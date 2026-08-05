@@ -1,0 +1,126 @@
+# Release — PORT_SPEC.md §8 (Distribution) and §7.3 (wheels).
+#
+# This workflow builds; it does not publish.  `goreleaser release --snapshot`
+# produces every artifact a real release would and uploads nothing anywhere,
+# which is the correct behaviour until two things are true:
+#
+#   1. Code signing is solved (§8: an unsigned Go binary is quarantined by
+#      Gatekeeper and warned about by SmartScreen exactly like a PyInstaller
+#      one).  See the signing block at the bottom of .goreleaser.yaml.
+#   2. §11 "Gate: do not release until" is satisfied — canary alongside 3.8.x,
+#      one real course for a full semester, cutover between semesters.
+#
+# Tagging early is still useful: it proves the five-platform cross-compile and
+# the wheel build on every tag instead of discovering both are broken on the day
+# of the first release.
+
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  # Snapshot builds publish nothing, so read is all that is needed.  A real
+  # release run needs `contents: write` plus GITHUB_TOKEN on the goreleaser step
+  # — add both in the same change that removes --snapshot, never before.
+  contents: read
+
+env:
+  GOTOOLCHAIN: local
+
+jobs:
+  snapshot:
+    name: goreleaser snapshot (5 platforms)
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # goreleaser derives the version and changelog from tag history;
+          # a shallow checkout silently yields the wrong version.
+          fetch-depth: 0
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache-dependency-path: "**/go.sum"
+
+      # Cross-compilation with no C toolchain in sight — CGO_ENABLED=0 is set
+      # per-build in .goreleaser.yaml so it applies to the local `goreleaser
+      # build` invocation a maintainer runs too, not only to CI.
+      - name: goreleaser
+        uses: goreleaser/goreleaser-action@v6
+        with:
+          distribution: goreleaser
+          version: "~> v2"
+          args: release --snapshot --clean
+          # TODO: a real release replaces the args above with `release --clean`
+          # and adds:
+          #   env:
+          #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Both changes belong to the same commit as the signing config; a
+          # publishing run without signing ships binaries the OS will block.
+
+      - name: Artifact inventory
+        run: |
+          ls -la dist/
+          cat dist/checksums.txt
+          # Five, per §7.3: linux/amd64, linux/arm64, darwin/amd64,
+          # darwin/arm64, windows/amd64.
+          count="$(find dist -type f \( -name kathara -o -name kathara.exe \) | wc -l)"
+          echo "binaries built: $count"
+          test "$count" -eq 5
+
+      - name: Upload binaries and archives
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: |
+            dist/*.tar.gz
+            dist/*.zip
+            dist/checksums.txt
+          retention-days: 14
+          if-no-files-found: error
+
+      # -----------------------------------------------------------------------
+      # Python wheels — §7.3: "goreleaser builds five binaries. A build script
+      # emits five platform-tagged wheels with the binary in .data/scripts/ so
+      # pip puts it on PATH directly. Backend is hatchling. No cibuildwheel, no
+      # auditwheel, no C toolchain, because there is no C extension. This is the
+      # ruff and uv distribution pattern."
+      #
+      # PLACEHOLDER: python/build_wheels.py arrives in Phase 7.  The guard makes
+      # this a no-op until then instead of a red run on every tag; Phase 7 must
+      # DELETE the guard, otherwise a renamed or deleted build script turns the
+      # wheel job green by skipping it.
+      #
+      # The flag contract assumed below (`--dist`, `--out`) is this workflow's
+      # only requirement of that script.  Phase 7 either implements it or edits
+      # this step — but the five wheels must be reproducible from the same dist/
+      # tree goreleaser just produced, not from a second build of the Go code,
+      # or the wheel and the tarball can disagree byte-for-byte.
+      # -----------------------------------------------------------------------
+      - uses: actions/setup-python@v5
+        if: hashFiles('python/build_wheels.py') != ''
+        with:
+          python-version: "3.12"
+
+      - name: Build platform wheels
+        if: hashFiles('python/build_wheels.py') != ''
+        run: |
+          python -m pip install --upgrade pip hatchling
+          python python/build_wheels.py --dist dist --out python/dist
+          ls -la python/dist/
+          # One wheel per goreleaser binary, §7.3.
+          test "$(find python/dist -name '*.whl' | wc -l)" -eq 5
+
+      - name: Upload wheels
+        if: hashFiles('python/build_wheels.py') != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: wheels
+          path: python/dist/*.whl
+          retention-days: 14
+          if-no-files-found: error

@@ -1,0 +1,232 @@
+# Goldens — PORT_SPEC.md §9 Layer A (CLI golden tests) and Layer B (parser
+# conformance vectors).  Phase 1 deliverable.
+#
+# ---------------------------------------------------------------------------
+# READ BEFORE RUNNING.  Layer A is not a normal CI job.
+# ---------------------------------------------------------------------------
+# PORT_SPEC.md §9: "Agents run against disposable VMs, never a workstation; the
+# tests start dozens of privileged containers with NET_ADMIN, create bridges and
+# VDE switches, and can leave host network state dirty on failure."
+#
+# The layer-a job therefore requires a runner that is:
+#   * Linux with a ROOT Docker daemon (rootless will not do: the scenarios need
+#     NET_ADMIN, sysctl writes and `docker plugin install`),
+#   * able to run privileged containers,
+#   * able to reach Docker Hub, because the binary under test installs the
+#     Kathara network plugin itself on first use —
+#     `kathara/katharanp_vde:<arch>`, see DockerPlugin.check_and_download_plugin
+#     — and pulls the kathara/* device images,
+#   * disposable.  A failed or cancelled run can leave bridges, VDE switches and
+#     netns state behind even though the harness cleans up unconditionally.
+#
+# That is why this workflow is `workflow_dispatch` only and never runs on push
+# or pull_request.  The `runner` input exists so an operator can point it at a
+# self-hosted disposable VM instead of the GitHub-hosted image.
+#
+# Layer B (the parser vectors) needs none of the above and runs first, on an
+# ordinary runner, as the cheap gate for the expensive one.
+
+name: Goldens
+
+on:
+  workflow_dispatch:
+    inputs:
+      runner:
+        description: >-
+          Runner label for the Layer A job. Must be a disposable Linux VM with a
+          root Docker daemon. Use a self-hosted label for real golden runs.
+        required: false
+        default: ubuntu-latest
+      scenario:
+        description: >-
+          Optional scenario name or glob (goldenharness -scenario), e.g.
+          'syn-*'. Empty runs the whole manifest.
+        required: false
+        default: ""
+      labs_ref:
+        description: KatharaFramework/Kathara-Labs ref to check out.
+        required: false
+        # Commit the goldens in test/goldens/ were recorded against.
+        default: 87fbf87e009938a4a62a696a87a730966fd35bff
+
+permissions:
+  contents: read
+
+env:
+  GOTOOLCHAIN: local
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Layer B — parser conformance vectors.
+  #
+  # PACKAGE_GRAPH.md §6.2: the vectors bind two implementations and both
+  # consumers must run "in the same CI job", because "a vector change that greens
+  # one side and reds the other is a drift alarm, not a fixture update".  Split
+  # across jobs that guarantee is lost: a red Python job and a green Go job read
+  # as two unrelated failures.  Hence one job, several steps, no `continue-on-
+  # error` anywhere.
+  # ---------------------------------------------------------------------------
+  layer-b:
+    name: Layer B — parser vectors (Go + Python)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache-dependency-path: "**/go.sum"
+
+      - uses: actions/setup-python@v5
+        with:
+          # kathara 3.8.3 declares requires-python >=3.10; every one of its
+          # dependencies (docker, kubernetes, pyroute2, rich, fs, chardet<6,
+          # setuptools<81, libtmux) has wheels for 3.12.  There is no C
+          # extension and no pyuv-from-git step on this path.
+          python-version: "3.12"
+          cache: pip
+
+      # The Layer B AUTHORITY is the real Python implementation, not a
+      # transcription of it: tools/vectorcheck/check_python.py imports
+      # Kathara.parser.netkit.* directly.  Pinned to the exact version the port
+      # targets — an unpinned install would silently re-baseline the oracle.
+      - name: Install the Kathara 3.8.3 oracle from PyPI
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install "kathara==3.8.3"
+          python -c "import Kathara; print('oracle:', Kathara.__file__)"
+
+      # Consumer 1: the Go labfile package.
+      # NOTE: this fails with "matched no packages" until Phase 3 creates
+      # labfile/. That is intentional — the job is dispatch-only and the vectors
+      # exist now, so the wiring is proven the moment the package lands.
+      - name: Go vectors — labfile
+        run: go test -count=1 ./labfile/...
+
+      # Consumer 2: the Python oracle.  --update is what re-records a vector
+      # from observed Python behaviour; it must never appear in CI, or a
+      # regression rewrites the thing that was supposed to catch it.
+      - name: Python vectors — Kathara 3.8.3 parsers
+        run: python tools/vectorcheck/check_python.py --verbose
+
+      # Consumer 3: the §7 Python client's own LabParser plus the error-code
+      # table test (PACKAGE_GRAPH.md §6.2/§6.3 — "both carry a verification test
+      # that walks the frozen table and fails on any missing or extra code, run
+      # in the same CI job").  Guarded because python/ arrives in Phase 7; drop
+      # the guard then so a deleted test cannot pass silently.
+      - name: Python client vectors + error-code table
+        if: hashFiles('python/tests/**') != ''
+        run: |
+          python -m pip install pytest
+          python -m pip install -e ./python
+          python -m pytest python/tests -q
+
+  # ---------------------------------------------------------------------------
+  # Layer A — CLI golden replay.
+  #
+  # Record is never run here.  Goldens are recorded from the Python 3.8.3 oracle
+  # by a human on a disposable VM and committed under test/goldens/; CI only
+  # replays them against the Go build.  A CI job that could re-record would be a
+  # CI job that can silently accept a regression.
+  # ---------------------------------------------------------------------------
+  layer-a:
+    name: Layer A — golden replay (Docker, privileged)
+    needs: layer-b
+    runs-on: ${{ inputs.runner || 'ubuntu-latest' }}
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+
+      # The golden set is 24 real scenarios from Kathara-Labs plus the synthetic
+      # ones (tools/goldenharness/scenarios.yaml, `dir: labs:<rel>`), so the labs
+      # corpus is an input to the oracle.
+      # TODO(human): pin `labs_ref` to the commit the goldens were recorded
+      # against and make it the default. Tracking `main` means an upstream lab
+      # edit reds this job with a diff that is not a port regression.
+      - name: Check out KatharaFramework/Kathara-Labs
+        uses: actions/checkout@v4
+        with:
+          repository: KatharaFramework/Kathara-Labs
+          ref: ${{ inputs.labs_ref || '87fbf87e009938a4a62a696a87a730966fd35bff' }}
+          path: kathara-labs
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache-dependency-path: "**/go.sum"
+
+      - name: Docker preflight
+        run: |
+          docker version
+          docker info --format 'storage={{ .Driver }} rootless={{ .SecurityOptions }}'
+          # The binary under test installs kathara/katharanp_vde:<arch> itself
+          # if it is absent, so nothing is installed here; this only records
+          # what the runner started with.
+          docker plugin ls
+
+      - name: Build the binary under test
+        run: |
+          mkdir -p bin
+          go build -trimpath -o bin/kathara ./cmd/kathara
+          # Smoke test, deliberately not `|| true`: CLI_SURFACE.md §48 pins this
+          # to `Current version: <ver>` on stdout with exit 0, so a binary that
+          # cannot answer it has no business being measured against goldens.
+          ./bin/kathara --version
+
+      # Built from its own module directory rather than `go run
+      # ./tools/goldenharness`: once the harness has its own go.mod (
+      # PACKAGE_GRAPH.md §1.1) the root module cannot reach into it.  The
+      # explicit -repo is needed for the same reason — the harness resolves the
+      # repository root as "nearest ancestor with a go.mod", which would stop at
+      # tools/goldenharness after the split.
+      - name: Build the golden harness
+        working-directory: tools/goldenharness
+        run: go build -trimpath -o "${GITHUB_WORKSPACE}/bin/goldenharness" .
+
+      - name: Verify goldens against the Go build
+        env:
+          KATHARA_CMD: ${{ github.workspace }}/bin/kathara
+          KATHARA_LABS_ROOT: ${{ github.workspace }}/kathara-labs
+          DOCKER_BIN: docker
+          # Via env, not interpolated into the script: a dispatch input pasted
+          # straight into `run:` is a shell-injection hole even on a workflow
+          # only collaborators can start.
+          SCENARIO: ${{ inputs.scenario }}
+        run: |
+          # -out both names the scratch recording and stops the harness from
+          # deleting it, which is what makes the upload step below possible.
+          mkdir -p "${RUNNER_TEMP}/verify-recording"
+          args=(verify -v -repo "${GITHUB_WORKSPACE}"
+                -out "${RUNNER_TEMP}/verify-recording")
+          if [ -n "$SCENARIO" ]; then
+            args+=(-scenario "$SCENARIO")
+          fi
+          "${GITHUB_WORKSPACE}/bin/goldenharness" "${args[@]}"
+
+      # The failing recording is the whole debugging story: normalized
+      # stdout/stderr, docker inspect subsets, in-container probes.  Without it a
+      # red run only says which files differed.
+      - name: Upload the failing recording
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: verify-recording
+          path: ${{ runner.temp }}/verify-recording
+          retention-days: 7
+          if-no-files-found: warn
+
+      # The harness already force-removes every app=kathara container and
+      # network on success, failure, timeout and SIGINT.  This runs anyway:
+      # spec §9, "Cleanup is part of every test, not a courtesy" — and a
+      # harness that crashed before its own cleanup is exactly the case that
+      # leaves a self-hosted VM dirty.
+      - name: Force cleanup
+        if: always()
+        run: |
+          ids="$(docker ps -aq --filter label=app=kathara)"
+          [ -n "$ids" ] && docker rm -f $ids || true
+          nets="$(docker network ls -q --filter label=app=kathara)"
+          [ -n "$nets" ] && docker network rm $nets || true
+          docker ps -a --filter label=app=kathara
+          docker network ls --filter label=app=kathara

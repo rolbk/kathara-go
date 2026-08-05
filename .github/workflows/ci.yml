@@ -1,0 +1,191 @@
+# CI — PORT_SPEC.md §9 "Test infrastructure", Phase 1 deliverable.
+#
+# "Go tooling that catches this port's characteristic bugs, all non-advisory in
+#  CI from the first commit: go vet, staticcheck, errcheck, -race on every test
+#  run, goleak.  Build it: GitHub Actions across Linux x64/arm64, macOS x64/arm64,
+#  Windows x64."
+#
+# Nothing here needs Docker, a privileged container or the Kathara network
+# plugin.  Everything that does lives in golden.yml, which is dispatch-only
+# because it must run on disposable VMs (spec §9, never a workstation).
+#
+# Why the analyzers run per-platform rather than once on Linux: the port is
+# heavily `_linux.go` / `_darwin.go` / `_windows.go` / `_unix.go` split
+# (PACKAGE_GRAPH.md §4).  A Linux-only vet/staticcheck/errcheck run would never
+# type-check the Windows ConPTY files, the darwin user-identity files, or the
+# `_other.go` no-op fallbacks — i.e. exactly the files no reviewer can run
+# locally.
+
+name: CI
+
+on:
+  push:
+    # Pushes to the integration branch, plus every pull request.  Deliberately
+    # not `branches: ["**"]`: a PR branch would then be built twice per push and
+    # the two runs land in different concurrency groups, so neither cancels the
+    # other.  Agents that push work branches without opening a PR get no CI —
+    # widen this list if that becomes the working style.
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # The toolchain is pinned by the `go` directive in go.mod (Go 1.26); every job
+  # resolves it with `go-version-file: go.mod` so there is exactly one source of
+  # truth.  GOTOOLCHAIN=local then forbids the silent toolchain download: if
+  # go.mod ever outruns the installed toolchain, CI fails loudly instead of
+  # testing a Go version nobody chose.
+  GOTOOLCHAIN: local
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Formatting and module hygiene.  OS-independent, so it runs once.  Kept off
+  # the Windows runner deliberately: gofmt compares byte-for-byte and a
+  # core.autocrlf checkout would report every file as unformatted.
+  # ---------------------------------------------------------------------------
+  hygiene:
+    name: gofmt + go.mod
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache-dependency-path: "**/go.sum"
+
+      - name: gofmt -l
+        run: |
+          unformatted="$(gofmt -l .)"
+          if [ -n "$unformatted" ]; then
+            echo "::error::gofmt -l reported unformatted files:"
+            echo "$unformatted"
+            exit 1
+          fi
+          echo "gofmt clean"
+
+      - name: go mod tidy -diff (main module)
+        run: go mod tidy -diff
+
+      # tools/goldenharness is a separate Go module (PACKAGE_GRAPH.md §1.1: the
+      # oracle must never share a dependency graph with the product).  While the
+      # split has not happened yet this is a harmless second tidy of the parent
+      # module; once tools/goldenharness/go.mod exists it becomes a real check.
+      - name: go mod tidy -diff (tools/goldenharness)
+        working-directory: tools/goldenharness
+        run: go mod tidy -diff
+
+  # ---------------------------------------------------------------------------
+  # Build, analyze and test on all five platform/arch combinations the spec
+  # names as merge gates (§11 "Gate: do not merge until").
+  # ---------------------------------------------------------------------------
+  build-test:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: linux-amd64
+            os: ubuntu-latest
+          - name: linux-arm64
+            os: ubuntu-24.04-arm
+          - name: darwin-amd64
+            # macos-13 is the last Intel macOS image GitHub hosts.  If it is
+            # retired, darwin/amd64 keeps its release build (goreleaser
+            # cross-compiles it) but loses native test coverage; the fallback is
+            # a `GOARCH=amd64 go build` cross-check plus Rosetta on macos-latest,
+            # NOT dropping the row — `backend/docker/image.go` has an
+            # amd64-under-Rosetta acceptance path that only Intel/Rosetta macOS
+            # exercises (PACKAGE_GRAPH.md §4).
+            os: macos-13
+          - name: darwin-arm64
+            os: macos-latest
+          - name: windows-amd64
+            os: windows-latest
+    defaults:
+      run:
+        # One shell on all five runners, so every step below is literally the
+        # same script everywhere.  Git Bash ships on the Windows image.
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          # Matches ./go.sum and ./tools/goldenharness/go.sum once the harness
+          # module is split out; a literal list would break the cache step while
+          # the second file does not exist yet.
+          cache-dependency-path: "**/go.sum"
+
+      - name: Toolchain identity
+        run: |
+          go version
+          go env GOOS GOARCH CGO_ENABLED GOTOOLCHAIN
+
+      # Analyzer versions are pinned, not floated: an analyzer that changes its
+      # findings between two runs of the same commit is a broken merge gate.
+      # Both versions verified against Go 1.26 (staticcheck 2026.1 = v0.7.0).
+      - name: Install pinned analyzers
+        run: |
+          go install honnef.co/go/tools/cmd/staticcheck@v0.7.0
+          go install github.com/kisielk/errcheck@v1.20.0
+          echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
+
+      - name: go build
+        run: go build ./...
+
+      - name: go vet
+        run: go vet ./...
+
+      - name: staticcheck
+        run: staticcheck ./...
+
+      # PORT_SPEC.md §9: "errcheck (the number one Python-to-Go porting bug is a
+      # dropped error where Python had an implicitly propagating exception)" and
+      # §10: "No silently discarded errors. errcheck is a merge gate."
+      # Run with defaults — no -ignoretests, no blanket exclusions.  If the
+      # `defer f.Close()` noise becomes unmanageable, the sanctioned answer is a
+      # reviewed `-exclude` file committed to the repo, never relaxing the gate
+      # or moving errcheck to advisory.
+      - name: errcheck
+        run: errcheck ./...
+
+      # -race requires CGO_ENABLED=1 and a C toolchain; all five runner images
+      # ship one, so CGO is left at its default here.  CGO_ENABLED=0 belongs to
+      # the release build only (.goreleaser.yaml), never to the test run.
+      #
+      # goleak has no step of its own: it is an in-test assertion
+      # (goleak.VerifyTestMain in each package's TestMain), so it is enforced by
+      # this same `go test` invocation on every platform.
+      - name: go test -race
+        run: go test -race -count=1 ./...
+
+      # -----------------------------------------------------------------------
+      # The Layer A oracle.  Separate module, zero imports of production
+      # packages (PACKAGE_GRAPH.md §1.1 / D-3), so it needs its own build.
+      # Build-only off Linux: its Docker-driving code paths are Linux-only in
+      # practice, but it must keep compiling everywhere so a macOS or Windows
+      # contributor can run `go vet` on it.
+      # -----------------------------------------------------------------------
+      - name: Build tools/goldenharness
+        working-directory: tools/goldenharness
+        run: go build ./...
+
+      - name: Analyze and test tools/goldenharness
+        if: runner.os == 'Linux'
+        working-directory: tools/goldenharness
+        run: |
+          go vet ./...
+          staticcheck ./...
+          errcheck ./...
+          go test -race -count=1 ./...
