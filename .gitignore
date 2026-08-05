@@ -1,0 +1,7 @@
+/dist/
+/bin/
+*.test
+/python/dist/
+/python/build/
+__pycache__/
+*.egg-info/
