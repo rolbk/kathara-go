@@ -1,0 +1,2612 @@
+[
+ {
+  "pattern": "b",
+  "line": "b\n",
+  "match": true
+ },
+ {
+  "pattern": "b",
+  "line": "b\r\n",
+  "match": true
+ },
+ {
+  "pattern": "b",
+  "line": "b\r",
+  "match": true
+ },
+ {
+  "pattern": "b",
+  "line": "b",
+  "match": true
+ },
+ {
+  "pattern": "b",
+  "line": "\n",
+  "match": false
+ },
+ {
+  "pattern": "b",
+  "line": "",
+  "match": false
+ },
+ {
+  "pattern": "b",
+  "line": "ab\n",
+  "match": true
+ },
+ {
+  "pattern": "b",
+  "line": "a\n",
+  "match": false
+ },
+ {
+  "pattern": "b",
+  "line": "\tb\n",
+  "match": true
+ },
+ {
+  "pattern": "b",
+  "line": "b1\n",
+  "match": true
+ },
+ {
+  "pattern": "b",
+  "line": "bb\n",
+  "match": true
+ },
+ {
+  "pattern": "b",
+  "line": "a b\n",
+  "match": true
+ },
+ {
+  "pattern": "b",
+  "line": "  \n",
+  "match": false
+ },
+ {
+  "pattern": "b",
+  "line": "# c\n",
+  "match": false
+ },
+ {
+  "pattern": "b",
+  "line": "abd",
+  "match": true
+ },
+ {
+  "pattern": "b",
+  "line": "abd\n",
+  "match": true
+ },
+ {
+  "pattern": "b",
+  "line": "b\n\n",
+  "match": true
+ },
+ {
+  "pattern": "b",
+  "line": "\r\n",
+  "match": false
+ },
+ {
+  "pattern": "z",
+  "line": "b\n",
+  "match": false
+ },
+ {
+  "pattern": "z",
+  "line": "b\r\n",
+  "match": false
+ },
+ {
+  "pattern": "z",
+  "line": "b\r",
+  "match": false
+ },
+ {
+  "pattern": "z",
+  "line": "b",
+  "match": false
+ },
+ {
+  "pattern": "z",
+  "line": "\n",
+  "match": false
+ },
+ {
+  "pattern": "z",
+  "line": "",
+  "match": false
+ },
+ {
+  "pattern": "z",
+  "line": "ab\n",
+  "match": false
+ },
+ {
+  "pattern": "z",
+  "line": "a\n",
+  "match": false
+ },
+ {
+  "pattern": "z",
+  "line": "\tb\n",
+  "match": false
+ },
+ {
+  "pattern": "z",
+  "line": "b1\n",
+  "match": false
+ },
+ {
+  "pattern": "z",
+  "line": "bb\n",
+  "match": false
+ },
+ {
+  "pattern": "z",
+  "line": "a b\n",
+  "match": false
+ },
+ {
+  "pattern": "z",
+  "line": "  \n",
+  "match": false
+ },
+ {
+  "pattern": "z",
+  "line": "# c\n",
+  "match": false
+ },
+ {
+  "pattern": "z",
+  "line": "abd",
+  "match": false
+ },
+ {
+  "pattern": "z",
+  "line": "abd\n",
+  "match": false
+ },
+ {
+  "pattern": "z",
+  "line": "b\n\n",
+  "match": false
+ },
+ {
+  "pattern": "z",
+  "line": "\r\n",
+  "match": false
+ },
+ {
+  "pattern": "",
+  "line": "b\n",
+  "match": true
+ },
+ {
+  "pattern": "",
+  "line": "b\r\n",
+  "match": true
+ },
+ {
+  "pattern": "",
+  "line": "b\r",
+  "match": true
+ },
+ {
+  "pattern": "",
+  "line": "b",
+  "match": true
+ },
+ {
+  "pattern": "",
+  "line": "\n",
+  "match": true
+ },
+ {
+  "pattern": "",
+  "line": "",
+  "match": true
+ },
+ {
+  "pattern": "",
+  "line": "ab\n",
+  "match": true
+ },
+ {
+  "pattern": "",
+  "line": "a\n",
+  "match": true
+ },
+ {
+  "pattern": "",
+  "line": "\tb\n",
+  "match": true
+ },
+ {
+  "pattern": "",
+  "line": "b1\n",
+  "match": true
+ },
+ {
+  "pattern": "",
+  "line": "bb\n",
+  "match": true
+ },
+ {
+  "pattern": "",
+  "line": "a b\n",
+  "match": true
+ },
+ {
+  "pattern": "",
+  "line": "  \n",
+  "match": true
+ },
+ {
+  "pattern": "",
+  "line": "# c\n",
+  "match": true
+ },
+ {
+  "pattern": "",
+  "line": "abd",
+  "match": true
+ },
+ {
+  "pattern": "",
+  "line": "abd\n",
+  "match": true
+ },
+ {
+  "pattern": "",
+  "line": "b\n\n",
+  "match": true
+ },
+ {
+  "pattern": "",
+  "line": "\r\n",
+  "match": true
+ },
+ {
+  "pattern": "^b",
+  "line": "b\n",
+  "match": true
+ },
+ {
+  "pattern": "^b",
+  "line": "b\r\n",
+  "match": true
+ },
+ {
+  "pattern": "^b",
+  "line": "b\r",
+  "match": true
+ },
+ {
+  "pattern": "^b",
+  "line": "b",
+  "match": true
+ },
+ {
+  "pattern": "^b",
+  "line": "\n",
+  "match": false
+ },
+ {
+  "pattern": "^b",
+  "line": "",
+  "match": false
+ },
+ {
+  "pattern": "^b",
+  "line": "ab\n",
+  "match": false
+ },
+ {
+  "pattern": "^b",
+  "line": "a\n",
+  "match": false
+ },
+ {
+  "pattern": "^b",
+  "line": "\tb\n",
+  "match": false
+ },
+ {
+  "pattern": "^b",
+  "line": "b1\n",
+  "match": true
+ },
+ {
+  "pattern": "^b",
+  "line": "bb\n",
+  "match": true
+ },
+ {
+  "pattern": "^b",
+  "line": "a b\n",
+  "match": false
+ },
+ {
+  "pattern": "^b",
+  "line": "  \n",
+  "match": false
+ },
+ {
+  "pattern": "^b",
+  "line": "# c\n",
+  "match": false
+ },
+ {
+  "pattern": "^b",
+  "line": "abd",
+  "match": false
+ },
+ {
+  "pattern": "^b",
+  "line": "abd\n",
+  "match": false
+ },
+ {
+  "pattern": "^b",
+  "line": "b\n\n",
+  "match": true
+ },
+ {
+  "pattern": "^b",
+  "line": "\r\n",
+  "match": false
+ },
+ {
+  "pattern": "b$",
+  "line": "b\n",
+  "match": true
+ },
+ {
+  "pattern": "b$",
+  "line": "b\r\n",
+  "match": false
+ },
+ {
+  "pattern": "b$",
+  "line": "b\r",
+  "match": false
+ },
+ {
+  "pattern": "b$",
+  "line": "b",
+  "match": true
+ },
+ {
+  "pattern": "b$",
+  "line": "\n",
+  "match": false
+ },
+ {
+  "pattern": "b$",
+  "line": "",
+  "match": false
+ },
+ {
+  "pattern": "b$",
+  "line": "ab\n",
+  "match": true
+ },
+ {
+  "pattern": "b$",
+  "line": "a\n",
+  "match": false
+ },
+ {
+  "pattern": "b$",
+  "line": "\tb\n",
+  "match": true
+ },
+ {
+  "pattern": "b$",
+  "line": "b1\n",
+  "match": false
+ },
+ {
+  "pattern": "b$",
+  "line": "bb\n",
+  "match": true
+ },
+ {
+  "pattern": "b$",
+  "line": "a b\n",
+  "match": true
+ },
+ {
+  "pattern": "b$",
+  "line": "  \n",
+  "match": false
+ },
+ {
+  "pattern": "b$",
+  "line": "# c\n",
+  "match": false
+ },
+ {
+  "pattern": "b$",
+  "line": "abd",
+  "match": false
+ },
+ {
+  "pattern": "b$",
+  "line": "abd\n",
+  "match": false
+ },
+ {
+  "pattern": "b$",
+  "line": "b\n\n",
+  "match": false
+ },
+ {
+  "pattern": "b$",
+  "line": "\r\n",
+  "match": false
+ },
+ {
+  "pattern": "^b$",
+  "line": "b\n",
+  "match": true
+ },
+ {
+  "pattern": "^b$",
+  "line": "b\r\n",
+  "match": false
+ },
+ {
+  "pattern": "^b$",
+  "line": "b\r",
+  "match": false
+ },
+ {
+  "pattern": "^b$",
+  "line": "b",
+  "match": true
+ },
+ {
+  "pattern": "^b$",
+  "line": "\n",
+  "match": false
+ },
+ {
+  "pattern": "^b$",
+  "line": "",
+  "match": false
+ },
+ {
+  "pattern": "^b$",
+  "line": "ab\n",
+  "match": false
+ },
+ {
+  "pattern": "^b$",
+  "line": "a\n",
+  "match": false
+ },
+ {
+  "pattern": "^b$",
+  "line": "\tb\n",
+  "match": false
+ },
+ {
+  "pattern": "^b$",
+  "line": "b1\n",
+  "match": false
+ },
+ {
+  "pattern": "^b$",
+  "line": "bb\n",
+  "match": false
+ },
+ {
+  "pattern": "^b$",
+  "line": "a b\n",
+  "match": false
+ },
+ {
+  "pattern": "^b$",
+  "line": "  \n",
+  "match": false
+ },
+ {
+  "pattern": "^b$",
+  "line": "# c\n",
+  "match": false
+ },
+ {
+  "pattern": "^b$",
+  "line": "abd",
+  "match": false
+ },
+ {
+  "pattern": "^b$",
+  "line": "abd\n",
+  "match": false
+ },
+ {
+  "pattern": "^b$",
+  "line": "b\n\n",
+  "match": false
+ },
+ {
+  "pattern": "^b$",
+  "line": "\r\n",
+  "match": false
+ },
+ {
+  "pattern": "^$",
+  "line": "b\n",
+  "match": false
+ },
+ {
+  "pattern": "^$",
+  "line": "b\r\n",
+  "match": false
+ },
+ {
+  "pattern": "^$",
+  "line": "b\r",
+  "match": false
+ },
+ {
+  "pattern": "^$",
+  "line": "b",
+  "match": false
+ },
+ {
+  "pattern": "^$",
+  "line": "\n",
+  "match": true
+ },
+ {
+  "pattern": "^$",
+  "line": "",
+  "match": true
+ },
+ {
+  "pattern": "^$",
+  "line": "ab\n",
+  "match": false
+ },
+ {
+  "pattern": "^$",
+  "line": "a\n",
+  "match": false
+ },
+ {
+  "pattern": "^$",
+  "line": "\tb\n",
+  "match": false
+ },
+ {
+  "pattern": "^$",
+  "line": "b1\n",
+  "match": false
+ },
+ {
+  "pattern": "^$",
+  "line": "bb\n",
+  "match": false
+ },
+ {
+  "pattern": "^$",
+  "line": "a b\n",
+  "match": false
+ },
+ {
+  "pattern": "^$",
+  "line": "  \n",
+  "match": false
+ },
+ {
+  "pattern": "^$",
+  "line": "# c\n",
+  "match": false
+ },
+ {
+  "pattern": "^$",
+  "line": "abd",
+  "match": false
+ },
+ {
+  "pattern": "^$",
+  "line": "abd\n",
+  "match": false
+ },
+ {
+  "pattern": "^$",
+  "line": "b\n\n",
+  "match": false
+ },
+ {
+  "pattern": "^$",
+  "line": "\r\n",
+  "match": false
+ },
+ {
+  "pattern": "^.$",
+  "line": "b\n",
+  "match": true
+ },
+ {
+  "pattern": "^.$",
+  "line": "b\r\n",
+  "match": false
+ },
+ {
+  "pattern": "^.$",
+  "line": "b\r",
+  "match": false
+ },
+ {
+  "pattern": "^.$",
+  "line": "b",
+  "match": true
+ },
+ {
+  "pattern": "^.$",
+  "line": "\n",
+  "match": false
+ },
+ {
+  "pattern": "^.$",
+  "line": "",
+  "match": false
+ },
+ {
+  "pattern": "^.$",
+  "line": "ab\n",
+  "match": false
+ },
+ {
+  "pattern": "^.$",
+  "line": "a\n",
+  "match": true
+ },
+ {
+  "pattern": "^.$",
+  "line": "\tb\n",
+  "match": false
+ },
+ {
+  "pattern": "^.$",
+  "line": "b1\n",
+  "match": false
+ },
+ {
+  "pattern": "^.$",
+  "line": "bb\n",
+  "match": false
+ },
+ {
+  "pattern": "^.$",
+  "line": "a b\n",
+  "match": false
+ },
+ {
+  "pattern": "^.$",
+  "line": "  \n",
+  "match": false
+ },
+ {
+  "pattern": "^.$",
+  "line": "# c\n",
+  "match": false
+ },
+ {
+  "pattern": "^.$",
+  "line": "abd",
+  "match": false
+ },
+ {
+  "pattern": "^.$",
+  "line": "abd\n",
+  "match": false
+ },
+ {
+  "pattern": "^.$",
+  "line": "b\n\n",
+  "match": false
+ },
+ {
+  "pattern": "^.$",
+  "line": "\r\n",
+  "match": true
+ },
+ {
+  "pattern": "b\\n",
+  "line": "b\n",
+  "match": true
+ },
+ {
+  "pattern": "b\\n",
+  "line": "b\r\n",
+  "match": false
+ },
+ {
+  "pattern": "b\\n",
+  "line": "b\r",
+  "match": false
+ },
+ {
+  "pattern": "b\\n",
+  "line": "b",
+  "match": false
+ },
+ {
+  "pattern": "b\\n",
+  "line": "\n",
+  "match": false
+ },
+ {
+  "pattern": "b\\n",
+  "line": "",
+  "match": false
+ },
+ {
+  "pattern": "b\\n",
+  "line": "ab\n",
+  "match": true
+ },
+ {
+  "pattern": "b\\n",
+  "line": "a\n",
+  "match": false
+ },
+ {
+  "pattern": "b\\n",
+  "line": "\tb\n",
+  "match": true
+ },
+ {
+  "pattern": "b\\n",
+  "line": "b1\n",
+  "match": false
+ },
+ {
+  "pattern": "b\\n",
+  "line": "bb\n",
+  "match": true
+ },
+ {
+  "pattern": "b\\n",
+  "line": "a b\n",
+  "match": true
+ },
+ {
+  "pattern": "b\\n",
+  "line": "  \n",
+  "match": false
+ },
+ {
+  "pattern": "b\\n",
+  "line": "# c\n",
+  "match": false
+ },
+ {
+  "pattern": "b\\n",
+  "line": "abd",
+  "match": false
+ },
+ {
+  "pattern": "b\\n",
+  "line": "abd\n",
+  "match": false
+ },
+ {
+  "pattern": "b\\n",
+  "line": "b\n\n",
+  "match": true
+ },
+ {
+  "pattern": "b\\n",
+  "line": "\r\n",
+  "match": false
+ },
+ {
+  "pattern": "b\\n$",
+  "line": "b\n",
+  "match": true
+ },
+ {
+  "pattern": "b\\n$",
+  "line": "b\r\n",
+  "match": false
+ },
+ {
+  "pattern": "b\\n$",
+  "line": "b\r",
+  "match": false
+ },
+ {
+  "pattern": "b\\n$",
+  "line": "b",
+  "match": false
+ },
+ {
+  "pattern": "b\\n$",
+  "line": "\n",
+  "match": false
+ },
+ {
+  "pattern": "b\\n$",
+  "line": "",
+  "match": false
+ },
+ {
+  "pattern": "b\\n$",
+  "line": "ab\n",
+  "match": true
+ },
+ {
+  "pattern": "b\\n$",
+  "line": "a\n",
+  "match": false
+ },
+ {
+  "pattern": "b\\n$",
+  "line": "\tb\n",
+  "match": true
+ },
+ {
+  "pattern": "b\\n$",
+  "line": "b1\n",
+  "match": false
+ },
+ {
+  "pattern": "b\\n$",
+  "line": "bb\n",
+  "match": true
+ },
+ {
+  "pattern": "b\\n$",
+  "line": "a b\n",
+  "match": true
+ },
+ {
+  "pattern": "b\\n$",
+  "line": "  \n",
+  "match": false
+ },
+ {
+  "pattern": "b\\n$",
+  "line": "# c\n",
+  "match": false
+ },
+ {
+  "pattern": "b\\n$",
+  "line": "abd",
+  "match": false
+ },
+ {
+  "pattern": "b\\n$",
+  "line": "abd\n",
+  "match": false
+ },
+ {
+  "pattern": "b\\n$",
+  "line": "b\n\n",
+  "match": true
+ },
+ {
+  "pattern": "b\\n$",
+  "line": "\r\n",
+  "match": false
+ },
+ {
+  "pattern": "\\n",
+  "line": "b\n",
+  "match": true
+ },
+ {
+  "pattern": "\\n",
+  "line": "b\r\n",
+  "match": true
+ },
+ {
+  "pattern": "\\n",
+  "line": "b\r",
+  "match": false
+ },
+ {
+  "pattern": "\\n",
+  "line": "b",
+  "match": false
+ },
+ {
+  "pattern": "\\n",
+  "line": "\n",
+  "match": true
+ },
+ {
+  "pattern": "\\n",
+  "line": "",
+  "match": false
+ },
+ {
+  "pattern": "\\n",
+  "line": "ab\n",
+  "match": true
+ },
+ {
+  "pattern": "\\n",
+  "line": "a\n",
+  "match": true
+ },
+ {
+  "pattern": "\\n",
+  "line": "\tb\n",
+  "match": true
+ },
+ {
+  "pattern": "\\n",
+  "line": "b1\n",
+  "match": true
+ },
+ {
+  "pattern": "\\n",
+  "line": "bb\n",
+  "match": true
+ },
+ {
+  "pattern": "\\n",
+  "line": "a b\n",
+  "match": true
+ },
+ {
+  "pattern": "\\n",
+  "line": "  \n",
+  "match": true
+ },
+ {
+  "pattern": "\\n",
+  "line": "# c\n",
+  "match": true
+ },
+ {
+  "pattern": "\\n",
+  "line": "abd",
+  "match": false
+ },
+ {
+  "pattern": "\\n",
+  "line": "abd\n",
+  "match": true
+ },
+ {
+  "pattern": "\\n",
+  "line": "b\n\n",
+  "match": true
+ },
+ {
+  "pattern": "\\n",
+  "line": "\r\n",
+  "match": true
+ },
+ {
+  "pattern": "\\n$",
+  "line": "b\n",
+  "match": true
+ },
+ {
+  "pattern": "\\n$",
+  "line": "b\r\n",
+  "match": true
+ },
+ {
+  "pattern": "\\n$",
+  "line": "b\r",
+  "match": false
+ },
+ {
+  "pattern": "\\n$",
+  "line": "b",
+  "match": false
+ },
+ {
+  "pattern": "\\n$",
+  "line": "\n",
+  "match": true
+ },
+ {
+  "pattern": "\\n$",
+  "line": "",
+  "match": false
+ },
+ {
+  "pattern": "\\n$",
+  "line": "ab\n",
+  "match": true
+ },
+ {
+  "pattern": "\\n$",
+  "line": "a\n",
+  "match": true
+ },
+ {
+  "pattern": "\\n$",
+  "line": "\tb\n",
+  "match": true
+ },
+ {
+  "pattern": "\\n$",
+  "line": "b1\n",
+  "match": true
+ },
+ {
+  "pattern": "\\n$",
+  "line": "bb\n",
+  "match": true
+ },
+ {
+  "pattern": "\\n$",
+  "line": "a b\n",
+  "match": true
+ },
+ {
+  "pattern": "\\n$",
+  "line": "  \n",
+  "match": true
+ },
+ {
+  "pattern": "\\n$",
+  "line": "# c\n",
+  "match": true
+ },
+ {
+  "pattern": "\\n$",
+  "line": "abd",
+  "match": false
+ },
+ {
+  "pattern": "\\n$",
+  "line": "abd\n",
+  "match": true
+ },
+ {
+  "pattern": "\\n$",
+  "line": "b\n\n",
+  "match": true
+ },
+ {
+  "pattern": "\\n$",
+  "line": "\r\n",
+  "match": true
+ },
+ {
+  "pattern": "b[1-2]",
+  "line": "b\n",
+  "match": false
+ },
+ {
+  "pattern": "b[1-2]",
+  "line": "b\r\n",
+  "match": false
+ },
+ {
+  "pattern": "b[1-2]",
+  "line": "b\r",
+  "match": false
+ },
+ {
+  "pattern": "b[1-2]",
+  "line": "b",
+  "match": false
+ },
+ {
+  "pattern": "b[1-2]",
+  "line": "\n",
+  "match": false
+ },
+ {
+  "pattern": "b[1-2]",
+  "line": "",
+  "match": false
+ },
+ {
+  "pattern": "b[1-2]",
+  "line": "ab\n",
+  "match": false
+ },
+ {
+  "pattern": "b[1-2]",
+  "line": "a\n",
+  "match": false
+ },
+ {
+  "pattern": "b[1-2]",
+  "line": "\tb\n",
+  "match": false
+ },
+ {
+  "pattern": "b[1-2]",
+  "line": "b1\n",
+  "match": true
+ },
+ {
+  "pattern": "b[1-2]",
+  "line": "bb\n",
+  "match": false
+ },
+ {
+  "pattern": "b[1-2]",
+  "line": "a b\n",
+  "match": false
+ },
+ {
+  "pattern": "b[1-2]",
+  "line": "  \n",
+  "match": false
+ },
+ {
+  "pattern": "b[1-2]",
+  "line": "# c\n",
+  "match": false
+ },
+ {
+  "pattern": "b[1-2]",
+  "line": "abd",
+  "match": false
+ },
+ {
+  "pattern": "b[1-2]",
+  "line": "abd\n",
+  "match": false
+ },
+ {
+  "pattern": "b[1-2]",
+  "line": "b\n\n",
+  "match": false
+ },
+ {
+  "pattern": "b[1-2]",
+  "line": "\r\n",
+  "match": false
+ },
+ {
+  "pattern": "^\\s*b",
+  "line": "b\n",
+  "match": true
+ },
+ {
+  "pattern": "^\\s*b",
+  "line": "b\r\n",
+  "match": true
+ },
+ {
+  "pattern": "^\\s*b",
+  "line": "b\r",
+  "match": true
+ },
+ {
+  "pattern": "^\\s*b",
+  "line": "b",
+  "match": true
+ },
+ {
+  "pattern": "^\\s*b",
+  "line": "\n",
+  "match": false
+ },
+ {
+  "pattern": "^\\s*b",
+  "line": "",
+  "match": false
+ },
+ {
+  "pattern": "^\\s*b",
+  "line": "ab\n",
+  "match": false
+ },
+ {
+  "pattern": "^\\s*b",
+  "line": "a\n",
+  "match": false
+ },
+ {
+  "pattern": "^\\s*b",
+  "line": "\tb\n",
+  "match": true
+ },
+ {
+  "pattern": "^\\s*b",
+  "line": "b1\n",
+  "match": true
+ },
+ {
+  "pattern": "^\\s*b",
+  "line": "bb\n",
+  "match": true
+ },
+ {
+  "pattern": "^\\s*b",
+  "line": "a b\n",
+  "match": false
+ },
+ {
+  "pattern": "^\\s*b",
+  "line": "  \n",
+  "match": false
+ },
+ {
+  "pattern": "^\\s*b",
+  "line": "# c\n",
+  "match": false
+ },
+ {
+  "pattern": "^\\s*b",
+  "line": "abd",
+  "match": false
+ },
+ {
+  "pattern": "^\\s*b",
+  "line": "abd\n",
+  "match": false
+ },
+ {
+  "pattern": "^\\s*b",
+  "line": "b\n\n",
+  "match": true
+ },
+ {
+  "pattern": "^\\s*b",
+  "line": "\r\n",
+  "match": false
+ },
+ {
+  "pattern": "d.*",
+  "line": "b\n",
+  "match": false
+ },
+ {
+  "pattern": "d.*",
+  "line": "b\r\n",
+  "match": false
+ },
+ {
+  "pattern": "d.*",
+  "line": "b\r",
+  "match": false
+ },
+ {
+  "pattern": "d.*",
+  "line": "b",
+  "match": false
+ },
+ {
+  "pattern": "d.*",
+  "line": "\n",
+  "match": false
+ },
+ {
+  "pattern": "d.*",
+  "line": "",
+  "match": false
+ },
+ {
+  "pattern": "d.*",
+  "line": "ab\n",
+  "match": false
+ },
+ {
+  "pattern": "d.*",
+  "line": "a\n",
+  "match": false
+ },
+ {
+  "pattern": "d.*",
+  "line": "\tb\n",
+  "match": false
+ },
+ {
+  "pattern": "d.*",
+  "line": "b1\n",
+  "match": false
+ },
+ {
+  "pattern": "d.*",
+  "line": "bb\n",
+  "match": false
+ },
+ {
+  "pattern": "d.*",
+  "line": "a b\n",
+  "match": false
+ },
+ {
+  "pattern": "d.*",
+  "line": "  \n",
+  "match": false
+ },
+ {
+  "pattern": "d.*",
+  "line": "# c\n",
+  "match": false
+ },
+ {
+  "pattern": "d.*",
+  "line": "abd",
+  "match": true
+ },
+ {
+  "pattern": "d.*",
+  "line": "abd\n",
+  "match": true
+ },
+ {
+  "pattern": "d.*",
+  "line": "b\n\n",
+  "match": false
+ },
+ {
+  "pattern": "d.*",
+  "line": "\r\n",
+  "match": false
+ },
+ {
+  "pattern": ".",
+  "line": "b\n",
+  "match": true
+ },
+ {
+  "pattern": ".",
+  "line": "b\r\n",
+  "match": true
+ },
+ {
+  "pattern": ".",
+  "line": "b\r",
+  "match": true
+ },
+ {
+  "pattern": ".",
+  "line": "b",
+  "match": true
+ },
+ {
+  "pattern": ".",
+  "line": "\n",
+  "match": false
+ },
+ {
+  "pattern": ".",
+  "line": "",
+  "match": false
+ },
+ {
+  "pattern": ".",
+  "line": "ab\n",
+  "match": true
+ },
+ {
+  "pattern": ".",
+  "line": "a\n",
+  "match": true
+ },
+ {
+  "pattern": ".",
+  "line": "\tb\n",
+  "match": true
+ },
+ {
+  "pattern": ".",
+  "line": "b1\n",
+  "match": true
+ },
+ {
+  "pattern": ".",
+  "line": "bb\n",
+  "match": true
+ },
+ {
+  "pattern": ".",
+  "line": "a b\n",
+  "match": true
+ },
+ {
+  "pattern": ".",
+  "line": "  \n",
+  "match": true
+ },
+ {
+  "pattern": ".",
+  "line": "# c\n",
+  "match": true
+ },
+ {
+  "pattern": ".",
+  "line": "abd",
+  "match": true
+ },
+ {
+  "pattern": ".",
+  "line": "abd\n",
+  "match": true
+ },
+ {
+  "pattern": ".",
+  "line": "b\n\n",
+  "match": true
+ },
+ {
+  "pattern": ".",
+  "line": "\r\n",
+  "match": true
+ },
+ {
+  "pattern": "^",
+  "line": "b\n",
+  "match": true
+ },
+ {
+  "pattern": "^",
+  "line": "b\r\n",
+  "match": true
+ },
+ {
+  "pattern": "^",
+  "line": "b\r",
+  "match": true
+ },
+ {
+  "pattern": "^",
+  "line": "b",
+  "match": true
+ },
+ {
+  "pattern": "^",
+  "line": "\n",
+  "match": true
+ },
+ {
+  "pattern": "^",
+  "line": "",
+  "match": true
+ },
+ {
+  "pattern": "^",
+  "line": "ab\n",
+  "match": true
+ },
+ {
+  "pattern": "^",
+  "line": "a\n",
+  "match": true
+ },
+ {
+  "pattern": "^",
+  "line": "\tb\n",
+  "match": true
+ },
+ {
+  "pattern": "^",
+  "line": "b1\n",
+  "match": true
+ },
+ {
+  "pattern": "^",
+  "line": "bb\n",
+  "match": true
+ },
+ {
+  "pattern": "^",
+  "line": "a b\n",
+  "match": true
+ },
+ {
+  "pattern": "^",
+  "line": "  \n",
+  "match": true
+ },
+ {
+  "pattern": "^",
+  "line": "# c\n",
+  "match": true
+ },
+ {
+  "pattern": "^",
+  "line": "abd",
+  "match": true
+ },
+ {
+  "pattern": "^",
+  "line": "abd\n",
+  "match": true
+ },
+ {
+  "pattern": "^",
+  "line": "b\n\n",
+  "match": true
+ },
+ {
+  "pattern": "^",
+  "line": "\r\n",
+  "match": true
+ },
+ {
+  "pattern": "$",
+  "line": "b\n",
+  "match": true
+ },
+ {
+  "pattern": "$",
+  "line": "b\r\n",
+  "match": true
+ },
+ {
+  "pattern": "$",
+  "line": "b\r",
+  "match": true
+ },
+ {
+  "pattern": "$",
+  "line": "b",
+  "match": true
+ },
+ {
+  "pattern": "$",
+  "line": "\n",
+  "match": true
+ },
+ {
+  "pattern": "$",
+  "line": "",
+  "match": true
+ },
+ {
+  "pattern": "$",
+  "line": "ab\n",
+  "match": true
+ },
+ {
+  "pattern": "$",
+  "line": "a\n",
+  "match": true
+ },
+ {
+  "pattern": "$",
+  "line": "\tb\n",
+  "match": true
+ },
+ {
+  "pattern": "$",
+  "line": "b1\n",
+  "match": true
+ },
+ {
+  "pattern": "$",
+  "line": "bb\n",
+  "match": true
+ },
+ {
+  "pattern": "$",
+  "line": "a b\n",
+  "match": true
+ },
+ {
+  "pattern": "$",
+  "line": "  \n",
+  "match": true
+ },
+ {
+  "pattern": "$",
+  "line": "# c\n",
+  "match": true
+ },
+ {
+  "pattern": "$",
+  "line": "abd",
+  "match": true
+ },
+ {
+  "pattern": "$",
+  "line": "abd\n",
+  "match": true
+ },
+ {
+  "pattern": "$",
+  "line": "b\n\n",
+  "match": true
+ },
+ {
+  "pattern": "$",
+  "line": "\r\n",
+  "match": true
+ },
+ {
+  "pattern": "a|b",
+  "line": "b\n",
+  "match": true
+ },
+ {
+  "pattern": "a|b",
+  "line": "b\r\n",
+  "match": true
+ },
+ {
+  "pattern": "a|b",
+  "line": "b\r",
+  "match": true
+ },
+ {
+  "pattern": "a|b",
+  "line": "b",
+  "match": true
+ },
+ {
+  "pattern": "a|b",
+  "line": "\n",
+  "match": false
+ },
+ {
+  "pattern": "a|b",
+  "line": "",
+  "match": false
+ },
+ {
+  "pattern": "a|b",
+  "line": "ab\n",
+  "match": true
+ },
+ {
+  "pattern": "a|b",
+  "line": "a\n",
+  "match": true
+ },
+ {
+  "pattern": "a|b",
+  "line": "\tb\n",
+  "match": true
+ },
+ {
+  "pattern": "a|b",
+  "line": "b1\n",
+  "match": true
+ },
+ {
+  "pattern": "a|b",
+  "line": "bb\n",
+  "match": true
+ },
+ {
+  "pattern": "a|b",
+  "line": "a b\n",
+  "match": true
+ },
+ {
+  "pattern": "a|b",
+  "line": "  \n",
+  "match": false
+ },
+ {
+  "pattern": "a|b",
+  "line": "# c\n",
+  "match": false
+ },
+ {
+  "pattern": "a|b",
+  "line": "abd",
+  "match": true
+ },
+ {
+  "pattern": "a|b",
+  "line": "abd\n",
+  "match": true
+ },
+ {
+  "pattern": "a|b",
+  "line": "b\n\n",
+  "match": true
+ },
+ {
+  "pattern": "a|b",
+  "line": "\r\n",
+  "match": false
+ },
+ {
+  "pattern": "(b)+",
+  "line": "b\n",
+  "match": true
+ },
+ {
+  "pattern": "(b)+",
+  "line": "b\r\n",
+  "match": true
+ },
+ {
+  "pattern": "(b)+",
+  "line": "b\r",
+  "match": true
+ },
+ {
+  "pattern": "(b)+",
+  "line": "b",
+  "match": true
+ },
+ {
+  "pattern": "(b)+",
+  "line": "\n",
+  "match": false
+ },
+ {
+  "pattern": "(b)+",
+  "line": "",
+  "match": false
+ },
+ {
+  "pattern": "(b)+",
+  "line": "ab\n",
+  "match": true
+ },
+ {
+  "pattern": "(b)+",
+  "line": "a\n",
+  "match": false
+ },
+ {
+  "pattern": "(b)+",
+  "line": "\tb\n",
+  "match": true
+ },
+ {
+  "pattern": "(b)+",
+  "line": "b1\n",
+  "match": true
+ },
+ {
+  "pattern": "(b)+",
+  "line": "bb\n",
+  "match": true
+ },
+ {
+  "pattern": "(b)+",
+  "line": "a b\n",
+  "match": true
+ },
+ {
+  "pattern": "(b)+",
+  "line": "  \n",
+  "match": false
+ },
+ {
+  "pattern": "(b)+",
+  "line": "# c\n",
+  "match": false
+ },
+ {
+  "pattern": "(b)+",
+  "line": "abd",
+  "match": true
+ },
+ {
+  "pattern": "(b)+",
+  "line": "abd\n",
+  "match": true
+ },
+ {
+  "pattern": "(b)+",
+  "line": "b\n\n",
+  "match": true
+ },
+ {
+  "pattern": "(b)+",
+  "line": "\r\n",
+  "match": false
+ },
+ {
+  "pattern": "[^a]",
+  "line": "b\n",
+  "match": true
+ },
+ {
+  "pattern": "[^a]",
+  "line": "b\r\n",
+  "match": true
+ },
+ {
+  "pattern": "[^a]",
+  "line": "b\r",
+  "match": true
+ },
+ {
+  "pattern": "[^a]",
+  "line": "b",
+  "match": true
+ },
+ {
+  "pattern": "[^a]",
+  "line": "\n",
+  "match": true
+ },
+ {
+  "pattern": "[^a]",
+  "line": "",
+  "match": false
+ },
+ {
+  "pattern": "[^a]",
+  "line": "ab\n",
+  "match": true
+ },
+ {
+  "pattern": "[^a]",
+  "line": "a\n",
+  "match": true
+ },
+ {
+  "pattern": "[^a]",
+  "line": "\tb\n",
+  "match": true
+ },
+ {
+  "pattern": "[^a]",
+  "line": "b1\n",
+  "match": true
+ },
+ {
+  "pattern": "[^a]",
+  "line": "bb\n",
+  "match": true
+ },
+ {
+  "pattern": "[^a]",
+  "line": "a b\n",
+  "match": true
+ },
+ {
+  "pattern": "[^a]",
+  "line": "  \n",
+  "match": true
+ },
+ {
+  "pattern": "[^a]",
+  "line": "# c\n",
+  "match": true
+ },
+ {
+  "pattern": "[^a]",
+  "line": "abd",
+  "match": true
+ },
+ {
+  "pattern": "[^a]",
+  "line": "abd\n",
+  "match": true
+ },
+ {
+  "pattern": "[^a]",
+  "line": "b\n\n",
+  "match": true
+ },
+ {
+  "pattern": "[^a]",
+  "line": "\r\n",
+  "match": true
+ },
+ {
+  "pattern": "\\bb\\b",
+  "line": "b\n",
+  "match": true
+ },
+ {
+  "pattern": "\\bb\\b",
+  "line": "b\r\n",
+  "match": true
+ },
+ {
+  "pattern": "\\bb\\b",
+  "line": "b\r",
+  "match": true
+ },
+ {
+  "pattern": "\\bb\\b",
+  "line": "b",
+  "match": true
+ },
+ {
+  "pattern": "\\bb\\b",
+  "line": "\n",
+  "match": false
+ },
+ {
+  "pattern": "\\bb\\b",
+  "line": "",
+  "match": false
+ },
+ {
+  "pattern": "\\bb\\b",
+  "line": "ab\n",
+  "match": false
+ },
+ {
+  "pattern": "\\bb\\b",
+  "line": "a\n",
+  "match": false
+ },
+ {
+  "pattern": "\\bb\\b",
+  "line": "\tb\n",
+  "match": true
+ },
+ {
+  "pattern": "\\bb\\b",
+  "line": "b1\n",
+  "match": false
+ },
+ {
+  "pattern": "\\bb\\b",
+  "line": "bb\n",
+  "match": false
+ },
+ {
+  "pattern": "\\bb\\b",
+  "line": "a b\n",
+  "match": true
+ },
+ {
+  "pattern": "\\bb\\b",
+  "line": "  \n",
+  "match": false
+ },
+ {
+  "pattern": "\\bb\\b",
+  "line": "# c\n",
+  "match": false
+ },
+ {
+  "pattern": "\\bb\\b",
+  "line": "abd",
+  "match": false
+ },
+ {
+  "pattern": "\\bb\\b",
+  "line": "abd\n",
+  "match": false
+ },
+ {
+  "pattern": "\\bb\\b",
+  "line": "b\n\n",
+  "match": true
+ },
+ {
+  "pattern": "\\bb\\b",
+  "line": "\r\n",
+  "match": false
+ },
+ {
+  "pattern": "\\Bb",
+  "line": "b\n",
+  "match": false
+ },
+ {
+  "pattern": "\\Bb",
+  "line": "b\r\n",
+  "match": false
+ },
+ {
+  "pattern": "\\Bb",
+  "line": "b\r",
+  "match": false
+ },
+ {
+  "pattern": "\\Bb",
+  "line": "b",
+  "match": false
+ },
+ {
+  "pattern": "\\Bb",
+  "line": "\n",
+  "match": false
+ },
+ {
+  "pattern": "\\Bb",
+  "line": "",
+  "match": false
+ },
+ {
+  "pattern": "\\Bb",
+  "line": "ab\n",
+  "match": true
+ },
+ {
+  "pattern": "\\Bb",
+  "line": "a\n",
+  "match": false
+ },
+ {
+  "pattern": "\\Bb",
+  "line": "\tb\n",
+  "match": false
+ },
+ {
+  "pattern": "\\Bb",
+  "line": "b1\n",
+  "match": false
+ },
+ {
+  "pattern": "\\Bb",
+  "line": "bb\n",
+  "match": true
+ },
+ {
+  "pattern": "\\Bb",
+  "line": "a b\n",
+  "match": false
+ },
+ {
+  "pattern": "\\Bb",
+  "line": "  \n",
+  "match": false
+ },
+ {
+  "pattern": "\\Bb",
+  "line": "# c\n",
+  "match": false
+ },
+ {
+  "pattern": "\\Bb",
+  "line": "abd",
+  "match": true
+ },
+ {
+  "pattern": "\\Bb",
+  "line": "abd\n",
+  "match": true
+ },
+ {
+  "pattern": "\\Bb",
+  "line": "b\n\n",
+  "match": false
+ },
+ {
+  "pattern": "\\Bb",
+  "line": "\r\n",
+  "match": false
+ },
+ {
+  "pattern": "^a.*d$",
+  "line": "b\n",
+  "match": false
+ },
+ {
+  "pattern": "^a.*d$",
+  "line": "b\r\n",
+  "match": false
+ },
+ {
+  "pattern": "^a.*d$",
+  "line": "b\r",
+  "match": false
+ },
+ {
+  "pattern": "^a.*d$",
+  "line": "b",
+  "match": false
+ },
+ {
+  "pattern": "^a.*d$",
+  "line": "\n",
+  "match": false
+ },
+ {
+  "pattern": "^a.*d$",
+  "line": "",
+  "match": false
+ },
+ {
+  "pattern": "^a.*d$",
+  "line": "ab\n",
+  "match": false
+ },
+ {
+  "pattern": "^a.*d$",
+  "line": "a\n",
+  "match": false
+ },
+ {
+  "pattern": "^a.*d$",
+  "line": "\tb\n",
+  "match": false
+ },
+ {
+  "pattern": "^a.*d$",
+  "line": "b1\n",
+  "match": false
+ },
+ {
+  "pattern": "^a.*d$",
+  "line": "bb\n",
+  "match": false
+ },
+ {
+  "pattern": "^a.*d$",
+  "line": "a b\n",
+  "match": false
+ },
+ {
+  "pattern": "^a.*d$",
+  "line": "  \n",
+  "match": false
+ },
+ {
+  "pattern": "^a.*d$",
+  "line": "# c\n",
+  "match": false
+ },
+ {
+  "pattern": "^a.*d$",
+  "line": "abd",
+  "match": true
+ },
+ {
+  "pattern": "^a.*d$",
+  "line": "abd\n",
+  "match": true
+ },
+ {
+  "pattern": "^a.*d$",
+  "line": "b\n\n",
+  "match": false
+ },
+ {
+  "pattern": "^a.*d$",
+  "line": "\r\n",
+  "match": false
+ },
+ {
+  "pattern": "b{1,2}$",
+  "line": "b\n",
+  "match": true
+ },
+ {
+  "pattern": "b{1,2}$",
+  "line": "b\r\n",
+  "match": false
+ },
+ {
+  "pattern": "b{1,2}$",
+  "line": "b\r",
+  "match": false
+ },
+ {
+  "pattern": "b{1,2}$",
+  "line": "b",
+  "match": true
+ },
+ {
+  "pattern": "b{1,2}$",
+  "line": "\n",
+  "match": false
+ },
+ {
+  "pattern": "b{1,2}$",
+  "line": "",
+  "match": false
+ },
+ {
+  "pattern": "b{1,2}$",
+  "line": "ab\n",
+  "match": true
+ },
+ {
+  "pattern": "b{1,2}$",
+  "line": "a\n",
+  "match": false
+ },
+ {
+  "pattern": "b{1,2}$",
+  "line": "\tb\n",
+  "match": true
+ },
+ {
+  "pattern": "b{1,2}$",
+  "line": "b1\n",
+  "match": false
+ },
+ {
+  "pattern": "b{1,2}$",
+  "line": "bb\n",
+  "match": true
+ },
+ {
+  "pattern": "b{1,2}$",
+  "line": "a b\n",
+  "match": true
+ },
+ {
+  "pattern": "b{1,2}$",
+  "line": "  \n",
+  "match": false
+ },
+ {
+  "pattern": "b{1,2}$",
+  "line": "# c\n",
+  "match": false
+ },
+ {
+  "pattern": "b{1,2}$",
+  "line": "abd",
+  "match": false
+ },
+ {
+  "pattern": "b{1,2}$",
+  "line": "abd\n",
+  "match": false
+ },
+ {
+  "pattern": "b{1,2}$",
+  "line": "b\n\n",
+  "match": false
+ },
+ {
+  "pattern": "b{1,2}$",
+  "line": "\r\n",
+  "match": false
+ },
+ {
+  "pattern": "\\s$",
+  "line": "b\n",
+  "match": true
+ },
+ {
+  "pattern": "\\s$",
+  "line": "b\r\n",
+  "match": true
+ },
+ {
+  "pattern": "\\s$",
+  "line": "b\r",
+  "match": true
+ },
+ {
+  "pattern": "\\s$",
+  "line": "b",
+  "match": false
+ },
+ {
+  "pattern": "\\s$",
+  "line": "\n",
+  "match": true
+ },
+ {
+  "pattern": "\\s$",
+  "line": "",
+  "match": false
+ },
+ {
+  "pattern": "\\s$",
+  "line": "ab\n",
+  "match": true
+ },
+ {
+  "pattern": "\\s$",
+  "line": "a\n",
+  "match": true
+ },
+ {
+  "pattern": "\\s$",
+  "line": "\tb\n",
+  "match": true
+ },
+ {
+  "pattern": "\\s$",
+  "line": "b1\n",
+  "match": true
+ },
+ {
+  "pattern": "\\s$",
+  "line": "bb\n",
+  "match": true
+ },
+ {
+  "pattern": "\\s$",
+  "line": "a b\n",
+  "match": true
+ },
+ {
+  "pattern": "\\s$",
+  "line": "  \n",
+  "match": true
+ },
+ {
+  "pattern": "\\s$",
+  "line": "# c\n",
+  "match": true
+ },
+ {
+  "pattern": "\\s$",
+  "line": "abd",
+  "match": false
+ },
+ {
+  "pattern": "\\s$",
+  "line": "abd\n",
+  "match": true
+ },
+ {
+  "pattern": "\\s$",
+  "line": "b\n\n",
+  "match": true
+ },
+ {
+  "pattern": "\\s$",
+  "line": "\r\n",
+  "match": true
+ },
+ {
+  "pattern": "\\S$",
+  "line": "b\n",
+  "match": true
+ },
+ {
+  "pattern": "\\S$",
+  "line": "b\r\n",
+  "match": false
+ },
+ {
+  "pattern": "\\S$",
+  "line": "b\r",
+  "match": false
+ },
+ {
+  "pattern": "\\S$",
+  "line": "b",
+  "match": true
+ },
+ {
+  "pattern": "\\S$",
+  "line": "\n",
+  "match": false
+ },
+ {
+  "pattern": "\\S$",
+  "line": "",
+  "match": false
+ },
+ {
+  "pattern": "\\S$",
+  "line": "ab\n",
+  "match": true
+ },
+ {
+  "pattern": "\\S$",
+  "line": "a\n",
+  "match": true
+ },
+ {
+  "pattern": "\\S$",
+  "line": "\tb\n",
+  "match": true
+ },
+ {
+  "pattern": "\\S$",
+  "line": "b1\n",
+  "match": true
+ },
+ {
+  "pattern": "\\S$",
+  "line": "bb\n",
+  "match": true
+ },
+ {
+  "pattern": "\\S$",
+  "line": "a b\n",
+  "match": true
+ },
+ {
+  "pattern": "\\S$",
+  "line": "  \n",
+  "match": false
+ },
+ {
+  "pattern": "\\S$",
+  "line": "# c\n",
+  "match": true
+ },
+ {
+  "pattern": "\\S$",
+  "line": "abd",
+  "match": true
+ },
+ {
+  "pattern": "\\S$",
+  "line": "abd\n",
+  "match": true
+ },
+ {
+  "pattern": "\\S$",
+  "line": "b\n\n",
+  "match": false
+ },
+ {
+  "pattern": "\\S$",
+  "line": "\r\n",
+  "match": false
+ },
+ {
+  "pattern": "^#",
+  "line": "b\n",
+  "match": false
+ },
+ {
+  "pattern": "^#",
+  "line": "b\r\n",
+  "match": false
+ },
+ {
+  "pattern": "^#",
+  "line": "b\r",
+  "match": false
+ },
+ {
+  "pattern": "^#",
+  "line": "b",
+  "match": false
+ },
+ {
+  "pattern": "^#",
+  "line": "\n",
+  "match": false
+ },
+ {
+  "pattern": "^#",
+  "line": "",
+  "match": false
+ },
+ {
+  "pattern": "^#",
+  "line": "ab\n",
+  "match": false
+ },
+ {
+  "pattern": "^#",
+  "line": "a\n",
+  "match": false
+ },
+ {
+  "pattern": "^#",
+  "line": "\tb\n",
+  "match": false
+ },
+ {
+  "pattern": "^#",
+  "line": "b1\n",
+  "match": false
+ },
+ {
+  "pattern": "^#",
+  "line": "bb\n",
+  "match": false
+ },
+ {
+  "pattern": "^#",
+  "line": "a b\n",
+  "match": false
+ },
+ {
+  "pattern": "^#",
+  "line": "  \n",
+  "match": false
+ },
+ {
+  "pattern": "^#",
+  "line": "# c\n",
+  "match": true
+ },
+ {
+  "pattern": "^#",
+  "line": "abd",
+  "match": false
+ },
+ {
+  "pattern": "^#",
+  "line": "abd\n",
+  "match": false
+ },
+ {
+  "pattern": "^#",
+  "line": "b\n\n",
+  "match": false
+ },
+ {
+  "pattern": "^#",
+  "line": "\r\n",
+  "match": false
+ },
+ {
+  "pattern": "#.*$",
+  "line": "b\n",
+  "match": false
+ },
+ {
+  "pattern": "#.*$",
+  "line": "b\r\n",
+  "match": false
+ },
+ {
+  "pattern": "#.*$",
+  "line": "b\r",
+  "match": false
+ },
+ {
+  "pattern": "#.*$",
+  "line": "b",
+  "match": false
+ },
+ {
+  "pattern": "#.*$",
+  "line": "\n",
+  "match": false
+ },
+ {
+  "pattern": "#.*$",
+  "line": "",
+  "match": false
+ },
+ {
+  "pattern": "#.*$",
+  "line": "ab\n",
+  "match": false
+ },
+ {
+  "pattern": "#.*$",
+  "line": "a\n",
+  "match": false
+ },
+ {
+  "pattern": "#.*$",
+  "line": "\tb\n",
+  "match": false
+ },
+ {
+  "pattern": "#.*$",
+  "line": "b1\n",
+  "match": false
+ },
+ {
+  "pattern": "#.*$",
+  "line": "bb\n",
+  "match": false
+ },
+ {
+  "pattern": "#.*$",
+  "line": "a b\n",
+  "match": false
+ },
+ {
+  "pattern": "#.*$",
+  "line": "  \n",
+  "match": false
+ },
+ {
+  "pattern": "#.*$",
+  "line": "# c\n",
+  "match": true
+ },
+ {
+  "pattern": "#.*$",
+  "line": "abd",
+  "match": false
+ },
+ {
+  "pattern": "#.*$",
+  "line": "abd\n",
+  "match": false
+ },
+ {
+  "pattern": "#.*$",
+  "line": "b\n\n",
+  "match": false
+ },
+ {
+  "pattern": "#.*$",
+  "line": "\r\n",
+  "match": false
+ }
+]

@@ -1,0 +1,162 @@
+[
+ {
+  "in": "",
+  "lines": []
+ },
+ {
+  "in": "\n",
+  "lines": [
+   "\n"
+  ]
+ },
+ {
+  "in": "\r",
+  "lines": [
+   "\r"
+  ]
+ },
+ {
+  "in": "\r\n",
+  "lines": [
+   "\r\n"
+  ]
+ },
+ {
+  "in": "a",
+  "lines": [
+   "a"
+  ]
+ },
+ {
+  "in": "a\n",
+  "lines": [
+   "a\n"
+  ]
+ },
+ {
+  "in": "a\r",
+  "lines": [
+   "a\r"
+  ]
+ },
+ {
+  "in": "a\r\n",
+  "lines": [
+   "a\r\n"
+  ]
+ },
+ {
+  "in": "a\nb",
+  "lines": [
+   "a\n",
+   "b"
+  ]
+ },
+ {
+  "in": "a\rb",
+  "lines": [
+   "a\r",
+   "b"
+  ]
+ },
+ {
+  "in": "a\r\nb",
+  "lines": [
+   "a\r\n",
+   "b"
+  ]
+ },
+ {
+  "in": "a\n\n",
+  "lines": [
+   "a\n",
+   "\n"
+  ]
+ },
+ {
+  "in": "a\r\r",
+  "lines": [
+   "a\r",
+   "\r"
+  ]
+ },
+ {
+  "in": "a\r\r\n",
+  "lines": [
+   "a\r",
+   "\r\n"
+  ]
+ },
+ {
+  "in": "a\n\r",
+  "lines": [
+   "a\n",
+   "\r"
+  ]
+ },
+ {
+  "in": "a\r\n\r\nb",
+  "lines": [
+   "a\r\n",
+   "\r\n",
+   "b"
+  ]
+ },
+ {
+  "in": "a\n\rb",
+  "lines": [
+   "a\n",
+   "\r",
+   "b"
+  ]
+ },
+ {
+  "in": "\r\n\r\n",
+  "lines": [
+   "\r\n",
+   "\r\n"
+  ]
+ },
+ {
+  "in": "\n\r\n",
+  "lines": [
+   "\n",
+   "\r\n"
+  ]
+ },
+ {
+  "in": "a\r\nb\r\nd\r\n",
+  "lines": [
+   "a\r\n",
+   "b\r\n",
+   "d\r\n"
+  ]
+ },
+ {
+  "in": "\ta\n\t\tb\n\t\t\td",
+  "lines": [
+   "\ta\n",
+   "\t\tb\n",
+   "\t\t\td"
+  ]
+ },
+ {
+  "in": "a\nb\nd",
+  "lines": [
+   "a\n",
+   "b\n",
+   "d"
+  ]
+ },
+ {
+  "in": "x\n\r\ry\r\n\nz",
+  "lines": [
+   "x\n",
+   "\r",
+   "\r",
+   "y\r\n",
+   "\n",
+   "z"
+  ]
+ }
+]
