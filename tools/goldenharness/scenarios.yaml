@@ -65,6 +65,11 @@ scenarios:
     note: >-
       Densest option mix in the corpus: sysctl, both ipv6="True" and
       ipv6="False" quoted variants, explicit MAC, bridged, port, num_terms.
+      pc1..pc3 have no .startup and are addressed by radvd on r1/r2, so their
+      SLAAC addresses and the DAD tentative flag are daemon-learned; both are
+      filtered out of the addr probe (NORMALIZATION.md section 7). Everything
+      static — fe80::1 / fe80::2, the pinned MACs, the accept_ra sysctl — stays
+      byte-exact.
     expect_explicit_mac: true
     probes: [link, addr, route, hosts, hostname, fstree]
 
@@ -86,8 +91,18 @@ scenarios:
 
   - name: 10-one-bridge
     dir: labs:main-labs/switching/one-bridge/kathara-lab_one-bridge
-    note: Explicit MAC and ipv6; one .startup file for five devices (partial-startup path).
+    note: >-
+      Explicit MAC and ipv6; one .startup file for five devices
+      (partial-startup path). b1.startup builds an in-device Linux bridge and
+      enslaves all four interfaces to it; the bridge's carrier follows its
+      ports asynchronously, so `mainbridge` is briefly
+      DOWN/NO-CARRIER after `ip link set up`. One recording caught the
+      transition mid-flight — `ip -br link` said DOWN/NO-CARRIER while
+      `ip -j addr`, run a moment later in the same probe pass, already said UP.
+      settle_seconds pins the observation to the converged side. The converged
+      state is what the lab is *for*, and it is stable once reached.
     expect_explicit_mac: true
+    settle_seconds: 5
     probes: [link, addr, route, hosts, hostname, fstree]
 
   - name: 11-capture-packets

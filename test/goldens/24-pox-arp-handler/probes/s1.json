@@ -1,0 +1,157 @@
+{
+  "device": "s1",
+  "ip_br_link": [
+    "eth0 UP <MAC> <BROADCAST,MULTICAST,UP,LOWER_UP>",
+    "eth1 UP <MAC> <BROADCAST,MULTICAST,UP,LOWER_UP>",
+    "eth2 UP <MAC> <BROADCAST,MULTICAST,UP,LOWER_UP>",
+    "lo UNKNOWN 00:00:00:00:00:00 <LOOPBACK,UP,LOWER_UP>",
+    "ovs-system DOWN <MAC> <BROADCAST,MULTICAST>",
+    "s1 DOWN <MAC> <BROADCAST,MULTICAST>"
+  ],
+  "ip_addr": [
+    {
+      "addr_info": [],
+      "address": "<MAC>",
+      "broadcast": "ff:ff:ff:ff:ff:ff",
+      "flags": [
+        "BROADCAST",
+        "MULTICAST",
+        "UP",
+        "LOWER_UP"
+      ],
+      "group": "default",
+      "ifname": "eth0",
+      "link_type": "ether",
+      "master": "ovs-system",
+      "mtu": 1500,
+      "operstate": "UP",
+      "qdisc": "fq_codel",
+      "txqlen": 1000
+    },
+    {
+      "addr_info": [],
+      "address": "<MAC>",
+      "broadcast": "ff:ff:ff:ff:ff:ff",
+      "flags": [
+        "BROADCAST",
+        "MULTICAST",
+        "UP",
+        "LOWER_UP"
+      ],
+      "group": "default",
+      "ifname": "eth1",
+      "link_type": "ether",
+      "master": "ovs-system",
+      "mtu": 1500,
+      "operstate": "UP",
+      "qdisc": "fq_codel",
+      "txqlen": 1000
+    },
+    {
+      "addr_info": [
+        {
+          "family": "inet",
+          "label": "eth2",
+          "local": "20.0.0.1",
+          "prefixlen": 24,
+          "scope": "global"
+        }
+      ],
+      "address": "<MAC>",
+      "broadcast": "ff:ff:ff:ff:ff:ff",
+      "flags": [
+        "BROADCAST",
+        "MULTICAST",
+        "UP",
+        "LOWER_UP"
+      ],
+      "group": "default",
+      "ifname": "eth2",
+      "link_type": "ether",
+      "mtu": 1500,
+      "operstate": "UP",
+      "qdisc": "fq_codel",
+      "txqlen": 1000
+    },
+    {
+      "addr_info": [
+        {
+          "family": "inet",
+          "label": "lo",
+          "local": "127.0.0.1",
+          "prefixlen": 8,
+          "scope": "host"
+        }
+      ],
+      "address": "00:00:00:00:00:00",
+      "broadcast": "00:00:00:00:00:00",
+      "flags": [
+        "LOOPBACK",
+        "UP",
+        "LOWER_UP"
+      ],
+      "group": "default",
+      "ifname": "lo",
+      "link_type": "loopback",
+      "mtu": 65536,
+      "operstate": "UNKNOWN",
+      "qdisc": "noqueue",
+      "txqlen": 1000
+    },
+    {
+      "addr_info": [],
+      "address": "<MAC>",
+      "broadcast": "ff:ff:ff:ff:ff:ff",
+      "flags": [
+        "BROADCAST",
+        "MULTICAST"
+      ],
+      "group": "default",
+      "ifname": "ovs-system",
+      "link_type": "ether",
+      "mtu": 1500,
+      "operstate": "DOWN",
+      "qdisc": "noop",
+      "txqlen": 1000
+    },
+    {
+      "addr_info": [],
+      "address": "<MAC>",
+      "broadcast": "ff:ff:ff:ff:ff:ff",
+      "flags": [
+        "BROADCAST",
+        "MULTICAST"
+      ],
+      "group": "default",
+      "ifname": "s1",
+      "link_type": "ether",
+      "mtu": 1500,
+      "operstate": "DOWN",
+      "qdisc": "noop",
+      "txqlen": 1000
+    }
+  ],
+  "ip_route": [
+    "20.0.0.0/24 dev eth2 proto kernel scope link src 20.0.0.1"
+  ],
+  "etc_hosts": [
+    "127.0.0.1 localhost",
+    "::1 localhost",
+    "127.0.1.1 s1"
+  ],
+  "hostname": "s1",
+  "fs_trees": {
+    "/hostlab": [
+      {
+        "kind": "d",
+        "path": "./s1"
+      },
+      {
+        "kind": "f",
+        "path": "./s1.startup",
+        "sha256": "f358c30008d612b1078791835ac009c6f9fecd565c5f4bd586e1d580b4a57eb6"
+      }
+    ],
+    "/shared": []
+  }
+}

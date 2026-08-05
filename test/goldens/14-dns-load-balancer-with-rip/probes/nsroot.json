@@ -1,0 +1,103 @@
+{
+  "device": "nsroot",
+  "ip_br_link": [
+    "eth0 UP <MAC> <BROADCAST,MULTICAST,UP,LOWER_UP>",
+    "lo UNKNOWN 00:00:00:00:00:00 <LOOPBACK,UP,LOWER_UP>"
+  ],
+  "ip_addr": [
+    {
+      "addr_info": [
+        {
+          "family": "inet",
+          "label": "eth0",
+          "local": "20.0.0.2",
+          "prefixlen": 24,
+          "scope": "global"
+        }
+      ],
+      "address": "<MAC>",
+      "broadcast": "ff:ff:ff:ff:ff:ff",
+      "flags": [
+        "BROADCAST",
+        "MULTICAST",
+        "UP",
+        "LOWER_UP"
+      ],
+      "group": "default",
+      "ifname": "eth0",
+      "link_type": "ether",
+      "mtu": 1500,
+      "operstate": "UP",
+      "qdisc": "fq_codel",
+      "txqlen": 1000
+    },
+    {
+      "addr_info": [
+        {
+          "family": "inet",
+          "label": "lo",
+          "local": "127.0.0.1",
+          "prefixlen": 8,
+          "scope": "host"
+        }
+      ],
+      "address": "00:00:00:00:00:00",
+      "broadcast": "00:00:00:00:00:00",
+      "flags": [
+        "LOOPBACK",
+        "UP",
+        "LOWER_UP"
+      ],
+      "group": "default",
+      "ifname": "lo",
+      "link_type": "loopback",
+      "mtu": 65536,
+      "operstate": "UNKNOWN",
+      "qdisc": "noqueue",
+      "txqlen": 1000
+    }
+  ],
+  "etc_hosts": [
+    "127.0.0.1 localhost",
+    "::1 localhost",
+    "127.0.1.1 nsroot"
+  ],
+  "hostname": "nsroot",
+  "fs_trees": {
+    "/hostlab": [
+      {
+        "kind": "d",
+        "path": "./nsroot"
+      },
+      {
+        "kind": "f",
+        "path": "./nsroot.startup",
+        "sha256": "df5b4e6385fcd10e4fecf4e50a07698f73aaafc851e616e04e94ee3fbc3dd134"
+      },
+      {
+        "kind": "d",
+        "path": "./nsroot/etc"
+      },
+      {
+        "kind": "d",
+        "path": "./nsroot/etc/bind"
+      },
+      {
+        "kind": "f",
+        "path": "./nsroot/etc/bind/db.root",
+        "sha256": "3d9eb227a100a0524d433df771628cdb23d72caf5b2254b18a7af9a67126e4f4"
+      },
+      {
+        "kind": "f",
+        "path": "./nsroot/etc/bind/named.conf",
+        "sha256": "5d2c4d5ff74ffe002bbe61221bee01e170f357dbae4a3dc044fd59b9bdd836a5"
+      },
+      {
+        "kind": "f",
+        "path": "./nsroot/etc/bind/named.conf.options",
+        "sha256": "56034d2701321b7cac28b6e6cf4dc4ce96da2d125ed29f68a5c40d265f3ab2a6"
+      }
+    ],
+    "/shared": []
+  }
+}

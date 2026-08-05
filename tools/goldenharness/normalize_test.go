@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"reflect"
 	"strings"
 	"testing"
@@ -111,6 +112,60 @@ func TestScrubLinkLocal6(t *testing.T) {
 	for in, want := range cases {
 		if got := n.Text(in); got != want {
 			t.Errorf("Text(%q) = %q, want %q", in, got, want)
+		}
+	}
+}
+
+func TestScrubVethPeerIfIndex(t *testing.T) {
+	n := NewNormalizer()
+	cases := map[string]string{
+		// The `bridged` device's veth peer index is host-global.
+		"eth1@if451 UP <MAC> <BROADCAST,MULTICAST,UP,LOWER_UP>": "eth1@if<IFINDEX> UP <MAC> <BROADCAST,MULTICAST,UP,LOWER_UP>",
+		// A katharanp_vde interface has no peer suffix and is untouched.
+		"eth0 UP <MAC> <BROADCAST,MULTICAST,UP,LOWER_UP>": "eth0 UP <MAC> <BROADCAST,MULTICAST,UP,LOWER_UP>",
+		// Nothing else in the line may be rewritten.
+		"vxlan1@if12 UNKNOWN <MAC> <UP> master br0": "vxlan1@if<IFINDEX> UNKNOWN <MAC> <UP> master br0",
+	}
+	for in, want := range cases {
+		if got := n.ScrubVethPeerIfIndex(in); got != want {
+			t.Errorf("ScrubVethPeerIfIndex(%q) = %q, want %q", in, got, want)
+		}
+	}
+}
+
+func TestScrubAddrJSONDropsDADAndSLAAC(t *testing.T) {
+	n := NewNormalizer()
+	n.KeepMAC("00:00:00:00:00:03")
+
+	const in = `[{"ifindex":7,"ifname":"eth0","link_index":8,"mtu":1500,"addr_info":[
+	  {"family":"inet6","local":"2001::3:200:ff:fe00:3","prefixlen":64,"scope":"global",
+	   "protocol":"kernel_ra","dynamic":true,"mngtmpaddr":true,"tentative":true,
+	   "valid_life_time":86400,"preferred_life_time":14400},
+	  {"family":"inet6","local":"fe80::1","prefixlen":64,"scope":"link","tentative":true},
+	  {"family":"inet6","local":"fe80::200:ff:fe00:3","prefixlen":64,"scope":"link",
+	   "protocol":"kernel_ll"}]}]`
+
+	var doc []any
+	if err := json.Unmarshal([]byte(in), &doc); err != nil {
+		t.Fatal(err)
+	}
+	got, err := json.Marshal(n.ScrubAddrJSON(doc))
+	if err != nil {
+		t.Fatal(err)
+	}
+	s := string(got)
+
+	// The SLAAC entry goes whole; nothing of it may survive.
+	for _, gone := range []string{"kernel_ra", "2001::3:200:ff:fe00:3", "mngtmpaddr", "tentative", "link_index", "ifindex", "valid_life_time"} {
+		if strings.Contains(s, gone) {
+			t.Errorf("ScrubAddrJSON kept %q: %s", gone, s)
+		}
+	}
+	// The statically configured link-local and the EUI-64 of the pinned MAC
+	// are real assertions and must survive byte-exact.
+	for _, kept := range []string{`"fe80::1"`, `"fe80::200:ff:fe00:3"`, `"kernel_ll"`, `"mtu":1500`} {
+		if !strings.Contains(s, kept) {
+			t.Errorf("ScrubAddrJSON dropped %q: %s", kept, s)
 		}
 	}
 }

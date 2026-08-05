@@ -179,6 +179,21 @@ func (r *Runner) Record(parent context.Context, sc Scenario) (snap *Snapshot, er
 		return nil, fmt.Errorf("scenario %s: lstart could not be executed: %w", sc.Name, startRes.Err)
 	}
 
+	// Step 1b: let the lab settle, for the scenarios that declare they need it.
+	// Everything observed below — docker inspect and every in-container probe —
+	// is therefore taken from the same side of the delay.
+	if d := sc.SettleDelay(); d > 0 && startRes.Err == nil && !startRes.TimedOut {
+		if r.Verbose {
+			fmt.Fprintf(os.Stderr, "      %s settling for %s\n", sc.Name, d)
+		}
+		timer := time.NewTimer(d)
+		select {
+		case <-timer.C:
+		case <-ctx.Done():
+			timer.Stop()
+		}
+	}
+
 	snap = &Snapshot{}
 	var assertionFailures []string
 

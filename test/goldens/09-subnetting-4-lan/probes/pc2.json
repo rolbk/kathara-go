@@ -1,0 +1,84 @@
+{
+  "device": "pc2",
+  "ip_br_link": [
+    "eth0 UP 00:00:00:00:00:02 <BROADCAST,MULTICAST,UP,LOWER_UP>",
+    "lo UNKNOWN 00:00:00:00:00:00 <LOOPBACK,UP,LOWER_UP>"
+  ],
+  "ip_addr": [
+    {
+      "addr_info": [
+        {
+          "family": "inet",
+          "label": "eth0",
+          "local": "100.50.25.214",
+          "prefixlen": 26,
+          "scope": "global"
+        }
+      ],
+      "address": "00:00:00:00:00:02",
+      "broadcast": "ff:ff:ff:ff:ff:ff",
+      "flags": [
+        "BROADCAST",
+        "MULTICAST",
+        "UP",
+        "LOWER_UP"
+      ],
+      "group": "default",
+      "ifname": "eth0",
+      "link_type": "ether",
+      "mtu": 1500,
+      "operstate": "UP",
+      "qdisc": "fq_codel",
+      "txqlen": 1000
+    },
+    {
+      "addr_info": [
+        {
+          "family": "inet",
+          "label": "lo",
+          "local": "127.0.0.1",
+          "prefixlen": 8,
+          "scope": "host"
+        }
+      ],
+      "address": "00:00:00:00:00:00",
+      "broadcast": "00:00:00:00:00:00",
+      "flags": [
+        "LOOPBACK",
+        "UP",
+        "LOWER_UP"
+      ],
+      "group": "default",
+      "ifname": "lo",
+      "link_type": "loopback",
+      "mtu": 65536,
+      "operstate": "UNKNOWN",
+      "qdisc": "noqueue",
+      "txqlen": 1000
+    }
+  ],
+  "ip_route": [
+    "100.50.25.192/26 dev eth0 proto kernel scope link src 100.50.25.214",
+    "default via 100.50.25.206 dev eth0"
+  ],
+  "etc_hosts": [
+    "127.0.0.1 localhost",
+    "::1 localhost",
+    "127.0.1.1 pc2"
+  ],
+  "hostname": "pc2",
+  "fs_trees": {
+    "/hostlab": [
+      {
+        "kind": "d",
+        "path": "./pc2"
+      },
+      {
+        "kind": "f",
+        "path": "./pc2.startup",
+        "sha256": "7ff9ee07b28a6c8fb13f1cd33826bcde852d53d6c0f609eb4e3216a4a4e57f87"
+      }
+    ],
+    "/shared": []
+  }
+}

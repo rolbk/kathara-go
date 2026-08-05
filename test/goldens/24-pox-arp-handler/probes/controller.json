@@ -1,0 +1,130 @@
+{
+  "device": "controller",
+  "ip_br_link": [
+    "eth0 UP <MAC> <BROADCAST,MULTICAST,UP,LOWER_UP>",
+    "eth1@if<IFINDEX> UP <MAC> <BROADCAST,MULTICAST,UP,LOWER_UP>",
+    "lo UNKNOWN 00:00:00:00:00:00 <LOOPBACK,UP,LOWER_UP>"
+  ],
+  "ip_addr": [
+    {
+      "addr_info": [
+        {
+          "family": "inet",
+          "label": "eth0",
+          "local": "20.0.0.100",
+          "prefixlen": 24,
+          "scope": "global"
+        }
+      ],
+      "address": "<MAC>",
+      "broadcast": "ff:ff:ff:ff:ff:ff",
+      "flags": [
+        "BROADCAST",
+        "MULTICAST",
+        "UP",
+        "LOWER_UP"
+      ],
+      "group": "default",
+      "ifname": "eth0",
+      "link_type": "ether",
+      "mtu": 1500,
+      "operstate": "UP",
+      "qdisc": "fq_codel",
+      "txqlen": 1000
+    },
+    {
+      "addr_info": [
+        {
+          "broadcast": "172.17.255.255",
+          "family": "inet",
+          "label": "eth1",
+          "local": "<DOCKERIP>",
+          "prefixlen": 16,
+          "scope": "global"
+        }
+      ],
+      "address": "<MAC>",
+      "broadcast": "ff:ff:ff:ff:ff:ff",
+      "flags": [
+        "BROADCAST",
+        "MULTICAST",
+        "UP",
+        "LOWER_UP"
+      ],
+      "group": "default",
+      "ifname": "eth1",
+      "link_type": "ether",
+      "mtu": 1500,
+      "operstate": "UP",
+      "qdisc": "noqueue"
+    },
+    {
+      "addr_info": [
+        {
+          "family": "inet",
+          "label": "lo",
+          "local": "127.0.0.1",
+          "prefixlen": 8,
+          "scope": "host"
+        }
+      ],
+      "address": "00:00:00:00:00:00",
+      "broadcast": "00:00:00:00:00:00",
+      "flags": [
+        "LOOPBACK",
+        "UP",
+        "LOWER_UP"
+      ],
+      "group": "default",
+      "ifname": "lo",
+      "link_type": "loopback",
+      "mtu": 65536,
+      "operstate": "UNKNOWN",
+      "qdisc": "noqueue",
+      "txqlen": 1000
+    }
+  ],
+  "ip_route": [
+    "172.17.0.0/16 dev eth1 proto kernel scope link src <DOCKERIP>",
+    "20.0.0.0/24 dev eth0 proto kernel scope link src 20.0.0.100",
+    "default via 172.17.0.1 dev eth1"
+  ],
+  "etc_hosts": [
+    "127.0.0.1 localhost",
+    "::1 localhost",
+    "127.0.1.1 controller"
+  ],
+  "hostname": "controller",
+  "fs_trees": {
+    "/hostlab": [
+      {
+        "kind": "d",
+        "path": "./controller"
+      },
+      {
+        "kind": "f",
+        "path": "./controller.startup",
+        "sha256": "9311ef1529b02f0f5de90bc2e2edf701ffefc0e107225684e7ec0a9faf9424d5"
+      },
+      {
+        "kind": "d",
+        "path": "./controller/pox"
+      },
+      {
+        "kind": "d",
+        "path": "./controller/pox/ext"
+      },
+      {
+        "kind": "f",
+        "path": "./controller/pox/ext/ARP.py",
+        "sha256": "bf89e26c4018cf250e2ca2934a775876960e4b840065e2c6ed1b504118c3dbb4"
+      },
+      {
+        "kind": "f",
+        "path": "./controller/pox/ext/HostDiscovery.py",
+        "sha256": "8969bfbe27c7421ec150e4ce25c5f35d41cbc3fb1e2fa1da6a8f0aa3d8d47dc6"
+      }
+    ],
+    "/shared": []
+  }
+}

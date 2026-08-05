@@ -1,0 +1,101 @@
+{
+  "device": "ws1",
+  "ip_br_link": [
+    "eth0 UP <MAC> <BROADCAST,MULTICAST,UP,LOWER_UP>",
+    "lo UNKNOWN 00:00:00:00:00:00 <LOOPBACK,UP,LOWER_UP>"
+  ],
+  "ip_addr": [
+    {
+      "addr_info": [
+        {
+          "family": "inet",
+          "label": "eth0",
+          "local": "10.10.0.1",
+          "prefixlen": 24,
+          "scope": "global"
+        }
+      ],
+      "address": "<MAC>",
+      "broadcast": "ff:ff:ff:ff:ff:ff",
+      "flags": [
+        "BROADCAST",
+        "MULTICAST",
+        "UP",
+        "LOWER_UP"
+      ],
+      "group": "default",
+      "ifname": "eth0",
+      "link_type": "ether",
+      "mtu": 1500,
+      "operstate": "UP",
+      "qdisc": "fq_codel",
+      "txqlen": 1000
+    },
+    {
+      "addr_info": [
+        {
+          "family": "inet",
+          "label": "lo",
+          "local": "127.0.0.1",
+          "prefixlen": 8,
+          "scope": "host"
+        }
+      ],
+      "address": "00:00:00:00:00:00",
+      "broadcast": "00:00:00:00:00:00",
+      "flags": [
+        "LOOPBACK",
+        "UP",
+        "LOWER_UP"
+      ],
+      "group": "default",
+      "ifname": "lo",
+      "link_type": "loopback",
+      "mtu": 65536,
+      "operstate": "UNKNOWN",
+      "qdisc": "noqueue",
+      "txqlen": 1000
+    }
+  ],
+  "ip_route": [
+    "10.10.0.0/24 dev eth0 proto kernel scope link src 10.10.0.1",
+    "default via 10.10.0.11 dev eth0"
+  ],
+  "etc_hosts": [
+    "127.0.0.1 localhost",
+    "::1 localhost",
+    "127.0.1.1 ws1"
+  ],
+  "hostname": "ws1",
+  "fs_trees": {
+    "/hostlab": [
+      {
+        "kind": "d",
+        "path": "./ws1"
+      },
+      {
+        "kind": "f",
+        "path": "./ws1.startup",
+        "sha256": "304f028ed4337e68ecad6da5af77363684e1a75067c460143615d3289af45bfc"
+      },
+      {
+        "kind": "d",
+        "path": "./ws1/var"
+      },
+      {
+        "kind": "d",
+        "path": "./ws1/var/www"
+      },
+      {
+        "kind": "d",
+        "path": "./ws1/var/www/html"
+      },
+      {
+        "kind": "f",
+        "path": "./ws1/var/www/html/index.html",
+        "sha256": "a617110e594ad378df7268dbdfda1ce8609a21cfc38dc5cf8c2ce69b663b9f43"
+      }
+    ],
+    "/shared": []
+  }
+}

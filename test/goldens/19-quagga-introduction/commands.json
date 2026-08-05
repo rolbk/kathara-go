@@ -1,0 +1,44 @@
+[
+  {
+    "step": "lstart",
+    "argv": [
+      "<KATHARA>",
+      "lstart",
+      "--noterminals",
+      "-d",
+      "<LABDIR>"
+    ],
+    "exit_code": 0,
+    "stdout": [
+      "┌──────────────────────────────────────────────────────────────────────────────┐",
+      "│                          Starting Network Scenario                           │",
+      "└──────────────────────────────────────────────────────────────────────────────┘",
+      "┌──────────────────────────────────────────────────────────────────────────────┐",
+      "│ Description: Experiences with Zebra/Quagga configurations and command line   │",
+      "│ interface                                                                    │",
+      "│ Version: 2.0                                                                 │",
+      "│ Author(s): T. Caiazzi, G. Di Battista, M. Patrignani, M. Pizzonia, F. Ricci, │",
+      "│ M. Rimondini                                                                 │",
+      "│ Email: contact@netkit.org                                                    │",
+      "│ Website: http://www.netkit.org/                                              │",
+      "└──────────────────────────────────────────────────────────────────────────────┘"
+    ],
+    "stderr": []
+  },
+  {
+    "step": "lclean",
+    "argv": [
+      "<KATHARA>",
+      "lclean",
+      "-d",
+      "<LABDIR>"
+    ],
+    "exit_code": 0,
+    "stdout": [
+      "┌──────────────────────────────────────────────────────────────────────────────┐",
+      "│                          Stopping Network Scenario                           │",
+      "└──────────────────────────────────────────────────────────────────────────────┘"
+    ],
+    "stderr": []
+  }
+]

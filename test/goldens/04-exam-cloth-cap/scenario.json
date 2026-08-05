@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "name": "04-exam-cloth-cap",
+  "kind": "deploy",
+  "status": "golden",
+  "note": "Default image, all five LAB_ metadata keys, 14 collision domains for 8 devices.",
+  "lab_dir": "<LABDIR>",
+  "flags": [],
+  "probes": [
+    "link",
+    "addr",
+    "route",
+    "hosts",
+    "hostname",
+    "fstree"
+  ],
+  "fs_roots": [
+    "/hostlab",
+    "/shared"
+  ],
+  "lab_hash_source": "path",
+  "lab_hash_derived_ok": true,
+  "user_slug_derived_ok": true,
+  "container_names_ok": true,
+  "network_names_ok": true,
+  "explicit_mac_count": 0,
+  "expect_explicit_mac": false
+}

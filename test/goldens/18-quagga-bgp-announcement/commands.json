@@ -1,0 +1,43 @@
+[
+  {
+    "step": "lstart",
+    "argv": [
+      "<KATHARA>",
+      "lstart",
+      "--noterminals",
+      "-d",
+      "<LABDIR>"
+    ],
+    "exit_code": 0,
+    "stdout": [
+      "┌──────────────────────────────────────────────────────────────────────────────┐",
+      "│                          Starting Network Scenario                           │",
+      "└──────────────────────────────────────────────────────────────────────────────┘",
+      "┌──────────────────────────────────────────────────────────────────────────────┐",
+      "│ Description: A simple BGP announcement between two routers                   │",
+      "│ Version: 2.0                                                                 │",
+      "│ Author(s): T. Caiazzi, G. Di Battista, M. Patrignani, M. Pizzonia, F. Ricci, │",
+      "│ M. Rimondini                                                                 │",
+      "│ Email: contact@kathara.org                                                   │",
+      "│ Website: http://www.kathara.org/                                             │",
+      "└──────────────────────────────────────────────────────────────────────────────┘"
+    ],
+    "stderr": []
+  },
+  {
+    "step": "lclean",
+    "argv": [
+      "<KATHARA>",
+      "lclean",
+      "-d",
+      "<LABDIR>"
+    ],
+    "exit_code": 0,
+    "stdout": [
+      "┌──────────────────────────────────────────────────────────────────────────────┐",
+      "│                          Stopping Network Scenario                           │",
+      "└──────────────────────────────────────────────────────────────────────────────┘"
+    ],
+    "stderr": []
+  }
+]

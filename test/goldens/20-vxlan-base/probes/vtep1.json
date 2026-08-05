@@ -1,0 +1,157 @@
+{
+  "device": "vtep1",
+  "ip_br_link": [
+    "br100 UP <MAC> <BROADCAST,MULTICAST,UP,LOWER_UP>",
+    "eth0 UP <MAC> <BROADCAST,MULTICAST,UP,LOWER_UP>",
+    "eth1 UP <MAC> <BROADCAST,MULTICAST,UP,LOWER_UP>",
+    "lo UNKNOWN 00:00:00:00:00:00 <LOOPBACK,UP,LOWER_UP>",
+    "vtep100 UNKNOWN <MAC> <BROADCAST,MULTICAST,UP,LOWER_UP>"
+  ],
+  "ip_addr": [
+    {
+      "addr_info": [],
+      "address": "<MAC>",
+      "broadcast": "ff:ff:ff:ff:ff:ff",
+      "flags": [
+        "BROADCAST",
+        "MULTICAST",
+        "UP",
+        "LOWER_UP"
+      ],
+      "group": "default",
+      "ifname": "br100",
+      "link_type": "ether",
+      "mtu": 1450,
+      "operstate": "UP",
+      "qdisc": "noqueue",
+      "txqlen": 1000
+    },
+    {
+      "addr_info": [],
+      "address": "<MAC>",
+      "broadcast": "ff:ff:ff:ff:ff:ff",
+      "flags": [
+        "BROADCAST",
+        "MULTICAST",
+        "UP",
+        "LOWER_UP"
+      ],
+      "group": "default",
+      "ifname": "eth0",
+      "link_type": "ether",
+      "master": "br100",
+      "mtu": 1500,
+      "operstate": "UP",
+      "qdisc": "fq_codel",
+      "txqlen": 1000
+    },
+    {
+      "addr_info": [
+        {
+          "family": "inet",
+          "label": "eth1",
+          "local": "193.204.0.1",
+          "prefixlen": 30,
+          "scope": "global"
+        }
+      ],
+      "address": "<MAC>",
+      "broadcast": "ff:ff:ff:ff:ff:ff",
+      "flags": [
+        "BROADCAST",
+        "MULTICAST",
+        "UP",
+        "LOWER_UP"
+      ],
+      "group": "default",
+      "ifname": "eth1",
+      "link_type": "ether",
+      "mtu": 1500,
+      "operstate": "UP",
+      "qdisc": "fq_codel",
+      "txqlen": 1000
+    },
+    {
+      "addr_info": [
+        {
+          "family": "inet",
+          "label": "lo",
+          "local": "127.0.0.1",
+          "prefixlen": 8,
+          "scope": "host"
+        }
+      ],
+      "address": "00:00:00:00:00:00",
+      "broadcast": "00:00:00:00:00:00",
+      "flags": [
+        "LOOPBACK",
+        "UP",
+        "LOWER_UP"
+      ],
+      "group": "default",
+      "ifname": "lo",
+      "link_type": "loopback",
+      "mtu": 65536,
+      "operstate": "UNKNOWN",
+      "qdisc": "noqueue",
+      "txqlen": 1000
+    },
+    {
+      "addr_info": [],
+      "address": "<MAC>",
+      "broadcast": "ff:ff:ff:ff:ff:ff",
+      "flags": [
+        "BROADCAST",
+        "MULTICAST",
+        "UP",
+        "LOWER_UP"
+      ],
+      "group": "default",
+      "ifname": "vtep100",
+      "link_type": "ether",
+      "master": "br100",
+      "mtu": 1450,
+      "operstate": "UNKNOWN",
+      "qdisc": "noqueue",
+      "txqlen": 1000
+    }
+  ],
+  "etc_hosts": [
+    "127.0.0.1 localhost",
+    "::1 localhost",
+    "127.0.1.1 vtep1"
+  ],
+  "hostname": "vtep1",
+  "fs_trees": {
+    "/hostlab": [
+      {
+        "kind": "d",
+        "path": "./vtep1"
+      },
+      {
+        "kind": "f",
+        "path": "./vtep1.startup",
+        "sha256": "94534827978216b5ccab62b1bed3781f3c3a7720b9998d1bd21c2b73fb5ec127"
+      },
+      {
+        "kind": "d",
+        "path": "./vtep1/etc"
+      },
+      {
+        "kind": "d",
+        "path": "./vtep1/etc/frr"
+      },
+      {
+        "kind": "f",
+        "path": "./vtep1/etc/frr/bgpd.conf",
+        "sha256": "e65b9b4636886bc3cc07f3646f4107fe5b7cf6b2718b850c0d1ff66dc879dc13"
+      },
+      {
+        "kind": "f",
+        "path": "./vtep1/etc/frr/daemons",
+        "sha256": "5657c4ce63f553664b2e687783f644094382916a996edd08fb31deebc2c88d4a"
+      }
+    ],
+    "/shared": []
+  }
+}

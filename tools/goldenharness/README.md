@@ -86,6 +86,9 @@ scenario or changing a probe.
    accumulate between recordings. A lab that uses the `volume` option must
    declare its host paths under `host_dirs`, or the recording depends on
    whether those paths happen to exist on the host.
-3. Add an entry to `scenarios.yaml` with a `note` saying what it covers.
+3. Add an entry to `scenarios.yaml` with a `note` saying what it covers. If the
+   lab's startup leaves a kernel state machine converging (an in-device bridge
+   coming up, for instance), set `settle_seconds` and say so in the note —
+   `lstart` returns before the startup commands have even run.
 4. `go run ./tools/goldenharness record -scenario <name>`, read the snapshot,
    then run `verify` at least twice to prove the recording is stable.

@@ -1,0 +1,218 @@
+{
+  "device": "as11r1",
+  "ip_br_link": [
+    "eth0 UP <MAC> <BROADCAST,MULTICAST,UP,LOWER_UP>",
+    "eth1 UP <MAC> <BROADCAST,MULTICAST,UP,LOWER_UP>",
+    "eth2 UP <MAC> <BROADCAST,MULTICAST,UP,LOWER_UP>",
+    "eth3 UP <MAC> <BROADCAST,MULTICAST,UP,LOWER_UP>",
+    "eth4 UP <MAC> <BROADCAST,MULTICAST,UP,LOWER_UP>",
+    "lo UNKNOWN 00:00:00:00:00:00 <LOOPBACK,UP,LOWER_UP>"
+  ],
+  "ip_addr": [
+    {
+      "addr_info": [
+        {
+          "family": "inet",
+          "label": "eth0",
+          "local": "11.14.0.11",
+          "prefixlen": 24,
+          "scope": "global"
+        }
+      ],
+      "address": "<MAC>",
+      "broadcast": "ff:ff:ff:ff:ff:ff",
+      "flags": [
+        "BROADCAST",
+        "MULTICAST",
+        "UP",
+        "LOWER_UP"
+      ],
+      "group": "default",
+      "ifname": "eth0",
+      "link_type": "ether",
+      "mtu": 1500,
+      "operstate": "UP",
+      "qdisc": "fq_codel",
+      "txqlen": 1000
+    },
+    {
+      "addr_info": [
+        {
+          "family": "inet",
+          "label": "eth1",
+          "local": "11.13.0.11",
+          "prefixlen": 24,
+          "scope": "global"
+        }
+      ],
+      "address": "<MAC>",
+      "broadcast": "ff:ff:ff:ff:ff:ff",
+      "flags": [
+        "BROADCAST",
+        "MULTICAST",
+        "UP",
+        "LOWER_UP"
+      ],
+      "group": "default",
+      "ifname": "eth1",
+      "link_type": "ether",
+      "mtu": 1500,
+      "operstate": "UP",
+      "qdisc": "fq_codel",
+      "txqlen": 1000
+    },
+    {
+      "addr_info": [
+        {
+          "family": "inet",
+          "label": "eth2",
+          "local": "11.12.0.11",
+          "prefixlen": 24,
+          "scope": "global"
+        }
+      ],
+      "address": "<MAC>",
+      "broadcast": "ff:ff:ff:ff:ff:ff",
+      "flags": [
+        "BROADCAST",
+        "MULTICAST",
+        "UP",
+        "LOWER_UP"
+      ],
+      "group": "default",
+      "ifname": "eth2",
+      "link_type": "ether",
+      "mtu": 1500,
+      "operstate": "UP",
+      "qdisc": "fq_codel",
+      "txqlen": 1000
+    },
+    {
+      "addr_info": [
+        {
+          "family": "inet",
+          "label": "eth3",
+          "local": "11.20.0.11",
+          "prefixlen": 24,
+          "scope": "global"
+        }
+      ],
+      "address": "<MAC>",
+      "broadcast": "ff:ff:ff:ff:ff:ff",
+      "flags": [
+        "BROADCAST",
+        "MULTICAST",
+        "UP",
+        "LOWER_UP"
+      ],
+      "group": "default",
+      "ifname": "eth3",
+      "link_type": "ether",
+      "mtu": 1500,
+      "operstate": "UP",
+      "qdisc": "fq_codel",
+      "txqlen": 1000
+    },
+    {
+      "addr_info": [
+        {
+          "family": "inet",
+          "label": "eth4",
+          "local": "10.11.0.11",
+          "prefixlen": 24,
+          "scope": "global"
+        }
+      ],
+      "address": "<MAC>",
+      "broadcast": "ff:ff:ff:ff:ff:ff",
+      "flags": [
+        "BROADCAST",
+        "MULTICAST",
+        "UP",
+        "LOWER_UP"
+      ],
+      "group": "default",
+      "ifname": "eth4",
+      "link_type": "ether",
+      "mtu": 1500,
+      "operstate": "UP",
+      "qdisc": "fq_codel",
+      "txqlen": 1000
+    },
+    {
+      "addr_info": [
+        {
+          "family": "inet",
+          "label": "lo",
+          "local": "127.0.0.1",
+          "prefixlen": 8,
+          "scope": "host"
+        }
+      ],
+      "address": "00:00:00:00:00:00",
+      "broadcast": "00:00:00:00:00:00",
+      "flags": [
+        "LOOPBACK",
+        "UP",
+        "LOWER_UP"
+      ],
+      "group": "default",
+      "ifname": "lo",
+      "link_type": "loopback",
+      "mtu": 65536,
+      "operstate": "UNKNOWN",
+      "qdisc": "noqueue",
+      "txqlen": 1000
+    }
+  ],
+  "ip_route": [
+    "10.11.0.0/24 dev eth4 proto kernel scope link src 10.11.0.11",
+    "11.12.0.0/24 dev eth2 proto kernel scope link src 11.12.0.11",
+    "11.13.0.0/24 dev eth1 proto kernel scope link src 11.13.0.11",
+    "11.14.0.0/24 dev eth0 proto kernel scope link src 11.14.0.11",
+    "11.20.0.0/24 dev eth3 proto kernel scope link src 11.20.0.11"
+  ],
+  "etc_hosts": [
+    "127.0.0.1 localhost",
+    "::1 localhost",
+    "127.0.1.1 as11r1"
+  ],
+  "hostname": "as11r1",
+  "fs_trees": {
+    "/hostlab": [
+      {
+        "kind": "d",
+        "path": "./as11r1"
+      },
+      {
+        "kind": "f",
+        "path": "./as11r1.startup",
+        "sha256": "034558d35630ec38afc27f67bd2c9f9c88cb68b63711de80e6502178a6dd59e6"
+      },
+      {
+        "kind": "d",
+        "path": "./as11r1/etc"
+      },
+      {
+        "kind": "d",
+        "path": "./as11r1/etc/frr"
+      },
+      {
+        "kind": "f",
+        "path": "./as11r1/etc/frr/daemons",
+        "sha256": "64430061aa8e52a2c3471784c1134b0da1f55d601e4533c62dc29721adf71a56"
+      },
+      {
+        "kind": "f",
+        "path": "./as11r1/etc/frr/frr.conf",
+        "sha256": "aab23e940f505505cb3452975f97655c6444e48da46e4b007d9ec0699321f462"
+      },
+      {
+        "kind": "f",
+        "path": "./as11r1/etc/frr/vtysh.conf",
+        "sha256": "f77d51716f0fa51571c2df1b58a7163eae5d18145fa384ba51daf03261d56243"
+      }
+    ],
+    "/shared": []
+  }
+}

@@ -1,0 +1,130 @@
+{
+  "device": "r3",
+  "ip_br_link": [
+    "eth0 UP <MAC> <BROADCAST,MULTICAST,UP,LOWER_UP>",
+    "eth1 UP <MAC> <BROADCAST,MULTICAST,UP,LOWER_UP>",
+    "lo UNKNOWN 00:00:00:00:00:00 <LOOPBACK,UP,LOWER_UP>"
+  ],
+  "ip_addr": [
+    {
+      "addr_info": [
+        {
+          "family": "inet",
+          "label": "eth0",
+          "local": "30.0.0.1",
+          "prefixlen": 24,
+          "scope": "global"
+        }
+      ],
+      "address": "<MAC>",
+      "broadcast": "ff:ff:ff:ff:ff:ff",
+      "flags": [
+        "BROADCAST",
+        "MULTICAST",
+        "UP",
+        "LOWER_UP"
+      ],
+      "group": "default",
+      "ifname": "eth0",
+      "link_type": "ether",
+      "mtu": 1500,
+      "operstate": "UP",
+      "qdisc": "fq_codel",
+      "txqlen": 1000
+    },
+    {
+      "addr_info": [
+        {
+          "family": "inet",
+          "label": "eth1",
+          "local": "100.0.0.3",
+          "prefixlen": 29,
+          "scope": "global"
+        }
+      ],
+      "address": "<MAC>",
+      "broadcast": "ff:ff:ff:ff:ff:ff",
+      "flags": [
+        "BROADCAST",
+        "MULTICAST",
+        "UP",
+        "LOWER_UP"
+      ],
+      "group": "default",
+      "ifname": "eth1",
+      "link_type": "ether",
+      "mtu": 1500,
+      "operstate": "UP",
+      "qdisc": "fq_codel",
+      "txqlen": 1000
+    },
+    {
+      "addr_info": [
+        {
+          "family": "inet",
+          "label": "lo",
+          "local": "127.0.0.1",
+          "prefixlen": 8,
+          "scope": "host"
+        }
+      ],
+      "address": "00:00:00:00:00:00",
+      "broadcast": "00:00:00:00:00:00",
+      "flags": [
+        "LOOPBACK",
+        "UP",
+        "LOWER_UP"
+      ],
+      "group": "default",
+      "ifname": "lo",
+      "link_type": "loopback",
+      "mtu": 65536,
+      "operstate": "UNKNOWN",
+      "qdisc": "noqueue",
+      "txqlen": 1000
+    }
+  ],
+  "etc_hosts": [
+    "127.0.0.1 localhost",
+    "::1 localhost",
+    "127.0.1.1 r3"
+  ],
+  "hostname": "r3",
+  "fs_trees": {
+    "/hostlab": [
+      {
+        "kind": "d",
+        "path": "./r3"
+      },
+      {
+        "kind": "f",
+        "path": "./r3.startup",
+        "sha256": "32783476ad5b204280a03c0d2681e483473e56fb54a0508992ced918eb969188"
+      },
+      {
+        "kind": "d",
+        "path": "./r3/etc"
+      },
+      {
+        "kind": "d",
+        "path": "./r3/etc/quagga"
+      },
+      {
+        "kind": "f",
+        "path": "./r3/etc/quagga/daemons",
+        "sha256": "80c45a4838d7d0130251438fbd1667ae06c9ad66219ca89e7eeb15c2317e22fe"
+      },
+      {
+        "kind": "f",
+        "path": "./r3/etc/quagga/ripd.conf",
+        "sha256": "b75e8ee9cd687a622ab865318e9894cbb8dcd28c01f2da7b21c21749cc810749"
+      },
+      {
+        "kind": "f",
+        "path": "./r3/etc/quagga/zebra.conf",
+        "sha256": "16913b3d148f65d783501a6b41376ab4372fa78a4d0a4aaab2754d5ef940fcd3"
+      }
+    ],
+    "/shared": []
+  }
+}

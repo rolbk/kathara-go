@@ -1,0 +1,642 @@
+[
+  {
+    "device": "pc1",
+    "container_name": "kathara_<USER>_pc1_<LABHASH>",
+    "hostname": "pc1",
+    "image": "kathara/core",
+    "user": "",
+    "labels": {
+      "app": "kathara",
+      "lab_hash": "<LABHASH>",
+      "name": "pc1",
+      "org.opencontainers.image.authors": "Kathara Team <contact@kathara.org>",
+      "shell": "/bin/bash",
+      "user": "<USER>"
+    },
+    "shell_label": "/bin/bash",
+    "cap_add": [
+      "NET_ADMIN",
+      "NET_RAW",
+      "NET_BROADCAST",
+      "NET_BIND_SERVICE",
+      "SYS_ADMIN"
+    ],
+    "privileged": false,
+    "sysctls": [
+      "net.ipv4.conf.all.rp_filter=0",
+      "net.ipv4.conf.default.rp_filter=0",
+      "net.ipv4.conf.lo.rp_filter=0",
+      "net.ipv4.icmp_ratelimit=0",
+      "net.ipv4.ip_forward=1",
+      "net.ipv6.conf.all.accept_ra=0",
+      "net.ipv6.conf.all.disable_ipv6=0",
+      "net.ipv6.conf.all.forwarding=1",
+      "net.ipv6.conf.default.disable_ipv6=0",
+      "net.ipv6.icmp.ratelimit=0"
+    ],
+    "ulimits": [],
+    "memory": 0,
+    "nano_cpus": 0,
+    "env": [
+      "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+      "LANG=C.UTF-8",
+      "LC_ALL=C.UTF-8",
+      "DEBIAN_FRONTEND=noninteractive"
+    ],
+    "cmd": [
+      "bash"
+    ],
+    "network_mode": "kathara_<USER>_A_<LABHASH>",
+    "mounts": [
+      {
+        "type": "volume",
+        "name": "<ANONVOL>",
+        "source": "<ANONVOL_PATH>",
+        "destination": "/hosthome",
+        "mode": "",
+        "rw": true,
+        "propagation": ""
+      },
+      {
+        "type": "bind",
+        "source": "<LABDIR>/shared",
+        "destination": "/shared",
+        "mode": "rw",
+        "rw": true,
+        "propagation": "rprivate"
+      }
+    ],
+    "port_bindings": {},
+    "exposed_ports": {},
+    "endpoints": [
+      {
+        "network": "kathara_<USER>_A_<LABHASH>",
+        "kathara_network": true,
+        "iface": 0,
+        "link": "A",
+        "endpoint_sysctls": [
+          "net.ipv4.conf.IFNAME.rp_filter=0",
+          "net.ipv6.conf.IFNAME.accept_ra=2",
+          "net.ipv6.conf.IFNAME.disable_ipv6=0",
+          "net.ipv6.conf.IFNAME.forwarding=1"
+        ],
+        "mac_address": "00:00:00:00:00:01",
+        "mac_driver_opt": "00:00:00:00:00:01",
+        "assertions": {
+          "has_kathara_iface": true,
+          "has_kathara_link": true,
+          "link_matches_network_label": true,
+          "mac_matches_driver_opt": true
+        }
+      }
+    ],
+    "state": "running",
+    "running": true
+  },
+  {
+    "device": "pc2",
+    "container_name": "kathara_<USER>_pc2_<LABHASH>",
+    "hostname": "pc2",
+    "image": "kathara/core",
+    "user": "",
+    "labels": {
+      "app": "kathara",
+      "lab_hash": "<LABHASH>",
+      "name": "pc2",
+      "org.opencontainers.image.authors": "Kathara Team <contact@kathara.org>",
+      "shell": "/bin/bash",
+      "user": "<USER>"
+    },
+    "shell_label": "/bin/bash",
+    "cap_add": [
+      "NET_ADMIN",
+      "NET_RAW",
+      "NET_BROADCAST",
+      "NET_BIND_SERVICE",
+      "SYS_ADMIN"
+    ],
+    "privileged": false,
+    "sysctls": [
+      "net.ipv4.conf.all.rp_filter=0",
+      "net.ipv4.conf.default.rp_filter=0",
+      "net.ipv4.conf.lo.rp_filter=0",
+      "net.ipv4.icmp_ratelimit=0",
+      "net.ipv4.ip_forward=1",
+      "net.ipv6.conf.all.accept_ra=0",
+      "net.ipv6.conf.all.disable_ipv6=0",
+      "net.ipv6.conf.all.forwarding=1",
+      "net.ipv6.conf.default.disable_ipv6=0",
+      "net.ipv6.icmp.ratelimit=0"
+    ],
+    "ulimits": [],
+    "memory": 0,
+    "nano_cpus": 0,
+    "env": [
+      "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+      "LANG=C.UTF-8",
+      "LC_ALL=C.UTF-8",
+      "DEBIAN_FRONTEND=noninteractive"
+    ],
+    "cmd": [
+      "bash"
+    ],
+    "network_mode": "kathara_<USER>_C_<LABHASH>",
+    "mounts": [
+      {
+        "type": "volume",
+        "name": "<ANONVOL>",
+        "source": "<ANONVOL_PATH>",
+        "destination": "/hosthome",
+        "mode": "",
+        "rw": true,
+        "propagation": ""
+      },
+      {
+        "type": "bind",
+        "source": "<LABDIR>/shared",
+        "destination": "/shared",
+        "mode": "rw",
+        "rw": true,
+        "propagation": "rprivate"
+      }
+    ],
+    "port_bindings": {},
+    "exposed_ports": {},
+    "endpoints": [
+      {
+        "network": "kathara_<USER>_C_<LABHASH>",
+        "kathara_network": true,
+        "iface": 0,
+        "link": "C",
+        "endpoint_sysctls": [
+          "net.ipv4.conf.IFNAME.rp_filter=0",
+          "net.ipv6.conf.IFNAME.accept_ra=2",
+          "net.ipv6.conf.IFNAME.disable_ipv6=0",
+          "net.ipv6.conf.IFNAME.forwarding=1"
+        ],
+        "mac_address": "00:00:00:00:00:02",
+        "mac_driver_opt": "00:00:00:00:00:02",
+        "assertions": {
+          "has_kathara_iface": true,
+          "has_kathara_link": true,
+          "link_matches_network_label": true,
+          "mac_matches_driver_opt": true
+        }
+      }
+    ],
+    "state": "running",
+    "running": true
+  },
+  {
+    "device": "pc3",
+    "container_name": "kathara_<USER>_pc3_<LABHASH>",
+    "hostname": "pc3",
+    "image": "kathara/core",
+    "user": "",
+    "labels": {
+      "app": "kathara",
+      "lab_hash": "<LABHASH>",
+      "name": "pc3",
+      "org.opencontainers.image.authors": "Kathara Team <contact@kathara.org>",
+      "shell": "/bin/bash",
+      "user": "<USER>"
+    },
+    "shell_label": "/bin/bash",
+    "cap_add": [
+      "NET_ADMIN",
+      "NET_RAW",
+      "NET_BROADCAST",
+      "NET_BIND_SERVICE",
+      "SYS_ADMIN"
+    ],
+    "privileged": false,
+    "sysctls": [
+      "net.ipv4.conf.all.rp_filter=0",
+      "net.ipv4.conf.default.rp_filter=0",
+      "net.ipv4.conf.lo.rp_filter=0",
+      "net.ipv4.icmp_ratelimit=0",
+      "net.ipv4.ip_forward=1",
+      "net.ipv6.conf.all.accept_ra=0",
+      "net.ipv6.conf.all.disable_ipv6=0",
+      "net.ipv6.conf.all.forwarding=1",
+      "net.ipv6.conf.default.disable_ipv6=0",
+      "net.ipv6.icmp.ratelimit=0"
+    ],
+    "ulimits": [],
+    "memory": 0,
+    "nano_cpus": 0,
+    "env": [
+      "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+      "LANG=C.UTF-8",
+      "LC_ALL=C.UTF-8",
+      "DEBIAN_FRONTEND=noninteractive"
+    ],
+    "cmd": [
+      "bash"
+    ],
+    "network_mode": "kathara_<USER>_C_<LABHASH>",
+    "mounts": [
+      {
+        "type": "volume",
+        "name": "<ANONVOL>",
+        "source": "<ANONVOL_PATH>",
+        "destination": "/hosthome",
+        "mode": "",
+        "rw": true,
+        "propagation": ""
+      },
+      {
+        "type": "bind",
+        "source": "<LABDIR>/shared",
+        "destination": "/shared",
+        "mode": "rw",
+        "rw": true,
+        "propagation": "rprivate"
+      }
+    ],
+    "port_bindings": {},
+    "exposed_ports": {},
+    "endpoints": [
+      {
+        "network": "kathara_<USER>_C_<LABHASH>",
+        "kathara_network": true,
+        "iface": 0,
+        "link": "C",
+        "endpoint_sysctls": [
+          "net.ipv4.conf.IFNAME.rp_filter=0",
+          "net.ipv6.conf.IFNAME.accept_ra=2",
+          "net.ipv6.conf.IFNAME.disable_ipv6=0",
+          "net.ipv6.conf.IFNAME.forwarding=1"
+        ],
+        "mac_address": "00:00:00:00:00:03",
+        "mac_driver_opt": "00:00:00:00:00:03",
+        "assertions": {
+          "has_kathara_iface": true,
+          "has_kathara_link": true,
+          "link_matches_network_label": true,
+          "mac_matches_driver_opt": true
+        }
+      }
+    ],
+    "state": "running",
+    "running": true
+  },
+  {
+    "device": "r1",
+    "container_name": "kathara_<USER>_r1_<LABHASH>",
+    "hostname": "r1",
+    "image": "kathara/core",
+    "user": "",
+    "labels": {
+      "app": "kathara",
+      "lab_hash": "<LABHASH>",
+      "name": "r1",
+      "org.opencontainers.image.authors": "Kathara Team <contact@kathara.org>",
+      "shell": "/bin/bash",
+      "user": "<USER>"
+    },
+    "shell_label": "/bin/bash",
+    "cap_add": [
+      "NET_ADMIN",
+      "NET_RAW",
+      "NET_BROADCAST",
+      "NET_BIND_SERVICE",
+      "SYS_ADMIN"
+    ],
+    "privileged": false,
+    "sysctls": [
+      "net.ipv4.conf.all.rp_filter=0",
+      "net.ipv4.conf.default.rp_filter=0",
+      "net.ipv4.conf.lo.rp_filter=0",
+      "net.ipv4.icmp_ratelimit=0",
+      "net.ipv4.ip_forward=1",
+      "net.ipv6.conf.all.accept_ra=0",
+      "net.ipv6.conf.all.disable_ipv6=0",
+      "net.ipv6.conf.all.forwarding=1",
+      "net.ipv6.conf.default.disable_ipv6=0",
+      "net.ipv6.icmp.ratelimit=0"
+    ],
+    "ulimits": [],
+    "memory": 0,
+    "nano_cpus": 0,
+    "env": [
+      "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+      "LANG=C.UTF-8",
+      "LC_ALL=C.UTF-8",
+      "DEBIAN_FRONTEND=noninteractive"
+    ],
+    "cmd": [
+      "bash"
+    ],
+    "network_mode": "kathara_<USER>_A_<LABHASH>",
+    "mounts": [
+      {
+        "type": "volume",
+        "name": "<ANONVOL>",
+        "source": "<ANONVOL_PATH>",
+        "destination": "/hosthome",
+        "mode": "",
+        "rw": true,
+        "propagation": ""
+      },
+      {
+        "type": "bind",
+        "source": "<LABDIR>/shared",
+        "destination": "/shared",
+        "mode": "rw",
+        "rw": true,
+        "propagation": "rprivate"
+      }
+    ],
+    "port_bindings": {},
+    "exposed_ports": {},
+    "endpoints": [
+      {
+        "network": "kathara_<USER>_A_<LABHASH>",
+        "kathara_network": true,
+        "iface": 0,
+        "link": "A",
+        "endpoint_sysctls": [
+          "net.ipv4.conf.IFNAME.rp_filter=0",
+          "net.ipv6.conf.IFNAME.disable_ipv6=0",
+          "net.ipv6.conf.IFNAME.forwarding=1"
+        ],
+        "mac_address": "00:00:00:00:00:a1",
+        "mac_driver_opt": "00:00:00:00:00:a1",
+        "assertions": {
+          "has_kathara_iface": true,
+          "has_kathara_link": true,
+          "link_matches_network_label": true,
+          "mac_matches_driver_opt": true
+        }
+      },
+      {
+        "network": "kathara_<USER>_B_<LABHASH>",
+        "kathara_network": true,
+        "iface": 1,
+        "link": "B",
+        "endpoint_sysctls": [
+          "net.ipv4.conf.IFNAME.rp_filter=0",
+          "net.ipv6.conf.IFNAME.disable_ipv6=0",
+          "net.ipv6.conf.IFNAME.forwarding=1"
+        ],
+        "mac_address": "00:00:00:00:00:b1",
+        "mac_driver_opt": "00:00:00:00:00:b1",
+        "assertions": {
+          "has_kathara_iface": true,
+          "has_kathara_link": true,
+          "link_matches_network_label": true,
+          "mac_matches_driver_opt": true
+        }
+      }
+    ],
+    "state": "running",
+    "running": true
+  },
+  {
+    "device": "r2",
+    "container_name": "kathara_<USER>_r2_<LABHASH>",
+    "hostname": "r2",
+    "image": "kathara/core",
+    "user": "",
+    "labels": {
+      "app": "kathara",
+      "lab_hash": "<LABHASH>",
+      "name": "r2",
+      "org.opencontainers.image.authors": "Kathara Team <contact@kathara.org>",
+      "shell": "/bin/bash",
+      "user": "<USER>"
+    },
+    "shell_label": "/bin/bash",
+    "cap_add": [
+      "NET_ADMIN",
+      "NET_RAW",
+      "NET_BROADCAST",
+      "NET_BIND_SERVICE",
+      "SYS_ADMIN"
+    ],
+    "privileged": false,
+    "sysctls": [
+      "net.ipv4.conf.all.rp_filter=0",
+      "net.ipv4.conf.default.rp_filter=0",
+      "net.ipv4.conf.lo.rp_filter=0",
+      "net.ipv4.icmp_ratelimit=0",
+      "net.ipv4.ip_forward=1",
+      "net.ipv6.conf.all.accept_ra=0",
+      "net.ipv6.conf.all.disable_ipv6=0",
+      "net.ipv6.conf.all.forwarding=1",
+      "net.ipv6.conf.default.disable_ipv6=0",
+      "net.ipv6.icmp.ratelimit=0"
+    ],
+    "ulimits": [],
+    "memory": 0,
+    "nano_cpus": 0,
+    "env": [
+      "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+      "LANG=C.UTF-8",
+      "LC_ALL=C.UTF-8",
+      "DEBIAN_FRONTEND=noninteractive"
+    ],
+    "cmd": [
+      "bash"
+    ],
+    "network_mode": "kathara_<USER>_C_<LABHASH>",
+    "mounts": [
+      {
+        "type": "volume",
+        "name": "<ANONVOL>",
+        "source": "<ANONVOL_PATH>",
+        "destination": "/hosthome",
+        "mode": "",
+        "rw": true,
+        "propagation": ""
+      },
+      {
+        "type": "bind",
+        "source": "<LABDIR>/shared",
+        "destination": "/shared",
+        "mode": "rw",
+        "rw": true,
+        "propagation": "rprivate"
+      }
+    ],
+    "port_bindings": {},
+    "exposed_ports": {},
+    "endpoints": [
+      {
+        "network": "kathara_<USER>_C_<LABHASH>",
+        "kathara_network": true,
+        "iface": 0,
+        "link": "C",
+        "endpoint_sysctls": [
+          "net.ipv4.conf.IFNAME.rp_filter=0",
+          "net.ipv6.conf.IFNAME.disable_ipv6=0",
+          "net.ipv6.conf.IFNAME.forwarding=1"
+        ],
+        "mac_address": "00:00:00:00:00:c1",
+        "mac_driver_opt": "00:00:00:00:00:c1",
+        "assertions": {
+          "has_kathara_iface": true,
+          "has_kathara_link": true,
+          "link_matches_network_label": true,
+          "mac_matches_driver_opt": true
+        }
+      },
+      {
+        "network": "kathara_<USER>_B_<LABHASH>",
+        "kathara_network": true,
+        "iface": 1,
+        "link": "B",
+        "endpoint_sysctls": [
+          "net.ipv4.conf.IFNAME.rp_filter=0",
+          "net.ipv6.conf.IFNAME.disable_ipv6=0",
+          "net.ipv6.conf.IFNAME.forwarding=1"
+        ],
+        "mac_address": "00:00:00:00:00:b2",
+        "mac_driver_opt": "00:00:00:00:00:b2",
+        "assertions": {
+          "has_kathara_iface": true,
+          "has_kathara_link": true,
+          "link_matches_network_label": true,
+          "mac_matches_driver_opt": true
+        }
+      }
+    ],
+    "state": "running",
+    "running": true
+  },
+  {
+    "device": "wireshark",
+    "container_name": "kathara_<USER>_wireshark_<LABHASH>",
+    "hostname": "wireshark",
+    "image": "lscr.io/linuxserver/wireshark",
+    "user": "",
+    "labels": {
+      "app": "kathara",
+      "bridged_iface": "0",
+      "build_version": "Linuxserver.io version:- 4.6.6-r0-ls320 Build-date:- 2026-08-03T17:22:11+00:00",
+      "lab_hash": "<LABHASH>",
+      "maintainer": "thelamer",
+      "name": "wireshark",
+      "org.opencontainers.image.authors": "linuxserver.io",
+      "org.opencontainers.image.created": "2026-08-03T17:22:11+00:00",
+      "org.opencontainers.image.description": "[Wireshark](https://www.wireshark.org/) is the world’s foremost and widely-used network protocol analyzer. It lets you see what’s happening on your network at a microscopic level and is the de facto (and often de jure) standard across many commercial and non-profit enterprises, government agencies, and educational institutions. Wireshark development thrives thanks to the volunteer contributions of networking experts around the globe and is the continuation of a project started by Gerald Combs in 1998. ",
+      "org.opencontainers.image.documentation": "https://docs.linuxserver.io/images/docker-wireshark",
+      "org.opencontainers.image.licenses": "GPL-3.0-only",
+      "org.opencontainers.image.ref.name": "047477b146196a00f6b6700c9ec70b003cfadc61",
+      "org.opencontainers.image.revision": "047477b146196a00f6b6700c9ec70b003cfadc61",
+      "org.opencontainers.image.source": "https://github.com/linuxserver/docker-wireshark",
+      "org.opencontainers.image.title": "Wireshark",
+      "org.opencontainers.image.url": "https://github.com/linuxserver/docker-wireshark/packages",
+      "org.opencontainers.image.vendor": "linuxserver.io",
+      "org.opencontainers.image.version": "4.6.6-r0-ls320",
+      "shell": "/bin/bash",
+      "user": "<USER>"
+    },
+    "shell_label": "/bin/bash",
+    "cap_add": [
+      "NET_ADMIN",
+      "NET_RAW",
+      "NET_BROADCAST",
+      "NET_BIND_SERVICE",
+      "SYS_ADMIN"
+    ],
+    "privileged": false,
+    "sysctls": [
+      "net.ipv4.conf.all.rp_filter=0",
+      "net.ipv4.conf.default.rp_filter=0",
+      "net.ipv4.conf.lo.rp_filter=0",
+      "net.ipv4.icmp_ratelimit=0",
+      "net.ipv4.ip_forward=1",
+      "net.ipv6.conf.all.disable_ipv6=1",
+      "net.ipv6.conf.all.forwarding=0",
+      "net.ipv6.conf.default.disable_ipv6=1",
+      "net.ipv6.conf.default.forwarding=0"
+    ],
+    "ulimits": [],
+    "memory": 0,
+    "nano_cpus": 0,
+    "env": [
+      "PATH=/lsiopy/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+      "PS1=$(whoami)@$(hostname):$(pwd)\\$ ",
+      "HOME=/config",
+      "TERM=xterm",
+      "S6_CMD_WAIT_FOR_SERVICES_MAXTIME=0",
+      "S6_VERBOSITY=1",
+      "S6_STAGE2_HOOK=/docker-mods",
+      "VIRTUAL_ENV=/lsiopy",
+      "DISPLAY=:1",
+      "PERL5LIB=/usr/local/bin",
+      "START_DOCKER=true",
+      "PULSE_RUNTIME_PATH=/defaults",
+      "SELKIES_INTERPOSER=/usr/lib/selkies_joystick_interposer.so",
+      "DISABLE_ZINK=false",
+      "DISABLE_DRI3=false",
+      "SELKIES_ENCODER=x264enc,jpeg",
+      "TITLE=Wireshark",
+      "LSIO_FIRST_PARTY=true",
+      "NO_GAMEPAD=true",
+      "PIXELFLUX_WAYLAND=true"
+    ],
+    "entrypoint": [
+      "/init"
+    ],
+    "network_mode": "bridge",
+    "mounts": [
+      {
+        "type": "volume",
+        "name": "<ANONVOL>",
+        "source": "<ANONVOL_PATH>",
+        "destination": "/config",
+        "mode": "",
+        "rw": true,
+        "propagation": ""
+      },
+      {
+        "type": "bind",
+        "source": "<LABDIR>/shared",
+        "destination": "/shared",
+        "mode": "rw",
+        "rw": true,
+        "propagation": "rprivate"
+      }
+    ],
+    "port_bindings": {
+      "3000/tcp": [
+        {
+          "host_ip": "",
+          "host_port": "3000"
+        }
+      ]
+    },
+    "exposed_ports": {
+      "3000/tcp": [
+        {
+          "host_ip": "0.0.0.0",
+          "host_port": "3000"
+        },
+        {
+          "host_ip": "::",
+          "host_port": "3000"
+        }
+      ],
+      "3001/tcp": []
+    },
+    "endpoints": [
+      {
+        "network": "bridge",
+        "kathara_network": false,
+        "iface": -1,
+        "link": "",
+        "endpoint_sysctls": [],
+        "assertions": {
+          "has_kathara_iface": false,
+          "has_kathara_link": false,
+          "link_matches_network_label": false
+        }
+      }
+    ],
+    "state": "running",
+    "running": true
+  }
+]

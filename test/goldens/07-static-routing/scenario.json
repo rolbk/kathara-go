@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "name": "07-static-routing",
+  "kind": "deploy",
+  "status": "golden",
+  "note": "The one lab whose full routing table is a safe byte-exact golden.",
+  "lab_dir": "<LABDIR>",
+  "flags": [],
+  "probes": [
+    "link",
+    "addr",
+    "route",
+    "hosts",
+    "hostname",
+    "fstree"
+  ],
+  "fs_roots": [
+    "/hostlab",
+    "/shared"
+  ],
+  "lab_hash_source": "path",
+  "lab_hash_derived_ok": true,
+  "user_slug_derived_ok": true,
+  "container_names_ok": true,
+  "network_names_ok": true,
+  "explicit_mac_count": 0,
+  "expect_explicit_mac": false
+}

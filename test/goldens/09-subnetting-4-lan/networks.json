@@ -1,0 +1,92 @@
+[
+  {
+    "link": "A1",
+    "network_name": "kathara_<USER>_A1_<LABHASH>",
+    "driver": "kathara/katharanp_vde:amd64",
+    "scope": "local",
+    "internal": false,
+    "attachable": false,
+    "ipam_driver": "null",
+    "labels": {
+      "app": "kathara",
+      "external": "",
+      "lab_hash": "<LABHASH>",
+      "name": "A1",
+      "user": "<USER>"
+    },
+    "external": "",
+    "external_label_present": true
+  },
+  {
+    "link": "A2",
+    "network_name": "kathara_<USER>_A2_<LABHASH>",
+    "driver": "kathara/katharanp_vde:amd64",
+    "scope": "local",
+    "internal": false,
+    "attachable": false,
+    "ipam_driver": "null",
+    "labels": {
+      "app": "kathara",
+      "external": "",
+      "lab_hash": "<LABHASH>",
+      "name": "A2",
+      "user": "<USER>"
+    },
+    "external": "",
+    "external_label_present": true
+  },
+  {
+    "link": "A3",
+    "network_name": "kathara_<USER>_A3_<LABHASH>",
+    "driver": "kathara/katharanp_vde:amd64",
+    "scope": "local",
+    "internal": false,
+    "attachable": false,
+    "ipam_driver": "null",
+    "labels": {
+      "app": "kathara",
+      "external": "",
+      "lab_hash": "<LABHASH>",
+      "name": "A3",
+      "user": "<USER>"
+    },
+    "external": "",
+    "external_label_present": true
+  },
+  {
+    "link": "A4",
+    "network_name": "kathara_<USER>_A4_<LABHASH>",
+    "driver": "kathara/katharanp_vde:amd64",
+    "scope": "local",
+    "internal": false,
+    "attachable": false,
+    "ipam_driver": "null",
+    "labels": {
+      "app": "kathara",
+      "external": "",
+      "lab_hash": "<LABHASH>",
+      "name": "A4",
+      "user": "<USER>"
+    },
+    "external": "",
+    "external_label_present": true
+  },
+  {
+    "link": "B",
+    "network_name": "kathara_<USER>_B_<LABHASH>",
+    "driver": "kathara/katharanp_vde:amd64",
+    "scope": "local",
+    "internal": false,
+    "attachable": false,
+    "ipam_driver": "null",
+    "labels": {
+      "app": "kathara",
+      "external": "",
+      "lab_hash": "<LABHASH>",
+      "name": "B",
+      "user": "<USER>"
+    },
+    "external": "",
+    "external_label_present": true
+  }
+]

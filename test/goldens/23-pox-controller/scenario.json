@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "name": "23-pox-controller",
+  "kind": "deploy",
+  "status": "golden",
+  "note": "kathara/pox plus kathara/sdn images; explicit MAC; zero LAB_ metadata.",
+  "lab_dir": "<LABDIR>",
+  "flags": [],
+  "probes": [
+    "link",
+    "addr",
+    "route",
+    "hosts",
+    "hostname",
+    "fstree"
+  ],
+  "fs_roots": [
+    "/hostlab",
+    "/shared"
+  ],
+  "lab_hash_source": "path",
+  "lab_hash_derived_ok": true,
+  "user_slug_derived_ok": true,
+  "container_names_ok": true,
+  "network_names_ok": true,
+  "explicit_mac_count": 2,
+  "expect_explicit_mac": true
+}

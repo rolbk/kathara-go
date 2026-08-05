@@ -1,0 +1,130 @@
+{
+  "device": "router1",
+  "ip_br_link": [
+    "eth0 UP <MAC> <BROADCAST,MULTICAST,UP,LOWER_UP>",
+    "eth1 UP <MAC> <BROADCAST,MULTICAST,UP,LOWER_UP>",
+    "lo UNKNOWN 00:00:00:00:00:00 <LOOPBACK,UP,LOWER_UP>"
+  ],
+  "ip_addr": [
+    {
+      "addr_info": [
+        {
+          "family": "inet",
+          "label": "eth0",
+          "local": "193.10.11.1",
+          "prefixlen": 24,
+          "scope": "global"
+        }
+      ],
+      "address": "<MAC>",
+      "broadcast": "ff:ff:ff:ff:ff:ff",
+      "flags": [
+        "BROADCAST",
+        "MULTICAST",
+        "UP",
+        "LOWER_UP"
+      ],
+      "group": "default",
+      "ifname": "eth0",
+      "link_type": "ether",
+      "mtu": 1500,
+      "operstate": "UP",
+      "qdisc": "fq_codel",
+      "txqlen": 1000
+    },
+    {
+      "addr_info": [
+        {
+          "family": "inet",
+          "label": "eth1",
+          "local": "195.11.14.1",
+          "prefixlen": 24,
+          "scope": "global"
+        }
+      ],
+      "address": "<MAC>",
+      "broadcast": "ff:ff:ff:ff:ff:ff",
+      "flags": [
+        "BROADCAST",
+        "MULTICAST",
+        "UP",
+        "LOWER_UP"
+      ],
+      "group": "default",
+      "ifname": "eth1",
+      "link_type": "ether",
+      "mtu": 1500,
+      "operstate": "UP",
+      "qdisc": "fq_codel",
+      "txqlen": 1000
+    },
+    {
+      "addr_info": [
+        {
+          "family": "inet",
+          "label": "lo",
+          "local": "127.0.0.1",
+          "prefixlen": 8,
+          "scope": "host"
+        }
+      ],
+      "address": "00:00:00:00:00:00",
+      "broadcast": "00:00:00:00:00:00",
+      "flags": [
+        "LOOPBACK",
+        "UP",
+        "LOWER_UP"
+      ],
+      "group": "default",
+      "ifname": "lo",
+      "link_type": "loopback",
+      "mtu": 65536,
+      "operstate": "UNKNOWN",
+      "qdisc": "noqueue",
+      "txqlen": 1000
+    }
+  ],
+  "etc_hosts": [
+    "127.0.0.1 localhost",
+    "::1 localhost",
+    "127.0.1.1 router1"
+  ],
+  "hostname": "router1",
+  "fs_trees": {
+    "/hostlab": [
+      {
+        "kind": "d",
+        "path": "./router1"
+      },
+      {
+        "kind": "f",
+        "path": "./router1.startup",
+        "sha256": "c994f03aaf4e307b4de1c5c6c7e3b582a1885b1eb67c707e09c0ca059d7aee2f"
+      },
+      {
+        "kind": "d",
+        "path": "./router1/etc"
+      },
+      {
+        "kind": "d",
+        "path": "./router1/etc/quagga"
+      },
+      {
+        "kind": "f",
+        "path": "./router1/etc/quagga/bgpd.conf",
+        "sha256": "ad01954c4b54a8349106ce85bb2e6e58b8731f319a00af1f90f4004876477512"
+      },
+      {
+        "kind": "f",
+        "path": "./router1/etc/quagga/daemons",
+        "sha256": "a9ae8a7dac470fc7388823df4731291a649f8e867b64fc27852e90e4ba35cf2b"
+      },
+      {
+        "kind": "f",
+        "path": "./router1/etc/quagga/zebra.conf",
+        "sha256": "0ca458fafc7021030c0f083986c329b06131f76709b7572696a0814d84c257de"
+      }
+    ],
+    "/shared": []
+  }
+}

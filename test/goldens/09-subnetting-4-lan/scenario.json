@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "name": "09-subnetting-4-lan",
+  "kind": "deploy",
+  "status": "golden",
+  "note": "Explicit MAC plus ipv6=\"false\" on every device; five collision domains.",
+  "lab_dir": "<LABDIR>",
+  "flags": [],
+  "probes": [
+    "link",
+    "addr",
+    "route",
+    "hosts",
+    "hostname",
+    "fstree"
+  ],
+  "fs_roots": [
+    "/hostlab",
+    "/shared"
+  ],
+  "lab_hash_source": "path",
+  "lab_hash_derived_ok": true,
+  "user_slug_derived_ok": true,
+  "container_names_ok": true,
+  "network_names_ok": true,
+  "explicit_mac_count": 10,
+  "expect_explicit_mac": true
+}

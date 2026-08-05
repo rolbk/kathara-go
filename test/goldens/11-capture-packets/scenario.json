@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "name": "11-capture-packets",
+  "kind": "deploy",
+  "status": "golden",
+  "note": "The only lab with the port=\"3000:3000/tcp\" protocol suffix; default plus third-party image.",
+  "lab_dir": "<LABDIR>",
+  "flags": [],
+  "probes": [
+    "link",
+    "addr",
+    "route",
+    "hosts",
+    "hostname",
+    "fstree"
+  ],
+  "fs_roots": [
+    "/hostlab",
+    "/shared"
+  ],
+  "lab_hash_source": "path",
+  "lab_hash_derived_ok": true,
+  "user_slug_derived_ok": true,
+  "container_names_ok": true,
+  "network_names_ok": true,
+  "explicit_mac_count": 0,
+  "expect_explicit_mac": false
+}

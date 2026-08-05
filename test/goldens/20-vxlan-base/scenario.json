@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "name": "20-vxlan-base",
+  "kind": "deploy",
+  "status": "golden",
+  "note": "frr plus core mix with in-device VXLAN interfaces.",
+  "lab_dir": "<LABDIR>",
+  "flags": [],
+  "probes": [
+    "link",
+    "addr",
+    "hosts",
+    "hostname",
+    "fstree"
+  ],
+  "fs_roots": [
+    "/hostlab",
+    "/shared"
+  ],
+  "lab_hash_source": "path",
+  "lab_hash_derived_ok": true,
+  "user_slug_derived_ok": true,
+  "container_names_ok": true,
+  "network_names_ok": true,
+  "explicit_mac_count": 0,
+  "expect_explicit_mac": false
+}

@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "name": "14-dns-load-balancer-with-rip",
+  "kind": "deploy",
+  "status": "golden",
+  "note": "Four images in one lab (apache, bind:9.11.5, core, quagga). RIP converges nondeterministically, so the route probe is off.",
+  "lab_dir": "<LABDIR>",
+  "flags": [],
+  "probes": [
+    "link",
+    "addr",
+    "hosts",
+    "hostname",
+    "fstree"
+  ],
+  "fs_roots": [
+    "/hostlab",
+    "/shared"
+  ],
+  "lab_hash_source": "path",
+  "lab_hash_derived_ok": true,
+  "user_slug_derived_ok": true,
+  "container_names_ok": true,
+  "network_names_ok": true,
+  "explicit_mac_count": 0,
+  "expect_explicit_mac": false
+}

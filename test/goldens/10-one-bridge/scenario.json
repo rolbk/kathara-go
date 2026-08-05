@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "name": "10-one-bridge",
+  "kind": "deploy",
+  "status": "golden",
+  "note": "Explicit MAC and ipv6; one .startup file for five devices (partial-startup path). b1.startup builds an in-device Linux bridge and enslaves all four interfaces to it; the bridge's carrier follows its ports asynchronously, so `mainbridge` is briefly DOWN/NO-CARRIER after `ip link set up`. One recording caught the transition mid-flight — `ip -br link` said DOWN/NO-CARRIER while `ip -j addr`, run a moment later in the same probe pass, already said UP. settle_seconds pins the observation to the converged side. The converged state is what the lab is *for*, and it is stable once reached.",
+  "lab_dir": "<LABDIR>",
+  "flags": [],
+  "probes": [
+    "link",
+    "addr",
+    "route",
+    "hosts",
+    "hostname",
+    "fstree"
+  ],
+  "fs_roots": [
+    "/hostlab",
+    "/shared"
+  ],
+  "lab_hash_source": "path",
+  "lab_hash_derived_ok": true,
+  "user_slug_derived_ok": true,
+  "container_names_ok": true,
+  "network_names_ok": true,
+  "explicit_mac_count": 8,
+  "expect_explicit_mac": true
+}

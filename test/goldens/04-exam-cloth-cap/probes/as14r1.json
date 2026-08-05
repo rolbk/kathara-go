@@ -1,0 +1,162 @@
+{
+  "device": "as14r1",
+  "ip_br_link": [
+    "eth0 UP <MAC> <BROADCAST,MULTICAST,UP,LOWER_UP>",
+    "eth1 UP <MAC> <BROADCAST,MULTICAST,UP,LOWER_UP>",
+    "eth2 UP <MAC> <BROADCAST,MULTICAST,UP,LOWER_UP>",
+    "lo UNKNOWN 00:00:00:00:00:00 <LOOPBACK,UP,LOWER_UP>"
+  ],
+  "ip_addr": [
+    {
+      "addr_info": [
+        {
+          "family": "inet",
+          "label": "eth0",
+          "local": "13.14.0.14",
+          "prefixlen": 24,
+          "scope": "global"
+        }
+      ],
+      "address": "<MAC>",
+      "broadcast": "ff:ff:ff:ff:ff:ff",
+      "flags": [
+        "BROADCAST",
+        "MULTICAST",
+        "UP",
+        "LOWER_UP"
+      ],
+      "group": "default",
+      "ifname": "eth0",
+      "link_type": "ether",
+      "mtu": 1500,
+      "operstate": "UP",
+      "qdisc": "fq_codel",
+      "txqlen": 1000
+    },
+    {
+      "addr_info": [
+        {
+          "family": "inet",
+          "label": "eth1",
+          "local": "11.14.0.14",
+          "prefixlen": 24,
+          "scope": "global"
+        }
+      ],
+      "address": "<MAC>",
+      "broadcast": "ff:ff:ff:ff:ff:ff",
+      "flags": [
+        "BROADCAST",
+        "MULTICAST",
+        "UP",
+        "LOWER_UP"
+      ],
+      "group": "default",
+      "ifname": "eth1",
+      "link_type": "ether",
+      "mtu": 1500,
+      "operstate": "UP",
+      "qdisc": "fq_codel",
+      "txqlen": 1000
+    },
+    {
+      "addr_info": [
+        {
+          "family": "inet",
+          "label": "eth2",
+          "local": "10.14.0.14",
+          "prefixlen": 24,
+          "scope": "global"
+        }
+      ],
+      "address": "<MAC>",
+      "broadcast": "ff:ff:ff:ff:ff:ff",
+      "flags": [
+        "BROADCAST",
+        "MULTICAST",
+        "UP",
+        "LOWER_UP"
+      ],
+      "group": "default",
+      "ifname": "eth2",
+      "link_type": "ether",
+      "mtu": 1500,
+      "operstate": "UP",
+      "qdisc": "fq_codel",
+      "txqlen": 1000
+    },
+    {
+      "addr_info": [
+        {
+          "family": "inet",
+          "label": "lo",
+          "local": "127.0.0.1",
+          "prefixlen": 8,
+          "scope": "host"
+        }
+      ],
+      "address": "00:00:00:00:00:00",
+      "broadcast": "00:00:00:00:00:00",
+      "flags": [
+        "LOOPBACK",
+        "UP",
+        "LOWER_UP"
+      ],
+      "group": "default",
+      "ifname": "lo",
+      "link_type": "loopback",
+      "mtu": 65536,
+      "operstate": "UNKNOWN",
+      "qdisc": "noqueue",
+      "txqlen": 1000
+    }
+  ],
+  "ip_route": [
+    "10.14.0.0/24 dev eth2 proto kernel scope link src 10.14.0.14",
+    "11.14.0.0/24 dev eth1 proto kernel scope link src 11.14.0.14",
+    "13.14.0.0/24 dev eth0 proto kernel scope link src 13.14.0.14"
+  ],
+  "etc_hosts": [
+    "127.0.0.1 localhost",
+    "::1 localhost",
+    "127.0.1.1 as14r1"
+  ],
+  "hostname": "as14r1",
+  "fs_trees": {
+    "/hostlab": [
+      {
+        "kind": "d",
+        "path": "./as14r1"
+      },
+      {
+        "kind": "f",
+        "path": "./as14r1.startup",
+        "sha256": "3cc8707dda73238e231e03950e6ffdee5210167a2f342fb4974785fb0bd1ec32"
+      },
+      {
+        "kind": "d",
+        "path": "./as14r1/etc"
+      },
+      {
+        "kind": "d",
+        "path": "./as14r1/etc/frr"
+      },
+      {
+        "kind": "f",
+        "path": "./as14r1/etc/frr/daemons",
+        "sha256": "64430061aa8e52a2c3471784c1134b0da1f55d601e4533c62dc29721adf71a56"
+      },
+      {
+        "kind": "f",
+        "path": "./as14r1/etc/frr/frr.conf",
+        "sha256": "92f587273e0980588a3f860985cfdd3f762b6dfc6ddbfcf7b5dc9e4d07517dba"
+      },
+      {
+        "kind": "f",
+        "path": "./as14r1/etc/frr/vtysh.conf",
+        "sha256": "d2ffed229dec21fce6d22f459bd9d040c7ae51d5184928773145fb115a721b72"
+      }
+    ],
+    "/shared": []
+  }
+}

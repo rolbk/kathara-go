@@ -1,0 +1,56 @@
+[
+  {
+    "link": "A",
+    "network_name": "kathara_<USER>_A_<LABHASH>",
+    "driver": "kathara/katharanp_vde:amd64",
+    "scope": "local",
+    "internal": false,
+    "attachable": false,
+    "ipam_driver": "null",
+    "labels": {
+      "app": "kathara",
+      "external": "",
+      "lab_hash": "<LABHASH>",
+      "name": "A",
+      "user": "<USER>"
+    },
+    "external": "",
+    "external_label_present": true
+  },
+  {
+    "link": "B",
+    "network_name": "kathara_<USER>_B_<LABHASH>",
+    "driver": "kathara/katharanp_vde:amd64",
+    "scope": "local",
+    "internal": false,
+    "attachable": false,
+    "ipam_driver": "null",
+    "labels": {
+      "app": "kathara",
+      "external": "",
+      "lab_hash": "<LABHASH>",
+      "name": "B",
+      "user": "<USER>"
+    },
+    "external": "",
+    "external_label_present": true
+  },
+  {
+    "link": "C",
+    "network_name": "kathara_<USER>_C_<LABHASH>",
+    "driver": "kathara/katharanp_vde:amd64",
+    "scope": "local",
+    "internal": false,
+    "attachable": false,
+    "ipam_driver": "null",
+    "labels": {
+      "app": "kathara",
+      "external": "",
+      "lab_hash": "<LABHASH>",
+      "name": "C",
+      "user": "<USER>"
+    },
+    "external": "",
+    "external_label_present": true
+  }
+]

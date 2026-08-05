@@ -1,0 +1,195 @@
+{
+  "device": "router1",
+  "ip_br_link": [
+    "eth0 UP 00:00:00:00:00:b1 <BROADCAST,MULTICAST,UP,LOWER_UP>",
+    "eth1 UP 00:00:00:00:00:a1 <BROADCAST,MULTICAST,UP,LOWER_UP>",
+    "eth2 UP 00:00:00:00:00:a2 <BROADCAST,MULTICAST,UP,LOWER_UP>",
+    "eth3 UP 00:00:00:00:00:a3 <BROADCAST,MULTICAST,UP,LOWER_UP>",
+    "eth4 UP 00:00:00:00:00:a4 <BROADCAST,MULTICAST,UP,LOWER_UP>",
+    "lo UNKNOWN 00:00:00:00:00:00 <LOOPBACK,UP,LOWER_UP>"
+  ],
+  "ip_addr": [
+    {
+      "addr_info": [
+        {
+          "family": "inet",
+          "label": "eth0",
+          "local": "10.0.13.2",
+          "prefixlen": 30,
+          "scope": "global"
+        }
+      ],
+      "address": "00:00:00:00:00:b1",
+      "broadcast": "ff:ff:ff:ff:ff:ff",
+      "flags": [
+        "BROADCAST",
+        "MULTICAST",
+        "UP",
+        "LOWER_UP"
+      ],
+      "group": "default",
+      "ifname": "eth0",
+      "link_type": "ether",
+      "mtu": 1500,
+      "operstate": "UP",
+      "qdisc": "fq_codel",
+      "txqlen": 1000
+    },
+    {
+      "addr_info": [
+        {
+          "family": "inet",
+          "label": "eth1",
+          "local": "100.50.25.76",
+          "prefixlen": 26,
+          "scope": "global"
+        }
+      ],
+      "address": "00:00:00:00:00:a1",
+      "broadcast": "ff:ff:ff:ff:ff:ff",
+      "flags": [
+        "BROADCAST",
+        "MULTICAST",
+        "UP",
+        "LOWER_UP"
+      ],
+      "group": "default",
+      "ifname": "eth1",
+      "link_type": "ether",
+      "mtu": 1500,
+      "operstate": "UP",
+      "qdisc": "fq_codel",
+      "txqlen": 1000
+    },
+    {
+      "addr_info": [
+        {
+          "family": "inet",
+          "label": "eth2",
+          "local": "100.50.25.206",
+          "prefixlen": 26,
+          "scope": "global"
+        }
+      ],
+      "address": "00:00:00:00:00:a2",
+      "broadcast": "ff:ff:ff:ff:ff:ff",
+      "flags": [
+        "BROADCAST",
+        "MULTICAST",
+        "UP",
+        "LOWER_UP"
+      ],
+      "group": "default",
+      "ifname": "eth2",
+      "link_type": "ether",
+      "mtu": 1500,
+      "operstate": "UP",
+      "qdisc": "fq_codel",
+      "txqlen": 1000
+    },
+    {
+      "addr_info": [
+        {
+          "family": "inet",
+          "label": "eth3",
+          "local": "100.50.25.11",
+          "prefixlen": 26,
+          "scope": "global"
+        }
+      ],
+      "address": "00:00:00:00:00:a3",
+      "broadcast": "ff:ff:ff:ff:ff:ff",
+      "flags": [
+        "BROADCAST",
+        "MULTICAST",
+        "UP",
+        "LOWER_UP"
+      ],
+      "group": "default",
+      "ifname": "eth3",
+      "link_type": "ether",
+      "mtu": 1500,
+      "operstate": "UP",
+      "qdisc": "fq_codel",
+      "txqlen": 1000
+    },
+    {
+      "addr_info": [
+        {
+          "family": "inet",
+          "label": "eth4",
+          "local": "100.50.25.145",
+          "prefixlen": 26,
+          "scope": "global"
+        }
+      ],
+      "address": "00:00:00:00:00:a4",
+      "broadcast": "ff:ff:ff:ff:ff:ff",
+      "flags": [
+        "BROADCAST",
+        "MULTICAST",
+        "UP",
+        "LOWER_UP"
+      ],
+      "group": "default",
+      "ifname": "eth4",
+      "link_type": "ether",
+      "mtu": 1500,
+      "operstate": "UP",
+      "qdisc": "fq_codel",
+      "txqlen": 1000
+    },
+    {
+      "addr_info": [
+        {
+          "family": "inet",
+          "label": "lo",
+          "local": "127.0.0.1",
+          "prefixlen": 8,
+          "scope": "host"
+        }
+      ],
+      "address": "00:00:00:00:00:00",
+      "broadcast": "00:00:00:00:00:00",
+      "flags": [
+        "LOOPBACK",
+        "UP",
+        "LOWER_UP"
+      ],
+      "group": "default",
+      "ifname": "lo",
+      "link_type": "loopback",
+      "mtu": 65536,
+      "operstate": "UNKNOWN",
+      "qdisc": "noqueue",
+      "txqlen": 1000
+    }
+  ],
+  "ip_route": [
+    "10.0.13.0/30 dev eth0 proto kernel scope link src 10.0.13.2",
+    "100.50.25.0/26 dev eth3 proto kernel scope link src 100.50.25.11",
+    "100.50.25.128/26 dev eth4 proto kernel scope link src 100.50.25.145",
+    "100.50.25.192/26 dev eth2 proto kernel scope link src 100.50.25.206",
+    "100.50.25.64/26 dev eth1 proto kernel scope link src 100.50.25.76"
+  ],
+  "etc_hosts": [
+    "127.0.0.1 localhost",
+    "::1 localhost",
+    "127.0.1.1 router1"
+  ],
+  "hostname": "router1",
+  "fs_trees": {
+    "/hostlab": [
+      {
+        "kind": "d",
+        "path": "./router1"
+      },
+      {
+        "kind": "f",
+        "path": "./router1.startup",
+        "sha256": "c10e02f224f0c8f4f69d5817bb1e225f3cbc1b2c16c3d3ba5c6333ce3ebfc3b2"
+      }
+    ],
+    "/shared": []
+  }
+}

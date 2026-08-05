@@ -26,6 +26,7 @@ const (
 	TokDockerIP6   = "<DOCKERIP6>"
 	TokContainerID = "<CID>"
 	TokShortID     = "<CID12>"
+	TokIfIndex     = "<IFINDEX>"
 )
 
 var (
@@ -49,6 +50,14 @@ var (
 	// as basic-ipv6's `fe80::1` does not match and stays a byte-exact
 	// assertion.
 	reLinkLocal6 = regexp.MustCompile(`\bfe80::[0-9a-fA-F]{1,4}:[0-9a-fA-F]{0,2}ff:fe[0-9a-fA-F]{2}:[0-9a-fA-F]{1,4}\b`)
+
+	// The peer-ifindex suffix `ip link` renders for a veth whose peer sits in
+	// another network namespace: `eth1@if451`. The number is the peer's
+	// host-global ifindex, i.e. a counter over every interface ever created on
+	// the box, not a property of the lab. Only ever applied to `ip -br link`
+	// output; `ip -j addr`'s equivalent `link_index` key is dropped outright
+	// (NORMALIZATION.md section 7).
+	reVethPeerIfIndex = regexp.MustCompile(`@if[0-9]+\b`)
 
 	// Docker's default address pools, used for the bridged path. The address a
 	// bridged device receives depends on allocation order across the daemon.
@@ -333,6 +342,15 @@ func (n *Normalizer) HostsLines(s string) []string {
 	return lines
 }
 
+// ScrubVethPeerIfIndex tokenizes the `@if<n>` peer-ifindex suffix that
+// `ip link` renders for a veth whose peer lives in another network namespace.
+// The suffix is kept (that the interface *has* a peer in another namespace is
+// a real fact about a `bridged` device); only the host-global index is
+// removed. Applied to `ip -br link` output only.
+func (n *Normalizer) ScrubVethPeerIfIndex(s string) string {
+	return reVethPeerIfIndex.ReplaceAllString(s, "@if"+TokIfIndex)
+}
+
 // StripANSI removes CSI, OSC and single-character escape sequences.
 func StripANSI(s string) string {
 	s = reANSIOSC.ReplaceAllString(s, "")
@@ -352,7 +370,35 @@ var volatileAddrKeys = map[string]bool{
 	"preferred_life_time": true,
 	"parentbus":           true,
 	"parentdev":           true,
+	// Duplicate Address Detection state. An address is `tentative` from the
+	// moment it is assigned until DAD finishes (one solicit, ~1 s later);
+	// `optimistic` and `dadfailed` are the other two states of the same
+	// machine. Whether the probe lands before or after DAD completes is pure
+	// wall-clock racing against `lstart` returning: 06-basic-ipv6 recorded
+	// pc1/pc3 tentative and pc2 not, in the same run.
+	"tentative":  true,
+	"optimistic": true,
+	"dadfailed":  true,
 }
+
+// raLearnedProtocols names the `ip -j addr` `protocol` values that mark an
+// address the kernel *learned* rather than one the lab configured. An
+// addr_info entry carrying one is dropped whole.
+//
+// `kernel_ra` is SLAAC: the address exists only once a Router Advertisement
+// has been received. 06-basic-ipv6's pc1..pc3 have no .startup at all and are
+// addressed entirely by radvd on r1/r2 (MinRtrAdvInterval 3, MaxRtrAdvInterval
+// 9), and the kernel's own Router Solicitation is sent after a random delay of
+// up to 1 s (RFC 4861). Two recordings therefore disagree on whether
+// `2001::3:200:ff:fe00:3` is present yet — observed directly. This is the same
+// class as a BGP/OSPF-learned route (GOLDEN_CANDIDATES.md's determinism
+// caveat), and it is removed for the same reason: daemon-learned state is not
+// a golden. What survives is every statically configured address, including
+// basic-ipv6's fe80::1 / fe80::2 and every EUI-64 link-local derived from an
+// explicitly pinned MAC — i.e. the assertion that Kathara applied
+// `sysctl net.ipv6.conf.eth0.accept_ra=2` and the `cd/mac` syntax is still
+// carried by containers.json and by `ip -br link`.
+var raLearnedProtocols = map[string]bool{"kernel_ra": true}
 
 // sortedAddrArrayKeys names the `ip -j addr` arrays whose observed order is
 // not stable. Everything else (notably "flags") keeps kernel order, which is
@@ -379,6 +425,9 @@ func (n *Normalizer) scrubAddrValue(key string, v any) any {
 	case []any:
 		out := make([]any, 0, len(t))
 		for _, e := range t {
+			if key == "addr_info" && isRALearnedAddr(e) {
+				continue
+			}
 			out = append(out, n.scrubAddrValue(key, e))
 		}
 		if sortedAddrArrayKeys[key] {
@@ -390,6 +439,17 @@ func (n *Normalizer) scrubAddrValue(key string, v any) any {
 	default:
 		return v
 	}
+}
+
+// isRALearnedAddr reports whether one addr_info entry is a Router
+// Advertisement-learned (SLAAC) address; see raLearnedProtocols.
+func isRALearnedAddr(e any) bool {
+	m, ok := e.(map[string]any)
+	if !ok {
+		return false
+	}
+	proto, _ := m["protocol"].(string)
+	return raLearnedProtocols[proto]
 }
 
 // sortByCanonicalJSON gives arrays a deterministic order without needing to

@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"gopkg.in/yaml.v3"
 )
@@ -118,6 +119,19 @@ type Scenario struct {
 	// TimeoutSeconds overrides the default per-scenario wall-clock limit.
 	TimeoutSeconds int `yaml:"timeout_seconds"`
 
+	// SettleSeconds delays the observation (inspect and in-container probes)
+	// after lstart returns. Default 0: the snapshot is taken the instant
+	// lstart is done, which is what every scenario wants unless the lab's
+	// startup script leaves a *link-layer* state machine converging behind it.
+	// Kathara dispatches the startup commands with detach=True
+	// (DockerMachine.py:555), so lstart returning says nothing about them
+	// having finished, let alone about the kernel having settled.
+	//
+	// This is deliberately opt-in per scenario rather than a global default:
+	// a blanket delay would change what every existing golden records, and the
+	// scenarios that need it are the ones whose note says why.
+	SettleSeconds int `yaml:"settle_seconds"`
+
 	// resolved fields, filled by Manifest.Resolve.
 	labDir  string
 	probes  []string
@@ -136,6 +150,14 @@ func (s *Scenario) FSRootSet() []string { return s.fsRoots }
 
 // TimeoutSecs is the resolved per-scenario timeout.
 func (s *Scenario) TimeoutSecs() int { return s.timeout }
+
+// SettleDelay is how long to wait after lstart before observing anything.
+func (s *Scenario) SettleDelay() time.Duration {
+	if s.SettleSeconds <= 0 {
+		return 0
+	}
+	return time.Duration(s.SettleSeconds) * time.Second
+}
 
 // HasProbe reports whether the resolved probe set contains name.
 func (s *Scenario) HasProbe(name string) bool {

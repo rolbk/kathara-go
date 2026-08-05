@@ -1,0 +1,130 @@
+{
+  "device": "router2",
+  "ip_br_link": [
+    "eth0 UP <MAC> <BROADCAST,MULTICAST,UP,LOWER_UP>",
+    "eth1 UP <MAC> <BROADCAST,MULTICAST,UP,LOWER_UP>",
+    "lo UNKNOWN 00:00:00:00:00:00 <LOOPBACK,UP,LOWER_UP>"
+  ],
+  "ip_addr": [
+    {
+      "addr_info": [
+        {
+          "family": "inet",
+          "label": "eth0",
+          "local": "193.10.11.2",
+          "prefixlen": 24,
+          "scope": "global"
+        }
+      ],
+      "address": "<MAC>",
+      "broadcast": "ff:ff:ff:ff:ff:ff",
+      "flags": [
+        "BROADCAST",
+        "MULTICAST",
+        "UP",
+        "LOWER_UP"
+      ],
+      "group": "default",
+      "ifname": "eth0",
+      "link_type": "ether",
+      "mtu": 1500,
+      "operstate": "UP",
+      "qdisc": "fq_codel",
+      "txqlen": 1000
+    },
+    {
+      "addr_info": [
+        {
+          "family": "inet",
+          "label": "eth1",
+          "local": "200.1.1.1",
+          "prefixlen": 24,
+          "scope": "global"
+        }
+      ],
+      "address": "<MAC>",
+      "broadcast": "ff:ff:ff:ff:ff:ff",
+      "flags": [
+        "BROADCAST",
+        "MULTICAST",
+        "UP",
+        "LOWER_UP"
+      ],
+      "group": "default",
+      "ifname": "eth1",
+      "link_type": "ether",
+      "mtu": 1500,
+      "operstate": "UP",
+      "qdisc": "fq_codel",
+      "txqlen": 1000
+    },
+    {
+      "addr_info": [
+        {
+          "family": "inet",
+          "label": "lo",
+          "local": "127.0.0.1",
+          "prefixlen": 8,
+          "scope": "host"
+        }
+      ],
+      "address": "00:00:00:00:00:00",
+      "broadcast": "00:00:00:00:00:00",
+      "flags": [
+        "LOOPBACK",
+        "UP",
+        "LOWER_UP"
+      ],
+      "group": "default",
+      "ifname": "lo",
+      "link_type": "loopback",
+      "mtu": 65536,
+      "operstate": "UNKNOWN",
+      "qdisc": "noqueue",
+      "txqlen": 1000
+    }
+  ],
+  "etc_hosts": [
+    "127.0.0.1 localhost",
+    "::1 localhost",
+    "127.0.1.1 router2"
+  ],
+  "hostname": "router2",
+  "fs_trees": {
+    "/hostlab": [
+      {
+        "kind": "d",
+        "path": "./router2"
+      },
+      {
+        "kind": "f",
+        "path": "./router2.startup",
+        "sha256": "18f45ad1dd251d0ce52e1b584edd967c6140873a650df591b056d9bebbfa984e"
+      },
+      {
+        "kind": "d",
+        "path": "./router2/etc"
+      },
+      {
+        "kind": "d",
+        "path": "./router2/etc/frr"
+      },
+      {
+        "kind": "f",
+        "path": "./router2/etc/frr/daemons",
+        "sha256": "039b6ad1c4152f30e805cb6b664c9f2745cbeee025f10541249c67a9b342f679"
+      },
+      {
+        "kind": "f",
+        "path": "./router2/etc/frr/frr.conf",
+        "sha256": "6d9b3fb1103b330b14573db9a14373f434b5e185ef32f43e0f7035f710da68d4"
+      },
+      {
+        "kind": "f",
+        "path": "./router2/etc/frr/vtysh.conf",
+        "sha256": "830986724b6730f0cbfe76dce341e9be4b3fcae73bd612fca3c09a8157515a1d"
+      }
+    ],
+    "/shared": []
+  }
+}

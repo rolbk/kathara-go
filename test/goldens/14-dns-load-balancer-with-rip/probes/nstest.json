@@ -1,0 +1,108 @@
+{
+  "device": "nstest",
+  "ip_br_link": [
+    "eth0 UP <MAC> <BROADCAST,MULTICAST,UP,LOWER_UP>",
+    "lo UNKNOWN 00:00:00:00:00:00 <LOOPBACK,UP,LOWER_UP>"
+  ],
+  "ip_addr": [
+    {
+      "addr_info": [
+        {
+          "family": "inet",
+          "label": "eth0",
+          "local": "20.0.0.3",
+          "prefixlen": 24,
+          "scope": "global"
+        }
+      ],
+      "address": "<MAC>",
+      "broadcast": "ff:ff:ff:ff:ff:ff",
+      "flags": [
+        "BROADCAST",
+        "MULTICAST",
+        "UP",
+        "LOWER_UP"
+      ],
+      "group": "default",
+      "ifname": "eth0",
+      "link_type": "ether",
+      "mtu": 1500,
+      "operstate": "UP",
+      "qdisc": "fq_codel",
+      "txqlen": 1000
+    },
+    {
+      "addr_info": [
+        {
+          "family": "inet",
+          "label": "lo",
+          "local": "127.0.0.1",
+          "prefixlen": 8,
+          "scope": "host"
+        }
+      ],
+      "address": "00:00:00:00:00:00",
+      "broadcast": "00:00:00:00:00:00",
+      "flags": [
+        "LOOPBACK",
+        "UP",
+        "LOWER_UP"
+      ],
+      "group": "default",
+      "ifname": "lo",
+      "link_type": "loopback",
+      "mtu": 65536,
+      "operstate": "UNKNOWN",
+      "qdisc": "noqueue",
+      "txqlen": 1000
+    }
+  ],
+  "etc_hosts": [
+    "127.0.0.1 localhost",
+    "::1 localhost",
+    "127.0.1.1 nstest"
+  ],
+  "hostname": "nstest",
+  "fs_trees": {
+    "/hostlab": [
+      {
+        "kind": "d",
+        "path": "./nstest"
+      },
+      {
+        "kind": "f",
+        "path": "./nstest.startup",
+        "sha256": "1164c80cfb9b7cfb583f8b346e7b6c7eedeaa4e3c54973812f82c22714872ebb"
+      },
+      {
+        "kind": "d",
+        "path": "./nstest/etc"
+      },
+      {
+        "kind": "d",
+        "path": "./nstest/etc/bind"
+      },
+      {
+        "kind": "f",
+        "path": "./nstest/etc/bind/db.root",
+        "sha256": "b2803a94edb50e9eab8b46efc62f388bdaadff786672d5e43029484cf1617623"
+      },
+      {
+        "kind": "f",
+        "path": "./nstest/etc/bind/db.test",
+        "sha256": "b4c0d36ffcfec36cf6483a8c5eb8cf532e130afa66f8f18645a1c7bcd0b2705b"
+      },
+      {
+        "kind": "f",
+        "path": "./nstest/etc/bind/named.conf",
+        "sha256": "8af86a9892f61cf9de2f958e2809a29116db57d7e1881ab05df76f814acf8d36"
+      },
+      {
+        "kind": "f",
+        "path": "./nstest/etc/bind/named.conf.options",
+        "sha256": "56034d2701321b7cac28b6e6cf4dc4ce96da2d125ed29f68a5c40d265f3ab2a6"
+      }
+    ],
+    "/shared": []
+  }
+}

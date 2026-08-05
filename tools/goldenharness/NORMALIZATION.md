@@ -51,6 +51,7 @@ tokenized through its components rather than as a whole.
 | `<CID>`, `<CID12>` | Container ids, full and 12-character. | Assigned by the daemon per run. They leak into `/etc/hosts` and into DNS names. |
 | `<ANONVOL>`, `<ANONVOL_PATH>` | The `Name` and `Source` of a mount whose type is `volume` and whose name is a 64-hex id. | The `kathara/base` image declares `VOLUME /hosthome`, so every device gets a fresh anonymous volume with a random id. Recorded structurally (by mount type and name shape) rather than by a blanket hex-pattern rewrite, because a blanket rewrite would also destroy the sha256 digests in the file-tree probe. |
 | `<KATHARA>` | The binary under test, in every recorded `argv`. | The whole point of `KATHARA_CMD` is that the same goldens replay against the Python oracle and the Go build. Recording `/root/kathara/pyvenv/bin/python -m kathara` in `commands.json` would guarantee a diff on the first Go run. |
+| `<IFINDEX>` | The number in the `@if<n>` peer suffix that `ip link` renders for a veth whose peer sits in another network namespace, e.g. `24-pox-arp-handler`'s `controller` recording `eth1@if451`. **`ip -br link` output only.** | The peer's ifindex is a host-global counter over every interface ever created on the box, so two recordings on the same host differ (451 vs 492 was the observed pair). `ip -j addr`'s equivalent `link_index` key is dropped outright by rule 7; this is the same fact in `ip link`'s text rendering. The `@if` marker itself is **kept**: that a `bridged` device's second interface is one end of a cross-namespace veth — as opposed to a `katharanp_vde` interface, which has no peer suffix — is a real assertion. Scoped to the one probe that can produce the suffix so it can never touch a lab-configured string. |
 | `<DOCKERIP>`, `<DOCKERIP6>` | The `IPAddress` and `GlobalIPv6Address` that `docker inspect` reports for an endpoint on a **non-Kathara** network, registered as literals before any text is rendered. Additionally, in `/etc/hosts` only, any address in `172.16.0.0/12` or `192.168.0.0/16`. | A `bridged` device is also attached to the default `bridge` network and receives an address from Docker's allocation pool. The address depends on daemon-wide allocation order across every container that ever ran, not on the lab: `05-two-computers`'s `wireshark` records `... scope link src 172.17.0.2` in `ip route`, and a host that already had a container on the bridge would record `.3`. Tokenizing the *observed* address rather than the whole private-address space is what keeps lab-configured addresses — including the labs that legitimately use `172.16.0.0/12` — byte-exact in `ip addr` and `ip route`. The gateway and subnet (`172.17.0.1`, `172.17.0.0/16`) are daemon configuration, not run state, and are deliberately left exact. The blanket `/etc/hosts` rule is kept as belt and braces. |
 
 ## 3. MAC addresses
@@ -219,11 +220,43 @@ Applied in this order to every captured stdout/stderr:
 
 Dropped keys, all host-global or time-derived:
 `ifindex`, `link_index`, `link_netnsid`, `altnames` / `alt_names`,
-`valid_life_time`, `preferred_life_time`, `parentbus`, `parentdev`.
+`valid_life_time`, `preferred_life_time`, `parentbus`, `parentdev`,
+`tentative`, `optimistic`, `dadfailed`.
+
+The last three are the Duplicate Address Detection state machine. An address is
+`tentative` from assignment until DAD completes — one solicitation and a
+timeout, of the order of a second — and `lstart` returns as soon as the
+containers are up (`DockerMachine.py:555` dispatches the startup commands with
+`detach=True`), so the probe races DAD. `06-basic-ipv6` recorded `pc1` and
+`pc3` tentative and `pc2` not, within one run. DAD's *outcome* is still
+asserted: a duplicate address would leave `dadfailed` behind **and** be missing
+from the traffic path, and the address itself stays byte-exact.
+
+Dropped `addr_info` **entries**: any whose `protocol` is `kernel_ra`.
+
+That is SLAAC — an address that exists only once a Router Advertisement has
+arrived. `06-basic-ipv6`'s `pc1`..`pc3` ship no `.startup` at all and are
+addressed entirely by `radvd` on `r1`/`r2` (`MinRtrAdvInterval 3`,
+`MaxRtrAdvInterval 9`), and the kernel delays its own Router Solicitation by a
+random interval of up to one second (RFC 4861 §6.3.7). Two recordings of the
+same lab disagree on whether `2001::3:200:ff:fe00:3` is there yet — observed,
+not hypothesised. This is the same class as a BGP- or OSPF-learned route
+(`GOLDEN_CANDIDATES.md`'s determinism caveat) and is dropped for the same
+reason: daemon-learned state is not a golden. It is dropped **by protocol**,
+not by address shape, so a statically configured address in the same prefix
+would still be compared exactly.
+
+What that lab still asserts, and what a port cannot break without failing:
+`containers.json` carries the `sysctl net.ipv6.conf.eth0.accept_ra=2` entry and
+the endpoint's `kathara.mac_addr`, and `ip -br link` carries the pinned MAC
+byte-exact. Every statically configured address survives, including
+`basic-ipv6`'s `fe80::1` / `fe80::2` and the EUI-64 link-locals derived from
+pinned MACs (section 3.4).
 
 Everything else — `ifname`, `flags`, `mtu`, `qdisc`, `operstate`, `group`,
-`txqlen`, `link_type`, `broadcast`, and every `addr_info` entry's `family`,
-`local`, `prefixlen`, `scope`, `label` — is kept and compared exactly.
+`txqlen`, `link_type`, `broadcast`, and every remaining `addr_info` entry's
+`family`, `local`, `prefixlen`, `scope`, `protocol`, `label` — is kept and
+compared exactly.
 
 ## 8. Host-state hygiene
 
@@ -254,6 +287,26 @@ Not normalization, but part of what makes a recording reproducible.
   `host_dirs`; the harness creates them before the run and removes the ones it
   created, exactly as it does for `shared/`. Without this, `syn-volume`
   recorded a `CRITICAL (FileExistsError)` and deployed nothing.
+- **Settling.** `lstart` returning does **not** mean the lab has stopped
+  moving: Kathara dispatches the startup commands with `detach=True`
+  (`DockerMachine.py:555`), and even once they have run, a kernel state
+  machine they started can still be converging. `settle_seconds` in the
+  manifest delays *all* observation — `docker inspect` and every in-container
+  probe — so that a scenario which needs it records the converged state rather
+  than a random point on the way there. It is opt-in per scenario and defaults
+  to 0; a global delay would change what every existing golden records, for the
+  benefit of the one or two that need it.
+
+  The case that motivated it: `10-one-bridge`'s `b1.startup` creates a Linux
+  bridge and enslaves `eth0`..`eth3` to it. A bridge has no carrier until a
+  port does, and the propagation is asynchronous, so `mainbridge` passes
+  through `DOWN <NO-CARRIER,…>` on its way to `UP <…>`. The window is short
+  enough that a single probe pass straddled it: `ip -br link` recorded
+  DOWN/NO-CARRIER and `ip -j addr`, a moment later, recorded `operstate: UP`.
+  Note that this is *not* a normalization — no assertion is deleted. The
+  bridge's converged link state stays byte-exact, and a port that failed to
+  enslave, or a bridge that never came up, still fails the golden.
+
 - **`teardown.json` asserts emptiness.** A non-empty `kathara_containers` or
   `kathara_networks` after `lclean` is a scenario failure, not a diff.
 

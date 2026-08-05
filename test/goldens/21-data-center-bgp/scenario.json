@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "name": "21-data-center-bgp",
+  "kind": "deploy",
+  "status": "golden",
+  "note": "The LARGE stress lab: 18 devices over 24 collision domains, unquoted ipv6=True, per-device sysctl net.ipv4.fib_multipath_hash_policy.",
+  "lab_dir": "<LABDIR>",
+  "flags": [],
+  "probes": [
+    "link",
+    "addr",
+    "hosts",
+    "hostname",
+    "fstree"
+  ],
+  "fs_roots": [
+    "/hostlab",
+    "/shared"
+  ],
+  "lab_hash_source": "path",
+  "lab_hash_derived_ok": true,
+  "user_slug_derived_ok": true,
+  "container_names_ok": true,
+  "network_names_ok": true,
+  "explicit_mac_count": 0,
+  "expect_explicit_mac": false
+}

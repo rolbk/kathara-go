@@ -1,0 +1,152 @@
+{
+  "device": "b1",
+  "ip_br_link": [
+    "eth0 UP 00:00:00:00:00:b1 <BROADCAST,MULTICAST,UP,LOWER_UP>",
+    "eth1 UP 00:00:00:00:00:b2 <BROADCAST,MULTICAST,UP,LOWER_UP>",
+    "eth2 UP 00:00:00:00:00:b3 <BROADCAST,MULTICAST,UP,LOWER_UP>",
+    "eth3 UP 00:00:00:00:00:b4 <BROADCAST,MULTICAST,UP,LOWER_UP>",
+    "lo UNKNOWN 00:00:00:00:00:00 <LOOPBACK,UP,LOWER_UP>",
+    "mainbridge UP 00:00:00:00:00:b1 <BROADCAST,MULTICAST,UP,LOWER_UP>"
+  ],
+  "ip_addr": [
+    {
+      "addr_info": [],
+      "address": "00:00:00:00:00:b1",
+      "broadcast": "ff:ff:ff:ff:ff:ff",
+      "flags": [
+        "BROADCAST",
+        "MULTICAST",
+        "UP",
+        "LOWER_UP"
+      ],
+      "group": "default",
+      "ifname": "eth0",
+      "link_type": "ether",
+      "master": "mainbridge",
+      "mtu": 1500,
+      "operstate": "UP",
+      "qdisc": "fq_codel",
+      "txqlen": 1000
+    },
+    {
+      "addr_info": [],
+      "address": "00:00:00:00:00:b2",
+      "broadcast": "ff:ff:ff:ff:ff:ff",
+      "flags": [
+        "BROADCAST",
+        "MULTICAST",
+        "UP",
+        "LOWER_UP"
+      ],
+      "group": "default",
+      "ifname": "eth1",
+      "link_type": "ether",
+      "master": "mainbridge",
+      "mtu": 1500,
+      "operstate": "UP",
+      "qdisc": "fq_codel",
+      "txqlen": 1000
+    },
+    {
+      "addr_info": [],
+      "address": "00:00:00:00:00:b3",
+      "broadcast": "ff:ff:ff:ff:ff:ff",
+      "flags": [
+        "BROADCAST",
+        "MULTICAST",
+        "UP",
+        "LOWER_UP"
+      ],
+      "group": "default",
+      "ifname": "eth2",
+      "link_type": "ether",
+      "master": "mainbridge",
+      "mtu": 1500,
+      "operstate": "UP",
+      "qdisc": "fq_codel",
+      "txqlen": 1000
+    },
+    {
+      "addr_info": [],
+      "address": "00:00:00:00:00:b4",
+      "broadcast": "ff:ff:ff:ff:ff:ff",
+      "flags": [
+        "BROADCAST",
+        "MULTICAST",
+        "UP",
+        "LOWER_UP"
+      ],
+      "group": "default",
+      "ifname": "eth3",
+      "link_type": "ether",
+      "master": "mainbridge",
+      "mtu": 1500,
+      "operstate": "UP",
+      "qdisc": "fq_codel",
+      "txqlen": 1000
+    },
+    {
+      "addr_info": [
+        {
+          "family": "inet",
+          "label": "lo",
+          "local": "127.0.0.1",
+          "prefixlen": 8,
+          "scope": "host"
+        }
+      ],
+      "address": "00:00:00:00:00:00",
+      "broadcast": "00:00:00:00:00:00",
+      "flags": [
+        "LOOPBACK",
+        "UP",
+        "LOWER_UP"
+      ],
+      "group": "default",
+      "ifname": "lo",
+      "link_type": "loopback",
+      "mtu": 65536,
+      "operstate": "UNKNOWN",
+      "qdisc": "noqueue",
+      "txqlen": 1000
+    },
+    {
+      "addr_info": [],
+      "address": "00:00:00:00:00:b1",
+      "broadcast": "ff:ff:ff:ff:ff:ff",
+      "flags": [
+        "BROADCAST",
+        "MULTICAST",
+        "UP",
+        "LOWER_UP"
+      ],
+      "group": "default",
+      "ifname": "mainbridge",
+      "link_type": "ether",
+      "mtu": 1500,
+      "operstate": "UP",
+      "qdisc": "noqueue",
+      "txqlen": 1000
+    }
+  ],
+  "etc_hosts": [
+    "127.0.0.1 localhost",
+    "::1 localhost",
+    "127.0.1.1 b1"
+  ],
+  "hostname": "b1",
+  "fs_trees": {
+    "/hostlab": [
+      {
+        "kind": "d",
+        "path": "./b1"
+      },
+      {
+        "kind": "f",
+        "path": "./b1.startup",
+        "sha256": "b73897c8cf2516dfc8ef9c1d66c9c306cd754c6374231eeedba9335212d6ea78"
+      }
+    ],
+    "/shared": []
+  }
+}

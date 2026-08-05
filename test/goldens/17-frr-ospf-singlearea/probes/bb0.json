@@ -1,0 +1,130 @@
+{
+  "device": "bb0",
+  "ip_br_link": [
+    "eth0 UP <MAC> <BROADCAST,MULTICAST,UP,LOWER_UP>",
+    "eth1 UP <MAC> <BROADCAST,MULTICAST,UP,LOWER_UP>",
+    "lo UNKNOWN 00:00:00:00:00:00 <LOOPBACK,UP,LOWER_UP>"
+  ],
+  "ip_addr": [
+    {
+      "addr_info": [
+        {
+          "family": "inet",
+          "label": "eth0",
+          "local": "10.0.0.3",
+          "prefixlen": 24,
+          "scope": "global"
+        }
+      ],
+      "address": "<MAC>",
+      "broadcast": "ff:ff:ff:ff:ff:ff",
+      "flags": [
+        "BROADCAST",
+        "MULTICAST",
+        "UP",
+        "LOWER_UP"
+      ],
+      "group": "default",
+      "ifname": "eth0",
+      "link_type": "ether",
+      "mtu": 1500,
+      "operstate": "UP",
+      "qdisc": "fq_codel",
+      "txqlen": 1000
+    },
+    {
+      "addr_info": [
+        {
+          "family": "inet",
+          "label": "eth1",
+          "local": "10.0.2.3",
+          "prefixlen": 24,
+          "scope": "global"
+        }
+      ],
+      "address": "<MAC>",
+      "broadcast": "ff:ff:ff:ff:ff:ff",
+      "flags": [
+        "BROADCAST",
+        "MULTICAST",
+        "UP",
+        "LOWER_UP"
+      ],
+      "group": "default",
+      "ifname": "eth1",
+      "link_type": "ether",
+      "mtu": 1500,
+      "operstate": "UP",
+      "qdisc": "fq_codel",
+      "txqlen": 1000
+    },
+    {
+      "addr_info": [
+        {
+          "family": "inet",
+          "label": "lo",
+          "local": "127.0.0.1",
+          "prefixlen": 8,
+          "scope": "host"
+        }
+      ],
+      "address": "00:00:00:00:00:00",
+      "broadcast": "00:00:00:00:00:00",
+      "flags": [
+        "LOOPBACK",
+        "UP",
+        "LOWER_UP"
+      ],
+      "group": "default",
+      "ifname": "lo",
+      "link_type": "loopback",
+      "mtu": 65536,
+      "operstate": "UNKNOWN",
+      "qdisc": "noqueue",
+      "txqlen": 1000
+    }
+  ],
+  "etc_hosts": [
+    "127.0.0.1 localhost",
+    "::1 localhost",
+    "127.0.1.1 bb0"
+  ],
+  "hostname": "bb0",
+  "fs_trees": {
+    "/hostlab": [
+      {
+        "kind": "d",
+        "path": "./bb0"
+      },
+      {
+        "kind": "f",
+        "path": "./bb0.startup",
+        "sha256": "dc9bd77f567b031cd8977424a2e8a9dbefd3f2c93002e3612f51764948a2d286"
+      },
+      {
+        "kind": "d",
+        "path": "./bb0/etc"
+      },
+      {
+        "kind": "d",
+        "path": "./bb0/etc/frr"
+      },
+      {
+        "kind": "f",
+        "path": "./bb0/etc/frr/daemons",
+        "sha256": "5ffed28170990575becdb24162ff11688c5eaf66e451d396ef1c3588fdbfa275"
+      },
+      {
+        "kind": "f",
+        "path": "./bb0/etc/frr/frr.conf",
+        "sha256": "3557fa8c696910440af83bffacbcf2b4862b44fca2a1c6ebaa0cc2cfa1bbe6b1"
+      },
+      {
+        "kind": "f",
+        "path": "./bb0/etc/frr/vtysh.conf",
+        "sha256": "dc8aa539965a4cebabbe1a75a53b48ae8471bafe77ce59af22d5352d28da4df6"
+      }
+    ],
+    "/shared": []
+  }
+}

@@ -1,0 +1,42 @@
+[
+  {
+    "step": "lstart",
+    "argv": [
+      "<KATHARA>",
+      "lstart",
+      "--noterminals",
+      "-d",
+      "<LABDIR>"
+    ],
+    "exit_code": 0,
+    "stdout": [
+      "┌──────────────────────────────────────────────────────────────────────────────┐",
+      "│                          Starting Network Scenario                           │",
+      "└──────────────────────────────────────────────────────────────────────────────┘",
+      "┌──────────────────────────────────────────────────────────────────────────────┐",
+      "│ Description: Network scenario with a load-balancer and the RIP protocol      │",
+      "│ Version: 3.0                                                                 │",
+      "│ Author(s): L. Ariemma, T. Caiazzi, G. Di Battista, M. Scazzariello           │",
+      "│ Email: contact@netkit.org                                                    │",
+      "│ Website: http://www.netkit.org/                                              │",
+      "└──────────────────────────────────────────────────────────────────────────────┘"
+    ],
+    "stderr": []
+  },
+  {
+    "step": "lclean",
+    "argv": [
+      "<KATHARA>",
+      "lclean",
+      "-d",
+      "<LABDIR>"
+    ],
+    "exit_code": 0,
+    "stdout": [
+      "┌──────────────────────────────────────────────────────────────────────────────┐",
+      "│                          Stopping Network Scenario                           │",
+      "└──────────────────────────────────────────────────────────────────────────────┘"
+    ],
+    "stderr": []
+  }
+]

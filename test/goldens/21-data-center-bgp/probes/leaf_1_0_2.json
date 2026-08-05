@@ -1,0 +1,200 @@
+{
+  "device": "leaf_1_0_2",
+  "ip_br_link": [
+    "eth0 UP <MAC> <BROADCAST,MULTICAST,UP,LOWER_UP>",
+    "eth1 UP <MAC> <BROADCAST,MULTICAST,UP,LOWER_UP>",
+    "eth2 UP <MAC> <BROADCAST,MULTICAST,UP,LOWER_UP>",
+    "eth3 UP <MAC> <BROADCAST,MULTICAST,UP,LOWER_UP>",
+    "lo UNKNOWN 00:00:00:00:00:00 <LOOPBACK,UP,LOWER_UP>"
+  ],
+  "ip_addr": [
+    {
+      "addr_info": [
+        {
+          "family": "inet6",
+          "local": "<LINKLOCAL6>",
+          "prefixlen": 64,
+          "protocol": "kernel_ll",
+          "scope": "link"
+        }
+      ],
+      "address": "<MAC>",
+      "broadcast": "ff:ff:ff:ff:ff:ff",
+      "flags": [
+        "BROADCAST",
+        "MULTICAST",
+        "UP",
+        "LOWER_UP"
+      ],
+      "group": "default",
+      "ifname": "eth0",
+      "link_type": "ether",
+      "mtu": 1500,
+      "operstate": "UP",
+      "qdisc": "fq_codel",
+      "txqlen": 1000
+    },
+    {
+      "addr_info": [
+        {
+          "family": "inet6",
+          "local": "<LINKLOCAL6>",
+          "prefixlen": 64,
+          "protocol": "kernel_ll",
+          "scope": "link"
+        }
+      ],
+      "address": "<MAC>",
+      "broadcast": "ff:ff:ff:ff:ff:ff",
+      "flags": [
+        "BROADCAST",
+        "MULTICAST",
+        "UP",
+        "LOWER_UP"
+      ],
+      "group": "default",
+      "ifname": "eth1",
+      "link_type": "ether",
+      "mtu": 1500,
+      "operstate": "UP",
+      "qdisc": "fq_codel",
+      "txqlen": 1000
+    },
+    {
+      "addr_info": [
+        {
+          "family": "inet",
+          "label": "eth2",
+          "local": "201.2.1.1",
+          "prefixlen": 24,
+          "scope": "global"
+        },
+        {
+          "family": "inet6",
+          "local": "<LINKLOCAL6>",
+          "prefixlen": 64,
+          "protocol": "kernel_ll",
+          "scope": "link"
+        }
+      ],
+      "address": "<MAC>",
+      "broadcast": "ff:ff:ff:ff:ff:ff",
+      "flags": [
+        "BROADCAST",
+        "MULTICAST",
+        "UP",
+        "LOWER_UP"
+      ],
+      "group": "default",
+      "ifname": "eth2",
+      "link_type": "ether",
+      "mtu": 1500,
+      "operstate": "UP",
+      "qdisc": "fq_codel",
+      "txqlen": 1000
+    },
+    {
+      "addr_info": [
+        {
+          "family": "inet",
+          "label": "eth3",
+          "local": "201.2.2.1",
+          "prefixlen": 24,
+          "scope": "global"
+        },
+        {
+          "family": "inet6",
+          "local": "<LINKLOCAL6>",
+          "prefixlen": 64,
+          "protocol": "kernel_ll",
+          "scope": "link"
+        }
+      ],
+      "address": "<MAC>",
+      "broadcast": "ff:ff:ff:ff:ff:ff",
+      "flags": [
+        "BROADCAST",
+        "MULTICAST",
+        "UP",
+        "LOWER_UP"
+      ],
+      "group": "default",
+      "ifname": "eth3",
+      "link_type": "ether",
+      "mtu": 1500,
+      "operstate": "UP",
+      "qdisc": "fq_codel",
+      "txqlen": 1000
+    },
+    {
+      "addr_info": [
+        {
+          "family": "inet",
+          "label": "lo",
+          "local": "127.0.0.1",
+          "prefixlen": 8,
+          "scope": "host"
+        },
+        {
+          "family": "inet6",
+          "local": "::1",
+          "prefixlen": 128,
+          "protocol": "kernel_lo",
+          "scope": "host"
+        }
+      ],
+      "address": "00:00:00:00:00:00",
+      "broadcast": "00:00:00:00:00:00",
+      "flags": [
+        "LOOPBACK",
+        "UP",
+        "LOWER_UP"
+      ],
+      "group": "default",
+      "ifname": "lo",
+      "link_type": "loopback",
+      "mtu": 65536,
+      "operstate": "UNKNOWN",
+      "qdisc": "noqueue",
+      "txqlen": 1000
+    }
+  ],
+  "etc_hosts": [
+    "127.0.0.1 localhost",
+    "::1 localhost",
+    "127.0.1.1 leaf_1_0_2"
+  ],
+  "hostname": "leaf_1_0_2",
+  "fs_trees": {
+    "/hostlab": [
+      {
+        "kind": "d",
+        "path": "./leaf_1_0_2"
+      },
+      {
+        "kind": "f",
+        "path": "./leaf_1_0_2.startup",
+        "sha256": "59163908fd87b25be59eba0ce117d7dc26362f7bd9d0fddef43a77a9884114e9"
+      },
+      {
+        "kind": "d",
+        "path": "./leaf_1_0_2/etc"
+      },
+      {
+        "kind": "d",
+        "path": "./leaf_1_0_2/etc/frr"
+      },
+      {
+        "kind": "f",
+        "path": "./leaf_1_0_2/etc/frr/bgpd.conf",
+        "sha256": "565e0a8f0d062c87079b708bf4abd258750ea62e6bb7204b3d398d975478340a"
+      },
+      {
+        "kind": "f",
+        "path": "./leaf_1_0_2/etc/frr/daemons",
+        "sha256": "5657c4ce63f553664b2e687783f644094382916a996edd08fb31deebc2c88d4a"
+      }
+    ],
+    "/shared": []
+  }
+}

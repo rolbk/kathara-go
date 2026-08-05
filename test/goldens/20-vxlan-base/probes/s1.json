@@ -1,0 +1,97 @@
+{
+  "device": "s1",
+  "ip_br_link": [
+    "eth0 UP <MAC> <BROADCAST,MULTICAST,UP,LOWER_UP>",
+    "lo UNKNOWN 00:00:00:00:00:00 <LOOPBACK,UP,LOWER_UP>"
+  ],
+  "ip_addr": [
+    {
+      "addr_info": [
+        {
+          "family": "inet",
+          "label": "eth0",
+          "local": "10.0.0.1",
+          "prefixlen": 24,
+          "scope": "global"
+        }
+      ],
+      "address": "<MAC>",
+      "broadcast": "ff:ff:ff:ff:ff:ff",
+      "flags": [
+        "BROADCAST",
+        "MULTICAST",
+        "UP",
+        "LOWER_UP"
+      ],
+      "group": "default",
+      "ifname": "eth0",
+      "link_type": "ether",
+      "mtu": 1450,
+      "operstate": "UP",
+      "qdisc": "fq_codel",
+      "txqlen": 1000
+    },
+    {
+      "addr_info": [
+        {
+          "family": "inet",
+          "label": "lo",
+          "local": "127.0.0.1",
+          "prefixlen": 8,
+          "scope": "host"
+        }
+      ],
+      "address": "00:00:00:00:00:00",
+      "broadcast": "00:00:00:00:00:00",
+      "flags": [
+        "LOOPBACK",
+        "UP",
+        "LOWER_UP"
+      ],
+      "group": "default",
+      "ifname": "lo",
+      "link_type": "loopback",
+      "mtu": 65536,
+      "operstate": "UNKNOWN",
+      "qdisc": "noqueue",
+      "txqlen": 1000
+    }
+  ],
+  "etc_hosts": [
+    "127.0.0.1 localhost",
+    "::1 localhost",
+    "127.0.1.1 s1"
+  ],
+  "hostname": "s1",
+  "fs_trees": {
+    "/hostlab": [
+      {
+        "kind": "d",
+        "path": "./s1"
+      },
+      {
+        "kind": "f",
+        "path": "./s1.startup",
+        "sha256": "f76b1dc5ec56795bee93fa8221510fd05c5f3356e01e2b611cb0aca5e3807c53"
+      },
+      {
+        "kind": "d",
+        "path": "./s1/var"
+      },
+      {
+        "kind": "d",
+        "path": "./s1/var/www"
+      },
+      {
+        "kind": "d",
+        "path": "./s1/var/www/html"
+      },
+      {
+        "kind": "f",
+        "path": "./s1/var/www/html/index.html",
+        "sha256": "0fe6b72354cc928b16bf08fe8665f0fb36a08573b7a1e9a6f32cfa7181061971"
+      }
+    ],
+    "/shared": []
+  }
+}

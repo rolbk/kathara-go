@@ -152,12 +152,13 @@ func (p *Prober) Probe(ctx context.Context, device, containerID string, sc *Scen
 }
 
 // normalizeBrLink scrubs the MAC column of `ip -br link` unless the address was
-// pinned by the lab, then sorts the lines. Interface order in the kernel dump
-// follows ifindex, which is host-global.
+// pinned by the lab, tokenizes the veth peer-ifindex suffix, then sorts the
+// lines. Interface order in the kernel dump follows ifindex, which is
+// host-global, and so is the peer index rendered as `eth1@if451`.
 func (p *Prober) normalizeBrLink(s string) []string {
 	lines := p.norm.FileLines(s)
 	for i, l := range lines {
-		lines[i] = strings.Join(strings.Fields(l), " ")
+		lines[i] = p.norm.ScrubVethPeerIfIndex(strings.Join(strings.Fields(l), " "))
 	}
 	sort.Strings(lines)
 	return lines
