@@ -1,0 +1,1 @@
+echo shared-ran > /shared-startup-marker

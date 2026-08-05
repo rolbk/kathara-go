@@ -1,0 +1,36 @@
+[
+  {
+    "step": "lstart",
+    "argv": [
+      "<KATHARA>",
+      "lstart",
+      "--noterminals",
+      "-d",
+      "<LABDIR>"
+    ],
+    "exit_code": 1,
+    "stdout": [
+      "┌──────────────────────────────────────────────────────────────────────────────┐",
+      "│                          Starting Network Scenario                           │",
+      "└──────────────────────────────────────────────────────────────────────────────┘",
+      "CRITICAL (ValueError) In lab.conf - Line 3: `_test` is a reserved name, you can not use it for a device."
+    ],
+    "stderr": []
+  },
+  {
+    "step": "lclean",
+    "argv": [
+      "<KATHARA>",
+      "lclean",
+      "-d",
+      "<LABDIR>"
+    ],
+    "exit_code": 0,
+    "stdout": [
+      "┌──────────────────────────────────────────────────────────────────────────────┐",
+      "│                          Stopping Network Scenario                           │",
+      "└──────────────────────────────────────────────────────────────────────────────┘"
+    ],
+    "stderr": []
+  }
+]

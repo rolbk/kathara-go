@@ -1,6 +1,9 @@
 /dist/
 /bin/
 *.test
+# `go build ./...` drops main-package binaries in the repository root.
+/kathara
+/goldenharness
 /python/dist/
 /python/build/
 __pycache__/

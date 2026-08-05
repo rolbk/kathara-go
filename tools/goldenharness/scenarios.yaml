@@ -1,0 +1,315 @@
+# Layer A golden scenario manifest (PORT_SPEC.md 9).
+#
+# Two groups:
+#   * 24 real network scenarios from KatharaFramework/Kathara-Labs, the golden
+#     set selected in analysis/GOLDEN_CANDIDATES.md. Between them they cover
+#     every lab.conf option and value-syntax variant the corpus actually uses
+#     (image, port, bridged, ipv6, sysctl, num_terms=0) and every image except
+#     the redundant kathara/frr:latest tag.
+#   * synthetic scenarios authored for this harness under
+#     test/scenarios/synthetic/, one per feature the corpus never exercises,
+#     plus the error-path fixtures.
+#
+# `dir` forms:  labs:<rel> -> <labs_root>/<rel>;  <rel> -> <repo_root>/<rel>;
+#               /abs -> verbatim.
+# `kind`:       deploy (lstart, probe, lclean) | dry (lstart --print) |
+#               error (command expected to fail; no probes).
+# `status`:     golden (verify fails on any diff) |
+#               reference (recorded for documentation; drift is reported, not fatal).
+#
+# The `route` probe is only enabled where the routing table is fully static.
+# Labs running FRR/Quagga/BGP/OSPF converge nondeterministically, so their
+# goldens cover the static facets only (see GOLDEN_CANDIDATES.md).
+
+version: 1
+
+defaults:
+  labs_root: /root/kathara/Kathara-Labs
+  timeout_seconds: 240
+  probes: [link, addr, hosts, hostname, fstree]
+  fs_roots: [/hostlab, /shared]
+
+scenarios:
+  # ---------------------------------------------------------------- golden set
+  - name: 01-simple-configuration
+    dir: labs:exercises/01-simple-configuration/lab
+    note: Smallest possible deploy; default image; one device with two interfaces.
+    probes: [link, addr, route, hosts, hostname, fstree]
+
+  - name: 02-add-one-router
+    dir: labs:exercises/02-add-one-router/lab
+    note: SMALL default-image multi-device lab with fully static configuration.
+    probes: [link, addr, route, hosts, hostname, fstree]
+
+  - name: 03-exam-chair-02
+    dir: labs:exam-labs/2020-11-05-chair/chair-02
+    note: Default image with zero LAB_ metadata (metadata-absent path).
+    probes: [link, addr, route, hosts, hostname, fstree]
+
+  - name: 04-exam-cloth-cap
+    dir: labs:exam-labs/2013-12-20-cloth-cap/lab
+    note: Default image, all five LAB_ metadata keys, 14 collision domains for 8 devices.
+    probes: [link, addr, route, hosts, hostname, fstree]
+    timeout_seconds: 360
+
+  - name: 05-two-computers
+    dir: labs:main-labs/basic-topics/two-computers/kathara-lab_two-computers
+    note: >-
+      Explicit MAC syntax; bridged, port and num_terms=0; the only golden lab
+      with no .startup file at all; third-party wireshark image.
+    expect_explicit_mac: true
+    probes: [link, addr, route, hosts, hostname, fstree]
+
+  - name: 06-basic-ipv6
+    dir: labs:main-labs/basic-topics/basic-ipv6/kathara-lab_basic-ipv6
+    note: >-
+      Densest option mix in the corpus: sysctl, both ipv6="True" and
+      ipv6="False" quoted variants, explicit MAC, bridged, port, num_terms.
+    expect_explicit_mac: true
+    probes: [link, addr, route, hosts, hostname, fstree]
+
+  - name: 07-static-routing
+    dir: labs:main-labs/basic-topics/static-routing/kathara-lab_static-routing
+    note: The one lab whose full routing table is a safe byte-exact golden.
+    probes: [link, addr, route, hosts, hostname, fstree]
+
+  - name: 08-arp
+    dir: labs:main-labs/basic-topics/arp/kathara-lab_arp
+    note: Plain kathara/core lab with per-device configuration folders.
+    probes: [link, addr, route, hosts, hostname, fstree]
+
+  - name: 09-subnetting-4-lan
+    dir: labs:main-labs/basic-topics/subnetting-ipv4/kathara-lab_subnetting-ipv4/kathara-lab_subnetting-4-lan
+    note: Explicit MAC plus ipv6="false" on every device; five collision domains.
+    expect_explicit_mac: true
+    probes: [link, addr, route, hosts, hostname, fstree]
+
+  - name: 10-one-bridge
+    dir: labs:main-labs/switching/one-bridge/kathara-lab_one-bridge
+    note: Explicit MAC and ipv6; one .startup file for five devices (partial-startup path).
+    expect_explicit_mac: true
+    probes: [link, addr, route, hosts, hostname, fstree]
+
+  - name: 11-capture-packets
+    dir: labs:tutorials/capture-packets/lab
+    note: The only lab with the port="3000:3000/tcp" protocol suffix; default plus third-party image.
+    probes: [link, addr, route, hosts, hostname, fstree]
+
+  - name: 12-traffic-control-fixed-delay
+    dir: labs:tutorials/traffic-control/fixed-delay/lab
+    note: Explicit kathara/base image reference; tc/netem startup scripts.
+    probes: [link, addr, route, hosts, hostname, fstree]
+
+  - name: 13-web-server
+    dir: labs:main-labs/application-level/web-server/kathara-lab_web-server
+    note: Smallest kathara/apache lab.
+    probes: [link, addr, route, hosts, hostname, fstree]
+
+  - name: 14-dns-load-balancer-with-rip
+    dir: labs:main-labs/labs-integrating-several-technologies/dns-load-balancer-with-rip/kathara-lab_dns-load-balancer-with-rip
+    note: >-
+      Four images in one lab (apache, bind:9.11.5, core, quagga). RIP converges
+      nondeterministically, so the route probe is off.
+    timeout_seconds: 360
+
+  - name: 15-frr-bgp-announcement
+    dir: labs:main-labs/interdomain-routing/frr/bgp-announcement/kathara-lab_bgp-announcement
+    note: Smallest kathara/frr:9 lab; static facets only (BGP state is nondeterministic).
+
+  - name: 16-frr-introduction
+    dir: labs:main-labs/intradomain-routing/frr/frrouting-introduction/kathara-lab_frr
+    note: FRR introduction lab; exercises the vtysh configuration mount.
+
+  - name: 17-frr-ospf-singlearea
+    dir: labs:main-labs/intradomain-routing/frr/ospf/kathara-lab_ospf/kathara-lab_ospf_frr-singlearea
+    note: Multi-router OSPF topology shape; static facets only.
+
+  - name: 18-quagga-bgp-announcement
+    dir: labs:main-labs/interdomain-routing/quagga/bgp-announcement/kathara-lab_bgp-announcement
+    note: Smallest kathara/quagga lab; static facets only.
+
+  - name: 19-quagga-introduction
+    dir: labs:main-labs/intradomain-routing/quagga/quagga-introduction/kathara-lab_quagga
+    note: Quagga introduction lab; mirrors 16 for the second routing image.
+
+  - name: 20-vxlan-base
+    dir: labs:main-labs/data-center-routing/data-center-vxlan/kathara-lab_vxlan-base
+    note: frr plus core mix with in-device VXLAN interfaces.
+
+  - name: 21-data-center-bgp
+    dir: labs:main-labs/data-center-routing/data-center-bgp/kathara-lab_data-center-bgp
+    note: >-
+      The LARGE stress lab: 18 devices over 24 collision domains, unquoted
+      ipv6=True, per-device sysctl net.ipv4.fib_multipath_hash_policy.
+    timeout_seconds: 600
+
+  - name: 22-p4-reflector
+    dir: labs:main-labs/p4/01-reflector
+    note: >-
+      Smallest kathara/bmv2 lab; several sysctl entries per device
+      (repeat-option append semantics). p4c compiles locally at boot.
+    timeout_seconds: 480
+
+  - name: 23-pox-controller
+    dir: labs:main-labs/sdn-openflow/pox/01-pox-controller
+    note: kathara/pox plus kathara/sdn images; explicit MAC; zero LAB_ metadata.
+    expect_explicit_mac: true
+    probes: [link, addr, route, hosts, hostname, fstree]
+
+  - name: 24-pox-arp-handler
+    dir: labs:main-labs/sdn-openflow/pox/08-pox-arp-handler
+    note: The bridged="True" quoted-boolean variant.
+    probes: [link, addr, route, hosts, hostname, fstree]
+
+  # --------------------------------------------------- synthetic option coverage
+  - name: syn-mem
+    dir: test/scenarios/synthetic/syn-mem
+    note: Device option `mem`, used by zero labs in the corpus.
+    probes: [link, addr, route, hosts, hostname, fstree, startup_log]
+
+  - name: syn-cpus
+    dir: test/scenarios/synthetic/syn-cpus
+    note: Device option `cpus`, used by zero labs in the corpus.
+    probes: [link, addr, route, hosts, hostname, fstree, startup_log]
+
+  - name: syn-exec
+    dir: test/scenarios/synthetic/syn-exec
+    note: >-
+      Device option `exec` with two entries: append (not overwrite) semantics
+      and execution order after the .startup script, both visible in
+      /var/log/startup.log.
+    probes: [link, addr, route, hosts, hostname, fstree, startup_log, files]
+    device_files: [/exec-marker-startup, /exec-marker-a, /exec-marker-b]
+
+  - name: syn-env
+    dir: test/scenarios/synthetic/syn-env
+    note: Device option `env`, including last-wins overwrite of a repeated key.
+    probes: [link, addr, route, hosts, hostname, fstree, startup_log]
+
+  - name: syn-ulimit
+    dir: test/scenarios/synthetic/syn-ulimit
+    note: Device option `ulimit`, soft:hard form and soft-only form (hard = soft).
+    probes: [link, addr, route, hosts, hostname, fstree, startup_log]
+
+  - name: syn-shell
+    dir: test/scenarios/synthetic/syn-shell
+    note: Device option `shell`; the label drives startup exec, connect and exec.
+    probes: [link, addr, route, hosts, hostname, fstree, startup_log]
+
+  - name: syn-num-terms
+    dir: test/scenarios/synthetic/syn-num-terms
+    note: >-
+      num_terms=2. The corpus only ever sets num_terms=0. Recorded under
+      --noterminals, so the golden pins the headless no-op.
+    probes: [link, addr, route, hosts, hostname, fstree, startup_log]
+
+  - name: syn-port-udp
+    dir: test/scenarios/synthetic/syn-port-udp
+    note: udp and sctp port protocols plus the bare form that defaults to tcp.
+    probes: [link, addr, route, hosts, hostname, fstree, startup_log]
+
+  - name: syn-privileged
+    dir: test/scenarios/synthetic/syn-privileged
+    note: Device option `privileged`; Kathara passes cap_add=None when set.
+    probes: [link, addr, route, hosts, hostname, fstree, startup_log]
+
+  - name: syn-volume
+    dir: test/scenarios/synthetic/syn-volume
+    note: >-
+      Device option `volume`, 3-part form with mode and 2-part form defaulting
+      to ro. Kathara refuses to start when a volume source is missing
+      (utils.check_directory_permissions), so the harness owns the two host
+      directories: without host_dirs the recording would flip between the
+      mount path and the FileExistsError path depending on host state.
+    probes: [link, addr, route, hosts, hostname, fstree, startup_log]
+    fs_roots: [/hostlab, /shared, /guest-rw, /guest-ro]
+    host_dirs: [/tmp/kathara-golden-vol-rw, /tmp/kathara-golden-vol-ro]
+
+  - name: syn-lab-meta
+    dir: test/scenarios/synthetic/syn-lab-meta
+    note: >-
+      LAB_NAME plus every other LAB_ metadata key. LAB_NAME is used by zero
+      corpus labs and switches the lab hash from path-derived to name-derived,
+      which changes every container and network name.
+    probes: [link, addr, route, hosts, hostname, fstree, startup_log]
+
+  - name: syn-shared-startup
+    dir: test/scenarios/synthetic/syn-shared-startup
+    note: shared.startup, absent from the whole corpus; runs in every device.
+    probes: [link, addr, route, hosts, hostname, fstree, startup_log, files]
+    device_files: [/shared-startup-marker, /device-startup-marker]
+
+  - name: syn-lab-dep
+    dir: test/scenarios/synthetic/syn-lab-dep
+    note: >-
+      lab.dep, absent from the whole corpus. Forces sequential boot in the
+      exact reverse of lab.conf order; the order is read back from a file each
+      device appends to on the rw /shared mount.
+    probes: [link, addr, route, hosts, hostname, fstree, startup_log]
+    reset_files: [shared/boot-order.txt]
+    host_files: [shared/boot-order.txt]
+
+  - name: syn-lab-dep-cycle
+    dir: test/scenarios/synthetic/syn-lab-dep-cycle
+    kind: error
+    note: lab.dep dependency loop -> MachineDependencyError.
+
+  - name: syn-shutdown
+    dir: test/scenarios/synthetic/syn-shutdown
+    note: >-
+      <device>.shutdown and shared.shutdown, absent from the whole corpus.
+      Both run during lclean; the side effect is read back from the host.
+    probes: [link, addr, route, hosts, hostname, fstree, startup_log]
+    reset_files: [shared/lifecycle.txt]
+    host_files: [shared/lifecycle.txt]
+
+  - name: syn-test-folder
+    dir: test/scenarios/synthetic/syn-test-folder
+    note: >-
+      A reserved _test/ folder in the lab directory must not become a device
+      and must not be packed into /hostlab, while the pc1/ device folder must.
+    probes: [link, addr, route, hosts, hostname, fstree, startup_log, files]
+    device_files: [/etc/golden-marker]
+
+  - name: syn-unknown-opt
+    dir: test/scenarios/synthetic/syn-unknown-opt
+    note: >-
+      Pins the current silent pass-through of an unknown device option so the
+      Go port cannot diverge by accident.
+    probes: [link, addr, route, hosts, hostname, fstree, startup_log]
+
+  # ------------------------------------------------------------- error fixtures
+  - name: err-lab-ext
+    dir: test/scenarios/synthetic/err-lab-ext
+    kind: dry
+    status: reference
+    note: >-
+      lab.ext fixture. Recorded in dry mode so lab.ext is parsed but no host
+      bridge or VLAN interface is created. ExternalLink is DEFERRED post-1.0
+      (PORT_SPEC 0.3): the Go build is expected to fail here with
+      FeatureNotAvailable, so drift against this snapshot is reported, not fatal.
+
+  - name: err-nonexistent-dir
+    dir: test/scenarios/synthetic/this-directory-does-not-exist
+    kind: error
+    note: -d pointing at a directory that does not exist.
+
+  - name: err-malformed-labconf
+    dir: test/scenarios/synthetic/err-malformed-labconf
+    kind: error
+    note: lab.conf line matching neither the device syntax nor a LAB_ metadata key.
+
+  - name: err-empty-labconf
+    dir: test/scenarios/synthetic/err-empty-labconf
+    kind: error
+    note: Zero-byte lab.conf -> IOError from LabParser.
+
+  - name: err-reserved-name
+    dir: test/scenarios/synthetic/err-reserved-name
+    kind: error
+    note: "`_test` is in utils.RESERVED_MACHINE_NAMES and cannot name a device."
+
+  - name: err-nonsequential-iface
+    dir: test/scenarios/synthetic/err-nonsequential-iface
+    kind: error
+    note: Interface numbers must be sequential from 0 (Lab.check_integrity).

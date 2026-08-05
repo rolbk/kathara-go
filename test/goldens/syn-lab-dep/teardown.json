@@ -1,0 +1,17 @@
+{
+  "kathara_containers": [],
+  "kathara_networks": [],
+  "clean": true,
+  "host_files": [
+    {
+      "path": "shared/boot-order.txt",
+      "exists": true,
+      "sha256": "a21583fa796e23f5e25e67bdbd32e08038c4652c8a789f34da25c0399b0e382f",
+      "content": [
+        "pc3",
+        "pc2",
+        "pc1"
+      ]
+    }
+  ]
+}

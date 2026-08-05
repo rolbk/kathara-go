@@ -1,0 +1,36 @@
+[
+  {
+    "step": "lstart",
+    "argv": [
+      "<KATHARA>",
+      "lstart",
+      "--noterminals",
+      "-d",
+      "<LABDIR>"
+    ],
+    "exit_code": 0,
+    "stdout": [
+      "┌──────────────────────────────────────────────────────────────────────────────┐",
+      "│                          Starting Network Scenario                           │",
+      "└──────────────────────────────────────────────────────────────────────────────┘",
+      "WARNING  To expose ports of device `pc1` on the host, you have to specify the `bridged` option on that device."
+    ],
+    "stderr": []
+  },
+  {
+    "step": "lclean",
+    "argv": [
+      "<KATHARA>",
+      "lclean",
+      "-d",
+      "<LABDIR>"
+    ],
+    "exit_code": 0,
+    "stdout": [
+      "┌──────────────────────────────────────────────────────────────────────────────┐",
+      "│                          Stopping Network Scenario                           │",
+      "└──────────────────────────────────────────────────────────────────────────────┘"
+    ],
+    "stderr": []
+  }
+]

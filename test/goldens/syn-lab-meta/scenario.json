@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "name": "syn-lab-meta",
+  "kind": "deploy",
+  "status": "golden",
+  "note": "LAB_NAME plus every other LAB_ metadata key. LAB_NAME is used by zero corpus labs and switches the lab hash from path-derived to name-derived, which changes every container and network name.",
+  "lab_dir": "<LABDIR>",
+  "flags": [],
+  "probes": [
+    "link",
+    "addr",
+    "route",
+    "hosts",
+    "hostname",
+    "fstree",
+    "startup_log"
+  ],
+  "fs_roots": [
+    "/hostlab",
+    "/shared"
+  ],
+  "lab_hash_source": "lab_name",
+  "lab_hash_derived_ok": true,
+  "user_slug_derived_ok": true,
+  "container_names_ok": true,
+  "network_names_ok": true,
+  "explicit_mac_count": 0,
+  "expect_explicit_mac": false
+}

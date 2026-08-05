@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "name": "syn-cpus",
+  "kind": "deploy",
+  "status": "golden",
+  "note": "Device option `cpus`, used by zero labs in the corpus.",
+  "lab_dir": "<LABDIR>",
+  "flags": [],
+  "probes": [
+    "link",
+    "addr",
+    "route",
+    "hosts",
+    "hostname",
+    "fstree",
+    "startup_log"
+  ],
+  "fs_roots": [
+    "/hostlab",
+    "/shared"
+  ],
+  "lab_hash_source": "path",
+  "lab_hash_derived_ok": true,
+  "user_slug_derived_ok": true,
+  "container_names_ok": true,
+  "network_names_ok": true,
+  "explicit_mac_count": 0,
+  "expect_explicit_mac": false
+}

@@ -1,0 +1,1 @@
+echo shared-shutdown >> /shared/lifecycle.txt

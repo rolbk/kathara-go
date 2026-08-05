@@ -1,0 +1,148 @@
+package main
+
+import (
+	"reflect"
+	"strings"
+	"testing"
+)
+
+// pad simulates rich's row padding to the console width.
+func pad(s string, w int) string {
+	if len(s) >= w {
+		return s
+	}
+	return s + strings.Repeat(" ", w-len(s))
+}
+
+func TestUnwrapLogRecordsFoldAndChop(t *testing.T) {
+	// A real capture shape: CRITICAL record whose long path word is moved to a
+	// continuation row and hard-chopped there (row filled to exactly 80).
+	path := "'/root/kathara/kathara-go/test/scenarios/synthetic/this-directory-does-not-exist'"
+	chopAt := consoleWidth - 9
+	in := strings.Join([]string{
+		pad("CRITICAL (CreateFailed) root path", consoleWidth),
+		pad("         "+path[:chopAt], consoleWidth), // exactly full row
+		pad("         "+path[chopAt:]+" does not exist", consoleWidth),
+	}, "\n")
+	want := "CRITICAL (CreateFailed) root path " + path + " does not exist"
+	got := UnwrapLogRecords(in, consoleWidth)
+	if got != want {
+		t.Fatalf("unwrap fold+chop:\n got %q\nwant %q", got, want)
+	}
+}
+
+func TestUnwrapLogRecordsFoldAtExactWidth(t *testing.T) {
+	// syn-env's real WARNING: the fold lands exactly on column 80 after
+	// "meta". The break is still a fold (the fragments around it, "meta" and
+	// "`env`.", fit the fold width together), so the space must come back.
+	row1 := "WARNING  In lab.conf - Line 5: Device `pc1` already has a value assigned to meta"
+	if len(row1) != consoleWidth {
+		t.Fatalf("test fixture drifted: row1 is %d columns, want %d", len(row1), consoleWidth)
+	}
+	in := row1 + "\n" + pad("         `env`. Previous value has been overwritten with `FOO=baz`.", consoleWidth)
+	want := "WARNING  In lab.conf - Line 5: Device `pc1` already has a value assigned to meta `env`. Previous value has been overwritten with `FOO=baz`."
+	if got := UnwrapLogRecords(in, consoleWidth); got != want {
+		t.Fatalf("unwrap exact-width fold:\n got %q\nwant %q", got, want)
+	}
+}
+
+func TestUnwrapLogRecordsEmbeddedNewline(t *testing.T) {
+	// A message containing a literal newline renders as a short continuation
+	// row; the unwrap normalizes it to a single space, same as a word fold.
+	in := strings.Join([]string{
+		pad("CRITICAL (SyntaxError) In lab.conf - Line 2: `not valid", consoleWidth),
+		pad("         syntax", consoleWidth),
+		pad("         `.", consoleWidth),
+	}, "\n")
+	want := "CRITICAL (SyntaxError) In lab.conf - Line 2: `not valid syntax `."
+	if got := UnwrapLogRecords(in, consoleWidth); got != want {
+		t.Fatalf("unwrap newline:\n got %q\nwant %q", got, want)
+	}
+}
+
+func TestUnwrapLogRecordsLeavesPanelsAlone(t *testing.T) {
+	in := "┌───┐\n│ x │\n└───┘\nplain\n         indented but no log record above"
+	if got := UnwrapLogRecords(in, consoleWidth); got != in {
+		t.Fatalf("unwrap touched non-log lines:\n got %q\nwant %q", got, in)
+	}
+	// "ERROR: ..." from a startup script is not the padded level column.
+	in2 := "ERROR: something\n         nine spaces"
+	if got := UnwrapLogRecords(in2, consoleWidth); got != in2 {
+		t.Fatalf("unwrap misread a non-rich line:\n got %q\nwant %q", got, in2)
+	}
+}
+
+func TestScrubMACs(t *testing.T) {
+	n := NewNormalizer()
+	n.KeepMAC("00:00:00:00:00:01")
+
+	cases := map[string]string{
+		// A plain random MAC is tokenized.
+		"eth0 UP aa:bb:cc:dd:ee:f0 <UP>": "eth0 UP <MAC> <UP>",
+		// Constants carry no identity.
+		"lo 00:00:00:00:00:00 x": "lo 00:00:00:00:00:00 x",
+		"bc ff:ff:ff:ff:ff:ff x": "bc ff:ff:ff:ff:ff:ff x",
+		// Explicitly pinned MACs survive.
+		"eth0 UP 00:00:00:00:00:01 <UP>": "eth0 UP 00:00:00:00:00:01 <UP>",
+		// The interior of an IPv6 address is not a MAC.
+		"addr 2001:db8:aa:bb:cc:dd:ee:f0/64": "addr 2001:db8:aa:bb:cc:dd:ee:f0/64",
+		"via fc00:12:34:56:78:9a:bc:de dev":  "via fc00:12:34:56:78:9a:bc:de dev",
+	}
+	for in, want := range cases {
+		if got := n.Text(in); got != want {
+			t.Errorf("Text(%q) = %q, want %q", in, got, want)
+		}
+	}
+}
+
+func TestScrubLinkLocal6(t *testing.T) {
+	n := NewNormalizer()
+	n.KeepMAC("00:00:00:00:00:01") // EUI-64: fe80::200:ff:fe00:1
+
+	cases := map[string]string{
+		// EUI-64-derived (random MAC) is scrubbed.
+		"inet6 fe80::a8bb:ccff:fedd:eeff/64": "inet6 <LINKLOCAL6>/64",
+		// Statically configured link-locals stay byte-exact.
+		"inet6 fe80::1/64":     "inet6 fe80::1/64",
+		"via fe80::2 dev eth1": "via fe80::2 dev eth1",
+		// EUI-64 of a pinned MAC is deterministic and kept.
+		"inet6 fe80::200:ff:fe00:1/64": "inet6 fe80::200:ff:fe00:1/64",
+	}
+	for in, want := range cases {
+		if got := n.Text(in); got != want {
+			t.Errorf("Text(%q) = %q, want %q", in, got, want)
+		}
+	}
+}
+
+func TestEUI64LinkLocal(t *testing.T) {
+	cases := map[string]string{
+		"00:00:00:00:00:01": "fe80::200:ff:fe00:1",
+		"aa:bb:cc:dd:ee:ff": "fe80::a8bb:ccff:fedd:eeff",
+		"02:42:ac:11:00:02": "fe80::42:acff:fe11:2",
+		"not-a-mac":         "",
+	}
+	for in, want := range cases {
+		if got := eui64LinkLocal(in); got != want {
+			t.Errorf("eui64LinkLocal(%q) = %q, want %q", in, got, want)
+		}
+	}
+}
+
+func TestLinesUnwrapsBeforeTokenizing(t *testing.T) {
+	// The lab dir wraps across rows in the rendered record; after unwrapping,
+	// the literal must match and tokenize.
+	n := NewNormalizer()
+	n.AddLiteral("/root/kathara/kathara-go/test/scenarios/synthetic/this-directory-does-not-exist", TokLabDir)
+	path := "'/root/kathara/kathara-go/test/scenarios/synthetic/this-directory-does-not-exist'"
+	chopAt := consoleWidth - 9
+	in := strings.Join([]string{
+		pad("CRITICAL (CreateFailed) root path", consoleWidth),
+		pad("         "+path[:chopAt], consoleWidth),
+		pad("         "+path[chopAt:]+" does not exist", consoleWidth),
+	}, "\n")
+	want := []string{"CRITICAL (CreateFailed) root path '<LABDIR>' does not exist"}
+	if got := n.Lines(in); !reflect.DeepEqual(got, want) {
+		t.Fatalf("Lines() = %q, want %q", got, want)
+	}
+}

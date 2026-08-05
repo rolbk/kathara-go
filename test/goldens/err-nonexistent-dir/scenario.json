@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "name": "err-nonexistent-dir",
+  "kind": "error",
+  "status": "golden",
+  "note": "-d pointing at a directory that does not exist.",
+  "lab_dir": "<LABDIR>",
+  "flags": [],
+  "probes": [],
+  "fs_roots": [
+    "/hostlab",
+    "/shared"
+  ],
+  "lab_hash_source": "path",
+  "lab_hash_derived_ok": false,
+  "user_slug_derived_ok": false,
+  "container_names_ok": false,
+  "network_names_ok": false,
+  "explicit_mac_count": 0,
+  "expect_explicit_mac": false
+}

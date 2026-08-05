@@ -1,0 +1,95 @@
+{
+  "device": "pc2",
+  "ip_br_link": [
+    "eth0 UP <MAC> <BROADCAST,MULTICAST,UP,LOWER_UP>",
+    "lo UNKNOWN 00:00:00:00:00:00 <LOOPBACK,UP,LOWER_UP>"
+  ],
+  "ip_addr": [
+    {
+      "addr_info": [
+        {
+          "family": "inet",
+          "label": "eth0",
+          "local": "10.0.0.2",
+          "prefixlen": 24,
+          "scope": "global"
+        }
+      ],
+      "address": "<MAC>",
+      "broadcast": "ff:ff:ff:ff:ff:ff",
+      "flags": [
+        "BROADCAST",
+        "MULTICAST",
+        "UP",
+        "LOWER_UP"
+      ],
+      "group": "default",
+      "ifname": "eth0",
+      "link_type": "ether",
+      "mtu": 1500,
+      "operstate": "UP",
+      "qdisc": "fq_codel",
+      "txqlen": 1000
+    },
+    {
+      "addr_info": [
+        {
+          "family": "inet",
+          "label": "lo",
+          "local": "127.0.0.1",
+          "prefixlen": 8,
+          "scope": "host"
+        }
+      ],
+      "address": "00:00:00:00:00:00",
+      "broadcast": "00:00:00:00:00:00",
+      "flags": [
+        "LOOPBACK",
+        "UP",
+        "LOWER_UP"
+      ],
+      "group": "default",
+      "ifname": "lo",
+      "link_type": "loopback",
+      "mtu": 65536,
+      "operstate": "UNKNOWN",
+      "qdisc": "noqueue",
+      "txqlen": 1000
+    }
+  ],
+  "ip_route": [
+    "10.0.0.0/24 dev eth0 proto kernel scope link src 10.0.0.2"
+  ],
+  "etc_hosts": [
+    "127.0.0.1 localhost",
+    "::1 localhost",
+    "127.0.1.1 pc2"
+  ],
+  "hostname": "pc2",
+  "fs_trees": {
+    "/hostlab": [
+      {
+        "kind": "d",
+        "path": "./pc2"
+      },
+      {
+        "kind": "f",
+        "path": "./pc2.startup",
+        "sha256": "fcc8e83f712d46ab806ee20d49693d86a27ec766f9bacc8e3819460336575efd"
+      }
+    ],
+    "/shared": [
+      {
+        "kind": "f",
+        "path": "./boot-order.txt",
+        "sha256": "a21583fa796e23f5e25e67bdbd32e08038c4652c8a789f34da25c0399b0e382f"
+      }
+    ]
+  },
+  "startup_logs": {
+    "/var/log/startup.log": [
+      "++ ip address add 10.0.0.2/24 dev eth0",
+      "++ echo pc2"
+    ]
+  }
+}

@@ -1,0 +1,115 @@
+{
+  "device": "pc2",
+  "ip_br_link": [
+    "eth0 UP <MAC> <BROADCAST,MULTICAST,UP,LOWER_UP>",
+    "lo UNKNOWN 00:00:00:00:00:00 <LOOPBACK,UP,LOWER_UP>"
+  ],
+  "ip_addr": [
+    {
+      "addr_info": [
+        {
+          "family": "inet",
+          "label": "eth0",
+          "local": "10.0.0.2",
+          "prefixlen": 24,
+          "scope": "global"
+        }
+      ],
+      "address": "<MAC>",
+      "broadcast": "ff:ff:ff:ff:ff:ff",
+      "flags": [
+        "BROADCAST",
+        "MULTICAST",
+        "UP",
+        "LOWER_UP"
+      ],
+      "group": "default",
+      "ifname": "eth0",
+      "link_type": "ether",
+      "mtu": 1500,
+      "operstate": "UP",
+      "qdisc": "fq_codel",
+      "txqlen": 1000
+    },
+    {
+      "addr_info": [
+        {
+          "family": "inet",
+          "label": "lo",
+          "local": "127.0.0.1",
+          "prefixlen": 8,
+          "scope": "host"
+        }
+      ],
+      "address": "00:00:00:00:00:00",
+      "broadcast": "00:00:00:00:00:00",
+      "flags": [
+        "LOOPBACK",
+        "UP",
+        "LOWER_UP"
+      ],
+      "group": "default",
+      "ifname": "lo",
+      "link_type": "loopback",
+      "mtu": 65536,
+      "operstate": "UNKNOWN",
+      "qdisc": "noqueue",
+      "txqlen": 1000
+    }
+  ],
+  "ip_route": [
+    "10.0.0.0/24 dev eth0 proto kernel scope link src 10.0.0.2"
+  ],
+  "etc_hosts": [
+    "127.0.0.1 localhost",
+    "::1 localhost",
+    "127.0.1.1 pc2"
+  ],
+  "hostname": "pc2",
+  "fs_trees": {
+    "/hostlab": [
+      {
+        "kind": "d",
+        "path": "./pc2"
+      },
+      {
+        "kind": "f",
+        "path": "./pc2.startup",
+        "sha256": "4b27372ba7648af311e5a112a8a29b9f284cdc41f2f64e7d6c686dd9d1f0ecf8"
+      },
+      {
+        "kind": "f",
+        "path": "./shared.startup",
+        "sha256": "ebc7d1a3d5941ea06412f93177db7a34a5e4b12b01c079e255e726ceb71d085e"
+      }
+    ],
+    "/shared": []
+  },
+  "startup_logs": {
+    "/var/log/shared.log": [
+      "++ echo shared-ran"
+    ],
+    "/var/log/startup.log": [
+      "++ ip address add 10.0.0.2/24 dev eth0",
+      "++ echo pc2"
+    ]
+  },
+  "files": [
+    {
+      "path": "/device-startup-marker",
+      "exists": true,
+      "sha256": "1ef7c5e9f4e3b2bcd3f542cb9a3c4a2818ec268bc4a607c4b455faefa2fde1c3",
+      "content": [
+        "pc2"
+      ]
+    },
+    {
+      "path": "/shared-startup-marker",
+      "exists": true,
+      "sha256": "bac8871a6453bbe991edf7d2c41aa7d8545bb90cfca5921377192638c8f959d1",
+      "content": [
+        "shared-ran"
+      ]
+    }
+  ]
+}

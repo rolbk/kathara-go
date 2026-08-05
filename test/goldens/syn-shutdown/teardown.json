@@ -1,0 +1,17 @@
+{
+  "kathara_containers": [],
+  "kathara_networks": [],
+  "clean": true,
+  "host_files": [
+    {
+      "path": "shared/lifecycle.txt",
+      "exists": true,
+      "sha256": "983353054b3a85c3a0e16f41df9deed74ca82891d3efdc3e56f6b36463ae6efc",
+      "content": [
+        "started",
+        "device-shutdown",
+        "shared-shutdown"
+      ]
+    }
+  ]
+}

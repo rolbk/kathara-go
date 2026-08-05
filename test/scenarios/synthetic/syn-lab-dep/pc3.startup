@@ -1,0 +1,2 @@
+ip address add 10.0.0.3/24 dev eth0
+echo pc3 >> /shared/boot-order.txt

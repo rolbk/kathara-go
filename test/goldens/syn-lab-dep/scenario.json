@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "name": "syn-lab-dep",
+  "kind": "deploy",
+  "status": "golden",
+  "note": "lab.dep, absent from the whole corpus. Forces sequential boot in the exact reverse of lab.conf order; the order is read back from a file each device appends to on the rw /shared mount.",
+  "lab_dir": "<LABDIR>",
+  "flags": [],
+  "probes": [
+    "link",
+    "addr",
+    "route",
+    "hosts",
+    "hostname",
+    "fstree",
+    "startup_log"
+  ],
+  "fs_roots": [
+    "/hostlab",
+    "/shared"
+  ],
+  "host_files": [
+    "shared/boot-order.txt"
+  ],
+  "lab_hash_source": "path",
+  "lab_hash_derived_ok": true,
+  "user_slug_derived_ok": true,
+  "container_names_ok": true,
+  "network_names_ok": true,
+  "explicit_mac_count": 0,
+  "expect_explicit_mac": false
+}

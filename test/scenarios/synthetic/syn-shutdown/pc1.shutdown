@@ -1,0 +1,1 @@
+echo device-shutdown >> /shared/lifecycle.txt

@@ -1,0 +1,105 @@
+{
+  "device": "pc1",
+  "ip_br_link": [
+    "eth0 UP <MAC> <BROADCAST,MULTICAST,UP,LOWER_UP>",
+    "lo UNKNOWN 00:00:00:00:00:00 <LOOPBACK,UP,LOWER_UP>"
+  ],
+  "ip_addr": [
+    {
+      "addr_info": [
+        {
+          "family": "inet",
+          "label": "eth0",
+          "local": "10.0.0.1",
+          "prefixlen": 24,
+          "scope": "global"
+        }
+      ],
+      "address": "<MAC>",
+      "broadcast": "ff:ff:ff:ff:ff:ff",
+      "flags": [
+        "BROADCAST",
+        "MULTICAST",
+        "UP",
+        "LOWER_UP"
+      ],
+      "group": "default",
+      "ifname": "eth0",
+      "link_type": "ether",
+      "mtu": 1500,
+      "operstate": "UP",
+      "qdisc": "fq_codel",
+      "txqlen": 1000
+    },
+    {
+      "addr_info": [
+        {
+          "family": "inet",
+          "label": "lo",
+          "local": "127.0.0.1",
+          "prefixlen": 8,
+          "scope": "host"
+        }
+      ],
+      "address": "00:00:00:00:00:00",
+      "broadcast": "00:00:00:00:00:00",
+      "flags": [
+        "LOOPBACK",
+        "UP",
+        "LOWER_UP"
+      ],
+      "group": "default",
+      "ifname": "lo",
+      "link_type": "loopback",
+      "mtu": 65536,
+      "operstate": "UNKNOWN",
+      "qdisc": "noqueue",
+      "txqlen": 1000
+    }
+  ],
+  "ip_route": [
+    "10.0.0.0/24 dev eth0 proto kernel scope link src 10.0.0.1"
+  ],
+  "etc_hosts": [
+    "127.0.0.1 localhost",
+    "::1 localhost",
+    "127.0.1.1 pc1"
+  ],
+  "hostname": "pc1",
+  "fs_trees": {
+    "/hostlab": [
+      {
+        "kind": "d",
+        "path": "./pc1"
+      },
+      {
+        "kind": "f",
+        "path": "./pc1.shutdown",
+        "sha256": "e3525dacb08d688b48af57f246e9bdcd3cad3e98887e0236d07d59fd8d7fe072"
+      },
+      {
+        "kind": "f",
+        "path": "./pc1.startup",
+        "sha256": "8a489f7ffc3785dce5795ca571d266c56c37f44b7d837b40e66c0a85d6545f70"
+      },
+      {
+        "kind": "f",
+        "path": "./shared.shutdown",
+        "sha256": "14cb23e9ee6675d7bd6029d497dcb86597bc2104085a5d9fb3dc0f24ee944934"
+      }
+    ],
+    "/shared": [
+      {
+        "kind": "f",
+        "path": "./lifecycle.txt",
+        "sha256": "eff64b343dcb2b1dc113648e7089b9ce9f8a7f6c7808a03a2cffb4ad7302f606"
+      }
+    ]
+  },
+  "startup_logs": {
+    "/var/log/startup.log": [
+      "++ ip address add 10.0.0.1/24 dev eth0",
+      "++ echo started"
+    ]
+  }
+}

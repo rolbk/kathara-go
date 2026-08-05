@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "name": "syn-volume",
+  "kind": "deploy",
+  "status": "golden",
+  "note": "Device option `volume`, 3-part form with mode and 2-part form defaulting to ro. Kathara refuses to start when a volume source is missing (utils.check_directory_permissions), so the harness owns the two host directories: without host_dirs the recording would flip between the mount path and the FileExistsError path depending on host state.",
+  "lab_dir": "<LABDIR>",
+  "flags": [],
+  "probes": [
+    "link",
+    "addr",
+    "route",
+    "hosts",
+    "hostname",
+    "fstree",
+    "startup_log"
+  ],
+  "fs_roots": [
+    "/hostlab",
+    "/shared",
+    "/guest-rw",
+    "/guest-ro"
+  ],
+  "host_dirs": [
+    "/tmp/kathara-golden-vol-rw",
+    "/tmp/kathara-golden-vol-ro"
+  ],
+  "lab_hash_source": "path",
+  "lab_hash_derived_ok": true,
+  "user_slug_derived_ok": true,
+  "container_names_ok": true,
+  "network_names_ok": true,
+  "explicit_mac_count": 0,
+  "expect_explicit_mac": false
+}
