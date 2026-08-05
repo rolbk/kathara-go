@@ -1,0 +1,2 @@
+﻿with bom
+line2

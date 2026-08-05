@@ -14,3 +14,5 @@ All ported as-is; vectors in `labfile/testdata/vectors/` pin the behaviour.
 6. **A UTF-8 BOM breaks parsing of line 1** (`﻿` survives `strip()`), rejecting Windows "UTF-8 with BOM" lab.conf files.
 7. **One badly-named directory (e.g. `Docs/`) kills the whole FolderParser run** — `lstart -F` fails outright on labs with any non-device folder next to the devices.
 8. Cosmetic: invalid-volume-mode message ends with a trailing space; `OptionParser` errors embed CPython-runtime text (only the outer frame is portable — noted in ERROR_CODES).
+9. **`utils.pack_file_for_tar` corrupts on text-mode CRLF streams** — sizes via `seek(0,2)/tell()` (raw bytes) but reads via `read().encode()` after universal-newline collapse, so a CRLF text handle raises `OSError: unexpected end of data`. Unreachable from the CLI; reachable from the Python-client API. The Go packer takes bytes and cannot express it.
+10. **CPython 3.13 tarfile writes NUL `devmajor`/`devminor` for non-device members** (3.9-3.12 wrote octal zeros); Go matches the 3.9-3.12 form. 16 bytes/header + checksum delta; Python reads both fine. Masked in tar parity tests, asserted explicitly.

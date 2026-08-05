@@ -1,0 +1,1 @@
+MZ is a two letter prefix that also starts DOS binaries
