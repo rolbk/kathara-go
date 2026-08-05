@@ -1,0 +1,9 @@
+{
+  "description": "Upstream fixture: two subdirectories become two devices.",
+  "dirs": [
+    "pc1",
+    "pc2"
+  ],
+  "order_sensitive": false,
+  "parser": "folder"
+}

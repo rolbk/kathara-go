@@ -1,0 +1,6 @@
+{
+  "error": {
+    "class": "ValueError",
+    "message": "Invalid truth value `maybe`."
+  }
+}

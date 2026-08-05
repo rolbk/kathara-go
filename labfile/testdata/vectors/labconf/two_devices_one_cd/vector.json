@@ -1,0 +1,4 @@
+{
+  "description": "Upstream fixture: two devices sharing collision domain A.",
+  "parser": "lab"
+}

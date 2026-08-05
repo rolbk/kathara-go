@@ -1,0 +1,4 @@
+{
+  "description": "Upstream fixture: the closing quote must be the same character as the opening one (backreference).",
+  "parser": "lab"
+}

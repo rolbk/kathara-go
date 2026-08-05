@@ -1,0 +1,4 @@
+{
+  "description": "DepParser knows nothing about lab.conf: unknown device names flow through unchecked.",
+  "parser": "dep"
+}

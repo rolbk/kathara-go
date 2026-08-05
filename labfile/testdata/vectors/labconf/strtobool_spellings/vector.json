@@ -1,0 +1,4 @@
+{
+  "description": "Every truth spelling accepted by strtobool for the two boolean metas (privileged, bridged).",
+  "parser": "lab"
+}

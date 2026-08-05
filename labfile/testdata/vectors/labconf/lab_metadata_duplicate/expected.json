@@ -1,0 +1,18 @@
+{
+  "lab": {
+    "author": null,
+    "description": null,
+    "email": null,
+    "general_options": {},
+    "global_machine_metadata": {},
+    "has_dependencies": false,
+    "hash": "qfDmGhN9hqqdtTRl4IAWEg",
+    "link_order": [],
+    "links": {},
+    "machine_order": [],
+    "machines": {},
+    "name": "second",
+    "version": null,
+    "web": null
+  }
+}

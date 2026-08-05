@@ -1,0 +1,4 @@
+{
+  "description": "Overwrite warnings also fire for the structured metas (sysctl/env/ulimit/volume) keyed by sub-key.",
+  "parser": "lab"
+}

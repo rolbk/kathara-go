@@ -1,0 +1,4 @@
+{
+  "description": "Multiple exec metas accumulate in file order and never warn about overwrite.",
+  "parser": "lab"
+}

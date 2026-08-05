@@ -1,0 +1,122 @@
+{
+  "dep": [
+    "pc2",
+    "pc3",
+    "pc1",
+    "zzz"
+  ],
+  "lab": {
+    "author": null,
+    "description": null,
+    "email": null,
+    "general_options": {},
+    "global_machine_metadata": {},
+    "has_dependencies": true,
+    "hash": null,
+    "link_order": [
+      "A",
+      "B"
+    ],
+    "links": {
+      "A": {
+        "machines": [
+          "pc2",
+          "pc1"
+        ]
+      },
+      "B": {
+        "machines": [
+          "srv",
+          "pc3"
+        ]
+      }
+    },
+    "machine_order": [
+      "srv",
+      "pc2",
+      "pc3",
+      "pc1"
+    ],
+    "machines": {
+      "pc1": {
+        "has_dir": false,
+        "interfaces": {
+          "0": {
+            "cd": "A",
+            "mac": null
+          }
+        },
+        "meta": {
+          "envs": {},
+          "exec_commands": [],
+          "extra": {},
+          "ports": {},
+          "sysctls": {},
+          "ulimits": {},
+          "volumes": {}
+        },
+        "startup_file": null
+      },
+      "pc2": {
+        "has_dir": false,
+        "interfaces": {
+          "0": {
+            "cd": "A",
+            "mac": null
+          }
+        },
+        "meta": {
+          "envs": {},
+          "exec_commands": [],
+          "extra": {},
+          "ports": {},
+          "sysctls": {},
+          "ulimits": {},
+          "volumes": {}
+        },
+        "startup_file": null
+      },
+      "pc3": {
+        "has_dir": false,
+        "interfaces": {
+          "0": {
+            "cd": "B",
+            "mac": null
+          }
+        },
+        "meta": {
+          "envs": {},
+          "exec_commands": [],
+          "extra": {},
+          "ports": {},
+          "sysctls": {},
+          "ulimits": {},
+          "volumes": {}
+        },
+        "startup_file": null
+      },
+      "srv": {
+        "has_dir": false,
+        "interfaces": {
+          "0": {
+            "cd": "B",
+            "mac": null
+          }
+        },
+        "meta": {
+          "envs": {},
+          "exec_commands": [],
+          "extra": {},
+          "ports": {},
+          "sysctls": {},
+          "ulimits": {},
+          "volumes": {}
+        },
+        "startup_file": null
+      }
+    },
+    "name": null,
+    "version": null,
+    "web": null
+  }
+}

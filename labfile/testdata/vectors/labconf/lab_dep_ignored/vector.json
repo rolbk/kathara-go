@@ -1,0 +1,4 @@
+{
+  "description": "LabParser never looks at lab.dep; dependency ordering is a separate step.",
+  "parser": "lab"
+}

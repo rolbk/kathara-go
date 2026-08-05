@@ -1,0 +1,8 @@
+{
+  "description": "Upstream fixture: several options accumulate into one dict.",
+  "options": [
+    "mem=64m",
+    "image=kathara/netkit_base"
+  ],
+  "parser": "options"
+}

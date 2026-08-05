@@ -1,0 +1,4 @@
+{
+  "description": "Duplicate (device, meta) logs a warning and overwrites; it is not an error.",
+  "parser": "lab"
+}

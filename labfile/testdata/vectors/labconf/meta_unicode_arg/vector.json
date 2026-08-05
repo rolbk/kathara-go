@@ -1,0 +1,4 @@
+{
+  "description": "The meta-name group is Unicode-aware \\w, so non-ASCII meta names are accepted verbatim.",
+  "parser": "lab"
+}

@@ -1,0 +1,4 @@
+{
+  "description": "Device names are capped at 30 characters; 31 characters no longer match.",
+  "parser": "lab"
+}

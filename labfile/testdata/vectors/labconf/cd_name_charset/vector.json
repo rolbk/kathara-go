@@ -1,0 +1,4 @@
+{
+  "description": "Collision-domain names only need ^\\w+$ - wider than the device charset (uppercase, '_', digits).",
+  "parser": "lab"
+}

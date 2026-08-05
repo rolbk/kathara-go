@@ -1,0 +1,4 @@
+{
+  "description": "Upstream fixture: '#' inside an unterminated quote - the quote never closes.",
+  "parser": "lab"
+}

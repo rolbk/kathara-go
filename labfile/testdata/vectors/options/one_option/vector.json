@@ -1,0 +1,7 @@
+{
+  "description": "Upstream fixture: quotes are stripped anywhere in the option string.",
+  "options": [
+    "mem='64m'"
+  ],
+  "parser": "options"
+}

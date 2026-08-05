@@ -1,0 +1,6 @@
+{
+  "error": {
+    "class": "MachineOptionError",
+    "message": "Invalid sysctl value (`kernel.shmmax=1`) on `pc1`, missing `=` or value not in `net.` namespace."
+  }
+}

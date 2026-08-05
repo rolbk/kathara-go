@@ -1,0 +1,4 @@
+{
+  "description": "Device names are lowercase-only; an uppercase name falls through to the metadata branch.",
+  "parser": "lab"
+}

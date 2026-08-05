@@ -1,0 +1,68 @@
+{
+  "lab": {
+    "author": null,
+    "description": null,
+    "email": null,
+    "general_options": {},
+    "global_machine_metadata": {},
+    "has_dependencies": false,
+    "hash": null,
+    "link_order": [
+      "A",
+      "B"
+    ],
+    "links": {
+      "A": {
+        "machines": [
+          "pc1"
+        ]
+      },
+      "B": {
+        "machines": [
+          "pc1"
+        ]
+      }
+    },
+    "machine_order": [
+      "pc1"
+    ],
+    "machines": {
+      "pc1": {
+        "has_dir": false,
+        "interfaces": {
+          "0": {
+            "cd": "A",
+            "mac": null
+          },
+          "1": {
+            "cd": "B",
+            "mac": null
+          }
+        },
+        "meta": {
+          "envs": {},
+          "exec_commands": [],
+          "extra": {
+            "cpu": "2",
+            "image": "kathara/frr",
+            "mem": "150m",
+            "num_terms": "2",
+            "privileged": true
+          },
+          "ports": {
+            "1000/udp": 2000,
+            "3000/tcp": 4000,
+            "3000/udp": 5000
+          },
+          "sysctls": {},
+          "ulimits": {},
+          "volumes": {}
+        },
+        "startup_file": null
+      }
+    },
+    "name": null,
+    "version": null,
+    "web": null
+  }
+}

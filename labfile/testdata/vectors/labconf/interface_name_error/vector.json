@@ -1,0 +1,4 @@
+{
+  "description": "Upstream fixture: '$' is not allowed in a collision-domain name.",
+  "parser": "lab"
+}

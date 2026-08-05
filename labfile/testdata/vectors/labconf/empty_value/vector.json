@@ -1,0 +1,4 @@
+{
+  "description": "Empty values are impossible: the value class requires at least one character.",
+  "parser": "lab"
+}

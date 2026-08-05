@@ -1,0 +1,4 @@
+{
+  "description": "RESERVED_MACHINE_NAMES constrains device names only; a collision domain may be called `shared`.",
+  "parser": "lab"
+}

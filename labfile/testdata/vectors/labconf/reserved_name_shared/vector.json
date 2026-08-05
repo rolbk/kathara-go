@@ -1,0 +1,4 @@
+{
+  "description": "Upstream fixture: `shared` is a reserved device name.",
+  "parser": "lab"
+}

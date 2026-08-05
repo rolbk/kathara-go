@@ -1,0 +1,6 @@
+{
+  "error": {
+    "class": "InterfaceMacAddressError",
+    "message": "MAC address gg:00:00:00:00:01 on interface `0` of device `pc1` is invalid."
+  }
+}

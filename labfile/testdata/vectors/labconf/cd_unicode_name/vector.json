@@ -1,0 +1,4 @@
+{
+  "description": "Collision-domain names are Unicode \\w+ in Python; RE2's ASCII \\w would reject this line entirely (OQ-14a family).",
+  "parser": "lab"
+}

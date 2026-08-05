@@ -1,0 +1,4 @@
+{
+  "description": "Upstream fixture: a dependency cycle is rejected.",
+  "parser": "dep"
+}

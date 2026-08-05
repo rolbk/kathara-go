@@ -1,0 +1,4 @@
+{
+  "description": "An unquoted value may contain spaces, but the collision-domain check then rejects it.",
+  "parser": "lab"
+}

@@ -1,0 +1,6 @@
+{
+  "error": {
+    "class": "OSError",
+    "message": "No lab.conf in given directory."
+  }
+}

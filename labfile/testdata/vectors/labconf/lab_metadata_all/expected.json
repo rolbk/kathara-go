@@ -1,0 +1,48 @@
+{
+  "lab": {
+    "author": "Author",
+    "description": "Description",
+    "email": "test@email.org",
+    "general_options": {},
+    "global_machine_metadata": {},
+    "has_dependencies": false,
+    "hash": "G9zqD2PLruJPMJBZriB86A",
+    "link_order": [
+      "A"
+    ],
+    "links": {
+      "A": {
+        "machines": [
+          "pc1"
+        ]
+      }
+    },
+    "machine_order": [
+      "pc1"
+    ],
+    "machines": {
+      "pc1": {
+        "has_dir": false,
+        "interfaces": {
+          "0": {
+            "cd": "A",
+            "mac": null
+          }
+        },
+        "meta": {
+          "envs": {},
+          "exec_commands": [],
+          "extra": {},
+          "ports": {},
+          "sysctls": {},
+          "ulimits": {},
+          "volumes": {}
+        },
+        "startup_file": null
+      }
+    },
+    "name": "test_lab",
+    "version": "1.0",
+    "web": "https://www.lab-test.org/"
+  }
+}

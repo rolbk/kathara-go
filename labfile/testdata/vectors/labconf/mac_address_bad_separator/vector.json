@@ -1,0 +1,4 @@
+{
+  "description": "Dash-separated MACs are rejected by the MAC regex.",
+  "parser": "lab"
+}

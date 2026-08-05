@@ -1,0 +1,109 @@
+{
+  "lab": {
+    "author": null,
+    "description": null,
+    "email": null,
+    "general_options": {},
+    "global_machine_metadata": {},
+    "has_dependencies": false,
+    "hash": null,
+    "link_order": [
+      "A"
+    ],
+    "links": {
+      "A": {
+        "machines": [
+          "pc1"
+        ]
+      }
+    },
+    "machine_order": [
+      "pc1"
+    ],
+    "machines": {
+      "pc1": {
+        "has_dir": false,
+        "interfaces": {
+          "0": {
+            "cd": "A",
+            "mac": null
+          }
+        },
+        "meta": {
+          "envs": {
+            "EMPTY": "",
+            "FOO": "bar"
+          },
+          "exec_commands": [
+            "echo one",
+            "echo two"
+          ],
+          "extra": {
+            "args": "--foo bar",
+            "bridged": true,
+            "cpus": "1.5",
+            "entrypoint": "/bin/sh -c",
+            "image": "kathara/frr",
+            "ipv6": "true",
+            "mem": "512m",
+            "num_terms": "2",
+            "privileged": true,
+            "shell": "/bin/bash"
+          },
+          "ports": {
+            "1000/udp": 2000,
+            "3000/sctp": 5000,
+            "3000/tcp": 4000,
+            "6000/tcp": 7000
+          },
+          "sysctls": {
+            "net.custom.value": "abc",
+            "net.ipv4.conf.all.rp_filter": -1,
+            "net.ipv4.ip_forward": 1,
+            "net.ipv6.conf.all.forwarding": 0
+          },
+          "ulimits": {
+            "core": {
+              "hard": -1,
+              "soft": 5
+            },
+            "memlock": {
+              "hard": -1,
+              "soft": -1
+            },
+            "nofile": {
+              "hard": 1024,
+              "soft": 1024
+            },
+            "nproc": {
+              "hard": 200,
+              "soft": 100
+            },
+            "stack": {
+              "hard": 200,
+              "soft": 200
+            }
+          },
+          "volumes": {
+            "/host/a": {
+              "guest_path": "/guest/a",
+              "mode": "rw"
+            },
+            "/host/b": {
+              "guest_path": "/guest/b",
+              "mode": "ro"
+            },
+            "/host/c": {
+              "guest_path": "/guest/c",
+              "mode": "rx"
+            }
+          }
+        },
+        "startup_file": null
+      }
+    },
+    "name": null,
+    "version": null,
+    "web": null
+  }
+}

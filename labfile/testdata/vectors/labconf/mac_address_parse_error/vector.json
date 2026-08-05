@@ -1,0 +1,4 @@
+{
+  "description": "Upstream fixture: three '/'-separated parts is not a valid interface definition.",
+  "parser": "lab"
+}

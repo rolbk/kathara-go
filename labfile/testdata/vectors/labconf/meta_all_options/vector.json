@@ -1,0 +1,4 @@
+{
+  "description": "Every machine option accepted by Machine.add_meta, in every shape the parser can produce.",
+  "parser": "lab"
+}

@@ -1,0 +1,4 @@
+{
+  "description": "The sysctl key regex needs net. plus at least TWO more labels: `net.foo=1` is rejected despite the valid namespace.",
+  "parser": "lab"
+}

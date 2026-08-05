@@ -1,0 +1,6 @@
+{
+  "error": {
+    "class": "SyntaxError",
+    "message": "In lab.conf - Line 2: `  # indented comment\n`."
+  }
+}

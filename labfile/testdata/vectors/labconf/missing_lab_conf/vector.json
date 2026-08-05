@@ -1,0 +1,4 @@
+{
+  "description": "A missing configuration file is an IOError (OSError in Python 3).",
+  "parser": "lab"
+}

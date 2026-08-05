@@ -1,0 +1,4 @@
+{
+  "description": "All six LAB_ metadata keys, quoted and unquoted. LAB_NAME resets lab.hash.",
+  "parser": "lab"
+}

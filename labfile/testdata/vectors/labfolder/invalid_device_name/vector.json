@@ -1,0 +1,7 @@
+{
+  "description": "A folder whose name breaks the device charset raises out of the Machine constructor.",
+  "dirs": [
+    "PC1"
+  ],
+  "parser": "folder"
+}

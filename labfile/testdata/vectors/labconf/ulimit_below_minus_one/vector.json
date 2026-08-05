@@ -1,0 +1,4 @@
+{
+  "description": "Limits below -1 are rejected.",
+  "parser": "lab"
+}

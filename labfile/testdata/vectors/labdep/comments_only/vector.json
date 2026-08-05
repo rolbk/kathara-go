@@ -1,0 +1,4 @@
+{
+  "description": "A comments-only lab.dep yields an empty dependency dict and therefore an empty list.",
+  "parser": "dep"
+}

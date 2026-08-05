@@ -1,0 +1,4 @@
+{
+  "description": "lab.dep lines are decoded as UTF-8 one at a time, exactly like lab.conf: invalid bytes abort with UnicodeDecodeError.",
+  "parser": "dep"
+}

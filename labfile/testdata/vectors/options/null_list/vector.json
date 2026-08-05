@@ -1,0 +1,5 @@
+{
+  "description": "A None option list (no -o flags at all) yields an empty dict.",
+  "options": null,
+  "parser": "options"
+}

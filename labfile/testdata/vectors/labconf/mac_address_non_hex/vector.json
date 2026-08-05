@@ -1,0 +1,4 @@
+{
+  "description": "Non-hex octets are rejected by the MAC regex.",
+  "parser": "lab"
+}

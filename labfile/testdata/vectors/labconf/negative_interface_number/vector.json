@@ -1,0 +1,4 @@
+{
+  "description": "'-' is excluded from \\w, so pc1[-1] never reaches the int() dispatch.",
+  "parser": "lab"
+}

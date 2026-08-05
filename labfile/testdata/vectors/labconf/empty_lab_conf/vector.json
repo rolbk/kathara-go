@@ -1,0 +1,4 @@
+{
+  "description": "A zero-byte configuration file is an IOError (the guard also protects Windows mmap).",
+  "parser": "lab"
+}

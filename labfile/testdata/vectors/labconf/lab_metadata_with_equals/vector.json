@@ -1,0 +1,5 @@
+{
+  "description": "Landmine: the metadata line is split with line.split('='), so a value containing '=' crashes.",
+  "notes": "Uncaught Python ValueError - DIVERGENCES.md candidate.",
+  "parser": "lab"
+}

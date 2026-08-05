@@ -1,0 +1,44 @@
+{
+  "lab": {
+    "author": null,
+    "description": null,
+    "email": null,
+    "general_options": {},
+    "global_machine_metadata": {},
+    "has_dependencies": false,
+    "hash": null,
+    "link_order": [],
+    "links": {},
+    "machine_order": [
+      "pc1"
+    ],
+    "machines": {
+      "pc1": {
+        "has_dir": false,
+        "interfaces": {},
+        "meta": {
+          "envs": {},
+          "exec_commands": [],
+          "extra": {},
+          "ports": {},
+          "sysctls": {},
+          "ulimits": {},
+          "volumes": {
+            "/host/a": {
+              "guest_path": "/guest/a",
+              "mode": "ro"
+            },
+            "/host/b": {
+              "guest_path": "/guest/b",
+              "mode": "ro"
+            }
+          }
+        },
+        "startup_file": null
+      }
+    },
+    "name": null,
+    "version": null,
+    "web": null
+  }
+}

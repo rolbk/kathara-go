@@ -1,0 +1,4 @@
+{
+  "description": "Unlike lab.conf, lab.dep tests '#' on the STRIPPED line, so indented comments are legal.",
+  "parser": "dep"
+}

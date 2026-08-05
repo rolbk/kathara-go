@@ -1,0 +1,6 @@
+{
+  "error": {
+    "class": "MachineOptionError",
+    "message": "Port protocol value not valid on `pc1`."
+  }
+}

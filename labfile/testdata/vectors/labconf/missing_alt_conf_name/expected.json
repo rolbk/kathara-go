@@ -1,0 +1,6 @@
+{
+  "error": {
+    "class": "OSError",
+    "message": "No custom.conf in given directory."
+  }
+}

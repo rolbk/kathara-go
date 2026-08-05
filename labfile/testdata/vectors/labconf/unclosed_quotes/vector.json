@@ -1,0 +1,4 @@
+{
+  "description": "Upstream fixture: an opened quote that is never closed.",
+  "parser": "lab"
+}

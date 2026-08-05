@@ -1,0 +1,4 @@
+{
+  "description": "The env value group is .*, so an env value may itself contain '=' (unlike sysctl, whose value class is [^=]*).",
+  "parser": "lab"
+}

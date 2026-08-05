@@ -1,0 +1,4 @@
+{
+  "description": "Upstream fixture: one device, two CDs, image/mem/cpu metas, privileged, three port forms, num_terms.",
+  "parser": "lab"
+}

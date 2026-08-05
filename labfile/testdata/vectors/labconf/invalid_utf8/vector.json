@@ -1,0 +1,4 @@
+{
+  "description": "Lines are decoded as UTF-8 one at a time; invalid bytes abort the parse with UnicodeDecodeError.",
+  "parser": "lab"
+}

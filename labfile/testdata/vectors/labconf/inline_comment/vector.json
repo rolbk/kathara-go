@@ -1,0 +1,4 @@
+{
+  "description": "Upstream fixture: inline comment after a quoted value requires >=1 whitespace before '#'.",
+  "parser": "lab"
+}

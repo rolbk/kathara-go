@@ -1,0 +1,5 @@
+{
+  "conf_name": "custom.conf",
+  "description": "lstart --config <name>: the conf_name argument selects a different configuration file.",
+  "parser": "lab"
+}

@@ -1,0 +1,4 @@
+{
+  "description": "The line counter advances on every line, including comments and blank lines.",
+  "parser": "lab"
+}

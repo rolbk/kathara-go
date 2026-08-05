@@ -1,0 +1,4 @@
+{
+  "description": "parse_cd_mac_address drops empty '/' segments: 'A//00:...' is still exactly two parts.",
+  "parser": "lab"
+}

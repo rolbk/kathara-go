@@ -1,0 +1,4 @@
+{
+  "description": "A volume needs at least host_path|guest_path.",
+  "parser": "lab"
+}

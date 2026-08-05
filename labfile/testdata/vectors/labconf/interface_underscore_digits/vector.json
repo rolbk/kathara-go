@@ -1,0 +1,5 @@
+{
+  "description": "PEP 515: int() accepts '_' as a digit separator and \\w admits it, so pc1[0_1] is interface 1.",
+  "notes": "strconv.Atoi rejects '0_1'; Go must special-case this or record a divergence.",
+  "parser": "lab"
+}

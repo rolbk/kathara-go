@@ -1,0 +1,4 @@
+{
+  "description": "A comment glued to the closing quote does not match the (\\s+#.*)? group.",
+  "parser": "lab"
+}

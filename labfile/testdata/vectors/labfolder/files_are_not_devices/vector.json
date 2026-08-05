@@ -1,0 +1,7 @@
+{
+  "description": "Only directories match the '*/' glob; plain files (including .startup) are ignored.",
+  "dirs": [
+    "pc1"
+  ],
+  "parser": "folder"
+}

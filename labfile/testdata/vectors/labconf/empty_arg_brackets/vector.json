@@ -1,0 +1,4 @@
+{
+  "description": "The arg group is \\w+ (>=1 char): `pc1[]=A` fails the device regex and is a raw-line syntax error.",
+  "parser": "lab"
+}

@@ -1,0 +1,11 @@
+{
+  "description": "Both reserved names are skipped silently (no error, unlike LabParser).",
+  "dirs": [
+    "pc1",
+    "pc2",
+    "shared",
+    "_test"
+  ],
+  "order_sensitive": false,
+  "parser": "folder"
+}

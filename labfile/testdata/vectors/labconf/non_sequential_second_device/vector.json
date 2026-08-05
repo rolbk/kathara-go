@@ -1,0 +1,4 @@
+{
+  "description": "The integrity check walks every device, so a later device's gap is still reported.",
+  "parser": "lab"
+}

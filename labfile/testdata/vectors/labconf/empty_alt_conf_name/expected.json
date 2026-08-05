@@ -1,0 +1,6 @@
+{
+  "error": {
+    "class": "OSError",
+    "message": "custom.conf file is empty."
+  }
+}

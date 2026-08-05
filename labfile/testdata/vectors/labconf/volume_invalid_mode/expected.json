@@ -1,0 +1,6 @@
+{
+  "error": {
+    "class": "MachineOptionError",
+    "message": "Invalid volume mode `xx` on `/host/a` mount. Allowed values are ro, rw, rx. "
+  }
+}

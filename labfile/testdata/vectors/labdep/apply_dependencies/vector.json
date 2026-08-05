@@ -1,0 +1,4 @@
+{
+  "description": "lstart flow: LabParser + DepParser + Lab.apply_dependencies. Unlisted devices sort first.",
+  "parser": "lab+dep"
+}

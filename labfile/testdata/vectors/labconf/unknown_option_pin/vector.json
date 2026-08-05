@@ -1,0 +1,4 @@
+{
+  "description": "Unknown machine options are stored verbatim as string metas; no validation, no error.",
+  "parser": "lab"
+}

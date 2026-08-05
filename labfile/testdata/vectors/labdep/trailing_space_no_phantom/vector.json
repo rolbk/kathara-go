@@ -1,0 +1,5 @@
+{
+  "description": "Trailing whitespace is removed by line.strip() before matching, so no phantom '' dep is produced.",
+  "notes": "parser-settings.md predicted a phantom '' entry here; strip() makes it unreachable.",
+  "parser": "dep"
+}

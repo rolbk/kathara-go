@@ -1,0 +1,5 @@
+{
+  "description": "A ulimit without a value does not match the ulimit regex.",
+  "notes": "The message interpolates the meta name, not the device name (Python bug).",
+  "parser": "lab"
+}

@@ -1,0 +1,4 @@
+{
+  "description": "`_test` is the other reserved device name and does match the key charset.",
+  "parser": "lab"
+}

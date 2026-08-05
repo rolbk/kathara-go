@@ -1,0 +1,6 @@
+{
+  "error": {
+    "class": "MachineDependencyError",
+    "message": "Machines' dependency loop in lab.dep file."
+  }
+}

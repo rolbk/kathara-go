@@ -1,0 +1,6 @@
+{
+  "error": {
+    "class": "SyntaxError",
+    "message": "In lab.conf - Line 1: Collision domain `A B` contains non-alphanumeric characters."
+  }
+}

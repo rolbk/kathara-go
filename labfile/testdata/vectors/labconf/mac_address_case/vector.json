@@ -1,0 +1,4 @@
+{
+  "description": "MAC regex is case-insensitive; the value is stored verbatim (no normalisation).",
+  "parser": "lab"
+}

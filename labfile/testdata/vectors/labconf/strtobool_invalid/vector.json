@@ -1,0 +1,4 @@
+{
+  "description": "strtobool raises a bare ValueError with no file/line context.",
+  "parser": "lab"
+}

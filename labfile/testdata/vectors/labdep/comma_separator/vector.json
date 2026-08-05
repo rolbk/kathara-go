@@ -1,0 +1,4 @@
+{
+  "description": "Commas are not dependency separators.",
+  "parser": "dep"
+}

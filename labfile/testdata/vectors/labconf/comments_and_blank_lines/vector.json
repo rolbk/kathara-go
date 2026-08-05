@@ -1,0 +1,4 @@
+{
+  "description": "Full-line comments and blank/whitespace-only lines are skipped.",
+  "parser": "lab"
+}

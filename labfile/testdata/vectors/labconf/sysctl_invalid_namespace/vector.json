@@ -1,0 +1,4 @@
+{
+  "description": "sysctl keys must live in the net.* namespace.",
+  "parser": "lab"
+}

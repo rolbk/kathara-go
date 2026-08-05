@@ -1,0 +1,12 @@
+{
+  "description": "OQ-15a: glob order is filesystem-dependent. Devices are compared as a set, not a sequence.",
+  "dirs": [
+    "m_delta",
+    "m_alpha",
+    "m_charlie",
+    "m_bravo"
+  ],
+  "notes": "Directories are created in the listed (non-sorted) order; machine_order is normalised.",
+  "order_sensitive": false,
+  "parser": "folder"
+}

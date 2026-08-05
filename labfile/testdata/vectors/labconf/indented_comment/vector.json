@@ -1,0 +1,4 @@
+{
+  "description": "The '#' skip test runs on the RAW line, so an indented comment is a syntax error in lab.conf.",
+  "parser": "lab"
+}

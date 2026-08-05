@@ -1,0 +1,4 @@
+{
+  "description": "lab.dep keys and deps are Unicode-aware \\w, unlike lab.conf device names.",
+  "parser": "dep"
+}

@@ -1,0 +1,4 @@
+{
+  "description": "Upstream fixture: explicit cd/mac syntax on one interface, plain cd on another device.",
+  "parser": "lab"
+}

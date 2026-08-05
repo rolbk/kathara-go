@@ -1,0 +1,4 @@
+{
+  "description": "A space before the colon breaks the key group.",
+  "parser": "dep"
+}

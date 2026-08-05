@@ -1,0 +1,4 @@
+{
+  "description": "lab.dep strips the line before matching, so CRLF files parse.",
+  "parser": "dep"
+}

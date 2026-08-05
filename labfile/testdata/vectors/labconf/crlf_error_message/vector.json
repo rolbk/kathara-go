@@ -1,0 +1,4 @@
+{
+  "description": "There is no newline translation, so a CRLF file leaks the CR into the syntax-error message.",
+  "parser": "lab"
+}

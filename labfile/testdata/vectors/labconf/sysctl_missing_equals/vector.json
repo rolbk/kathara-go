@@ -1,0 +1,4 @@
+{
+  "description": "sysctl values need a key=value pair.",
+  "parser": "lab"
+}

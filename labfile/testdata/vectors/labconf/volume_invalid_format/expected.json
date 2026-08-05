@@ -1,0 +1,6 @@
+{
+  "error": {
+    "class": "MachineOptionError",
+    "message": "The volume specified `/host/a` is not in a valid format: <host_path>|<guest_path>|[<mode>]"
+  }
+}

@@ -1,0 +1,4 @@
+{
+  "description": "check() sorts interface numbers together with the string bridged_iface meta -> TypeError.",
+  "parser": "lab"
+}

@@ -1,0 +1,7 @@
+{
+  "description": "Upstream fixture: a second '=' fails to unpack.",
+  "options": [
+    "option=syntax_error=2"
+  ],
+  "parser": "options"
+}

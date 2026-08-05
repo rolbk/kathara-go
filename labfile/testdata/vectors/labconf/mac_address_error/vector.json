@@ -1,0 +1,4 @@
+{
+  "description": "Upstream fixture: a five-octet MAC parses as cd/mac but the Interface constructor rejects it.",
+  "parser": "lab"
+}

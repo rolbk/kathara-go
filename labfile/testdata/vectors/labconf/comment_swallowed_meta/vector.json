@@ -1,0 +1,4 @@
+{
+  "description": "The trailing-comment group only fires after a quoted value: an unquoted meta swallows the comment.",
+  "parser": "lab"
+}

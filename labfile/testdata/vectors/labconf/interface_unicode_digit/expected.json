@@ -1,0 +1,78 @@
+{
+  "lab": {
+    "author": null,
+    "description": null,
+    "email": null,
+    "general_options": {},
+    "global_machine_metadata": {},
+    "has_dependencies": false,
+    "hash": null,
+    "link_order": [
+      "A",
+      "B",
+      "C",
+      "D"
+    ],
+    "links": {
+      "A": {
+        "machines": [
+          "pc1"
+        ]
+      },
+      "B": {
+        "machines": [
+          "pc1"
+        ]
+      },
+      "C": {
+        "machines": [
+          "pc1"
+        ]
+      },
+      "D": {
+        "machines": [
+          "pc1"
+        ]
+      }
+    },
+    "machine_order": [
+      "pc1"
+    ],
+    "machines": {
+      "pc1": {
+        "has_dir": false,
+        "interfaces": {
+          "0": {
+            "cd": "A",
+            "mac": null
+          },
+          "1": {
+            "cd": "B",
+            "mac": null
+          },
+          "2": {
+            "cd": "C",
+            "mac": null
+          },
+          "3": {
+            "cd": "D",
+            "mac": null
+          }
+        },
+        "meta": {
+          "envs": {},
+          "exec_commands": [],
+          "extra": {},
+          "ports": {},
+          "sysctls": {},
+          "ulimits": {},
+          "volumes": {}
+        },
+        "startup_file": null
+      }
+    },
+    "name": null,
+    "version": null,
+    "web": null
+  }
+}

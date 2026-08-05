@@ -1,0 +1,6 @@
+{
+  "error": {
+    "class": "MachineOptionError",
+    "message": "Invalid ulimit value (`nofile=-1:5`) on `ulimit`. Soft limit (-1) cannot be greater than hard limit (5)."
+  }
+}

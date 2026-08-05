@@ -1,0 +1,6 @@
+{
+  "error": {
+    "class": "SyntaxError",
+    "message": "Invalid device name `PC1`."
+  }
+}

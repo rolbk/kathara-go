@@ -1,0 +1,4 @@
+{
+  "description": "Volume modes are limited to ro, rw and rx (note the trailing space in the message).",
+  "parser": "lab"
+}

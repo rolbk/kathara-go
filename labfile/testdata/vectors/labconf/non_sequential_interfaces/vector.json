@@ -1,0 +1,4 @@
+{
+  "description": "check_integrity runs inside parse: a gap in the interface numbering is a parse-time error.",
+  "parser": "lab"
+}

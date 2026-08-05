@@ -1,0 +1,10 @@
+{
+  "description": "glob ignores dot-prefixed entries, so .git and friends never become devices.",
+  "dirs": [
+    "pc1",
+    ".git",
+    ".vscode"
+  ],
+  "order_sensitive": false,
+  "parser": "folder"
+}

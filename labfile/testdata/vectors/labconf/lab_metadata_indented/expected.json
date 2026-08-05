@@ -1,0 +1,6 @@
+{
+  "error": {
+    "class": "SyntaxError",
+    "message": "In lab.conf - Line 1: `  LAB_NAME=test_lab\n`."
+  }
+}

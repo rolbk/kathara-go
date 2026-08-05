@@ -1,0 +1,9 @@
+{
+  "description": "The '*/' glob is single-level: directories inside a device folder are not devices.",
+  "dirs": [
+    "pc1",
+    "pc1/etc",
+    "pc1/etc/frr"
+  ],
+  "parser": "folder"
+}

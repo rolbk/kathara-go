@@ -1,0 +1,6 @@
+{
+  "error": {
+    "class": "MachineOptionError",
+    "message": "Invalid sysctl value (`net.ipv4.ip_forward`) on `pc1`, missing `=` or value not in `net.` namespace."
+  }
+}

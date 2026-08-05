@@ -1,0 +1,5 @@
+{
+  "description": "Python \\w and int() are Unicode-aware: pc1[U+0663] is interface 3. Go RE2/Atoi are not.",
+  "notes": "OQ-14a: Unicode-digit interface numbers.",
+  "parser": "lab"
+}

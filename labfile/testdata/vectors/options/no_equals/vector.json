@@ -1,0 +1,7 @@
+{
+  "description": "Upstream fixture: an option without '=' fails to unpack.",
+  "options": [
+    "option:syntax_error"
+  ],
+  "parser": "options"
+}

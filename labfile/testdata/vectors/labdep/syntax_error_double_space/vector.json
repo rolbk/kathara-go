@@ -1,0 +1,4 @@
+{
+  "description": "Upstream fixture: at most one whitespace after ':' and single spaces between deps.",
+  "parser": "dep"
+}

@@ -1,0 +1,6 @@
+{
+  "error": {
+    "class": "MachineCollisionDomainError",
+    "message": "Device `pc1` is already connected to collision domain `A`."
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "description": "An option with nothing before '=' is accepted: the empty string becomes a key.",
+  "options": [
+    "=value"
+  ],
+  "parser": "options"
+}

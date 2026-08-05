@@ -1,0 +1,8 @@
+{
+  "description": "Machine folders and .startup files do not create devices; a matching folder sets Machine.fs.",
+  "dirs": [
+    "pc1",
+    "pc3"
+  ],
+  "parser": "lab"
+}

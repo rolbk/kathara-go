@@ -1,0 +1,6 @@
+{
+  "error": {
+    "class": "NonSequentialMachineInterfaceError",
+    "message": "Interface `1` missing on device `pc1`."
+  }
+}

@@ -1,0 +1,4 @@
+{
+  "description": "LAB_ values: surrounding whitespace stripped, every quote char deleted anywhere in the value.",
+  "parser": "lab"
+}

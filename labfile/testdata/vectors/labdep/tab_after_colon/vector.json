@@ -1,0 +1,4 @@
+{
+  "description": "\\s? accepts any single whitespace character, including a tab.",
+  "parser": "dep"
+}

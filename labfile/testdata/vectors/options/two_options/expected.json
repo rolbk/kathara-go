@@ -1,0 +1,6 @@
+{
+  "options": {
+    "image": "kathara/netkit_base",
+    "mem": "64m"
+  }
+}

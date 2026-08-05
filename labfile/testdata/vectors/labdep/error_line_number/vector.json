@@ -1,0 +1,4 @@
+{
+  "description": "The line counter includes comments and blank lines.",
+  "parser": "dep"
+}

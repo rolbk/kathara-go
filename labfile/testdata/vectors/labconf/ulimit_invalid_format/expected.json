@@ -1,0 +1,6 @@
+{
+  "error": {
+    "class": "MachineOptionError",
+    "message": "Invalid ulimit value (`nofile`) on `ulimit`."
+  }
+}

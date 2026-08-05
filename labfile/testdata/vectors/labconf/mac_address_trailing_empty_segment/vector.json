@@ -1,0 +1,4 @@
+{
+  "description": "A trailing slash AFTER a MAC still leaves exactly two non-empty parts.",
+  "parser": "lab"
+}

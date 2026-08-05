@@ -1,0 +1,4 @@
+{
+  "description": "A trailing slash leaves a single part after empty-segment filtering.",
+  "parser": "lab"
+}

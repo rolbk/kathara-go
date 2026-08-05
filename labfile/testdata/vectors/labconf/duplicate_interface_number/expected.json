@@ -1,0 +1,6 @@
+{
+  "error": {
+    "class": "MachineCollisionDomainError",
+    "message": "Interface 0 already set on device `pc1`."
+  }
+}

@@ -1,0 +1,4 @@
+{
+  "description": "A lab directory with no subdirectories yields an empty network scenario.",
+  "parser": "folder"
+}

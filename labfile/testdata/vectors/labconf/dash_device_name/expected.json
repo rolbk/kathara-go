@@ -1,0 +1,6 @@
+{
+  "error": {
+    "class": "SyntaxError",
+    "message": "In lab.conf - Line 1: `pc-1[0]='A'\n`."
+  }
+}

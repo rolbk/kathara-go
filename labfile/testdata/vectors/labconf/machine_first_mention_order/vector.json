@@ -1,0 +1,4 @@
+{
+  "description": "Machine insertion order is first mention, whether the first mention is a meta or an interface.",
+  "parser": "lab"
+}

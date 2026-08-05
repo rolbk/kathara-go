@@ -1,0 +1,7 @@
+{
+  "description": "Quote stripping happens before the split, so quotes around the whole pair also disappear.",
+  "options": [
+    "\"image=kathara/base\""
+  ],
+  "parser": "options"
+}

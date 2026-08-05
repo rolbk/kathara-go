@@ -1,0 +1,4 @@
+{
+  "description": "Zero whitespace after ':' is accepted.",
+  "parser": "dep"
+}

@@ -1,0 +1,4 @@
+{
+  "description": "The LAB_ prefix test also runs on the raw line: leading whitespace breaks it.",
+  "parser": "lab"
+}

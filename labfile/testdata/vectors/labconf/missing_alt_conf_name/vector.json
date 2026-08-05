@@ -1,0 +1,5 @@
+{
+  "conf_name": "custom.conf",
+  "description": "The conf_name argument is interpolated into the not-found message.",
+  "parser": "lab"
+}

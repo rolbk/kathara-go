@@ -1,0 +1,7 @@
+{
+  "description": "An empty value is legal here (unlike a machine meta in lab.conf).",
+  "options": [
+    "mem="
+  ],
+  "parser": "options"
+}

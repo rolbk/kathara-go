@@ -1,0 +1,292 @@
+{
+  "lab": {
+    "author": null,
+    "description": null,
+    "email": null,
+    "general_options": {},
+    "global_machine_metadata": {},
+    "has_dependencies": false,
+    "hash": null,
+    "link_order": [],
+    "links": {},
+    "machine_order": [
+      "p_y",
+      "p_yes",
+      "p_t",
+      "p_true",
+      "p_on",
+      "p_1",
+      "p_n",
+      "p_no",
+      "p_f",
+      "p_false",
+      "p_off",
+      "p_0",
+      "p_upper",
+      "p_mixed",
+      "b_on",
+      "b_off"
+    ],
+    "machines": {
+      "b_off": {
+        "has_dir": false,
+        "interfaces": {},
+        "meta": {
+          "envs": {},
+          "exec_commands": [],
+          "extra": {
+            "bridged": false
+          },
+          "ports": {},
+          "sysctls": {},
+          "ulimits": {},
+          "volumes": {}
+        },
+        "startup_file": null
+      },
+      "b_on": {
+        "has_dir": false,
+        "interfaces": {},
+        "meta": {
+          "envs": {},
+          "exec_commands": [],
+          "extra": {
+            "bridged": true
+          },
+          "ports": {},
+          "sysctls": {},
+          "ulimits": {},
+          "volumes": {}
+        },
+        "startup_file": null
+      },
+      "p_0": {
+        "has_dir": false,
+        "interfaces": {},
+        "meta": {
+          "envs": {},
+          "exec_commands": [],
+          "extra": {
+            "privileged": false
+          },
+          "ports": {},
+          "sysctls": {},
+          "ulimits": {},
+          "volumes": {}
+        },
+        "startup_file": null
+      },
+      "p_1": {
+        "has_dir": false,
+        "interfaces": {},
+        "meta": {
+          "envs": {},
+          "exec_commands": [],
+          "extra": {
+            "privileged": true
+          },
+          "ports": {},
+          "sysctls": {},
+          "ulimits": {},
+          "volumes": {}
+        },
+        "startup_file": null
+      },
+      "p_f": {
+        "has_dir": false,
+        "interfaces": {},
+        "meta": {
+          "envs": {},
+          "exec_commands": [],
+          "extra": {
+            "privileged": false
+          },
+          "ports": {},
+          "sysctls": {},
+          "ulimits": {},
+          "volumes": {}
+        },
+        "startup_file": null
+      },
+      "p_false": {
+        "has_dir": false,
+        "interfaces": {},
+        "meta": {
+          "envs": {},
+          "exec_commands": [],
+          "extra": {
+            "privileged": false
+          },
+          "ports": {},
+          "sysctls": {},
+          "ulimits": {},
+          "volumes": {}
+        },
+        "startup_file": null
+      },
+      "p_mixed": {
+        "has_dir": false,
+        "interfaces": {},
+        "meta": {
+          "envs": {},
+          "exec_commands": [],
+          "extra": {
+            "privileged": true
+          },
+          "ports": {},
+          "sysctls": {},
+          "ulimits": {},
+          "volumes": {}
+        },
+        "startup_file": null
+      },
+      "p_n": {
+        "has_dir": false,
+        "interfaces": {},
+        "meta": {
+          "envs": {},
+          "exec_commands": [],
+          "extra": {
+            "privileged": false
+          },
+          "ports": {},
+          "sysctls": {},
+          "ulimits": {},
+          "volumes": {}
+        },
+        "startup_file": null
+      },
+      "p_no": {
+        "has_dir": false,
+        "interfaces": {},
+        "meta": {
+          "envs": {},
+          "exec_commands": [],
+          "extra": {
+            "privileged": false
+          },
+          "ports": {},
+          "sysctls": {},
+          "ulimits": {},
+          "volumes": {}
+        },
+        "startup_file": null
+      },
+      "p_off": {
+        "has_dir": false,
+        "interfaces": {},
+        "meta": {
+          "envs": {},
+          "exec_commands": [],
+          "extra": {
+            "privileged": false
+          },
+          "ports": {},
+          "sysctls": {},
+          "ulimits": {},
+          "volumes": {}
+        },
+        "startup_file": null
+      },
+      "p_on": {
+        "has_dir": false,
+        "interfaces": {},
+        "meta": {
+          "envs": {},
+          "exec_commands": [],
+          "extra": {
+            "privileged": true
+          },
+          "ports": {},
+          "sysctls": {},
+          "ulimits": {},
+          "volumes": {}
+        },
+        "startup_file": null
+      },
+      "p_t": {
+        "has_dir": false,
+        "interfaces": {},
+        "meta": {
+          "envs": {},
+          "exec_commands": [],
+          "extra": {
+            "privileged": true
+          },
+          "ports": {},
+          "sysctls": {},
+          "ulimits": {},
+          "volumes": {}
+        },
+        "startup_file": null
+      },
+      "p_true": {
+        "has_dir": false,
+        "interfaces": {},
+        "meta": {
+          "envs": {},
+          "exec_commands": [],
+          "extra": {
+            "privileged": true
+          },
+          "ports": {},
+          "sysctls": {},
+          "ulimits": {},
+          "volumes": {}
+        },
+        "startup_file": null
+      },
+      "p_upper": {
+        "has_dir": false,
+        "interfaces": {},
+        "meta": {
+          "envs": {},
+          "exec_commands": [],
+          "extra": {
+            "privileged": true
+          },
+          "ports": {},
+          "sysctls": {},
+          "ulimits": {},
+          "volumes": {}
+        },
+        "startup_file": null
+      },
+      "p_y": {
+        "has_dir": false,
+        "interfaces": {},
+        "meta": {
+          "envs": {},
+          "exec_commands": [],
+          "extra": {
+            "privileged": true
+          },
+          "ports": {},
+          "sysctls": {},
+          "ulimits": {},
+          "volumes": {}
+        },
+        "startup_file": null
+      },
+      "p_yes": {
+        "has_dir": false,
+        "interfaces": {},
+        "meta": {
+          "envs": {},
+          "exec_commands": [],
+          "extra": {
+            "privileged": true
+          },
+          "ports": {},
+          "sysctls": {},
+          "ulimits": {},
+          "volumes": {}
+        },
+        "startup_file": null
+      }
+    },
+    "name": null,
+    "version": null,
+    "web": null
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "description": "A lab.dep that exists but cannot be opened as a file (here: a directory) hits the mmap try/except.",
+  "dirs": [
+    "lab.dep"
+  ],
+  "parser": "dep"
+}

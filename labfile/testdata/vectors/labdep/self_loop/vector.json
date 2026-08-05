@@ -1,0 +1,4 @@
+{
+  "description": "A device depending on itself is a loop.",
+  "parser": "dep"
+}

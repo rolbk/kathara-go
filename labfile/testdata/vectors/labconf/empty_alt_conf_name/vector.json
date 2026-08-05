@@ -1,0 +1,5 @@
+{
+  "conf_name": "custom.conf",
+  "description": "conf_name is interpolated into the empty-file message too, not just the not-found one.",
+  "parser": "lab"
+}

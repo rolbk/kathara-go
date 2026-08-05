@@ -1,0 +1,6 @@
+{
+  "error": {
+    "class": "OSError",
+    "message": "Cannot open lab.conf file."
+  }
+}

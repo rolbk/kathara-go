@@ -1,0 +1,4 @@
+{
+  "description": "Volume '|' splitting filters empty segments (like the MAC '/' split): '/a||/b' and '|/a|/b' are legal 2-part volumes, mode ro.",
+  "parser": "lab"
+}

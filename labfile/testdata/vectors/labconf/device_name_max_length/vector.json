@@ -1,0 +1,4 @@
+{
+  "description": "Exactly 30 characters is still a valid device name.",
+  "parser": "lab"
+}

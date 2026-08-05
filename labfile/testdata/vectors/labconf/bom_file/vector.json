@@ -1,0 +1,4 @@
+{
+  "description": "A UTF-8 BOM is not whitespace, so it survives strip() and breaks the first line.",
+  "parser": "lab"
+}

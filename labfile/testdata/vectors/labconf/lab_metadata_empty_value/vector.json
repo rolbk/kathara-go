@@ -1,0 +1,4 @@
+{
+  "description": "Unlike machine metas, a LAB_ key may have an empty value - it takes the metadata branch.",
+  "parser": "lab"
+}

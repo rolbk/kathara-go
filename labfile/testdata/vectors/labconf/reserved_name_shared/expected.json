@@ -1,0 +1,6 @@
+{
+  "error": {
+    "class": "ValueError",
+    "message": "In lab.conf - Line 1: `shared` is a reserved name, you can not use it for a device."
+  }
+}

@@ -1,0 +1,5 @@
+{
+  "description": "Same graph, lines reordered: the within-level order flips. Deploy order is line-order sensitive.",
+  "notes": "Pins that depgen.flatten is NOT a canonical topological sort.",
+  "parser": "dep"
+}

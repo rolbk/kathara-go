@@ -1,0 +1,4 @@
+{
+  "description": "A missing lab.dep is not an error: the parser returns None.",
+  "parser": "dep"
+}

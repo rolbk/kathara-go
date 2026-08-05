@@ -1,0 +1,55 @@
+{
+  "lab": {
+    "author": null,
+    "description": null,
+    "email": null,
+    "general_options": {},
+    "global_machine_metadata": {},
+    "has_dependencies": false,
+    "hash": null,
+    "link_order": [],
+    "links": {},
+    "machine_order": [
+      "pc1"
+    ],
+    "machines": {
+      "pc1": {
+        "has_dir": false,
+        "interfaces": {},
+        "meta": {
+          "envs": {
+            "FOO": "two"
+          },
+          "exec_commands": [],
+          "extra": {},
+          "ports": {},
+          "sysctls": {
+            "net.ipv4.ip_forward": 1
+          },
+          "ulimits": {
+            "nofile": {
+              "hard": 20,
+              "soft": 20
+            }
+          },
+          "volumes": {
+            "/host/a": {
+              "guest_path": "/guest/two",
+              "mode": "rw"
+            }
+          }
+        },
+        "startup_file": null
+      }
+    },
+    "name": null,
+    "version": null,
+    "web": null
+  },
+  "warnings": [
+    "In lab.conf - Line 2: Device `pc1` already has a value assigned to meta `sysctl`. Previous value has been overwritten with `net.ipv4.ip_forward=1`.",
+    "In lab.conf - Line 4: Device `pc1` already has a value assigned to meta `env`. Previous value has been overwritten with `FOO=two`.",
+    "In lab.conf - Line 6: Device `pc1` already has a value assigned to meta `ulimit`. Previous value has been overwritten with `nofile=20`.",
+    "In lab.conf - Line 8: Device `pc1` already has a value assigned to meta `volume`. Previous value has been overwritten with `/host/a|/guest/two|rw`."
+  ]
+}

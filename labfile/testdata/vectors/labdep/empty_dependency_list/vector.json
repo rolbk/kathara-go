@@ -1,0 +1,4 @@
+{
+  "description": "An empty dependency list does not match (\\w+ ?)+.",
+  "parser": "dep"
+}

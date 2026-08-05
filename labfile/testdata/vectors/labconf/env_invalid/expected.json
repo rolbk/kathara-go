@@ -1,0 +1,6 @@
+{
+  "error": {
+    "class": "MachineOptionError",
+    "message": "Invalid env value (`FOO`) on `pc1`."
+  }
+}

@@ -1,0 +1,4 @@
+{
+  "description": "A non-empty lab.conf containing only comments yields an empty (but valid) network scenario.",
+  "parser": "lab"
+}

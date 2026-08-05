@@ -1,0 +1,4 @@
+{
+  "description": "A repeated LAB_ metadata key silently overwrites (setattr last-wins) - no warning, unlike duplicate machine metas.",
+  "parser": "lab"
+}

@@ -1,0 +1,4 @@
+{
+  "description": "A leading slash drops the collision-domain segment, leaving one part.",
+  "parser": "lab"
+}

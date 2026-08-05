@@ -1,0 +1,4 @@
+{
+  "description": "Quote characters inside a value cannot survive the value class [^\"']+ - the line simply fails.",
+  "parser": "lab"
+}

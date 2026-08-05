@@ -1,0 +1,4 @@
+{
+  "description": "Only the six LAB_ keys are recognised; anything else is a syntax error (message carries the raw line).",
+  "parser": "lab"
+}

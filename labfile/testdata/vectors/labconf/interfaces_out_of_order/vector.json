@@ -1,0 +1,4 @@
+{
+  "description": "Interfaces may be declared out of order; check() sorts them. Link creation order follows the file.",
+  "parser": "lab"
+}

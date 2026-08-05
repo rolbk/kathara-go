@@ -1,0 +1,5 @@
+{
+  "description": "sysctl int coercion uses val.lstrip('-') which strips ALL dashes: '--5' passes isnumeric but int() crashes bare.",
+  "notes": "The ValueError is raised inside the meta path (already inside the except ValueError dispatcher), so it escapes uncaught with no file/line context.",
+  "parser": "lab"
+}

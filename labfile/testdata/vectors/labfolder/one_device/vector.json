@@ -1,0 +1,7 @@
+{
+  "description": "Upstream fixture: one subdirectory becomes one device with no interfaces.",
+  "dirs": [
+    "pc1"
+  ],
+  "parser": "folder"
+}

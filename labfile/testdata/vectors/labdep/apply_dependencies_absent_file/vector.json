@@ -1,0 +1,4 @@
+{
+  "description": "Without lab.dep the machine order is pure lab.conf order and has_dependencies stays False.",
+  "parser": "lab+dep"
+}

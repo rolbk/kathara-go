@@ -1,0 +1,8 @@
+{
+  "description": "Duplicate keys: last wins.",
+  "options": [
+    "mem=64m",
+    "mem=128m"
+  ],
+  "parser": "options"
+}

@@ -1,0 +1,5 @@
+{
+  "description": "Args that int() rejects become metas, even when they look numeric.",
+  "notes": "'²' is \\w and str.isdigit() but int() rejects it; '_0'/'0_' are malformed PEP 515.",
+  "parser": "lab"
+}

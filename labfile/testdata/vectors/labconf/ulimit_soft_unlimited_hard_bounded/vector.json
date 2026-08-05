@@ -1,0 +1,4 @@
+{
+  "description": "A -1 soft limit with a bounded hard limit is rejected.",
+  "parser": "lab"
+}

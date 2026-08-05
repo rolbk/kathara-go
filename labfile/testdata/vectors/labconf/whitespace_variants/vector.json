@@ -1,0 +1,4 @@
+{
+  "description": "Leading/trailing spaces and tabs around a device line are stripped before matching.",
+  "parser": "lab"
+}

@@ -1,0 +1,4 @@
+{
+  "description": "mmap + text-mode open means no newline translation; strip() hides the CR from the regexes.",
+  "parser": "lab"
+}

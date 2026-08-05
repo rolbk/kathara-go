@@ -1,0 +1,4 @@
+{
+  "description": "A zero-byte lab.dep logs a warning and returns None.",
+  "parser": "dep"
+}
