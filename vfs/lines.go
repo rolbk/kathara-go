@@ -79,6 +79,18 @@ func normalizeLine(line string) string {
 //	"b$"  vs "b\r\n"  -> no match
 //	"b$"  vs "b\r"    -> no match
 //	"^$"  vs "\n"     -> match
+//
+// Residual gap, documented in SPIKES/vfs.md §5 and pinned by
+// testdata/pysearch_divergent.json. The retry only covers a `$` that the whole
+// match ends at. When a `$` sits MID-pattern and what follows it consumes the
+// trailing newline, Python matches and this returns false — `re.search("b$\n",
+// "b\n")` is True in Python, while under RE2 `b$\n` is unsatisfiable and the
+// stripped line has no "\n" left for the pattern to consume. Python's `$` is
+// the lookahead `(?=\n?\z)`, which RE2 has no spelling for, so there is no
+// faithful emulation; the failure mode is one-sided (a miss, never an invented
+// match), which is why the pinning test asserts exactly that. No in-tree
+// pattern uses `$` anywhere but in terminal position; this is reachable only
+// through a caller-supplied searched_line on the §7 client API.
 func pySearch(re *regexp.Regexp, line string) bool {
 	if re.MatchString(line) {
 		return true

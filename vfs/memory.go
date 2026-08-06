@@ -140,24 +140,36 @@ func (m *memFS) openWrite(name, op string, appendMode bool) (io.WriteCloser, err
 	if n, ok := m.nodes[cleaned]; ok && n.dir {
 		return nil, &fs.PathError{Op: op, Path: cleaned, Err: ErrFileExpected}
 	}
-	// Parent must exist: pyfilesystem's fs.open(p, "w"|"a") raises
-	// ResourceNotFound otherwise, which is why every FilesystemMixin creator
-	// calls makedirs first (probe P6b).
+	// Parent must exist and be a directory: pyfilesystem's fs.open(p, "w"|"a")
+	// raises ResourceNotFound otherwise, which is why every FilesystemMixin
+	// creator calls makedirs first (probe P6b). ResourceNotFound is also what
+	// MemoryFS raises when a path COMPONENT is a file, not DirectoryExpected —
+	// verified live: with a file at /afile, open("/afile/child", "w") and
+	// open("/afile/child", "a") both raise ResourceNotFound on mem:// and on
+	// osfs://. (DirectoryExpected comes from makedirs, which runs first for
+	// the create_* family — probe MD1 — and is unchanged.)
 	parent := parentDir(cleaned)
 	pn, ok := m.nodes[parent]
-	if !ok {
+	if !ok || !pn.dir {
 		return nil, &fs.PathError{Op: op, Path: cleaned, Err: fs.ErrNotExist}
-	}
-	if !pn.dir {
-		return nil, &fs.PathError{Op: op, Path: cleaned, Err: ErrDirectoryExpected}
 	}
 
 	w := &memWriter{fsys: m, name: cleaned}
 	if appendMode {
 		if n, ok := m.nodes[cleaned]; ok {
 			w.buf.Write(n.data)
+			return w, nil
 		}
 	}
+	// pyfilesystem creates the entry — and, for "w", truncates it — at OPEN
+	// time, not at close. Verified live on both backends: right after
+	// fs.open(p, "w") the file exists, reads back b"" and lists in its parent,
+	// and removedir on that parent fails with DirectoryNotEmpty. Creating the
+	// node here reproduces that and closes a real hole: with the node deferred
+	// to Close, Remove(parent) saw an empty directory and succeeded, and the
+	// later Close then stored a file with no parent — reachable by Exists and
+	// ReadFile but invisible to ReadDir and Walk.
+	m.nodes[cleaned] = &memNode{mode: 0o644, mod: m.clock()}
 	return w, nil
 }
 
@@ -201,8 +213,10 @@ func (m *memFS) Remove(name string) error {
 		return &fs.PathError{Op: "remove", Path: cleaned, Err: fs.ErrNotExist}
 	}
 	if n.dir {
+		// fs.errors.RemoveRootError: pyfilesystem refuses the root whether it
+		// is empty or not. OSDir refuses it identically.
 		if cleaned == "." {
-			return &fs.PathError{Op: "remove", Path: cleaned, Err: ErrDirectoryNotEmpty}
+			return &fs.PathError{Op: "remove", Path: cleaned, Err: ErrRemoveRoot}
 		}
 		if len(m.childrenLocked(cleaned)) > 0 {
 			return &fs.PathError{Op: "remove", Path: cleaned, Err: ErrDirectoryNotEmpty}
@@ -282,8 +296,9 @@ func (d *memDir) ReadDir(n int) ([]fs.DirEntry, error) {
 	return rest, nil
 }
 
-// memWriter buffers until Close so a failed write leaves no half-file, and so
-// Create's truncation is not observable until the writer is closed.
+// memWriter buffers until Close so a failed write leaves no half-file. The
+// entry itself is created (and, for Create, truncated) by openWrite, matching
+// pyfilesystem's open-time semantics; only the CONTENT lands on Close.
 type memWriter struct {
 	fsys   *memFS
 	name   string

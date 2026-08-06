@@ -1,0 +1,702 @@
+[
+ {
+  "pattern": "b$\n",
+  "line": "b\n",
+  "match": true
+ },
+ {
+  "pattern": "b$\n",
+  "line": "ab\n",
+  "match": true
+ },
+ {
+  "pattern": "b$\n",
+  "line": "b\r\n",
+  "match": false
+ },
+ {
+  "pattern": "b$\n",
+  "line": "b\r",
+  "match": false
+ },
+ {
+  "pattern": "b$\n",
+  "line": "b",
+  "match": false
+ },
+ {
+  "pattern": "b$\n",
+  "line": "a\n",
+  "match": false
+ },
+ {
+  "pattern": "b$\n",
+  "line": "a",
+  "match": false
+ },
+ {
+  "pattern": "b$\n",
+  "line": "\n",
+  "match": false
+ },
+ {
+  "pattern": "b$\n",
+  "line": "",
+  "match": false
+ },
+ {
+  "pattern": "b$\n",
+  "line": "a\nb",
+  "match": false
+ },
+ {
+  "pattern": "b$\\n",
+  "line": "b\n",
+  "match": true
+ },
+ {
+  "pattern": "b$\\n",
+  "line": "ab\n",
+  "match": true
+ },
+ {
+  "pattern": "b$\\n",
+  "line": "b\r\n",
+  "match": false
+ },
+ {
+  "pattern": "b$\\n",
+  "line": "b\r",
+  "match": false
+ },
+ {
+  "pattern": "b$\\n",
+  "line": "b",
+  "match": false
+ },
+ {
+  "pattern": "b$\\n",
+  "line": "a\n",
+  "match": false
+ },
+ {
+  "pattern": "b$\\n",
+  "line": "a",
+  "match": false
+ },
+ {
+  "pattern": "b$\\n",
+  "line": "\n",
+  "match": false
+ },
+ {
+  "pattern": "b$\\n",
+  "line": "",
+  "match": false
+ },
+ {
+  "pattern": "b$\\n",
+  "line": "a\nb",
+  "match": false
+ },
+ {
+  "pattern": "$\n",
+  "line": "b\n",
+  "match": true
+ },
+ {
+  "pattern": "$\n",
+  "line": "ab\n",
+  "match": true
+ },
+ {
+  "pattern": "$\n",
+  "line": "b\r\n",
+  "match": true
+ },
+ {
+  "pattern": "$\n",
+  "line": "b\r",
+  "match": false
+ },
+ {
+  "pattern": "$\n",
+  "line": "b",
+  "match": false
+ },
+ {
+  "pattern": "$\n",
+  "line": "a\n",
+  "match": true
+ },
+ {
+  "pattern": "$\n",
+  "line": "a",
+  "match": false
+ },
+ {
+  "pattern": "$\n",
+  "line": "\n",
+  "match": true
+ },
+ {
+  "pattern": "$\n",
+  "line": "",
+  "match": false
+ },
+ {
+  "pattern": "$\n",
+  "line": "a\nb",
+  "match": false
+ },
+ {
+  "pattern": "^a$\n",
+  "line": "b\n",
+  "match": false
+ },
+ {
+  "pattern": "^a$\n",
+  "line": "ab\n",
+  "match": false
+ },
+ {
+  "pattern": "^a$\n",
+  "line": "b\r\n",
+  "match": false
+ },
+ {
+  "pattern": "^a$\n",
+  "line": "b\r",
+  "match": false
+ },
+ {
+  "pattern": "^a$\n",
+  "line": "b",
+  "match": false
+ },
+ {
+  "pattern": "^a$\n",
+  "line": "a\n",
+  "match": true
+ },
+ {
+  "pattern": "^a$\n",
+  "line": "a",
+  "match": false
+ },
+ {
+  "pattern": "^a$\n",
+  "line": "\n",
+  "match": false
+ },
+ {
+  "pattern": "^a$\n",
+  "line": "",
+  "match": false
+ },
+ {
+  "pattern": "^a$\n",
+  "line": "a\nb",
+  "match": false
+ },
+ {
+  "pattern": "(b$)\n",
+  "line": "b\n",
+  "match": true
+ },
+ {
+  "pattern": "(b$)\n",
+  "line": "ab\n",
+  "match": true
+ },
+ {
+  "pattern": "(b$)\n",
+  "line": "b\r\n",
+  "match": false
+ },
+ {
+  "pattern": "(b$)\n",
+  "line": "b\r",
+  "match": false
+ },
+ {
+  "pattern": "(b$)\n",
+  "line": "b",
+  "match": false
+ },
+ {
+  "pattern": "(b$)\n",
+  "line": "a\n",
+  "match": false
+ },
+ {
+  "pattern": "(b$)\n",
+  "line": "a",
+  "match": false
+ },
+ {
+  "pattern": "(b$)\n",
+  "line": "\n",
+  "match": false
+ },
+ {
+  "pattern": "(b$)\n",
+  "line": "",
+  "match": false
+ },
+ {
+  "pattern": "(b$)\n",
+  "line": "a\nb",
+  "match": false
+ },
+ {
+  "pattern": "[b]$\n",
+  "line": "b\n",
+  "match": true
+ },
+ {
+  "pattern": "[b]$\n",
+  "line": "ab\n",
+  "match": true
+ },
+ {
+  "pattern": "[b]$\n",
+  "line": "b\r\n",
+  "match": false
+ },
+ {
+  "pattern": "[b]$\n",
+  "line": "b\r",
+  "match": false
+ },
+ {
+  "pattern": "[b]$\n",
+  "line": "b",
+  "match": false
+ },
+ {
+  "pattern": "[b]$\n",
+  "line": "a\n",
+  "match": false
+ },
+ {
+  "pattern": "[b]$\n",
+  "line": "a",
+  "match": false
+ },
+ {
+  "pattern": "[b]$\n",
+  "line": "\n",
+  "match": false
+ },
+ {
+  "pattern": "[b]$\n",
+  "line": "",
+  "match": false
+ },
+ {
+  "pattern": "[b]$\n",
+  "line": "a\nb",
+  "match": false
+ },
+ {
+  "pattern": "b$\n?",
+  "line": "b\n",
+  "match": true
+ },
+ {
+  "pattern": "b$\n?",
+  "line": "ab\n",
+  "match": true
+ },
+ {
+  "pattern": "b$\n?",
+  "line": "b\r\n",
+  "match": false
+ },
+ {
+  "pattern": "b$\n?",
+  "line": "b\r",
+  "match": false
+ },
+ {
+  "pattern": "b$\n?",
+  "line": "b",
+  "match": true
+ },
+ {
+  "pattern": "b$\n?",
+  "line": "a\n",
+  "match": false
+ },
+ {
+  "pattern": "b$\n?",
+  "line": "a",
+  "match": false
+ },
+ {
+  "pattern": "b$\n?",
+  "line": "\n",
+  "match": false
+ },
+ {
+  "pattern": "b$\n?",
+  "line": "",
+  "match": false
+ },
+ {
+  "pattern": "b$\n?",
+  "line": "a\nb",
+  "match": true
+ },
+ {
+  "pattern": "b$\\s",
+  "line": "b\n",
+  "match": true
+ },
+ {
+  "pattern": "b$\\s",
+  "line": "ab\n",
+  "match": true
+ },
+ {
+  "pattern": "b$\\s",
+  "line": "b\r\n",
+  "match": false
+ },
+ {
+  "pattern": "b$\\s",
+  "line": "b\r",
+  "match": false
+ },
+ {
+  "pattern": "b$\\s",
+  "line": "b",
+  "match": false
+ },
+ {
+  "pattern": "b$\\s",
+  "line": "a\n",
+  "match": false
+ },
+ {
+  "pattern": "b$\\s",
+  "line": "a",
+  "match": false
+ },
+ {
+  "pattern": "b$\\s",
+  "line": "\n",
+  "match": false
+ },
+ {
+  "pattern": "b$\\s",
+  "line": "",
+  "match": false
+ },
+ {
+  "pattern": "b$\\s",
+  "line": "a\nb",
+  "match": false
+ },
+ {
+  "pattern": "b$",
+  "line": "b\n",
+  "match": true
+ },
+ {
+  "pattern": "b$",
+  "line": "ab\n",
+  "match": true
+ },
+ {
+  "pattern": "b$",
+  "line": "b\r\n",
+  "match": false
+ },
+ {
+  "pattern": "b$",
+  "line": "b\r",
+  "match": false
+ },
+ {
+  "pattern": "b$",
+  "line": "b",
+  "match": true
+ },
+ {
+  "pattern": "b$",
+  "line": "a\n",
+  "match": false
+ },
+ {
+  "pattern": "b$",
+  "line": "a",
+  "match": false
+ },
+ {
+  "pattern": "b$",
+  "line": "\n",
+  "match": false
+ },
+ {
+  "pattern": "b$",
+  "line": "",
+  "match": false
+ },
+ {
+  "pattern": "b$",
+  "line": "a\nb",
+  "match": true
+ },
+ {
+  "pattern": "b$|x",
+  "line": "b\n",
+  "match": true
+ },
+ {
+  "pattern": "b$|x",
+  "line": "ab\n",
+  "match": true
+ },
+ {
+  "pattern": "b$|x",
+  "line": "b\r\n",
+  "match": false
+ },
+ {
+  "pattern": "b$|x",
+  "line": "b\r",
+  "match": false
+ },
+ {
+  "pattern": "b$|x",
+  "line": "b",
+  "match": true
+ },
+ {
+  "pattern": "b$|x",
+  "line": "a\n",
+  "match": false
+ },
+ {
+  "pattern": "b$|x",
+  "line": "a",
+  "match": false
+ },
+ {
+  "pattern": "b$|x",
+  "line": "\n",
+  "match": false
+ },
+ {
+  "pattern": "b$|x",
+  "line": "",
+  "match": false
+ },
+ {
+  "pattern": "b$|x",
+  "line": "a\nb",
+  "match": true
+ },
+ {
+  "pattern": "^a$",
+  "line": "b\n",
+  "match": false
+ },
+ {
+  "pattern": "^a$",
+  "line": "ab\n",
+  "match": false
+ },
+ {
+  "pattern": "^a$",
+  "line": "b\r\n",
+  "match": false
+ },
+ {
+  "pattern": "^a$",
+  "line": "b\r",
+  "match": false
+ },
+ {
+  "pattern": "^a$",
+  "line": "b",
+  "match": false
+ },
+ {
+  "pattern": "^a$",
+  "line": "a\n",
+  "match": true
+ },
+ {
+  "pattern": "^a$",
+  "line": "a",
+  "match": true
+ },
+ {
+  "pattern": "^a$",
+  "line": "\n",
+  "match": false
+ },
+ {
+  "pattern": "^a$",
+  "line": "",
+  "match": false
+ },
+ {
+  "pattern": "^a$",
+  "line": "a\nb",
+  "match": false
+ },
+ {
+  "pattern": "a$b",
+  "line": "b\n",
+  "match": false
+ },
+ {
+  "pattern": "a$b",
+  "line": "ab\n",
+  "match": false
+ },
+ {
+  "pattern": "a$b",
+  "line": "b\r\n",
+  "match": false
+ },
+ {
+  "pattern": "a$b",
+  "line": "b\r",
+  "match": false
+ },
+ {
+  "pattern": "a$b",
+  "line": "b",
+  "match": false
+ },
+ {
+  "pattern": "a$b",
+  "line": "a\n",
+  "match": false
+ },
+ {
+  "pattern": "a$b",
+  "line": "a",
+  "match": false
+ },
+ {
+  "pattern": "a$b",
+  "line": "\n",
+  "match": false
+ },
+ {
+  "pattern": "a$b",
+  "line": "",
+  "match": false
+ },
+ {
+  "pattern": "a$b",
+  "line": "a\nb",
+  "match": false
+ },
+ {
+  "pattern": "b$.",
+  "line": "b\n",
+  "match": false
+ },
+ {
+  "pattern": "b$.",
+  "line": "ab\n",
+  "match": false
+ },
+ {
+  "pattern": "b$.",
+  "line": "b\r\n",
+  "match": false
+ },
+ {
+  "pattern": "b$.",
+  "line": "b\r",
+  "match": false
+ },
+ {
+  "pattern": "b$.",
+  "line": "b",
+  "match": false
+ },
+ {
+  "pattern": "b$.",
+  "line": "a\n",
+  "match": false
+ },
+ {
+  "pattern": "b$.",
+  "line": "a",
+  "match": false
+ },
+ {
+  "pattern": "b$.",
+  "line": "\n",
+  "match": false
+ },
+ {
+  "pattern": "b$.",
+  "line": "",
+  "match": false
+ },
+ {
+  "pattern": "b$.",
+  "line": "a\nb",
+  "match": false
+ },
+ {
+  "pattern": "b$x",
+  "line": "b\n",
+  "match": false
+ },
+ {
+  "pattern": "b$x",
+  "line": "ab\n",
+  "match": false
+ },
+ {
+  "pattern": "b$x",
+  "line": "b\r\n",
+  "match": false
+ },
+ {
+  "pattern": "b$x",
+  "line": "b\r",
+  "match": false
+ },
+ {
+  "pattern": "b$x",
+  "line": "b",
+  "match": false
+ },
+ {
+  "pattern": "b$x",
+  "line": "a\n",
+  "match": false
+ },
+ {
+  "pattern": "b$x",
+  "line": "a",
+  "match": false
+ },
+ {
+  "pattern": "b$x",
+  "line": "\n",
+  "match": false
+ },
+ {
+  "pattern": "b$x",
+  "line": "",
+  "match": false
+ },
+ {
+  "pattern": "b$x",
+  "line": "a\nb",
+  "match": false
+ }
+]

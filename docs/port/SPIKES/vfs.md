@@ -21,14 +21,19 @@ adversarial review in Phase 3; open items are in §7.
 | `vfs/files.go` | `CreateFileFromString/List/Path/Stream`, `UpdateFileFromString/List`, `CopyDirectory` |
 | `vfs/lines.go` | `SplitLines`, `pySearch`, `WriteLineBefore`, `WriteLineAfter`, `DeleteLine` |
 | `vfs/walk.go` | `Walk`, `Files`, `Dirs` |
-| `internal/util/tar.go` | `TarEntry`, `TarName`, `WriteTar`, `PackFilesForTar`, `PackFilesForTarMap` |
+| `internal/util/tar.go` | `TarEntry`, `TarName`, `WriteTar`, `PackFilesForTar` |
 | `vfs/testdata/pysearch_matrix.json` | 522 `re.search(pattern, line)` results produced BY CPython 3.13 |
+| `vfs/testdata/pysearch_divergent.json` | 140 more, produced the same way, concentrated on the **mid-pattern `$`** class the matrix has none of (§5.9) |
 | `vfs/testdata/pyreadlines.json` | 23 `readlines()` results produced BY pyfilesystem2 |
 | `internal/util/testdata/pack_*.tar` | 5 archives produced BY `utils.pack_files_for_tar` |
 
-Tests: `vfs/{vfs,files,lines,walk,oracle}_test.go`, `internal/util/tar_test.go`.
-**40 top-level test functions, 409 PASS assertions counting subtests, 0 failures**
-(`vfs` 31 + 345 = 376, `internal/util` 9 + 24 = 33), clean under `-race`.
+Tests: `vfs/{vfs,files,lines,walk,oracle,review}_test.go` — **51 top-level test
+functions, 439 PASS assertions counting subtests, 0 failures**, clean under
+`-race`. (`review_test.go` holds the Phase 3 regression set, §8.) The tar tests
+live in `internal/util/tar_test.go` and are counted by that package.
+
+All three oracle tables were re-verified against the live stack during the
+Phase 3 review: 522 / 140 / 23 rows, **0 disagreements**.
 
 **Package placement note.** The tar helper is in `internal/util`, not in `vfs`.
 PACKAGE_GRAPH.md §2 row 2 assigns "tar packing" to `internal/util` (`tar.go`),
@@ -63,6 +68,11 @@ traversal **clamped at the root** (`"../../x"` → `"x"`), root spelled `"."`.
 Backslashes are ordinary bytes — pyfilesystem does not translate them on POSIX,
 and only `pack_file_for_tar` rewrites them.
 
+**Corrected in Phase 3.** An earlier draft of this section claimed the clamping
+was "exactly like `fs.path.normpath` on an absolute path". That is **false**:
+`normpath` *raises* `fs.errors.IllegalBackReference` for any `..` that escapes
+the root, it does not clamp. The clamping is therefore a divergence, §5.11.
+
 `Create` deliberately does **not** create parent directories, because
 `fs.open(p, "w")` does not either; every `create_file_from_*` helper calls
 `MkdirAll(dirname)` first, exactly as the Python does.
@@ -91,6 +101,14 @@ not by reading.
    longer one, so any unanchored match in it also exists in the original. Pinned
    against a 522-row `pattern × line` matrix computed by CPython — 0 disagreements.
 
+   **Corrected in Phase 3.** The retry covers a `$` that the whole match *ends
+   at* — which is every `$` the 522-row matrix contains, so "0 disagreements"
+   was true but vacuous for the rest of the class. It does **not** cover a `$`
+   that sits mid-pattern with something after it that consumes the trailing
+   newline: `re.search("b$\n", "b\n")` is `True` in Python, and `pySearch`
+   returns false. The "cannot invent matches" half stands and is now asserted
+   directly; the miss is a residual gap, §5.9.
+
 `editLines` also preserves Python's **error ordering**: nil-FS guard →
 `re.compile` → file access. A bad pattern therefore reports itself even when the
 target file does not exist.
@@ -104,17 +122,17 @@ adds a directory member, so the "files vs dirs" question the brief raised has no
 second case to reproduce. Arcnames get `\` → `/` and nothing else — a leading `/`
 is preserved verbatim.
 
-Two deliberate divergences, both for determinism:
+**Member order = caller order.** *Superseded in Phase 3.* This spike originally
+sorted members by canonical arcname for determinism. `ORDERING.tsv` row
+`utils.py:452` is binding and reads "API takes ordered pairs; Python client must
+preserve caller order", and the sort could not honour it: it also flipped the
+last-wins winner for two keys that canonicalise to the same member (`etc\x` and
+`etc/x`). `WriteTar` now emits `[]TarEntry` in slice order and the map-shaped
+`PackFilesForTarMap` entry point is gone, since a Go map has no caller order to
+preserve.
 
-- **Member order = sorted arcname.** *Ruling:* Python iterates
-  `guest_to_host.items()`, i.e. dict insertion order, so its byte output depends
-  on the caller's construction order (verified: `{"b":…,"a":…}` and
-  `{"a":…,"b":…}` produce different archives). Tar assigns no meaning to member
-  order, so sorting is inside the observable envelope and is what makes archives
-  comparable. **Canonicalisation:** sort by the *canonical* (backslash-translated)
-  name, since that is the only string a consumer can observe; ties broken by the
-  original key so the order stays total when two distinct keys canonicalise to
-  the same member (Python would emit both members too, last-one-wins on extract).
+One deliberate divergence remains, for determinism:
+
 - **gzip MTIME zeroed.** Python's `w:gz` stamps `time.time()` there — verified:
   two `pack_files_for_tar` calls on identical input are **not** byte-identical,
   while the tar payload underneath is. `gzip.Header{OS: 255}` with the zero
@@ -235,7 +253,18 @@ exported from the Go tests and re-executed through the real `FilesystemMixin`:
 | all three | pattern `b$` vs a CRLF/CR line | **no match** (Python's `$` only looks past a trailing `\n`) |
 | all three | invalid regex + missing file | the **regex** error wins — `re.compile` runs before the open |
 | all three | missing path / directory path / nil FS | `ResourceNotFound` / `FileExpected` / `InvocationError` |
+| `CreateFileFrom*` | `dst_path` with a **trailing slash** | `os.path.dirname` runs on the RAW path, so `dirname("/a/b/")` is `/a/b`: makedirs creates the **directory** `/a/b`, then the open raises `FileExpected`. With `/a/b` already a file the makedirs fails first — `DirectoryExpected`. `UpdateFileFrom*` has no makedirs and pyfilesystem normalises the slash away, so `update("bb", "/a/")` **appends** to the file `/a` |
 | `CopyDirectory` | existing destination | **merges**; same-named files overwritten, others survive; empty source dirs reproduced |
+| `CopyDirectory` | **symlinks** in the source | **followed**, both kinds: `copy_dir` walks an OSFS and `OSFS.scandir` classifies with `os.DirEntry.is_dir()`, which follows. `linkdir -> real/` yields `/dst/linkdir/f.txt`; `linkfile -> plain.txt` yields `/dst/linkfile`. A broken link is an error; a loop dies on `ELOOP` |
+| any path arg | `..` **escaping the root** (`"/../../esc.txt"`) | `fs.path.normpath` raises `IllegalBackReference` and **nothing is written**, on both backends. The port clamps to `esc.txt` and succeeds — divergence §5.11, pinned not fixed |
+| `CopyDirectory` | missing **source** | `fs.errors.CreateFailed` (from `open_fs`). The port has no equivalent and reports `fs.ErrNotExist` — §5.12 |
+| `CopyDirectory` | **broken symlink** in the source | errors (`ResourceNotFound`) on both backends, but the partial state left behind **differs between Python's own backends** (`mem` leaves nothing, `osfs` leaves an empty `/dst/zbroken`), so partial state is unspecified — the port errors with the same class and is not held to a byte-exact partial tree |
+| `Remove` | the filesystem **root** | refused on both spellings — `removedir("/")` is `RemoveRootError`, `remove("/")` is `ResourceNotFound` (mem) / `FileExpected` (osfs). Never deletes the backing host directory |
+| `Remove` | non-empty directory | `DirectoryNotEmpty` on both backends |
+| any op | a path **component** that is a file | `ResourceNotFound` for the file-flavoured operations (`getinfo`, `openbin` in every mode, `remove`, and so the whole line-edit family), `DirectoryExpected` for the directory-flavoured ones (`listdir`, `makedir`, `removedir`) — `fs/error_tools.py` keeps two errno tables and only `DIR_ERRORS` maps `ENOTDIR` to `DirectoryExpected` |
+| `IsEmpty` | on a file | `DirectoryExpected` on both backends |
+| `Memory` | entry lifetime | the entry is created — and, for `"w"`, truncated — at **open** time, not on close: the file exists and reads `b""` immediately, and `removedir` on its parent then fails `DirectoryNotEmpty` |
+| `Sub` | `opendir("")` / `opendir("/")` | still a `SubFS`, so `fs_type()` is `"sub"`, not the parent's name |
 | `CreateFileFromPath` | CRLF / BOM / binary source | copied **byte-verbatim** — no normalisation on this path |
 | `PackFilesForTar` | directory members | none exist — `pack_files_for_tar` writes regular files only |
 | `PackFilesForTar` | empty input | a 10240-byte archive, not 1024 |
@@ -244,11 +273,15 @@ exported from the Go tests and re-executed through the real `FilesystemMixin`:
 
 ## 5. Divergences introduced by this spike
 
-Sanctioned-by-determinism, all documented in code:
+All documented in code:
 
-1. **Tar member order** is sorted, not insertion order (§2.4). Python's order is
-   caller-dependent; tar has no ordering semantics.
-2. **gzip MTIME zeroed** (§2.4). Python's is `time.time()`.
+1. ~~**Tar member order** is sorted, not insertion order.~~ **Withdrawn in
+   Phase 3**: it contradicted the binding `ORDERING.tsv` row for `utils.py:452`.
+   Members are emitted in caller order and `PackFilesForTarMap` is deleted
+   (§2.4).
+2. **gzip MTIME zeroed** (§2.4). Python's is `time.time()`, and its `FNAME` is a
+   random temp-file basename, so two Python calls on identical input already
+   differ. Recorded in `PROPOSED-DIVERGENCES.md`.
 3. **`OSDir(path)` does not fail eagerly** on a missing directory, because the
    §6 signature returns no error; `open_fs("osfs://missing")` raises
    `CreateFailed`. The first operation fails with `fs.ErrNotExist`.
@@ -276,6 +309,57 @@ Sanctioned-by-determinism, all documented in code:
    >100 bytes) or emits its own `PaxHeaders.0/` block (non-ASCII). Bytes differ,
    members do not — asserted both ways by `TestPythonPaxReadable`, and CPython's
    `tarfile` reads Go's archives with the right names.
+
+Added in Phase 3 — both are residual gaps with no fix available inside the
+frozen §6 interface, so they are pinned by tests rather than closed:
+
+9. **A mid-pattern `$` in a caller-supplied `searched_line` is missed.**
+   Python's `$` is the lookahead `(?=\n?\z)`; RE2 has no spelling for it, and
+   `pySearch`'s strip-one-`\n` retry only reaches a `$` the match *ends at*
+   (§2.3 rule 3). When something after the `$` consumes the trailing newline the
+   Go side returns no match where Python matches — `write_line_before(f, "X",
+   "b$\n")` on `b"a\nb\nd\n"` is `1` / `b"a\nX\nb\nd\n"` in Python and `0` /
+   unchanged here. The failure is **one-sided**: the emulation can only ever
+   miss, never invent, which is what keeps it safe for the `$`-anchored patterns
+   that do work. No in-tree pattern puts `$` anywhere but in terminal position,
+   so this is reachable only through the §7 client API. Pinned by
+   `vfs/testdata/pysearch_divergent.json` (140 CPython-produced rows) and
+   `TestPySearchDivergentCorpus`, which fails loudly both if the emulation ever
+   invents a match and if the gap ever closes. Same family as the `\Z` and
+   Unicode-`\b`/`\w` gaps in §7.5.
+10. **Filenames that are not valid UTF-8 are rejected, not carried.** `io/fs`
+    requires `fs.ValidPath`, which requires valid UTF-8, so `CleanPath` turns a
+    latin-1 lab filename into `fs.ErrInvalid`; pyfilesystem's OSFS carries
+    arbitrary POSIX filename bytes through `surrogateescape` (verified:
+    `b"caf\xe9.txt"` lists as `'/caf\udce9.txt'`). Divergence 5 above covers
+    non-UTF-8 *content*, which the port handles; this is about *names*, and it
+    is strictly less permissive. Not fixable while `FS` embeds `fs.FS`.
+    Reachable with a Windows-authored lab directory.
+11. **A `..` that escapes the root is clamped, where pyfilesystem refuses it.**
+    *Found in Phase 3 by the fixer's Go-vs-Python differential; neither §10
+    review raised it.* `fs.path.normpath` **raises**
+    `fs.errors.IllegalBackReference` for any path whose back-references leave
+    the filesystem root — verified live: `normpath("/../../x")`,
+    `normpath("..")`, `normpath("/..")` and `normpath("a/../..")` all raise, and
+    `create_file_from_string("x", "/../../esc.txt")` therefore writes
+    **nothing** and raises on both `mem://` and `osfs://`. `CleanPath` clamps
+    instead (`"/../../esc.txt"` → `"esc.txt"`), so the same call **succeeds**
+    and creates the file at the root under a name the caller never asked for.
+    Both behaviours are *contained* — neither can escape the filesystem root —
+    so this is a silent wrong-target write, not a traversal hole. Reachable
+    only through a caller-supplied path on the §7 client API
+    (`model/Machine.py:638` and its siblings pass `dst_path` straight through).
+    **Not fixed**: refusing would add an exported sentinel and flip a
+    path-model contract that both §10 reviews read and accepted, so it needs a
+    ruling — §7.11. Pinned by `TestBackReferenceIsClampedNotRefused`; the false
+    "exactly like `fs.path.normpath`" claim is corrected in §2.2 and in
+    `CleanPath`'s doc comment.
+12. **A missing `copy_directory_from_path` source is a different error class.**
+    Python opens the source with `open_fs()`, so a missing directory is
+    `fs.errors.CreateFailed` (verified live, both backends). The port has no
+    `CreateFailed` equivalent — `OSDir(path)` cannot fail eagerly, divergence 3
+    — so the `os.Stat` error surfaces as `fs.ErrNotExist` instead. Both error;
+    only the class differs. Pinned by `TestCopyDirectoryMissingSourceErrorClass`.
 
 ---
 
@@ -312,6 +396,11 @@ Sanctioned-by-determinism, all documented in code:
 2. **Append atomicity.** `UpdateFileFrom*` uses a real `O_APPEND` handle on both
    implementations (via `Appender`), but the fallback path for a third-party
    `FS` is read-modify-rewrite. Decide whether the fallback should exist at all.
+   *Phase 3:* the fallback was **unreachable through `Sub`** — a `subFS` always
+   satisfies the `Appender` assertion, so a Sub of a non-`Appender` parent
+   errored out instead of falling back. Both paths now route through
+   `openAppend`, so the documented contract holds either way. The
+   should-it-exist question is unchanged.
 3. **Line editing is read-all / rewrite-all**, like Python's
    `readlines + seek(0) + truncate`. Neither is crash-atomic. If a reviewer wants
    write-to-temp-and-rename, it is a behaviour change (the file's inode and any
@@ -327,6 +416,10 @@ Sanctioned-by-determinism, all documented in code:
    §7 client API: `\Z` (Python) has no RE2 spelling, and Python's `\b`/`\w` are
    Unicode-aware for `str` patterns while Go's are ASCII. Decide whether to
    translate, reject, or document.
+   *Phase 3:* a **third** gap joined them — `$` itself, when it is not in
+   terminal position (§5.9). Documented and pinned, not translated: the faithful
+   rewrite is a lookahead. Whatever ruling covers `\Z` should cover this too,
+   since both are end-anchor semantics RE2 cannot express.
 6. **`MkdirAll` permission.** Free functions pass `0o755`; pyfilesystem's
    `makedirs` takes no mode and lands on `0777 & ~umask`. Confirm `0755` is the
    wanted fixed value (it matters for `shared/` and device directories created
@@ -335,6 +428,11 @@ Sanctioned-by-determinism, all documented in code:
    the **raw** path, so `create_file_from_string(c, "a\\b")` targets directory
    `a` on Windows and the root on POSIX. `CleanPath` treats `\` as a filename
    byte everywhere. Needs a ruling once the Windows build is in scope.
+   *Phase 3:* the raw-path part is now reproduced — `prepareCreate` runs
+   `posixDirname` on the untouched `dst_path` (§5 / §4, the trailing-slash row),
+   which is `posixpath.dirname` byte for byte. What is left for the ruling is
+   purely the separator: `ntpath.dirname` also splits on `\`, `posixDirname`
+   never does.
 8. **`internal/util/tar.go` ownership.** Another Phase 2 spike may also be
    creating `internal/util`. Merge conflict risk on the package doc comment
    only; the file itself is self-contained.
@@ -354,3 +452,79 @@ Sanctioned-by-determinism, all documented in code:
     (`model/Lab.py:425`) compares `fs_type() == "os"` on the **Lab's own** FS,
     never on a device sub-FS, so nothing changes behaviourally — but
     `Machine.fs_type()` returning `"sub"` is now correct rather than accidental.
+11. **Back-references that escape the root: clamp or refuse?** (§5.11, new in
+    Phase 3.) pyfilesystem raises `IllegalBackReference`; `CleanPath` clamps and
+    the write silently lands somewhere else. Refusing is the faithful choice and
+    is a ~4-line change, but it adds an exported sentinel
+    (`ErrIllegalBackReference`), changes `CleanPath`'s contract for every free
+    function and both write-side implementations, and flips three existing test
+    rows — a design decision outside the fixer's work order, especially as
+    `ERROR_CODES.md` is frozen and `Exists`/`IsDir` return no error to carry the
+    new class. Left as-is and pinned; **needs a ruling**. Note the current
+    behaviour is contained, so this is a faithfulness question, not a security
+    one.
+
+---
+
+## 8. Phase 3 review outcome
+
+Two independent §10 adversarial reviews ran against this package. Everything
+below was re-derived against the live Kathara 3.8.3 / pyfilesystem2 stack on
+**both** backends before it was changed, and the fixes were then validated by a
+26-scenario differential harness (Go dump vs `FilesystemMixin` dump, mem:// and
+osfs://): **0 mismatches**. Regression tests live in `vfs/review_test.go`.
+
+| # | Finding | Disposition |
+|---|---|---|
+| 1 | `dst_path` with a trailing slash created a file where Python creates a directory and raises `FileExpected` | **Fixed** — `prepareCreate` takes the parent from `posixDirname` on the RAW path (§4) |
+| 2 | `CopyDirectory` aborted on symlinks and left a partial file; Python follows them | **Fixed** — `copyHostDir` classifies with a following `os.Stat` (§4) |
+| 3 | `OSDir.Remove("")` deleted the lab's own host directory; Memory refused | **Fixed** — both refuse the root with the new `ErrRemoveRoot` (`fs.errors.RemoveRootError`) |
+| 4 | Raw `syscall.ENOTDIR` escaped from `osDir`, matching no `errors.Is` target; the backends disagreed | **Fixed** — `osDir.convert` reproduces `error_tools.py`'s FILE/DIR errno tables. Note the two backends legitimately **stay** different for `listdir` on a path under a file (`ResourceNotFound` on mem, `DirectoryExpected` on osfs) — that is Python, not a port bug |
+| 5 | `memFS` created the node at Close, so `Remove(parent)` then `Close` left an orphan reachable by `Exists` but invisible to `ReadDir` | **Fixed** — the entry is created (and truncated) at open time, as pyfilesystem does |
+| 6 | `Sub(fsys, "")` / `Sub(fsys, "/")` returned the parent, so `Type()` was `"os"`/`"memory"` | **Fixed** — always wrapped; `prefix` may now be `"."` |
+| 7 | `subFS.Append` made the documented read-modify-rewrite fallback unreachable | **Fixed** — both paths go through `openAppend` (§7.2) |
+| 8 | `subFS.Open`/`Stat`/`ReadDir` accepted names `fs.ValidPath` rejects, unlike the other two implementations | **Fixed** — io/fs contract enforced on the read side; the write side still takes pyfilesystem paths. `FS`'s doc comment corrected: it is not true that "every entry point runs CleanPath first" |
+| 9 | Mid-pattern `$` silently returns the wrong count | **Documented + pinned**, not fixed — §5.9. No faithful RE2 emulation exists |
+| 10 | Non-UTF-8 *filenames* are rejected where OSFS carries them | **Documented**, not fixable inside `fs.FS` — §5.10 |
+
+Two review suggestions were **not** taken, with evidence:
+
+- *"Make `copyInto` not commit on a failed copy, or remove the partial file."*
+  Python leaves partial state on a mid-copy failure too — `fs.upload` has no
+  rollback — so discarding the buffer would be a divergence, not a fix. The
+  symptom the reviewer saw (an empty regular file at `dst/linkdir`) was the
+  symlink bug, and it is gone.
+- *"Give `osDir.ReadDir` the same error as `memFS.ReadDir` for a path under a
+  file, for Memory/OSDir parity."* The two pyfilesystem backends genuinely
+  disagree there (`listdir("/afile/child")` is `ResourceNotFound` on MemoryFS
+  and `DirectoryExpected` on OSFS), so forcing parity would break faithfulness.
+  Each side now matches its own oracle. Parity **was** restored everywhere
+  Python has it, which is every other row of the table above.
+
+### 8.1 Independent re-verification by the fixer
+
+Every one of the 10 dispositions above was re-derived from scratch against the
+live stack before being accepted — none was taken on trust:
+
+- All 10 findings **confirmed genuine and correctly fixed**; none rejected.
+- `posixpath.dirname` re-checked on 11 inputs including the `"//a"` → `"//"` and
+  `"///"` → `"///"` corners; `posixDirname` is byte-exact.
+- The FILE/DIR errno split re-probed on both backends: the code matches each
+  backend's own oracle, including the two rows where the backends legitimately
+  disagree (`listdir` under a file: `ResourceNotFound` on mem, `DirectoryExpected`
+  on osfs; likewise `removedir`). The "don't force parity" call was right.
+- All three oracle tables **replayed against live CPython/pyfilesystem2**:
+  522 / 140 / 23 rows, **0 mismatches**. The divergent corpus really does target
+  the gap — 120 of its 140 rows carry a non-terminal `$`, a class the 522-row
+  matrix contains **zero** of, confirming the original "0 disagreements" was
+  true but vacuous.
+- A fresh **36-scenario × 2-backend differential** (Go dump vs `FilesystemMixin`
+  dump) was run: **72 comparisons, 8 mismatches**, all four scenarios accounted
+  for — 2 are the pinned §5.9 `$` gap, 2 are §5.12 (`CreateFailed`), 2 are
+  §5.11 (newly found, above), and 2 are `copydir` **partial state after a broken
+  symlink**, where Python's own two backends disagree with each other (`mem`
+  leaves nothing, `osfs` leaves an empty `/dst/zbroken`), so partial state on a
+  mid-copy failure is genuinely unspecified in Python and is not a port bug.
+  This independently vindicates the "don't roll back `copyInto`" call above.
+
+Harnesses: `scratchpad/{fix_verify.py,diff_scen.py,goscen/main.go}`.

@@ -25,10 +25,16 @@ import (
 // FS is the filesystem interface from PORT_SPEC §6, verbatim.
 //
 // Paths are slash-separated and unrooted in the io/fs sense ("a/b", never
-// "/a/b" and never "."-relative escapes). Callers may pass pyfilesystem-style
-// rooted paths ("/a/b") and a bare "" for the root; every entry point runs
+// "/a/b" and never "."-relative escapes).
+//
+// The free functions in this package and the write-side methods below accept
+// pyfilesystem-style rooted paths ("/a/b") and a bare "" for the root: they run
 // CleanPath first, which clamps traversal at the root the way pyfilesystem's
-// normpath does.
+// normpath does. The io/fs read side (Open, and the Stat/ReadDir of the
+// fs.StatFS / fs.ReadDirFS implementations) does NOT: it keeps the io/fs
+// contract and rejects anything fs.ValidPath rejects with fs.ErrInvalid, so a
+// generic io/fs consumer sees the standard behaviour from every implementation
+// here.
 type FS interface {
 	fs.FS
 
@@ -105,14 +111,29 @@ var (
 
 	// ErrDirectoryNotEmpty mirrors fs.errors.DirectoryNotEmpty.
 	ErrDirectoryNotEmpty = errors.New("directory is not empty")
+
+	// ErrRemoveRoot mirrors fs.errors.RemoveRootError. FS.Remove covers both
+	// fs.remove and fs.removedir, and pyfilesystem refuses the filesystem root
+	// on either spelling (removedir("/") raises RemoveRootError; remove("/")
+	// raises ResourceNotFound on MemoryFS and FileExpected on OSFS). Without
+	// this, OSDir.Remove("") would delete the lab's own host directory.
+	ErrRemoveRoot = errors.New("root directory may not be removed")
 )
 
 // CleanPath converts a pyfilesystem-style path into an io/fs path.
 //
 // Leading slashes are dropped ("/a/b" and "a/b" name the same resource, as in
 // pyfilesystem), "." and ".." are resolved, and traversal is clamped at the
-// root ("../../x" becomes "x") exactly like fs.path.normpath on an absolute
-// path. The root is ".".
+// root ("../../x" becomes "x"). The root is ".".
+//
+// DIVERGENCE (SPIKES/vfs.md §5.11, awaiting a ruling): the clamping is NOT
+// what fs.path.normpath does. pyfilesystem REFUSES a path whose ".." escapes
+// the root — normpath("/../../x") raises fs.errors.IllegalBackReference, and
+// so create_file_from_string("x", "/../../esc.txt") writes nothing on both
+// backends. This clamps instead, so the same call silently creates "esc.txt"
+// at the root. Both are contained (neither can escape the filesystem root);
+// the difference is a silent wrong-target write versus an error. Reachable
+// only through a caller-supplied path on the §7 client API.
 //
 // Backslashes are NOT translated: pyfilesystem treats "\" as an ordinary
 // filename byte on POSIX and only utils.pack_file_for_tar rewrites it.
