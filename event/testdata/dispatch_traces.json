@@ -1,0 +1,674 @@
+{
+  "note": "Recorded from Kathara 3.8.3 EventDispatcher (CPython). Each scenario's steps are replayed against the Go dispatcher and the flat log must match entry for entry.",
+  "scenarios": [
+    {
+      "name": "registration_order",
+      "note": "EventDispatcher.py:62-70 appends to a list; dispatch (L85) walks it in order.",
+      "steps": [
+        {
+          "op": "register",
+          "event": "link_deployed",
+          "tag": "a",
+          "hook": false
+        },
+        {
+          "op": "register",
+          "event": "link_deployed",
+          "tag": "b",
+          "hook": false
+        },
+        {
+          "op": "register",
+          "event": "link_deployed",
+          "tag": "c",
+          "hook": false
+        },
+        {
+          "op": "dispatch",
+          "event": "link_deployed"
+        },
+        {
+          "op": "subscribers",
+          "event": "link_deployed"
+        }
+      ],
+      "log": [
+        "run:a",
+        "run:b",
+        "run:c",
+        "subs:a,b,c"
+      ]
+    },
+    {
+      "name": "two_events_are_independent",
+      "note": "self.events is keyed by name; interleaved registrations do not mix.",
+      "steps": [
+        {
+          "op": "register",
+          "event": "link_deployed",
+          "tag": "a1",
+          "hook": false
+        },
+        {
+          "op": "register",
+          "event": "machine_deployed",
+          "tag": "b1",
+          "hook": false
+        },
+        {
+          "op": "register",
+          "event": "link_deployed",
+          "tag": "a2",
+          "hook": false
+        },
+        {
+          "op": "register",
+          "event": "machine_deployed",
+          "tag": "b2",
+          "hook": false
+        },
+        {
+          "op": "dispatch",
+          "event": "link_deployed"
+        },
+        {
+          "op": "dispatch",
+          "event": "machine_deployed"
+        },
+        {
+          "op": "subscribers",
+          "event": "link_deployed"
+        },
+        {
+          "op": "subscribers",
+          "event": "machine_deployed"
+        }
+      ],
+      "log": [
+        "run:a1",
+        "run:a2",
+        "run:b1",
+        "run:b2",
+        "subs:a1,a2",
+        "subs:b1,b2"
+      ]
+    },
+    {
+      "name": "dispatch_unknown_event_is_a_noop",
+      "note": "EventDispatcher.py:82-83 `if event not in self.events: return`.",
+      "steps": [
+        {
+          "op": "dispatch",
+          "event": "link_deployed"
+        },
+        {
+          "op": "register",
+          "event": "machine_deployed",
+          "tag": "b",
+          "hook": false
+        },
+        {
+          "op": "dispatch",
+          "event": "link_deployed"
+        },
+        {
+          "op": "dispatch",
+          "event": "machine_deployed"
+        }
+      ],
+      "log": [
+        "run:b"
+      ]
+    },
+    {
+      "name": "unregister_unknown_event_is_a_noop",
+      "note": "EventDispatcher.py:97-98.",
+      "steps": [
+        {
+          "op": "unregister",
+          "event": "link_deployed"
+        },
+        {
+          "op": "register",
+          "event": "link_deployed",
+          "tag": "a",
+          "hook": true
+        },
+        {
+          "op": "unregister",
+          "event": "link_deployed"
+        },
+        {
+          "op": "unregister",
+          "event": "link_deployed"
+        },
+        {
+          "op": "dispatch",
+          "event": "link_deployed"
+        }
+      ],
+      "log": [
+        "hook:a"
+      ]
+    },
+    {
+      "name": "subscribers_unknown_event_raises_keyerror",
+      "note": "get_subscribers (L46) indexes self.events[event] with no guard.",
+      "steps": [
+        {
+          "op": "subscribers",
+          "event": "link_deployed"
+        },
+        {
+          "op": "register",
+          "event": "link_deployed",
+          "tag": "a",
+          "hook": false
+        },
+        {
+          "op": "subscribers",
+          "event": "link_deployed"
+        },
+        {
+          "op": "unregister",
+          "event": "link_deployed"
+        },
+        {
+          "op": "subscribers",
+          "event": "link_deployed"
+        }
+      ],
+      "log": [
+        "subs:!KeyError:'link_deployed'",
+        "subs:a",
+        "subs:!KeyError:'link_deployed'"
+      ]
+    },
+    {
+      "name": "unregister_fires_hooks_in_registration_order",
+      "note": "EventDispatcher.py:100-102; subscribers without an `unregister` attribute contribute None and are skipped.",
+      "steps": [
+        {
+          "op": "register",
+          "event": "link_deployed",
+          "tag": "a",
+          "hook": true
+        },
+        {
+          "op": "register",
+          "event": "link_deployed",
+          "tag": "b",
+          "hook": false
+        },
+        {
+          "op": "register",
+          "event": "link_deployed",
+          "tag": "c",
+          "hook": true
+        },
+        {
+          "op": "unregister",
+          "event": "link_deployed"
+        },
+        {
+          "op": "subscribers",
+          "event": "link_deployed"
+        },
+        {
+          "op": "dispatch",
+          "event": "link_deployed"
+        }
+      ],
+      "log": [
+        "hook:a",
+        "hook:c",
+        "subs:!KeyError:'link_deployed'"
+      ]
+    },
+    {
+      "name": "same_subscriber_registered_three_times",
+      "note": "register.py:59-61 registers one HandleProgressBar under three events; per event the hook is stored per entry, so N entries mean N hook calls.",
+      "steps": [
+        {
+          "op": "register",
+          "event": "link_deployed",
+          "tag": "bar",
+          "hook": true
+        },
+        {
+          "op": "register",
+          "event": "link_deployed",
+          "tag": "bar",
+          "hook": true
+        },
+        {
+          "op": "register",
+          "event": "link_deployed",
+          "tag": "bar",
+          "hook": true
+        },
+        {
+          "op": "dispatch",
+          "event": "link_deployed"
+        },
+        {
+          "op": "unregister",
+          "event": "link_deployed"
+        }
+      ],
+      "log": [
+        "run:bar",
+        "run:bar",
+        "run:bar",
+        "hook:bar",
+        "hook:bar",
+        "hook:bar"
+      ]
+    },
+    {
+      "name": "double_unregister_of_one_event",
+      "note": "register.py:37 and :44 both unregister machine_deployed; the second call finds no key and returns.",
+      "steps": [
+        {
+          "op": "register",
+          "event": "machine_deployed",
+          "tag": "bar",
+          "hook": true
+        },
+        {
+          "op": "register",
+          "event": "machine_deployed",
+          "tag": "term",
+          "hook": false
+        },
+        {
+          "op": "unregister",
+          "event": "machine_deployed"
+        },
+        {
+          "op": "unregister",
+          "event": "machine_deployed"
+        },
+        {
+          "op": "dispatch",
+          "event": "machine_deployed"
+        }
+      ],
+      "log": [
+        "hook:bar"
+      ]
+    },
+    {
+      "name": "register_during_dispatch_is_seen_by_that_dispatch",
+      "note": "dispatch iterates the live list object, so an append lands inside the loop and runs last.",
+      "steps": [
+        {
+          "op": "register",
+          "event": "link_deployed",
+          "tag": "registrar",
+          "hook": false,
+          "on_run": [
+            {
+              "do": "register",
+              "event": "link_deployed",
+              "tag": "late",
+              "hook": false
+            }
+          ]
+        },
+        {
+          "op": "register",
+          "event": "link_deployed",
+          "tag": "tail",
+          "hook": false
+        },
+        {
+          "op": "dispatch",
+          "event": "link_deployed"
+        },
+        {
+          "op": "subscribers",
+          "event": "link_deployed"
+        },
+        {
+          "op": "dispatch",
+          "event": "link_deployed"
+        }
+      ],
+      "log": [
+        "run:registrar",
+        "run:tail",
+        "run:late",
+        "subs:registrar,tail,late",
+        "run:registrar",
+        "run:tail",
+        "run:late",
+        "run:late"
+      ]
+    },
+    {
+      "name": "unregister_during_dispatch_still_runs_the_rest",
+      "note": "unregister deletes the dict key but the loop holds the list object; every hook fires immediately, then the remaining run callbacks still execute.",
+      "steps": [
+        {
+          "op": "register",
+          "event": "link_deployed",
+          "tag": "unreg",
+          "hook": true,
+          "on_run": [
+            {
+              "do": "unregister",
+              "event": "link_deployed"
+            }
+          ]
+        },
+        {
+          "op": "register",
+          "event": "link_deployed",
+          "tag": "tail",
+          "hook": true
+        },
+        {
+          "op": "dispatch",
+          "event": "link_deployed"
+        },
+        {
+          "op": "subscribers",
+          "event": "link_deployed"
+        },
+        {
+          "op": "dispatch",
+          "event": "link_deployed"
+        }
+      ],
+      "log": [
+        "run:unreg",
+        "hook:unreg",
+        "hook:tail",
+        "run:tail",
+        "subs:!KeyError:'link_deployed'"
+      ]
+    },
+    {
+      "name": "unregister_then_register_during_dispatch",
+      "note": "the re-register builds a NEW list under the key; the in-flight loop keeps walking the old one, so `new` does not run now.",
+      "steps": [
+        {
+          "op": "register",
+          "event": "link_deployed",
+          "tag": "swap",
+          "hook": false,
+          "on_run": [
+            {
+              "do": "unregister",
+              "event": "link_deployed"
+            },
+            {
+              "do": "register",
+              "event": "link_deployed",
+              "tag": "new",
+              "hook": false
+            }
+          ]
+        },
+        {
+          "op": "register",
+          "event": "link_deployed",
+          "tag": "tail",
+          "hook": false
+        },
+        {
+          "op": "dispatch",
+          "event": "link_deployed"
+        },
+        {
+          "op": "subscribers",
+          "event": "link_deployed"
+        },
+        {
+          "op": "dispatch",
+          "event": "link_deployed"
+        }
+      ],
+      "log": [
+        "run:swap",
+        "run:tail",
+        "subs:new",
+        "run:new"
+      ]
+    },
+    {
+      "name": "handler_exception_aborts_the_rest",
+      "note": "dispatch has no try/except (L85-86): the exception propagates to the dispatching thread and later subscribers never run. The subscriber list is left intact.",
+      "steps": [
+        {
+          "op": "register",
+          "event": "link_deployed",
+          "tag": "head",
+          "hook": false
+        },
+        {
+          "op": "register",
+          "event": "link_deployed",
+          "tag": "boom",
+          "hook": false,
+          "on_run": [
+            {
+              "do": "raise",
+              "msg": "boom!"
+            }
+          ]
+        },
+        {
+          "op": "register",
+          "event": "link_deployed",
+          "tag": "tail",
+          "hook": false
+        },
+        {
+          "op": "dispatch",
+          "event": "link_deployed"
+        },
+        {
+          "op": "subscribers",
+          "event": "link_deployed"
+        },
+        {
+          "op": "dispatch",
+          "event": "link_deployed"
+        }
+      ],
+      "log": [
+        "run:head",
+        "run:boom",
+        "err:RuntimeError:boom!",
+        "subs:head,boom,tail",
+        "run:head",
+        "run:boom",
+        "err:RuntimeError:boom!"
+      ]
+    },
+    {
+      "name": "hook_exception_aborts_unregister_and_skips_the_delete",
+      "note": "unregister (L100-104) raises out of the hook loop before `del self.events[event]`, so the event stays subscribed.",
+      "steps": [
+        {
+          "op": "register",
+          "event": "link_deployed",
+          "tag": "boom",
+          "hook": true,
+          "on_hook": [
+            {
+              "do": "raise",
+              "msg": "hook boom"
+            }
+          ]
+        },
+        {
+          "op": "register",
+          "event": "link_deployed",
+          "tag": "ok",
+          "hook": true
+        },
+        {
+          "op": "unregister",
+          "event": "link_deployed"
+        },
+        {
+          "op": "subscribers",
+          "event": "link_deployed"
+        },
+        {
+          "op": "dispatch",
+          "event": "link_deployed"
+        },
+        {
+          "op": "unregister",
+          "event": "link_deployed"
+        },
+        {
+          "op": "subscribers",
+          "event": "link_deployed"
+        }
+      ],
+      "log": [
+        "hook:boom",
+        "err:RuntimeError:hook boom",
+        "subs:boom,ok",
+        "run:boom",
+        "run:ok",
+        "hook:boom",
+        "err:RuntimeError:hook boom",
+        "subs:boom,ok"
+      ]
+    },
+    {
+      "name": "mutating_another_event_during_dispatch",
+      "note": "touching a different key does not disturb the in-flight loop.",
+      "steps": [
+        {
+          "op": "register",
+          "event": "machine_deployed",
+          "tag": "other",
+          "hook": true
+        },
+        {
+          "op": "register",
+          "event": "link_deployed",
+          "tag": "mutator",
+          "hook": false,
+          "on_run": [
+            {
+              "do": "register",
+              "event": "machine_deployed",
+              "tag": "added",
+              "hook": false
+            },
+            {
+              "do": "unregister",
+              "event": "machine_deployed"
+            }
+          ]
+        },
+        {
+          "op": "register",
+          "event": "link_deployed",
+          "tag": "tail",
+          "hook": false
+        },
+        {
+          "op": "dispatch",
+          "event": "link_deployed"
+        },
+        {
+          "op": "subscribers",
+          "event": "link_deployed"
+        },
+        {
+          "op": "dispatch",
+          "event": "machine_deployed"
+        }
+      ],
+      "log": [
+        "run:mutator",
+        "hook:other",
+        "run:tail",
+        "subs:mutator,tail"
+      ]
+    },
+    {
+      "name": "reentrant_dispatch_of_another_event",
+      "note": "nested dispatch runs to completion inside the outer one.",
+      "steps": [
+        {
+          "op": "register",
+          "event": "machine_deployed",
+          "tag": "inner",
+          "hook": false
+        },
+        {
+          "op": "register",
+          "event": "link_deployed",
+          "tag": "outer",
+          "hook": false,
+          "on_run": [
+            {
+              "do": "dispatch",
+              "event": "machine_deployed"
+            }
+          ]
+        },
+        {
+          "op": "register",
+          "event": "link_deployed",
+          "tag": "tail",
+          "hook": false
+        },
+        {
+          "op": "dispatch",
+          "event": "link_deployed"
+        }
+      ],
+      "log": [
+        "run:outer",
+        "run:inner",
+        "run:tail"
+      ]
+    },
+    {
+      "name": "unregister_then_register_outside_dispatch",
+      "note": "after the key is deleted, register starts a fresh list.",
+      "steps": [
+        {
+          "op": "register",
+          "event": "link_deployed",
+          "tag": "old",
+          "hook": true
+        },
+        {
+          "op": "unregister",
+          "event": "link_deployed"
+        },
+        {
+          "op": "register",
+          "event": "link_deployed",
+          "tag": "new",
+          "hook": false
+        },
+        {
+          "op": "dispatch",
+          "event": "link_deployed"
+        },
+        {
+          "op": "subscribers",
+          "event": "link_deployed"
+        }
+      ],
+      "log": [
+        "hook:old",
+        "run:new",
+        "subs:new"
+      ]
+    }
+  ]
+}

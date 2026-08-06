@@ -1,0 +1,518 @@
+{
+  "note": "Generated from Kathara 3.8.3 by ast-walking every EventDispatcher.dispatch/register/unregister call site.",
+  "events": [
+    {
+      "name": "docker_image_update_found",
+      "kwargs": [
+        "docker_image",
+        "image_name"
+      ],
+      "sites": [
+        {
+          "site": "Kathara/manager/docker/DockerImage.py:95",
+          "kwargs": [
+            "docker_image",
+            "image_name"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "docker_pull_ended",
+      "kwargs": [],
+      "sites": [
+        {
+          "site": "Kathara/manager/docker/DockerImage.py:63",
+          "kwargs": []
+        }
+      ]
+    },
+    {
+      "name": "docker_pull_progress",
+      "kwargs": [
+        "progress"
+      ],
+      "sites": [
+        {
+          "site": "Kathara/manager/docker/DockerImage.py:62",
+          "kwargs": [
+            "progress"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "docker_pull_started",
+      "kwargs": [],
+      "sites": [
+        {
+          "site": "Kathara/manager/docker/DockerImage.py:58",
+          "kwargs": []
+        }
+      ]
+    },
+    {
+      "name": "link_deployed",
+      "kwargs": [
+        "item"
+      ],
+      "sites": [
+        {
+          "site": "Kathara/manager/docker/DockerLink.py:93",
+          "kwargs": [
+            "item"
+          ]
+        },
+        {
+          "site": "Kathara/manager/kubernetes/KubernetesLink.py:103",
+          "kwargs": [
+            "item"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "link_undeployed",
+      "kwargs": [
+        "item"
+      ],
+      "sites": [
+        {
+          "site": "Kathara/manager/docker/DockerLink.py:217",
+          "kwargs": [
+            "item"
+          ]
+        },
+        {
+          "site": "Kathara/manager/kubernetes/KubernetesLink.py:196",
+          "kwargs": [
+            "item"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "links_deploy_ended",
+      "kwargs": [],
+      "sites": [
+        {
+          "site": "Kathara/manager/docker/DockerLink.py:70",
+          "kwargs": []
+        },
+        {
+          "site": "Kathara/manager/kubernetes/KubernetesLink.py:85",
+          "kwargs": []
+        }
+      ]
+    },
+    {
+      "name": "links_deploy_started",
+      "kwargs": [
+        "items"
+      ],
+      "sites": [
+        {
+          "site": "Kathara/manager/docker/DockerLink.py:64",
+          "kwargs": [
+            "items"
+          ]
+        },
+        {
+          "site": "Kathara/manager/kubernetes/KubernetesLink.py:73",
+          "kwargs": [
+            "items"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "links_undeploy_ended",
+      "kwargs": [],
+      "sites": [
+        {
+          "site": "Kathara/manager/docker/DockerLink.py:182",
+          "kwargs": []
+        },
+        {
+          "site": "Kathara/manager/kubernetes/KubernetesLink.py:156",
+          "kwargs": []
+        }
+      ]
+    },
+    {
+      "name": "links_undeploy_started",
+      "kwargs": [
+        "items"
+      ],
+      "sites": [
+        {
+          "site": "Kathara/manager/docker/DockerLink.py:176",
+          "kwargs": [
+            "items"
+          ]
+        },
+        {
+          "site": "Kathara/manager/kubernetes/KubernetesLink.py:150",
+          "kwargs": [
+            "items"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "machine_deployed",
+      "kwargs": [
+        "item"
+      ],
+      "sites": [
+        {
+          "site": "Kathara/manager/docker/DockerMachine.py:204",
+          "kwargs": [
+            "item"
+          ]
+        },
+        {
+          "site": "Kathara/manager/kubernetes/KubernetesMachine.py:260",
+          "kwargs": [
+            "item"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "machine_startup_wait_ended",
+      "kwargs": [],
+      "sites": [
+        {
+          "site": "Kathara/manager/docker/DockerMachine.py:696",
+          "kwargs": []
+        }
+      ]
+    },
+    {
+      "name": "machine_startup_wait_started",
+      "kwargs": [],
+      "sites": [
+        {
+          "site": "Kathara/manager/docker/DockerMachine.py:931",
+          "kwargs": []
+        }
+      ]
+    },
+    {
+      "name": "machine_undeployed",
+      "kwargs": [
+        "item"
+      ],
+      "sites": [
+        {
+          "site": "Kathara/manager/docker/DockerMachine.py:643",
+          "kwargs": [
+            "item"
+          ]
+        },
+        {
+          "site": "Kathara/manager/kubernetes/KubernetesMachine.py:633",
+          "kwargs": [
+            "item"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "machines_deploy_ended",
+      "kwargs": [],
+      "sites": [
+        {
+          "site": "Kathara/manager/docker/DockerMachine.py:185",
+          "kwargs": []
+        },
+        {
+          "site": "Kathara/manager/kubernetes/KubernetesMachine.py:282",
+          "kwargs": []
+        }
+      ]
+    },
+    {
+      "name": "machines_deploy_started",
+      "kwargs": [
+        "items"
+      ],
+      "sites": [
+        {
+          "site": "Kathara/manager/docker/DockerMachine.py:169",
+          "kwargs": [
+            "items"
+          ]
+        },
+        {
+          "site": "Kathara/manager/kubernetes/KubernetesMachine.py:222",
+          "kwargs": [
+            "items"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "machines_undeploy_ended",
+      "kwargs": [],
+      "sites": [
+        {
+          "site": "Kathara/manager/docker/DockerMachine.py:612",
+          "kwargs": []
+        },
+        {
+          "site": "Kathara/manager/kubernetes/KubernetesMachine.py:638",
+          "kwargs": []
+        }
+      ]
+    },
+    {
+      "name": "machines_undeploy_started",
+      "kwargs": [
+        "items"
+      ],
+      "sites": [
+        {
+          "site": "Kathara/manager/docker/DockerMachine.py:606",
+          "kwargs": [
+            "items"
+          ]
+        },
+        {
+          "site": "Kathara/manager/kubernetes/KubernetesMachine.py:621",
+          "kwargs": [
+            "items"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "machines_with_volumes",
+      "kwargs": [
+        "lab",
+        "machines_with_volumes"
+      ],
+      "sites": [
+        {
+          "site": "Kathara/manager/docker/DockerMachine.py:157",
+          "kwargs": [
+            "lab",
+            "machines_with_volumes"
+          ]
+        },
+        {
+          "site": "Kathara/manager/kubernetes/KubernetesMachine.py:180",
+          "kwargs": [
+            "lab",
+            "machines_with_volumes"
+          ]
+        }
+      ]
+    }
+  ],
+  "cli_registrations": [
+    {
+      "event": "docker_image_update_found",
+      "site": "Kathara/cli/ui/event/register.py:19",
+      "obj": "UpdateDockerImage()",
+      "method": null
+    },
+    {
+      "event": "links_deploy_started",
+      "site": "Kathara/cli/ui/event/register.py:59",
+      "obj": "link_deploy_progress_bar_handler",
+      "method": "init"
+    },
+    {
+      "event": "link_deployed",
+      "site": "Kathara/cli/ui/event/register.py:60",
+      "obj": "link_deploy_progress_bar_handler",
+      "method": "update"
+    },
+    {
+      "event": "links_deploy_ended",
+      "site": "Kathara/cli/ui/event/register.py:61",
+      "obj": "link_deploy_progress_bar_handler",
+      "method": "finish"
+    },
+    {
+      "event": "links_undeploy_started",
+      "site": "Kathara/cli/ui/event/register.py:64",
+      "obj": "link_undeploy_progress_bar_handler",
+      "method": "init"
+    },
+    {
+      "event": "link_undeployed",
+      "site": "Kathara/cli/ui/event/register.py:65",
+      "obj": "link_undeploy_progress_bar_handler",
+      "method": "update"
+    },
+    {
+      "event": "links_undeploy_ended",
+      "site": "Kathara/cli/ui/event/register.py:66",
+      "obj": "link_undeploy_progress_bar_handler",
+      "method": "finish"
+    },
+    {
+      "event": "machines_deploy_started",
+      "site": "Kathara/cli/ui/event/register.py:71",
+      "obj": "machine_deploy_progress_bar_handler",
+      "method": "init"
+    },
+    {
+      "event": "machine_deployed",
+      "site": "Kathara/cli/ui/event/register.py:72",
+      "obj": "machine_deploy_progress_bar_handler",
+      "method": "update"
+    },
+    {
+      "event": "machines_deploy_ended",
+      "site": "Kathara/cli/ui/event/register.py:73",
+      "obj": "machine_deploy_progress_bar_handler",
+      "method": "finish"
+    },
+    {
+      "event": "machines_undeploy_started",
+      "site": "Kathara/cli/ui/event/register.py:76",
+      "obj": "machine_undeploy_progress_bar_handler",
+      "method": "init"
+    },
+    {
+      "event": "machine_undeployed",
+      "site": "Kathara/cli/ui/event/register.py:77",
+      "obj": "machine_undeploy_progress_bar_handler",
+      "method": "update"
+    },
+    {
+      "event": "machines_undeploy_ended",
+      "site": "Kathara/cli/ui/event/register.py:78",
+      "obj": "machine_undeploy_progress_bar_handler",
+      "method": "finish"
+    },
+    {
+      "event": "machine_deployed",
+      "site": "Kathara/cli/ui/event/register.py:81",
+      "obj": "machine_terminal_handler",
+      "method": "run"
+    },
+    {
+      "event": "machine_startup_wait_started",
+      "site": "Kathara/cli/ui/event/register.py:82",
+      "obj": "machine_terminal_handler",
+      "method": "print_wait_msg"
+    },
+    {
+      "event": "machine_startup_wait_ended",
+      "site": "Kathara/cli/ui/event/register.py:83",
+      "obj": "machine_terminal_handler",
+      "method": "flush"
+    },
+    {
+      "event": "machines_with_volumes",
+      "site": "Kathara/cli/ui/event/register.py:85",
+      "obj": "MountDevicesVolumes()",
+      "method": null
+    },
+    {
+      "event": "docker_pull_started",
+      "site": "Kathara/cli/ui/event/register.py:90",
+      "obj": "docker_pull_handler",
+      "method": "init"
+    },
+    {
+      "event": "docker_pull_progress",
+      "site": "Kathara/cli/ui/event/register.py:91",
+      "obj": "docker_pull_handler",
+      "method": "update"
+    },
+    {
+      "event": "docker_pull_ended",
+      "site": "Kathara/cli/ui/event/register.py:92",
+      "obj": "docker_pull_handler",
+      "method": "finish"
+    }
+  ],
+  "cli_unregistrations": [
+    {
+      "event": "links_deploy_started",
+      "site": "Kathara/cli/ui/event/register.py:28"
+    },
+    {
+      "event": "link_deployed",
+      "site": "Kathara/cli/ui/event/register.py:29"
+    },
+    {
+      "event": "links_deploy_ended",
+      "site": "Kathara/cli/ui/event/register.py:30"
+    },
+    {
+      "event": "links_undeploy_started",
+      "site": "Kathara/cli/ui/event/register.py:32"
+    },
+    {
+      "event": "link_undeployed",
+      "site": "Kathara/cli/ui/event/register.py:33"
+    },
+    {
+      "event": "links_undeploy_ended",
+      "site": "Kathara/cli/ui/event/register.py:34"
+    },
+    {
+      "event": "machines_deploy_started",
+      "site": "Kathara/cli/ui/event/register.py:36"
+    },
+    {
+      "event": "machine_deployed",
+      "site": "Kathara/cli/ui/event/register.py:37"
+    },
+    {
+      "event": "machines_deploy_ended",
+      "site": "Kathara/cli/ui/event/register.py:38"
+    },
+    {
+      "event": "machines_undeploy_started",
+      "site": "Kathara/cli/ui/event/register.py:40"
+    },
+    {
+      "event": "machine_undeployed",
+      "site": "Kathara/cli/ui/event/register.py:41"
+    },
+    {
+      "event": "machines_undeploy_ended",
+      "site": "Kathara/cli/ui/event/register.py:42"
+    },
+    {
+      "event": "machine_deployed",
+      "site": "Kathara/cli/ui/event/register.py:44"
+    },
+    {
+      "event": "machine_startup_wait_started",
+      "site": "Kathara/cli/ui/event/register.py:45"
+    },
+    {
+      "event": "machine_startup_wait_ended",
+      "site": "Kathara/cli/ui/event/register.py:46"
+    },
+    {
+      "event": "machines_with_volumes",
+      "site": "Kathara/cli/ui/event/register.py:48"
+    },
+    {
+      "event": "docker_pull_started",
+      "site": "Kathara/cli/ui/event/register.py:50"
+    },
+    {
+      "event": "docker_pull_progress",
+      "site": "Kathara/cli/ui/event/register.py:51"
+    },
+    {
+      "event": "docker_pull_ended",
+      "site": "Kathara/cli/ui/event/register.py:52"
+    },
+    {
+      "event": "docker_image_update_found",
+      "site": "Kathara/cli/ui/event/register.py:54"
+    }
+  ]
+}
