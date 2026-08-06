@@ -72,7 +72,8 @@ var (
 // not be started at all. tmux exits 1 for every error it reports, so Stderr is
 // the only thing distinguishing "no such session" from "permission denied";
 // callers in this package only ever match it against the small set of stable
-// message prefixes listed in knownAbsenceMessages.
+// message prefixes listed above isAbsence, and only ever to tell "absent" from
+// "failed".
 type CommandError struct {
 	Args     []string // full argv, tmux binary included
 	ExitCode int      // -1 when the process could not be started
@@ -166,36 +167,68 @@ func (d *Driver) run(ctx context.Context, args ...string) (string, error) {
 	}
 }
 
-// knownAbsenceMessages are the tmux 3.x messages that mean "the thing you asked
-// about is not there", as opposed to "tmux failed". tmux has no localization,
-// so these strings are stable across builds and locales.
-var knownAbsenceMessages = []string{
-	"no server running on ", // socket exists, server has exited
-	"error connecting to ",  // socket file absent (server never started)
-	"no current server",     // no server and no client context
-	"can't find session",    // session target did not resolve
-	"session not found",     // alternate phrasing in some subcommands
-	"can't find window",     // window target did not resolve
-	"no such window",        // set-option/show-options phrasing
-	"can't find pane",       // pane target did not resolve
-	"no current client",     // detach-client with nothing attached
-	"no client with tty",    // detach-client variant
-	"can't find client",     // client target did not resolve
-	"duplicate session:",    // new-session lost a create race
-	"can't establish current session",
-}
+// The tmux messages that mean "the thing you asked about is not there", as
+// opposed to "tmux failed". tmux has no localization, so these strings are
+// stable across builds and locales.
+//
+// The groups are deliberately narrow: each call site passes only the spellings
+// the command it ran can actually produce, so a genuine failure that merely
+// mentions an absent object elsewhere is not swallowed as "nothing to do".
+// Every spelling below was observed on the pinned tmux 3.5a from the
+// subcommand named beside it, and exists in that binary's string table; four
+// entries that earlier versions of this list carried ("no current server",
+// "session not found", "no client with tty", "can't establish current
+// session") are absent from tmux 3.5a entirely and were dropped rather than
+// left as unverifiable widening (see docs/port/SPIKES/tmux.md quirk 5).
+var (
+	// noServerMessages: any command, when the socket has no live server.
+	noServerMessages = []string{
+		"no server running on ", // socket file exists, server has exited
+		"error connecting to ",  // socket file absent (server never started)
+	}
+	// sessionAbsentMessages: has-session, new-window, list-windows,
+	// list-clients, select-window, kill-session, kill-window, attach-session,
+	// switch-client.
+	sessionAbsentMessages = []string{
+		"can't find session", // session target did not resolve
+		"no such session",    // set-option with a session target
+	}
+	// windowAbsentMessages: select-window, kill-window (and the chained
+	// set-option in remainOnExitCommand, which uses a window target).
+	windowAbsentMessages = []string{
+		"can't find window", // window target did not resolve
+		"no such window",    // set-option with a window target
+	}
+	// clientAbsentMessages: detach-client on a server with nothing attached.
+	// tmux reports this even when the *session* target does not resolve, so
+	// DetachSession sees it in place of "can't find session".
+	clientAbsentMessages = []string{
+		"no current client",
+	}
+	// duplicateSessionMessages: new-session for a name that already exists.
+	duplicateSessionMessages = []string{
+		"duplicate session:",
+	}
+)
 
-// isAbsence reports whether err is a tmux error whose stderr matches one of the
+// isAbsence reports whether err is a tmux error whose stderr carries one of the
 // documented "not there" messages. Any other non-zero exit is a real failure.
+//
+// A message has to *begin a line* of stderr: matching anywhere inside it would
+// let an unrelated failure that happens to quote one of these strings be read
+// as absence, while anchoring to the very first byte would break on a command
+// that starts the server and prints configuration diagnostics first.
 func isAbsence(err error, prefixes ...string) bool {
 	var cmdErr *CommandError
 	if !errors.As(err, &cmdErr) || cmdErr.ExitCode != 1 {
 		return false
 	}
-	msg := strings.ToLower(cmdErr.Stderr)
-	for _, p := range prefixes {
-		if strings.Contains(msg, strings.ToLower(p)) {
-			return true
+	for _, line := range strings.Split(strings.ToLower(cmdErr.Stderr), "\n") {
+		line = strings.TrimSpace(line)
+		for _, p := range prefixes {
+			if strings.HasPrefix(line, strings.ToLower(p)) {
+				return true
+			}
 		}
 	}
 	return false
@@ -203,7 +236,13 @@ func isAbsence(err error, prefixes ...string) bool {
 
 // isNoServer reports whether err means "there is no tmux server on this socket".
 func isNoServer(err error) bool {
-	return isAbsence(err, "no server running on ", "error connecting to ", "no current server")
+	return isAbsence(err, noServerMessages...)
+}
+
+// isSessionAbsent folds the two ways a command can report an unresolvable
+// session, plus the no-server case that is indistinguishable from it.
+func isSessionAbsent(err error) bool {
+	return isNoServer(err) || isAbsence(err, sessionAbsentMessages...)
 }
 
 // Available reports whether the tmux binary can be found and executed.

@@ -3,6 +3,7 @@ package tmuxdrv
 import (
 	"errors"
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 )
@@ -136,6 +137,24 @@ func TestWindowCommandArgsAreGuarded(t *testing.T) {
 	if empty := (Window{Name: "pc1"}).commandArgs(); empty != nil {
 		t.Errorf("commandArgs with no command = %v, want nil", empty)
 	}
+
+	// ...and never truncatable by tmux's command-sequence parser, which eats a
+	// trailing ';' even after "--" (TestWindowCommandTrailingSemicolon proves
+	// this against real tmux).
+	semicolons := []struct{ in, want string }{
+		{"kathara connect -l pc1", "kathara connect -l pc1"},
+		{"sleep 60;", `sleep 60\;`},
+		{"sleep 60 ;", `sleep 60 \;`},
+		{"sleep 60; true", "sleep 60; true"},
+		{`sleep 60\;`, `sleep 60\;`},    // already escaped: left alone
+		{`sleep 60\\;`, `sleep 60\\\;`}, // the backslash was the literal one
+		{";", `\;`},
+	}
+	for _, tc := range semicolons {
+		if got := escapeTrailingSemicolon(tc.in); got != tc.want {
+			t.Errorf("escapeTrailingSemicolon(%q) = %q, want %q", tc.in, got, tc.want)
+		}
+	}
 }
 
 func TestOuterSocketPath(t *testing.T) {
@@ -154,6 +173,49 @@ func TestOuterSocketPath(t *testing.T) {
 	}
 	if InsideTmux() {
 		t.Error("InsideTmux = true with $TMUX empty")
+	}
+}
+
+func TestSameSocket(t *testing.T) {
+	t.Parallel()
+
+	dir := t.TempDir()
+	real := filepath.Join(dir, "tmux.sock")
+	if err := os.WriteFile(real, nil, 0o600); err != nil {
+		t.Fatalf("creating socket stand-in: %v", err)
+	}
+	link := filepath.Join(dir, "link.sock")
+	if err := os.Symlink(real, link); err != nil {
+		t.Skipf("symlinks unavailable: %v", err)
+	}
+
+	// The production case: identical strings, no filesystem access needed.
+	if !sameSocket(real, real) {
+		t.Error("identical paths reported as different servers")
+	}
+	// The one that matters: a false "different" is what execs with $TMUX
+	// stripped and mirrors the terminal into its own pane.
+	if !sameSocket(link, real) {
+		t.Errorf("sameSocket(%q, %q) = false; a symlink to the same socket is the same server", link, real)
+	}
+	if !sameSocket(filepath.Join(dir, "sub", "..", "tmux.sock"), real) {
+		t.Error("an unclean path to the same socket reported as a different server")
+	}
+
+	// Genuinely different, and the degenerate inputs.
+	other := filepath.Join(dir, "other.sock")
+	if err := os.WriteFile(other, nil, 0o600); err != nil {
+		t.Fatalf("creating second socket stand-in: %v", err)
+	}
+	if sameSocket(other, real) {
+		t.Error("two different sockets reported as the same server")
+	}
+	if sameSocket("", "") || sameSocket("", real) || sameSocket(real, "") {
+		t.Error("an empty socket path must never compare equal")
+	}
+	// Unresolvable paths fall back to the plain comparison, never to a guess.
+	if sameSocket(filepath.Join(dir, "gone.sock"), real) {
+		t.Error("a path that does not resolve reported as the same server")
 	}
 }
 

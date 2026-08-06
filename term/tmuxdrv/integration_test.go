@@ -337,8 +337,10 @@ func TestWindowOptionsAndDeath(t *testing.T) {
 		has, err := d.HasWindow(ctx, session, "transient")
 		return err == nil && !has
 	})
-	if has, _ := d.HasWindow(ctx, session, "transient"); has {
-		t.Error("window with an exited command still present; tmux should have closed it")
+	// The error is checked: waitFor gives up silently, so a HasWindow that
+	// keeps failing would otherwise make this assertion pass vacuously.
+	if has, err := d.HasWindow(ctx, session, "transient"); err != nil || has {
+		t.Errorf("HasWindow(transient) = %v, %v; want false, nil (tmux should have closed the window)", has, err)
 	}
 
 	// ...unless remain-on-exit keeps the corpse visible, which is how a failing
@@ -468,7 +470,7 @@ func TestAttachSelectAndDetach(t *testing.T) {
 	// This one runs with $TMUX pointing at a *different* tmux server, the
 	// "user's own tmux is on another socket" case: not nesting, so Attach must
 	// still execve into tmux after dropping $TMUX.
-	startAttachHelper(t, ctx,
+	helper2 := startAttachHelper(t, ctx,
 		self,
 		append(envWithout(os.Environ(), "TMUX"), "TMUX=/tmp/tmux-0/definitely-not-our-socket,1,0"),
 		d.SocketPath+"|"+session+"|pc3",
@@ -478,6 +480,18 @@ func TestAttachSelectAndDetach(t *testing.T) {
 		ttys, err := d.ClientTTYs(ctx, session)
 		return err == nil && len(ttys) > 0
 	})
+	// Asserted, not assumed: Attach select-windows *before* it hands the
+	// terminal over, so the active-window check below passes even when the
+	// attach itself never happens. Without this the whole different-server
+	// exec path could be dead and the test would still be green.
+	ttys, err = d.ClientTTYs(ctx, session)
+	if err != nil {
+		t.Fatalf("ClientTTYs (reattach): %v", err)
+	}
+	if len(ttys) == 0 {
+		t.Fatal("no client attached after the second Attach; the different-server exec path did not reach tmux")
+	}
+
 	windows, err = d.ListWindows(ctx, session)
 	if err != nil {
 		t.Fatalf("ListWindows (reattach): %v", err)
@@ -490,6 +504,196 @@ func TestAttachSelectAndDetach(t *testing.T) {
 	}
 	if active != "pc3" {
 		t.Errorf("active window after reattach = %q, want %q", active, "pc3")
+	}
+
+	// And the second client detaches as cleanly as the first, which is the
+	// only thing that proves it was a real tmux client and not a corpse.
+	if err := d.DetachSession(ctx, session); err != nil {
+		t.Fatalf("DetachSession (reattach): %v", err)
+	}
+	helper2.expectExit(t, 10*time.Second)
+	if has, err := d.HasSession(ctx, session); err != nil || !has {
+		t.Fatalf("HasSession after second detach = %v, %v; want true, nil", has, err)
+	}
+}
+
+// TestAttachSwitchesClientOnSameServer covers the third hand-over path, the one
+// users hit most: kathara is run from inside a pane of the very server that
+// holds the scenario session. execve'ing attach-session there would either be
+// refused by tmux (when $TMUX survives) or mirror the terminal into its own
+// pane (when it does not), so Attach must switch the existing client instead
+// and return normally.
+func TestAttachSwitchesClientOnSameServer(t *testing.T) {
+	d := testDriver(t)
+	ctx := testContext(t)
+
+	if _, err := exec.LookPath("script"); err != nil {
+		t.Skip("script(1) not installed; cannot allocate a pty for the attach test")
+	}
+
+	first := SessionName("switchfrom", "")
+	second := SessionName("switchto", "")
+	for _, s := range []string{first, second} {
+		if _, err := d.EnsureWindow(ctx, s, Window{Name: "pc1", Command: "sleep 300"}); err != nil {
+			t.Fatalf("EnsureWindow(%s): %v", s, err)
+		}
+	}
+
+	self, err := filepath.Abs(os.Args[0])
+	if err != nil {
+		t.Fatalf("locating test binary: %v", err)
+	}
+
+	// A real client on a pty, sitting in the first session.
+	startAttachHelper(t, ctx, self, envWithout(os.Environ(), "TMUX"), d.SocketPath+"|"+first+"|pc1")
+	waitFor(t, 10*time.Second, func() bool {
+		ttys, err := d.ClientTTYs(ctx, first)
+		return err == nil && len(ttys) > 0
+	})
+	before, err := d.ClientTTYs(ctx, first)
+	if err != nil || len(before) == 0 {
+		t.Fatalf("ClientTTYs(%s) = %v, %v; want one attached client", first, before, err)
+	}
+
+	// Now "kathara connect --tmux" from inside that server: $TMUX names this
+	// socket. No pty for this helper on purpose — if Attach were to take an
+	// exec path, tmux would fail with "open terminal failed: not a terminal"
+	// and the helper's exit status would say so.
+	inner := startHelperProcess(t, ctx, self,
+		append(envWithout(os.Environ(), "TMUX"), "TMUX="+d.SocketPath+",1,0"),
+		d.SocketPath+"|"+second+"|pc1")
+	inner.expectExit(t, 10*time.Second)
+
+	// The pre-existing client moved to the second session; no second client
+	// was created, and nothing was left attached to the first.
+	waitFor(t, 10*time.Second, func() bool {
+		ttys, err := d.ClientTTYs(ctx, second)
+		return err == nil && len(ttys) > 0
+	})
+	after, err := d.ClientTTYs(ctx, second)
+	if err != nil {
+		t.Fatalf("ClientTTYs(%s): %v", second, err)
+	}
+	if len(after) != 1 || after[0] != before[0] {
+		t.Fatalf("clients on %s = %v, want the existing client %v switched over", second, after, before)
+	}
+	if left, err := d.ClientTTYs(ctx, first); err != nil || len(left) != 0 {
+		t.Fatalf("clients on %s after switch = %v, %v; want none", first, left, err)
+	}
+}
+
+// TestAbsenceClassifierSpellings pins the two whitelist entries that no other
+// test can reach through the exported API, because the code is written to
+// avoid provoking them: "duplicate session:" (EnsureSession checks HasSession
+// first, so only a lost race gets there) and "no current client" on a *live*
+// server (TestAbsentServerIsNotAnError only covers the no-server spelling).
+// If tmux ever renames either, attach-don't-clobber turns into an error and
+// DetachSession stops being idempotent — silently, in both cases.
+func TestAbsenceClassifierSpellings(t *testing.T) {
+	d := testDriver(t)
+	ctx := testContext(t)
+
+	session := SessionName("classifier", "")
+	if _, err := d.EnsureSession(ctx, session, Window{Name: "pc1", Command: "sleep 300"}); err != nil {
+		t.Fatalf("EnsureSession: %v", err)
+	}
+
+	// The race EnsureSession is written to survive: another process created
+	// the session between our has-session and our new-session.
+	_, err := d.run(ctx, "new-session", "-d", "-s", session, "-n", "pc1")
+	if err == nil {
+		t.Fatal("second new-session succeeded; tmux should reject a duplicate name")
+	}
+	if !isAbsence(err, duplicateSessionMessages...) {
+		t.Fatalf("duplicate new-session error %v is not classified as a lost race; EnsureSession would report it as a failure", err)
+	}
+	if isSessionAbsent(err) {
+		t.Fatalf("duplicate new-session error %v classified as session-absent", err)
+	}
+
+	// detach-client with a live server but nothing attached.
+	_, err = d.run(ctx, "detach-client", "-s", sessionTarget(session))
+	if err == nil {
+		t.Fatal("detach-client with nothing attached succeeded; expected tmux to exit 1")
+	}
+	if !isAbsence(err, clientAbsentMessages...) {
+		t.Fatalf("detach-client-with-no-client error %v is not classified as absence; DetachSession would fail instead of being a no-op", err)
+	}
+	if err := d.DetachSession(ctx, session); err != nil {
+		t.Fatalf("DetachSession on a live server with no client: %v", err)
+	}
+
+	// A real failure must not be swallowed by any of the groups: tmux rejects
+	// an unknown command with prose none of them matches.
+	_, err = d.run(ctx, "no-such-tmux-command")
+	if err == nil {
+		t.Fatal("unknown tmux command succeeded")
+	}
+	if isSessionAbsent(err) || isAbsence(err, windowAbsentMessages...) ||
+		isAbsence(err, clientAbsentMessages...) || isAbsence(err, duplicateSessionMessages...) {
+		t.Fatalf("real failure %v classified as absence", err)
+	}
+}
+
+// TestForeignSessionNameCannotForgeARow backs the claim in ListSessions's doc:
+// the newline-delimited -F listing cannot be spoofed by a session someone else
+// created, because tmux vis-escapes control characters in session names.
+func TestForeignSessionNameCannotForgeARow(t *testing.T) {
+	d := testDriver(t)
+	ctx := testContext(t)
+
+	// Created through the bare CLI: this is a name *we* would never build.
+	if _, err := d.run(ctx, "new-session", "-d", "-s", "evil\nkathara_phantom", "-n", "w", "--", "sleep 300"); err != nil {
+		t.Fatalf("new-session with a newline in the name: %v", err)
+	}
+
+	sessions, err := d.ListSessions(ctx)
+	if err != nil {
+		t.Fatalf("ListSessions: %v", err)
+	}
+	if len(sessions) != 1 {
+		t.Fatalf("ListSessions = %q, want a single row (tmux must escape the newline, not store it)", sessions)
+	}
+	if strings.Contains(sessions[0], "\n") {
+		t.Fatalf("ListSessions row %q contains a raw newline", sessions[0])
+	}
+	if kathara, err := d.ListKatharaSessions(ctx); err != nil || len(kathara) != 0 {
+		t.Fatalf("ListKatharaSessions = %q, %v; want none (no phantom kathara_ session)", kathara, err)
+	}
+}
+
+// TestWindowCommandTrailingSemicolon: tmux's command-sequence parser eats a
+// trailing ';' even after "--", which would silently truncate a device's
+// command. Kathara's own connect command never ends in ';', so this is about
+// the transport not lying about what it ran.
+func TestWindowCommandTrailingSemicolon(t *testing.T) {
+	d := testDriver(t)
+	ctx := testContext(t)
+
+	session := SessionName("semicolon", "")
+	if _, err := d.EnsureSession(ctx, session, Window{Name: "pc1", Command: "sleep 300;"}); err != nil {
+		t.Fatalf("EnsureSession: %v", err)
+	}
+
+	// tmux renders a start command containing spaces in double quotes.
+	got, err := d.run(ctx, "list-panes", "-t", windowTarget(session, "pc1"), "-F", "#{pane_start_command}")
+	if err != nil {
+		t.Fatalf("list-panes: %v", err)
+	}
+	if want := `"sleep 300;"`; got != want {
+		t.Errorf("pane start command = %q, want %q (the trailing ';' must survive)", got, want)
+	}
+	// The escaping is only for the trailing one; a ';' inside the command is
+	// already safe and must not be doubled.
+	if _, err := d.EnsureWindow(ctx, session, Window{Name: "pc2", Command: "sleep 300; true"}); err != nil {
+		t.Fatalf("EnsureWindow(pc2): %v", err)
+	}
+	got, err = d.run(ctx, "list-panes", "-t", windowTarget(session, "pc2"), "-F", "#{pane_start_command}")
+	if err != nil {
+		t.Fatalf("list-panes (pc2): %v", err)
+	}
+	if want := `"sleep 300; true"`; got != want {
+		t.Errorf("pane start command = %q, want %q", got, want)
 	}
 }
 
@@ -533,9 +737,15 @@ func TestSanitizedNameRoundTrip(t *testing.T) {
 	}
 
 	// The raw, unsanitized name is exactly what a naive implementation would
-	// probe with — and tmux would never report it as present.
-	if has, err := d.HasSession(ctx, SessionPrefix+raw); err != nil || has {
-		t.Fatalf("HasSession(unsanitized) = %v, %v; want false, nil", has, err)
+	// probe with. tmux would never report it as present — proven here with the
+	// bare CLI call...
+	if _, err := d.run(ctx, "has-session", "-t", sessionTarget(SessionPrefix+raw)); !isSessionAbsent(err) {
+		t.Fatalf("raw has-session(unsanitized) = %v, want tmux to report it absent", err)
+	}
+	// ...and the exported probe refuses the question outright rather than
+	// handing back a "false" the caller would act on forever.
+	if _, err := d.HasSession(ctx, SessionPrefix+raw); !errors.Is(err, ErrInvalidName) {
+		t.Fatalf("HasSession(unsanitized) = %v, want ErrInvalidName", err)
 	}
 	// ...and creating with it would be rejected by us rather than silently
 	// producing a session under a different name.
@@ -551,6 +761,7 @@ type attachHelper struct {
 	cmd    *exec.Cmd
 	done   chan error
 	exited bool
+	stderr *strings.Builder // only for helpers started without a pty
 }
 
 // startAttachHelper runs `script -q -e -c <testbin> /dev/null`, which gives the
@@ -558,8 +769,26 @@ type attachHelper struct {
 // a terminal"). script -e propagates the command's exit status.
 func startAttachHelper(t *testing.T, ctx context.Context, self string, env []string, spec string) *attachHelper {
 	t.Helper()
+	return startHelper(t, exec.CommandContext(ctx, "script", "-q", "-e", "-c", shellQuote(self), "/dev/null"), env, spec)
+}
 
-	cmd := exec.CommandContext(ctx, "script", "-q", "-e", "-c", shellQuote(self), "/dev/null")
+// startHelperProcess runs the helper *without* a pty. Used for the same-server
+// switch-client path, which must not need one: if Attach took an exec path
+// instead, tmux would refuse with "open terminal failed: not a terminal" and
+// the helper would exit non-zero. Its stderr is kept so that failure says why.
+func startHelperProcess(t *testing.T, ctx context.Context, self string, env []string, spec string) *attachHelper {
+	t.Helper()
+	cmd := exec.CommandContext(ctx, self)
+	stderr := &strings.Builder{}
+	cmd.Stderr = stderr
+	h := startHelper(t, cmd, env, spec)
+	h.stderr = stderr
+	return h
+}
+
+func startHelper(t *testing.T, cmd *exec.Cmd, env []string, spec string) *attachHelper {
+	t.Helper()
+
 	cmd.Env = append(env, attachHelperEnv+"="+spec)
 	if err := cmd.Start(); err != nil {
 		t.Fatalf("starting attach helper (%s): %v", spec, err)
@@ -589,7 +818,11 @@ func (h *attachHelper) expectExit(t *testing.T, timeout time.Duration) {
 	case err := <-h.done:
 		h.exited = true
 		if err != nil {
-			t.Errorf("attach helper exited with %v, want a clean exit", err)
+			var why string
+			if h.stderr != nil {
+				why = ": " + strings.TrimSpace(h.stderr.String())
+			}
+			t.Errorf("attach helper exited with %v, want a clean exit%s", err, why)
 		}
 	case <-time.After(timeout):
 		t.Error("attach helper did not exit")

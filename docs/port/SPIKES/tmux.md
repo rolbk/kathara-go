@@ -1,8 +1,10 @@
 # SPIKE: driving the real tmux binary
 
 **Phase 2 dependency spike** for PORT_SPEC §3.3 item 2 ("tmux as a first-class backend, done
-properly"), a §0.2 #2 sanctioned rebuild. Status: prototype landed, tests green against real
-tmux. Not review-complete — this code still gets the full §10 adversarial pass in Phase 3.
+properly"), a §0.2 #2 sanctioned rebuild. Status: landed, tests green against real tmux, **§10
+adversarial pass done** (two independent reviews + fixer, Phase 3). Findings applied are marked
+in place below; the one open item is OI-1 (package placement, needs a human ruling on a frozen
+document).
 
 Code: `term/tmuxdrv/` (`tmuxdrv.go`, `naming.go`, `session.go`, `attach.go`,
 `attach_unix.go`, `attach_other.go`; tests `naming_test.go`, `integration_test.go`).
@@ -62,7 +64,7 @@ err = d.Attach(ctx, session, "pc1")             // select-window, then execve in
 | `EnsureWindow` / `AddWindow` | `new-window -d -t '=<s>:' -n <w> [-c] [-e] -- <cmd>` |
 | `ListWindows` / `WindowNames` / `HasWindow` | `list-windows -t '=<s>' -F '#{window_index}\t#{window_name}\t#{window_id}\t#{window_active}\t#{pane_dead}'` |
 | `SelectWindow` | `select-window -t '=<s>:=<w>'` |
-| `Attach` | `select-window`, then `execve(tmux attach-session -t '=<s>')` |
+| `Attach` | `select-window`, then `execve(tmux attach-session -t '=<s>')` — or `switch-client -t '=<s>'` when kathara is inside the target server (quirk 13) |
 | `DetachSession` | `detach-client -s '=<s>'` |
 | `ClientTTYs` | `list-clients -t '=<s>' -F '#{client_tty}'` |
 | `KillSession` / `KillWindow` | `kill-session -t '=<s>'` / `kill-window -t '=<s>:=<w>'` |
@@ -71,8 +73,8 @@ err = d.Attach(ctx, session, "pc1")             // select-window, then execve in
 No tmux output is parsed except values tmux was explicitly asked to print with `-F`, plus a
 whitelist of stderr strings used *only* to tell "absent" from "failed" (§4, quirk 5).
 
-**Size, against the §3.3 budget of ~250 SLOC for the tmux backend:** 619 SLOC excluding tests and
-comments (`session.go` 302, `tmuxdrv.go` 149, `naming.go` 66, `attach*.go` 102). Roughly a third
+**Size, against the §3.3 budget of ~250 SLOC for the tmux backend:** 656 SLOC excluding tests and
+comments (`session.go` 315, `tmuxdrv.go` 159, `naming.go` 66, `attach*.go` 116). Roughly a third
 is surface `term` may never call (`ListKatharaSessions`, `KillWindow`, `ClientTTYs`, `SocketPath`,
 the full `WindowInfo`) and can be trimmed when the caller exists; the rest is the exit-code and
 absence handling quirks 4–5 force on anything driving this CLI honestly. The 250-line estimate
@@ -132,8 +134,15 @@ means `lstart` in `~/labs/demo` adopts the session of `~/labs/demo2`. Window tar
 
 **2. Session names are silently rewritten.** `new-session -s 'a.b'` creates the session `a_b`;
 `-s 'a:b'` also creates `a_b`, so the second one fails with `duplicate session: a_b`. Spaces are
-kept; an empty name is rejected (`invalid session: `, exit 1). Sanitize before probing.
-*Pinned by `TestSanitizedNameRoundTrip`, `TestSessionName`.*
+kept; an empty name is rejected (`invalid session: `, exit 1). Sanitize before probing. tmux also
+*vis-escapes* control characters in a session name (`session_check_name` → `utf8_stravis`): a
+literal newline is stored as the two characters `\` and `n`, so a session someone else created
+cannot forge a row boundary in the newline-delimited `list-sessions -F` output, and
+`ListKatharaSessions` cannot be made to report a phantom `kathara_…` session. Verified on 3.5a
+(one row, one `\n`-free name); an exact-match re-probe of each row would be the fallback if a tmux
+old enough to store the raw byte ever turns up.
+*Pinned by `TestSanitizedNameRoundTrip`, `TestSessionName`,
+`TestForeignSessionNameCannotForgeARow`.*
 
 **3. Server autostart, and "no server" is a normal state.** Any command needing a server starts
 one; `new-session` is how Kathara starts it. There is no way to keep a server with zero sessions:
@@ -161,13 +170,34 @@ only signal is stderr, and there are two distinct spellings of "no server":
 | create raced | `duplicate session: <name>` | 1 |
 | detach with nothing attached | `no current client` | 1 |
 
-**5. Hence: a small, closed stderr whitelist.** `knownAbsenceMessages` in `tmuxdrv.go` lists the
-strings that mean "not there"; anything else non-zero is a real failure and is returned as a
-`*CommandError` with the full argv. tmux has no localization, so these strings do not move with
-the user's locale. This is the one place the package looks at tmux prose, and it is deliberately
-confined to absence-vs-failure — never to structure. Two idempotency behaviors fall out of it:
-`KillSession` returns `(false, nil)` for an absent session, and `DetachSession` is a no-op when
-nothing is attached.
+**5. Hence: a small, closed stderr whitelist.** `tmuxdrv.go` groups the strings that mean "not
+there" by *what* is missing (`noServerMessages`, `sessionAbsentMessages`, `windowAbsentMessages`,
+`clientAbsentMessages`, `duplicateSessionMessages`); anything else non-zero is a real failure and
+is returned as a `*CommandError` with the full argv. tmux has no localization, so these strings do
+not move with the user's locale. This is the one place the package looks at tmux prose, and it is
+deliberately confined to absence-vs-failure — never to structure. Two idempotency behaviors fall
+out of it: `KillSession` returns `(false, nil)` for an absent session, and `DetachSession` is a
+no-op when nothing is attached.
+
+Three rules keep the whitelist honest, all tightened in the Phase 3 review:
+
+- **Every spelling is one this tmux actually emits.** Each was reproduced from the subcommand
+  named beside it and exists in `strings /usr/bin/tmux`. Four entries an earlier draft carried
+  (`no current server`, `session not found`, `no client with tty`, `can't establish current
+  session`) are in no tmux 3.5a binary at all and were dropped rather than left as unverifiable
+  widening.
+- **A message must begin a line of stderr** (`strings.HasPrefix` per line, not `Contains`
+  anywhere), so a genuine failure that merely quotes one of these strings is not read as absence.
+  Per-line rather than per-message so a command that starts the server and prints configuration
+  diagnostics first still classifies.
+- **Each call site passes only what its own command can say.** `kill-session` cannot report a
+  missing *window*, so it is not offered that spelling; `detach-client` is, because tmux answers
+  `no current client` even when the `-s` target does not resolve.
+
+Two of these are unreachable through the ordinary API — `duplicate session:` needs a lost
+creation race, `no current client` on a live server needs a detach with nothing attached — so
+`TestAbsenceClassifierSpellings` provokes both directly and also asserts an unknown-command
+failure is classified as a failure.
 
 **6. Configuration is read once, at server start.** `-f /dev/null` passed to a command that
 reaches an already-running server is ignored. Demonstrated: a config with `set -g base-index 7`
@@ -211,14 +241,40 @@ Anything Kathara needs the device window to see must be passed explicitly; relyi
 **11. `--` is honored before the shell-command positional**, so a command starting with `-` can
 never be re-read as a flag. `Window.commandArgs` always emits it.
 
+**11b. `--` does not protect against the *command-sequence* parser.** That runs earlier: an
+argument ending in an unescaped `;` separates tmux commands, and tmux drops the `;`. So
+`new-session … -- 'sleep 60;'` runs `sleep 60` and exits 0 — the command is silently truncated,
+not rejected. Measured: `'sleep 60;'` → `pane_start_command` `"sleep 60"`; `'sleep 60 ;'` →
+`"sleep 60 "`; `'sleep 60; true'` (mid-string) → unchanged; `'sleep 60\;'` → `"sleep 60;"`. Only a
+trailing `;` separates, and escaping it restores it, so `commandArgs` escapes a trailing `;` the
+caller did not already escape. Kathara's connect command never ends in `;`; this is the transport
+not lying about what it ran.
+*Pinned by `TestWindowCommandTrailingSemicolon`.*
+
 **12. Attaching requires a real TTY.** Without one: `open terminal failed: not a terminal`,
 exit 1. Tests get a pty from `script -q -e -c <cmd> /dev/null` (`-e` propagates the command's
 exit status, which is how the suite asserts a clean exit after detach).
 
-**13. Nesting is refused by `$TMUX` presence alone.** `$TMUX` is
-`<socket-path>,<server-pid>,<session-id>`. tmux refuses `attach-session` whenever it is set — but
-the refusal is only *correct* when the client belongs to the same server. Three cases, all
-handled in `Attach`:
+**13. Nesting is refused by `$TMUX` *plus* a pane-tty match — not by `$TMUX` alone.** `$TMUX` is
+`<socket-path>,<server-pid>,<session-id>`. tmux's check (`server_client_check_nested`) refuses
+`attach-session` only when `$TMUX` is set **and** the attaching client's tty is the tty of one of
+*this server's* panes. Measured on 3.5a, all four combinations:
+
+| $TMUX | client tty is a pane of the target server | result |
+|---|---|---|
+| set (points at the target socket) | yes | refused: `sessions should be nested with care, unset $TMUX to force`, exit 1 |
+| set (points at the target socket) | no (fresh pty) | **attaches** — no refusal |
+| set (points at a *different* server) | no | **attaches** — no refusal |
+| unset | yes | **attaches**: a client inside its own pane, the recursive mirror |
+
+Two consequences for `Attach`, and they pull in opposite directions: dropping `$TMUX` on the
+different-server path is belt-and-braces rather than load-bearing (tmux would not have refused
+anyway), while dropping it on the *same*-server path would disarm the one protection tmux has and
+mirror the terminal into its own pane — row 4. So the same-server branch never execs, and a
+failure to establish *which* server we are inside is returned rather than guessed past (an earlier
+draft fell back to "assume different server", i.e. straight into row 4; Phase 3 review).
+
+Three cases, all handled in `Attach`:
 
 | kathara runs… | action |
 |---|---|
@@ -227,8 +283,15 @@ handled in `Attach`:
 | inside a client of a **different** server (user on `-L work`, Kathara on the default socket) | `execve(attach-session)` with `TMUX` dropped from the child env — not nesting |
 
 The same-server test uses `display-message -p '#{socket_path}'` on the target server rather than
-reconstructing `$TMUX_TMPDIR`/`/tmp/tmux-<uid>` by hand.
-*Pinned by `TestAttachSelectAndDetach` (both exec paths) and `TestOuterSocketPath`.*
+reconstructing `$TMUX_TMPDIR`/`/tmp/tmux-<uid>` by hand, and compares it to `$TMUX`'s socket
+symlink-tolerantly (`sameSocket`): the two are byte-identical for the default socket, and a false
+"different" is the answer that walks into row 4 of the table above. `switch-client` picks the right client on
+its own: with `$TMUX_PANE` inherited from the pane kathara was started in, tmux resolves the
+current client to *that* pane's client (verified with two clients attached to different sessions —
+only the one owning `$TMUX_PANE` moved).
+*Pinned by `TestAttachSelectAndDetach` (both exec paths, the reattach leg asserting a client is
+genuinely attached), `TestAttachSwitchesClientOnSameServer` (the switch-client path, asserting the
+existing client moved and no second client appeared) and `TestOuterSocketPath`.*
 
 **14. The daemonized server does not hold the client's stdout/stderr.** Worth stating because it
 is the classic exec-driver hang: Go's `exec` gives a non-`*os.File` `Stdout` a pipe and `Run()`
@@ -279,7 +342,7 @@ output — the `decode()` bug class §3.3 calls out).
 |---|---|
 | `session_name = "Kathara" if not session_name` — **every path-parsed lab shares one session** | one session per scenario (§3, OQ-9 ruling) |
 | Creates the session around a random placeholder window (`"%008x" % random.getrandbits(32)`), then kills the placeholder if it created the session | the first device *is* the first window; no placeholder, so no window-count skew and no kill-the-placeholder step |
-| Duplicate-session handling: `except TmuxSessionExists`, plus `except LibTmuxException` sniffing `'duplicate session' in e.args[0][0]`; if neither matches, `session` is never bound → `UnboundLocalError` | one whitelist entry (`duplicate session:`) → "attach, do not clobber"; anything else is returned as a typed error |
+| Duplicate-session handling: `except TmuxSessionExists`, plus `except LibTmuxException` sniffing `'duplicate session' in e.args[0][0]`; a `LibTmuxException` that is *not* a duplicate falls out of the handler with no `return`, so the swallowed error surfaces as `libtmux.exc.ObjectDoesNotExist: No objects found: session_name='…'` from the `self._server.sessions.get(...)` below (reproduced against 3.8.3 + libtmux 0.62.0; an earlier draft of this table said `UnboundLocalError`, which cannot happen — that line binds `session`) | one whitelist entry (`duplicate session:`) → "attach, do not clobber"; anything else is returned as a typed error |
 | `_get_session_from_server` may return `None`, which is then cached in `self._sessions` | no session cache; tmux is the only state |
 | Per-process session cache in a singleton | stateless `Driver` value (§0.2 #10 direction) |
 | `kill_window(session, window_name)` static helper | `KillWindow(ctx, session, window)` |
@@ -312,8 +375,8 @@ should map to is OI-3.
 > creates `kathara_<name-or-hash>` per scenario (§3). Approved under spec §0.2 #2 / §3.3 ("one
 > session per network scenario named from the lab"); OQ-9.
 
-To be copied into `DIVERGENCES.md` when `term/` lands in Phase 3 — this spike does not edit the
-frozen deliverables.
+Copied into `DIVERGENCES.md` as entry 18 in the Phase 3 review, which is where `term/tmuxdrv`
+lands.
 
 ---
 
@@ -347,19 +410,30 @@ helper when `KATHARA_TMUXDRV_ATTACH_HELPER` is set.
 Result on this VM (tmux 3.5a):
 
 ```
---- PASS: TestVersion (0.01s)                     tmux version under test: tmux 3.5a
---- PASS: TestEnsureSessionLifecycle (0.17s)      create 3 windows, verify, re-ensure (no clobber), +1 device, kill, verify gone
---- PASS: TestExactMatchTargeting (0.05s)
---- PASS: TestAbsentServerIsNotAnError (0.06s)
---- PASS: TestWindowOptionsAndDeath (0.07s)       -c / -e / window death / remain-on-exit
---- PASS: TestAttachSelectAndDetach (0.20s)       pty attach, select, detach, reattach (both exec paths)
---- PASS: TestAttachMissingWindow (0.03s)
---- PASS: TestSanitizedNameRoundTrip (0.04s)
+--- PASS: TestVersion                             tmux version under test: tmux 3.5a
+--- PASS: TestEnsureSessionLifecycle              create 3 windows, verify, re-ensure (no clobber), +1 device, kill, verify gone
+--- PASS: TestExactMatchTargeting
+--- PASS: TestAbsentServerIsNotAnError
+--- PASS: TestWindowOptionsAndDeath               -c / -e / window death / remain-on-exit
+--- PASS: TestAttachSelectAndDetach               pty attach, select, detach, reattach (both exec paths, both asserted attached)
+--- PASS: TestAttachSwitchesClientOnSameServer    switch-client path: the existing client moves, no second client
+--- PASS: TestAbsenceClassifierSpellings          duplicate session / no current client / a real failure stays a failure
+--- PASS: TestForeignSessionNameCannotForgeARow   a newline in someone else's session name cannot forge a listing row
+--- PASS: TestWindowCommandTrailingSemicolon      a trailing ';' in a device command survives tmux's sequence parser
+--- PASS: TestAttachMissingWindow
+--- PASS: TestSanitizedNameRoundTrip
 --- PASS: TestSessionName + 10 subtests, TestCheckNames, TestArgvComposition,
           TestTargetsAreExactMatch, TestDriverValidateRejectsTwoSockets,
           TestWindowCommandArgsAreGuarded, TestOuterSocketPath, TestEnvironWithoutTmux
-ok  github.com/KatharaFramework/kathara-go/term/tmuxdrv  0.546s
+ok  github.com/KatharaFramework/kathara-go/term/tmuxdrv
 ```
+
+Phase 3 added the four tests in the middle of that list, all mutation-checked: breaking the
+different-server exec branch, or the same-server `switch-client` branch, fails
+`TestAttachSelectAndDetach` and `TestAttachSwitchesClientOnSameServer` respectively (before the
+review, the reattach leg passed with the exec branch replaced by `return fmt.Errorf(...)`, because
+`Attach` selects the window *before* it hands the terminal over and nothing asserted a client had
+appeared).
 
 `go build ./...`, `go vet`, `errcheck`, `staticcheck`, `gofmt -l`: clean.
 
@@ -369,7 +443,7 @@ ok  github.com/KatharaFramework/kathara-go/term/tmuxdrv  0.546s
 
 | # | Item | Why it needs a decision |
 |---|---|---|
-| **OI-1** | **Package placement.** PACKAGE_GRAPH.md maps `trdparty/libtmux/tmux.py` → `term/tmux.go` (a file in package `term`); this spike landed in `term/tmuxdrv/`, a new leaf package the frozen inventory does not list. It imports nothing from the module, so it cannot create a cycle, and keeping it dependency-free is what lets it be tested without `kathara`/`settings`. Needs either a graph amendment (add `term/tmuxdrv`, imports: none) or a fold-in to `term/tmux.go` at Phase 3. Frozen doc → human ruling. |
+| **OI-1** | **Package placement — still open after the Phase 3 review; both reviewers raised it, one as a BLOCKER.** PACKAGE_GRAPH.md maps `trdparty/libtmux/tmux.py` → `term/tmux.go` (a file in package `term`); this spike landed in `term/tmuxdrv/`, a new leaf package the frozen inventory does not list, and `term/pty.go`'s package doc already points at it. It imports nothing from the module, so it cannot create a cycle, and keeping it dependency-free is what lets it be tested without `kathara`/`settings`. Needs either a graph amendment (add `term/tmuxdrv`, imports: none) or a fold-in to `term/tmux.go`. Frozen doc → human ruling; the fixer pass deliberately did **not** move code or edit the frozen graph. Registered in PROPOSED-DIVERGENCES.md so it cannot land silently. |
 | **OI-2** | **`connect --tmux` is new CLI surface.** 3.8.3's `connect` has no such flag (`-d/--directory`, `-v/--vmachine`, `--shell`, `-l/--logs`, `DEVICE_NAME`). §3.3 mandates it; CLI_SURFACE.md is frozen and does not list it. Needs an amendment, plus a decision on what it does when the scenario has no tmux session (error, or create-and-attach). |
 | **OI-3** | **Error mapping for a missing/broken tmux.** ERROR_CODES.md sends terminal-internal sites to `InternalError`, and `check_terminal` skips the check for TMUX entirely, so 3.8.3 has no precedent. Recommendation: map "tmux binary not found" to `Settings` with the existing reason string `Terminal Emulator \`{terminal}\` not valid! Install it before using it.` (the closest existing user-facing message), and everything else in `tmuxdrv` to `InternalError`. Contract-touching → human ruling. |
 | **OI-4** | **`remain-on-exit` default.** Off = 3.8.3 parity and a device whose connect fails vanishes silently. On = the failure stays on screen with its exit status, at the cost of dead windows the user must close. The mechanism is race-free and free (quirk 8); only the default is open. |

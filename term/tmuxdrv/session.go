@@ -56,15 +56,19 @@ const listWindowsFormat = "#{window_index}\t#{window_name}\t#{window_id}\t#{wind
 // two are indistinguishable by exit status alone; both mean false here. A false
 // negative is safe: EnsureSession still refuses to clobber, because tmux itself
 // rejects a duplicate new-session.
+//
+// A name tmux would rewrite is rejected rather than probed: tmux could never
+// have stored it, so the honest answer is "you cannot ask that", not a "false"
+// the caller would act on forever.
 func (d *Driver) HasSession(ctx context.Context, session string) (bool, error) {
-	if session == "" {
-		return false, fmt.Errorf("%w: empty session name", ErrInvalidName)
+	if err := checkSessionName(session); err != nil {
+		return false, err
 	}
 	_, err := d.run(ctx, "has-session", "-t", sessionTarget(session))
 	if err == nil {
 		return true, nil
 	}
-	if isNoServer(err) || isAbsence(err, "can't find session", "session not found") {
+	if isSessionAbsent(err) {
 		return false, nil
 	}
 	return false, err
@@ -72,6 +76,12 @@ func (d *Driver) HasSession(ctx context.Context, session string) (bool, error) {
 
 // ListSessions returns the names of all sessions on the server, in tmux's
 // listing order. No server means no sessions, not an error.
+//
+// One row per session is safe even against session names a foreign process
+// chose: tmux vis-escapes control characters in a session name before storing
+// it (a literal newline is stored as the two characters '\' and 'n'), so a
+// name cannot forge a row boundary in the newline-delimited -F output. Pinned
+// by TestForeignSessionNameCannotForgeARow.
 func (d *Driver) ListSessions(ctx context.Context) ([]string, error) {
 	out, err := d.run(ctx, "list-sessions", "-F", "#{session_name}")
 	if err != nil {
@@ -138,7 +148,7 @@ func (d *Driver) EnsureSession(ctx context.Context, session string, initial Wind
 		// Lost a creation race against another kathara process: the session
 		// now exists and belongs to whoever won. Attach semantics, not
 		// clobber semantics.
-		if isAbsence(err, "duplicate session:") {
+		if isAbsence(err, duplicateSessionMessages...) {
 			return false, nil
 		}
 		return false, err
@@ -203,7 +213,11 @@ func (d *Driver) EnsureWindow(ctx context.Context, session string, w Window) (Wi
 
 // AddWindow adds a detached window to an existing session unconditionally.
 // Prefer EnsureWindow; this exists for callers that have already established
-// the window is absent.
+// the window is absent — tmux window names are not unique, so calling this for
+// a name the session already holds creates a *second* window with that name,
+// and every later name-based target (including the chained remain-on-exit
+// set-option below, and SelectWindow) then resolves to the older, lower-index
+// one.
 func (d *Driver) AddWindow(ctx context.Context, session string, w Window) error {
 	if err := checkSessionName(session); err != nil {
 		return err
@@ -220,7 +234,7 @@ func (d *Driver) AddWindow(ctx context.Context, session string, w Window) error 
 	args = append(args, remainOnExitCommand(session, w)...)
 
 	if _, err := d.run(ctx, args...); err != nil {
-		if isAbsence(err, "can't find session", "session not found") {
+		if isSessionAbsent(err) {
 			return fmt.Errorf("%w: %s", ErrSessionNotFound, session)
 		}
 		return err
@@ -242,11 +256,36 @@ func (w Window) creationFlags() []string {
 
 // commandArgs renders the shell-command positional, guarded by "--" so a
 // command starting with '-' can never be read as a flag.
+//
+// "--" does not protect against tmux's *command-sequence* parser, which runs
+// before argument assignment: an argument ending in an unescaped ';' is a
+// command separator, and tmux drops the ';' and starts a new command after it.
+// `new-session ... -- 'sleep 60;'` therefore runs `sleep 60` — silently, with
+// exit status 0. escapeTrailingSemicolon puts the ';' back where the caller
+// wanted it. A ';' anywhere else in the string is untouched, because only a
+// trailing one separates (both verified on tmux 3.5a).
 func (w Window) commandArgs() []string {
 	if w.Command == "" {
 		return nil
 	}
-	return []string{"--", w.Command}
+	return []string{"--", escapeTrailingSemicolon(w.Command)}
+}
+
+// escapeTrailingSemicolon backslash-escapes a final ';' that tmux would
+// otherwise eat as a command separator. A ';' the caller already escaped (an
+// odd number of backslashes in front of it) is left alone.
+func escapeTrailingSemicolon(cmd string) string {
+	if !strings.HasSuffix(cmd, ";") {
+		return cmd
+	}
+	backslashes := 0
+	for i := len(cmd) - 2; i >= 0 && cmd[i] == '\\'; i-- {
+		backslashes++
+	}
+	if backslashes%2 == 1 {
+		return cmd
+	}
+	return cmd[:len(cmd)-1] + `\;`
 }
 
 // remainOnExitCommand appends a chained `; set-option -w remain-on-exit on` to
@@ -275,7 +314,7 @@ func (d *Driver) ListWindows(ctx context.Context, session string) ([]WindowInfo,
 	}
 	out, err := d.run(ctx, "list-windows", "-t", sessionTarget(session), "-F", listWindowsFormat)
 	if err != nil {
-		if isNoServer(err) || isAbsence(err, "can't find session", "session not found") {
+		if isSessionAbsent(err) {
 			return nil, fmt.Errorf("%w: %s", ErrSessionNotFound, session)
 		}
 		return nil, err
@@ -349,10 +388,10 @@ func (d *Driver) SelectWindow(ctx context.Context, session, window string) error
 		return err
 	}
 	if _, err := d.run(ctx, "select-window", "-t", windowTarget(session, window)); err != nil {
-		if isAbsence(err, "can't find window", "no such window") {
+		if isAbsence(err, windowAbsentMessages...) {
 			return fmt.Errorf("%w: %s in session %s", ErrWindowNotFound, window, session)
 		}
-		if isNoServer(err) || isAbsence(err, "can't find session", "session not found") {
+		if isSessionAbsent(err) {
 			return fmt.Errorf("%w: %s", ErrSessionNotFound, session)
 		}
 		return err
@@ -372,7 +411,9 @@ func (d *Driver) KillSession(ctx context.Context, session string) (killed bool, 
 		return false, err
 	}
 	if _, err := d.run(ctx, "kill-session", "-t", sessionTarget(session)); err != nil {
-		if isAbsence(err, knownAbsenceMessages...) {
+		// kill-session can only be absent-for-lack-of-session or of server;
+		// anything else it says is a real failure.
+		if isSessionAbsent(err) {
 			return false, nil
 		}
 		return false, err
@@ -391,7 +432,8 @@ func (d *Driver) KillWindow(ctx context.Context, session, window string) (killed
 		return false, err
 	}
 	if _, err := d.run(ctx, "kill-window", "-t", windowTarget(session, window)); err != nil {
-		if isAbsence(err, knownAbsenceMessages...) {
+		// Either half of the target can be the missing one.
+		if isSessionAbsent(err) || isAbsence(err, windowAbsentMessages...) {
 			return false, nil
 		}
 		return false, err
@@ -403,14 +445,16 @@ func (d *Driver) KillWindow(ctx context.Context, session, window string) (killed
 // session, its windows, their commands and the devices behind them running.
 // This is the programmatic form of the user pressing prefix-d.
 //
-// Detaching when nothing is attached is a no-op, not an error (tmux itself
-// exits 1 with "no current client" in that case).
+// Detaching when nothing is attached is a no-op, not an error: tmux exits 1
+// with "no current client" in that case, and says the same thing when the
+// session target does not resolve either (verified on 3.5a — it looks for a
+// client before it looks at -s), so the two collapse into one no-op here.
 func (d *Driver) DetachSession(ctx context.Context, session string) error {
 	if err := checkSessionName(session); err != nil {
 		return err
 	}
 	if _, err := d.run(ctx, "detach-client", "-s", sessionTarget(session)); err != nil {
-		if isAbsence(err, knownAbsenceMessages...) {
+		if isSessionAbsent(err) || isAbsence(err, clientAbsentMessages...) {
 			return nil
 		}
 		return err
@@ -426,7 +470,7 @@ func (d *Driver) ClientTTYs(ctx context.Context, session string) ([]string, erro
 	}
 	out, err := d.run(ctx, "list-clients", "-t", sessionTarget(session), "-F", "#{client_tty}")
 	if err != nil {
-		if isNoServer(err) || isAbsence(err, "can't find session", "session not found") {
+		if isSessionAbsent(err) {
 			return nil, fmt.Errorf("%w: %s", ErrSessionNotFound, session)
 		}
 		return nil, err
