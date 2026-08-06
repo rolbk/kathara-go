@@ -1,0 +1,2701 @@
+{
+  "accessors": {
+    "cpu": [
+      {
+        "nano": {
+          "ok": true,
+          "result_str": "500000000",
+          "result_type": "int"
+        },
+        "one": {
+          "ok": true,
+          "result_str": "0",
+          "result_type": "int"
+        },
+        "value": "0.5"
+      },
+      {
+        "nano": {
+          "ok": true,
+          "result_str": "2000000000",
+          "result_type": "int"
+        },
+        "one": {
+          "ok": true,
+          "result_str": "2",
+          "result_type": "int"
+        },
+        "value": "2"
+      },
+      {
+        "nano": {
+          "ok": true,
+          "result_str": "1000000000000",
+          "result_type": "int"
+        },
+        "one": {
+          "ok": true,
+          "result_str": "1000",
+          "result_type": "int"
+        },
+        "value": "1e3"
+      },
+      {
+        "nano": {
+          "ok": true,
+          "result_str": "3000000000",
+          "result_type": "int"
+        },
+        "one": {
+          "ok": true,
+          "result_str": "3",
+          "result_type": "int"
+        },
+        "value": "  3 "
+      },
+      {
+        "nano": {
+          "ok": true,
+          "result_str": "-1500000000",
+          "result_type": "int"
+        },
+        "one": {
+          "ok": true,
+          "result_str": "-1",
+          "result_type": "int"
+        },
+        "value": "-1.5"
+      },
+      {
+        "nano": {
+          "ok": true,
+          "result_str": "12000000000",
+          "result_type": "int"
+        },
+        "one": {
+          "ok": true,
+          "result_str": "12",
+          "result_type": "int"
+        },
+        "value": "١٢"
+      },
+      {
+        "nano": {
+          "ok": true,
+          "result_str": "10000000000",
+          "result_type": "int"
+        },
+        "one": {
+          "ok": true,
+          "result_str": "10",
+          "result_type": "int"
+        },
+        "value": "1_0"
+      },
+      {
+        "nano": {
+          "error_class": "MachineOptionError",
+          "error_message": "CPU value not valid on `pc1`.",
+          "ok": false
+        },
+        "one": {
+          "error_class": "MachineOptionError",
+          "error_message": "CPU value not valid on `pc1`.",
+          "ok": false
+        },
+        "value": "abc"
+      },
+      {
+        "nano": {
+          "error_class": "MachineOptionError",
+          "error_message": "CPU value not valid on `pc1`.",
+          "ok": false
+        },
+        "one": {
+          "error_class": "MachineOptionError",
+          "error_message": "CPU value not valid on `pc1`.",
+          "ok": false
+        },
+        "value": ""
+      },
+      {
+        "nano": {
+          "error_class": "MachineOptionError",
+          "error_message": "CPU value not valid on `pc1`.",
+          "ok": false
+        },
+        "one": {
+          "error_class": "MachineOptionError",
+          "error_message": "CPU value not valid on `pc1`.",
+          "ok": false
+        },
+        "value": "0x1"
+      },
+      {
+        "nano": {
+          "error_class": "MachineOptionError",
+          "error_message": "CPU value not valid on `pc1`.",
+          "ok": false
+        },
+        "one": {
+          "error_class": "MachineOptionError",
+          "error_message": "CPU value not valid on `pc1`.",
+          "ok": false
+        },
+        "value": "nan"
+      },
+      {
+        "nano": {
+          "error_class": "OverflowError",
+          "error_message": "cannot convert float infinity to integer",
+          "ok": false
+        },
+        "one": {
+          "error_class": "OverflowError",
+          "error_message": "cannot convert float infinity to integer",
+          "ok": false
+        },
+        "value": "infinity"
+      },
+      {
+        "nano": {
+          "error_class": "OverflowError",
+          "error_message": "cannot convert float infinity to integer",
+          "ok": false
+        },
+        "one": {
+          "ok": true,
+          "result_str": "1000000000000000052504760255204420248704468581108159154915854115511802457988908195786371375080447864043704443832883878176942523235360430575644792184786706982848387200926575803737830233794788090059368953234970799945081119038967640880074652742780142494579258788820056842838115669472196386865459400540160",
+          "result_type": "int"
+        },
+        "value": "1e300"
+      }
+    ],
+    "ipv6": [
+      {
+        "kind": "bool",
+        "ok": true,
+        "result_str": "True",
+        "result_type": "bool",
+        "value": "True"
+      },
+      {
+        "kind": "bool",
+        "ok": true,
+        "result_str": "False",
+        "result_type": "bool",
+        "value": "False"
+      },
+      {
+        "kind": "str",
+        "ok": true,
+        "result_str": "True",
+        "result_type": "bool",
+        "value": "true"
+      },
+      {
+        "kind": "str",
+        "ok": true,
+        "result_str": "False",
+        "result_type": "bool",
+        "value": "False"
+      },
+      {
+        "kind": "str",
+        "ok": true,
+        "result_str": "True",
+        "result_type": "bool",
+        "value": "yes"
+      },
+      {
+        "error_class": "MachineOptionError",
+        "error_message": "IPv6 value not valid on `pc1`.",
+        "kind": "str",
+        "ok": false,
+        "value": "maybe"
+      },
+      {
+        "error_class": "AttributeError",
+        "error_message": "'int' object has no attribute 'lower'",
+        "kind": "int",
+        "ok": false,
+        "value": "1"
+      },
+      {
+        "error_class": "AttributeError",
+        "error_message": "'float' object has no attribute 'lower'",
+        "kind": "float",
+        "ok": false,
+        "value": "1.5"
+      }
+    ],
+    "mem": [
+      {
+        "ok": true,
+        "result_str": "64m",
+        "result_type": "str",
+        "value": "064m"
+      },
+      {
+        "ok": true,
+        "result_str": "100m",
+        "result_type": "str",
+        "value": "100"
+      },
+      {
+        "ok": true,
+        "result_str": "12m",
+        "result_type": "str",
+        "value": " 12 "
+      },
+      {
+        "ok": true,
+        "result_str": "0m",
+        "result_type": "str",
+        "value": "0"
+      },
+      {
+        "ok": true,
+        "result_str": "",
+        "result_type": "str",
+        "value": ""
+      },
+      {
+        "ok": true,
+        "result_str": "12k",
+        "result_type": "str",
+        "value": "12K"
+      },
+      {
+        "ok": true,
+        "result_str": "12g",
+        "result_type": "str",
+        "value": "12G"
+      },
+      {
+        "ok": true,
+        "result_str": "12b",
+        "result_type": "str",
+        "value": "12B"
+      },
+      {
+        "ok": true,
+        "result_str": "5m",
+        "result_type": "str",
+        "value": "+5m"
+      },
+      {
+        "ok": true,
+        "result_str": "5m",
+        "result_type": "str",
+        "value": "5 m"
+      },
+      {
+        "ok": true,
+        "result_str": "-5m",
+        "result_type": "str",
+        "value": "-5m"
+      },
+      {
+        "ok": true,
+        "result_str": "12m",
+        "result_type": "str",
+        "value": "١٢m"
+      },
+      {
+        "ok": true,
+        "result_str": "999999999999999999999999999999m",
+        "result_type": "str",
+        "value": "999999999999999999999999999999m"
+      },
+      {
+        "ok": true,
+        "result_str": "999999999999999999999999999999m",
+        "result_type": "str",
+        "value": "999999999999999999999999999999"
+      },
+      {
+        "error_class": "MachineOptionError",
+        "error_message": "Memory value not valid on `pc1`.",
+        "ok": false,
+        "value": "1e3"
+      },
+      {
+        "error_class": "MachineOptionError",
+        "error_message": "Memory value not valid on `pc1`.",
+        "ok": false,
+        "value": "12x"
+      },
+      {
+        "error_class": "MachineOptionError",
+        "error_message": "Memory value not valid on `pc1`.",
+        "ok": false,
+        "value": "12.5"
+      },
+      {
+        "error_class": "MachineOptionError",
+        "error_message": "Memory value not valid on `pc1`.",
+        "ok": false,
+        "value": "0x10"
+      }
+    ],
+    "num_terms": [
+      {
+        "ok": true,
+        "result_str": "2",
+        "result_type": "int",
+        "value": "2"
+      },
+      {
+        "ok": true,
+        "result_str": "0",
+        "result_type": "int",
+        "value": "0"
+      },
+      {
+        "ok": true,
+        "result_str": "3",
+        "result_type": "int",
+        "value": " 3 "
+      },
+      {
+        "ok": true,
+        "result_str": "3",
+        "result_type": "int",
+        "value": "٣"
+      },
+      {
+        "ok": true,
+        "result_str": "10",
+        "result_type": "int",
+        "value": "1_0"
+      },
+      {
+        "ok": true,
+        "result_str": "4",
+        "result_type": "int",
+        "value": "+4"
+      },
+      {
+        "error_class": "MachineOptionError",
+        "error_message": "Terminals Number value on `pc1` must be a positive value or zero.",
+        "ok": false,
+        "value": "-1"
+      },
+      {
+        "error_class": "MachineOptionError",
+        "error_message": "Terminals Number value not valid on `pc1`.",
+        "ok": false,
+        "value": "2.5"
+      },
+      {
+        "error_class": "MachineOptionError",
+        "error_message": "Terminals Number value not valid on `pc1`.",
+        "ok": false,
+        "value": ""
+      },
+      {
+        "ok": true,
+        "result_str": "999999999999999999999999999999",
+        "result_type": "int",
+        "value": "999999999999999999999999999999"
+      }
+    ]
+  },
+  "add_meta": [
+    {
+      "meta": "image",
+      "meta_after": {
+        "envs": [],
+        "exec_commands": [],
+        "ports": [],
+        "scalars": {
+          "image": {
+            "str": "kathara/frr",
+            "type": "str"
+          }
+        },
+        "sysctls": [],
+        "ulimits": [],
+        "volumes": []
+      },
+      "ok": true,
+      "previous_is_none": true,
+      "previous_str": "None",
+      "previous_type": "NoneType",
+      "value": "kathara/frr"
+    },
+    {
+      "meta": "mem",
+      "meta_after": {
+        "envs": [],
+        "exec_commands": [],
+        "ports": [],
+        "scalars": {
+          "mem": {
+            "str": "512m",
+            "type": "str"
+          }
+        },
+        "sysctls": [],
+        "ulimits": [],
+        "volumes": []
+      },
+      "ok": true,
+      "previous_is_none": true,
+      "previous_str": "None",
+      "previous_type": "NoneType",
+      "value": "512m"
+    },
+    {
+      "meta": "cpus",
+      "meta_after": {
+        "envs": [],
+        "exec_commands": [],
+        "ports": [],
+        "scalars": {
+          "cpus": {
+            "str": "1.5",
+            "type": "str"
+          }
+        },
+        "sysctls": [],
+        "ulimits": [],
+        "volumes": []
+      },
+      "ok": true,
+      "previous_is_none": true,
+      "previous_str": "None",
+      "previous_type": "NoneType",
+      "value": "1.5"
+    },
+    {
+      "meta": "num_terms",
+      "meta_after": {
+        "envs": [],
+        "exec_commands": [],
+        "ports": [],
+        "scalars": {
+          "num_terms": {
+            "str": "2",
+            "type": "str"
+          }
+        },
+        "sysctls": [],
+        "ulimits": [],
+        "volumes": []
+      },
+      "ok": true,
+      "previous_is_none": true,
+      "previous_str": "None",
+      "previous_type": "NoneType",
+      "value": "2"
+    },
+    {
+      "meta": "ipv6",
+      "meta_after": {
+        "envs": [],
+        "exec_commands": [],
+        "ports": [],
+        "scalars": {
+          "ipv6": {
+            "str": "true",
+            "type": "str"
+          }
+        },
+        "sysctls": [],
+        "ulimits": [],
+        "volumes": []
+      },
+      "ok": true,
+      "previous_is_none": true,
+      "previous_str": "None",
+      "previous_type": "NoneType",
+      "value": "true"
+    },
+    {
+      "meta": "shell",
+      "meta_after": {
+        "envs": [],
+        "exec_commands": [],
+        "ports": [],
+        "scalars": {
+          "shell": {
+            "str": "/bin/bash",
+            "type": "str"
+          }
+        },
+        "sysctls": [],
+        "ulimits": [],
+        "volumes": []
+      },
+      "ok": true,
+      "previous_is_none": true,
+      "previous_str": "None",
+      "previous_type": "NoneType",
+      "value": "/bin/bash"
+    },
+    {
+      "meta": "entrypoint",
+      "meta_after": {
+        "envs": [],
+        "exec_commands": [],
+        "ports": [],
+        "scalars": {
+          "entrypoint": {
+            "str": "/bin/sh -c",
+            "type": "str"
+          }
+        },
+        "sysctls": [],
+        "ulimits": [],
+        "volumes": []
+      },
+      "ok": true,
+      "previous_is_none": true,
+      "previous_str": "None",
+      "previous_type": "NoneType",
+      "value": "/bin/sh -c"
+    },
+    {
+      "meta": "args",
+      "meta_after": {
+        "envs": [],
+        "exec_commands": [],
+        "ports": [],
+        "scalars": {
+          "args": {
+            "str": "--foo bar",
+            "type": "str"
+          }
+        },
+        "sysctls": [],
+        "ulimits": [],
+        "volumes": []
+      },
+      "ok": true,
+      "previous_is_none": true,
+      "previous_str": "None",
+      "previous_type": "NoneType",
+      "value": "--foo bar"
+    },
+    {
+      "meta": "bridged_iface",
+      "meta_after": {
+        "envs": [],
+        "exec_commands": [],
+        "ports": [],
+        "scalars": {
+          "bridged_iface": {
+            "str": "1",
+            "type": "str"
+          }
+        },
+        "sysctls": [],
+        "ulimits": [],
+        "volumes": []
+      },
+      "ok": true,
+      "previous_is_none": true,
+      "previous_str": "None",
+      "previous_type": "NoneType",
+      "value": "1"
+    },
+    {
+      "meta": "unknown_option",
+      "meta_after": {
+        "envs": [],
+        "exec_commands": [],
+        "ports": [],
+        "scalars": {
+          "unknown_option": {
+            "str": "x",
+            "type": "str"
+          }
+        },
+        "sysctls": [],
+        "ulimits": [],
+        "volumes": []
+      },
+      "ok": true,
+      "previous_is_none": true,
+      "previous_str": "None",
+      "previous_type": "NoneType",
+      "value": "x"
+    },
+    {
+      "meta": "privileged",
+      "meta_after": {
+        "envs": [],
+        "exec_commands": [],
+        "ports": [],
+        "scalars": {
+          "privileged": {
+            "str": "True",
+            "type": "bool"
+          }
+        },
+        "sysctls": [],
+        "ulimits": [],
+        "volumes": []
+      },
+      "ok": true,
+      "previous_is_none": true,
+      "previous_str": "None",
+      "previous_type": "NoneType",
+      "value": "1"
+    },
+    {
+      "meta": "privileged",
+      "meta_after": {
+        "envs": [],
+        "exec_commands": [],
+        "ports": [],
+        "scalars": {
+          "privileged": {
+            "str": "True",
+            "type": "bool"
+          }
+        },
+        "sysctls": [],
+        "ulimits": [],
+        "volumes": []
+      },
+      "ok": true,
+      "previous_is_none": true,
+      "previous_str": "None",
+      "previous_type": "NoneType",
+      "value": "yes"
+    },
+    {
+      "meta": "privileged",
+      "meta_after": {
+        "envs": [],
+        "exec_commands": [],
+        "ports": [],
+        "scalars": {
+          "privileged": {
+            "str": "False",
+            "type": "bool"
+          }
+        },
+        "sysctls": [],
+        "ulimits": [],
+        "volumes": []
+      },
+      "ok": true,
+      "previous_is_none": true,
+      "previous_str": "None",
+      "previous_type": "NoneType",
+      "value": "FALSE"
+    },
+    {
+      "error_class": "ValueError",
+      "error_message": "Invalid truth value `maybe`.",
+      "meta": "privileged",
+      "ok": false,
+      "value": "maybe"
+    },
+    {
+      "meta": "bridged",
+      "meta_after": {
+        "envs": [],
+        "exec_commands": [],
+        "ports": [],
+        "scalars": {
+          "bridged": {
+            "str": "True",
+            "type": "bool"
+          }
+        },
+        "sysctls": [],
+        "ulimits": [],
+        "volumes": []
+      },
+      "ok": true,
+      "previous_is_none": true,
+      "previous_str": "None",
+      "previous_type": "NoneType",
+      "value": "true"
+    },
+    {
+      "meta": "bridged",
+      "meta_after": {
+        "envs": [],
+        "exec_commands": [],
+        "ports": [],
+        "scalars": {
+          "bridged": {
+            "str": "False",
+            "type": "bool"
+          }
+        },
+        "sysctls": [],
+        "ulimits": [],
+        "volumes": []
+      },
+      "ok": true,
+      "previous_is_none": true,
+      "previous_str": "None",
+      "previous_type": "NoneType",
+      "value": "off"
+    },
+    {
+      "error_class": "ValueError",
+      "error_message": "Invalid truth value `nope`.",
+      "meta": "bridged",
+      "ok": false,
+      "value": "nope"
+    },
+    {
+      "meta": "exec",
+      "meta_after": {
+        "envs": [],
+        "exec_commands": [
+          "echo one"
+        ],
+        "ports": [],
+        "scalars": {},
+        "sysctls": [],
+        "ulimits": [],
+        "volumes": []
+      },
+      "ok": true,
+      "previous_is_none": true,
+      "previous_str": "None",
+      "previous_type": "NoneType",
+      "value": "echo one"
+    },
+    {
+      "meta": "sysctl",
+      "meta_after": {
+        "envs": [],
+        "exec_commands": [],
+        "ports": [],
+        "scalars": {},
+        "sysctls": [
+          {
+            "key": "net.ipv4.ip_forward",
+            "str": "1",
+            "type": "int"
+          }
+        ],
+        "ulimits": [],
+        "volumes": []
+      },
+      "ok": true,
+      "previous_is_none": true,
+      "previous_str": "None",
+      "previous_type": "NoneType",
+      "value": "net.ipv4.ip_forward=1"
+    },
+    {
+      "meta": "sysctl",
+      "meta_after": {
+        "envs": [],
+        "exec_commands": [],
+        "ports": [],
+        "scalars": {},
+        "sysctls": [
+          {
+            "key": "net.ipv4.conf.all.rp_filter",
+            "str": "-1",
+            "type": "int"
+          }
+        ],
+        "ulimits": [],
+        "volumes": []
+      },
+      "ok": true,
+      "previous_is_none": true,
+      "previous_str": "None",
+      "previous_type": "NoneType",
+      "value": "net.ipv4.conf.all.rp_filter=-1"
+    },
+    {
+      "meta": "sysctl",
+      "meta_after": {
+        "envs": [],
+        "exec_commands": [],
+        "ports": [],
+        "scalars": {},
+        "sysctls": [
+          {
+            "key": "net.custom.value",
+            "str": "abc",
+            "type": "str"
+          }
+        ],
+        "ulimits": [],
+        "volumes": []
+      },
+      "ok": true,
+      "previous_is_none": true,
+      "previous_str": "None",
+      "previous_type": "NoneType",
+      "value": "net.custom.value=abc"
+    },
+    {
+      "meta": "sysctl",
+      "meta_after": {
+        "envs": [],
+        "exec_commands": [],
+        "ports": [],
+        "scalars": {},
+        "sysctls": [
+          {
+            "key": "net.a.b",
+            "str": "5",
+            "type": "int"
+          }
+        ],
+        "ulimits": [],
+        "volumes": []
+      },
+      "ok": true,
+      "previous_is_none": true,
+      "previous_str": "None",
+      "previous_type": "NoneType",
+      "value": "net.a.b=  5  "
+    },
+    {
+      "meta": "sysctl",
+      "meta_after": {
+        "envs": [],
+        "exec_commands": [],
+        "ports": [],
+        "scalars": {},
+        "sysctls": [
+          {
+            "key": "net.a.b",
+            "str": "7",
+            "type": "int"
+          }
+        ],
+        "ulimits": [],
+        "volumes": []
+      },
+      "ok": true,
+      "previous_is_none": true,
+      "previous_str": "None",
+      "previous_type": "NoneType",
+      "value": "net.a.b=007"
+    },
+    {
+      "meta": "sysctl",
+      "meta_after": {
+        "envs": [],
+        "exec_commands": [],
+        "ports": [],
+        "scalars": {},
+        "sysctls": [
+          {
+            "key": "net.a.b",
+            "str": "3",
+            "type": "int"
+          }
+        ],
+        "ulimits": [],
+        "volumes": []
+      },
+      "ok": true,
+      "previous_is_none": true,
+      "previous_str": "None",
+      "previous_type": "NoneType",
+      "value": "net.a.b=٣"
+    },
+    {
+      "meta": "sysctl",
+      "meta_after": {
+        "envs": [],
+        "exec_commands": [],
+        "ports": [],
+        "scalars": {},
+        "sysctls": [
+          {
+            "key": "net.a.b",
+            "str": "+5",
+            "type": "str"
+          }
+        ],
+        "ulimits": [],
+        "volumes": []
+      },
+      "ok": true,
+      "previous_is_none": true,
+      "previous_str": "None",
+      "previous_type": "NoneType",
+      "value": "net.a.b=+5"
+    },
+    {
+      "meta": "sysctl",
+      "meta_after": {
+        "envs": [],
+        "exec_commands": [],
+        "ports": [],
+        "scalars": {},
+        "sysctls": [
+          {
+            "key": "net.a.b",
+            "str": "1_0",
+            "type": "str"
+          }
+        ],
+        "ulimits": [],
+        "volumes": []
+      },
+      "ok": true,
+      "previous_is_none": true,
+      "previous_str": "None",
+      "previous_type": "NoneType",
+      "value": "net.a.b=1_0"
+    },
+    {
+      "meta": "sysctl",
+      "meta_after": {
+        "envs": [],
+        "exec_commands": [],
+        "ports": [],
+        "scalars": {},
+        "sysctls": [
+          {
+            "key": "net.a.b",
+            "str": "",
+            "type": "str"
+          }
+        ],
+        "ulimits": [],
+        "volumes": []
+      },
+      "ok": true,
+      "previous_is_none": true,
+      "previous_str": "None",
+      "previous_type": "NoneType",
+      "value": "net.a.b="
+    },
+    {
+      "meta": "sysctl",
+      "meta_after": {
+        "envs": [],
+        "exec_commands": [],
+        "ports": [],
+        "scalars": {},
+        "sysctls": [
+          {
+            "key": "net.a.b",
+            "str": "1",
+            "type": "int"
+          }
+        ],
+        "ulimits": [],
+        "volumes": []
+      },
+      "ok": true,
+      "previous_is_none": true,
+      "previous_str": "None",
+      "previous_type": "NoneType",
+      "value": "net.a.b=1\n"
+    },
+    {
+      "meta": "sysctl",
+      "meta_after": {
+        "envs": [],
+        "exec_commands": [],
+        "ports": [],
+        "scalars": {},
+        "sysctls": [
+          {
+            "key": "net.a.b",
+            "str": "1\nx",
+            "type": "str"
+          }
+        ],
+        "ulimits": [],
+        "volumes": []
+      },
+      "ok": true,
+      "previous_is_none": true,
+      "previous_str": "None",
+      "previous_type": "NoneType",
+      "value": "net.a.b=1\nx"
+    },
+    {
+      "meta": "sysctl",
+      "meta_after": {
+        "envs": [],
+        "exec_commands": [],
+        "ports": [],
+        "scalars": {},
+        "sysctls": [
+          {
+            "key": "net.ключ.b",
+            "str": "1",
+            "type": "int"
+          }
+        ],
+        "ulimits": [],
+        "volumes": []
+      },
+      "ok": true,
+      "previous_is_none": true,
+      "previous_str": "None",
+      "previous_type": "NoneType",
+      "value": "net.ключ.b=1"
+    },
+    {
+      "meta": "sysctl",
+      "meta_after": {
+        "envs": [],
+        "exec_commands": [],
+        "ports": [],
+        "scalars": {},
+        "sysctls": [
+          {
+            "key": "net.a-b.c",
+            "str": "1",
+            "type": "int"
+          }
+        ],
+        "ulimits": [],
+        "volumes": []
+      },
+      "ok": true,
+      "previous_is_none": true,
+      "previous_str": "None",
+      "previous_type": "NoneType",
+      "value": "net.a-b.c=1"
+    },
+    {
+      "meta": "sysctl",
+      "meta_after": {
+        "envs": [],
+        "exec_commands": [],
+        "ports": [],
+        "scalars": {},
+        "sysctls": [
+          {
+            "key": "net.a.b",
+            "str": "4096 87380 33554432",
+            "type": "str"
+          }
+        ],
+        "ulimits": [],
+        "volumes": []
+      },
+      "ok": true,
+      "previous_is_none": true,
+      "previous_str": "None",
+      "previous_type": "NoneType",
+      "value": "net.a.b=4096 87380 33554432"
+    },
+    {
+      "meta": "sysctl",
+      "meta_after": {
+        "envs": [],
+        "exec_commands": [],
+        "ports": [],
+        "scalars": {},
+        "sysctls": [
+          {
+            "key": "net.a.b",
+            "str": "-1-",
+            "type": "str"
+          }
+        ],
+        "ulimits": [],
+        "volumes": []
+      },
+      "ok": true,
+      "previous_is_none": true,
+      "previous_str": "None",
+      "previous_type": "NoneType",
+      "value": "net.a.b=-1-"
+    },
+    {
+      "error_class": "ValueError",
+      "error_message": "invalid literal for int() with base 10: '--5'",
+      "meta": "sysctl",
+      "ok": false,
+      "value": "net.a.b=--5"
+    },
+    {
+      "error_class": "ValueError",
+      "error_message": "invalid literal for int() with base 10: '²'",
+      "meta": "sysctl",
+      "ok": false,
+      "value": "net.a.b=²"
+    },
+    {
+      "error_class": "ValueError",
+      "error_message": "invalid literal for int() with base 10: '½'",
+      "meta": "sysctl",
+      "ok": false,
+      "value": "net.a.b=½"
+    },
+    {
+      "error_class": "MachineOptionError",
+      "error_message": "Invalid sysctl value (`net.foo=1`) on `pc1`, missing `=` or value not in `net.` namespace.",
+      "meta": "sysctl",
+      "ok": false,
+      "value": "net.foo=1"
+    },
+    {
+      "error_class": "MachineOptionError",
+      "error_message": "Invalid sysctl value (`kernel.shm_rmid_forced=1`) on `pc1`, missing `=` or value not in `net.` namespace.",
+      "meta": "sysctl",
+      "ok": false,
+      "value": "kernel.shm_rmid_forced=1"
+    },
+    {
+      "error_class": "MachineOptionError",
+      "error_message": "Invalid sysctl value (`kernel.shm_rmid_forced`) on `pc1`, missing `=` or value not in `net.` namespace.",
+      "meta": "sysctl",
+      "ok": false,
+      "value": "kernel.shm_rmid_forced"
+    },
+    {
+      "error_class": "MachineOptionError",
+      "error_message": "Invalid sysctl value (`net.a.b=1=2`) on `pc1`, missing `=` or value not in `net.` namespace.",
+      "meta": "sysctl",
+      "ok": false,
+      "value": "net.a.b=1=2"
+    },
+    {
+      "error_class": "MachineOptionError",
+      "error_message": "Invalid sysctl value (`net.a.b =5`) on `pc1`, missing `=` or value not in `net.` namespace.",
+      "meta": "sysctl",
+      "ok": false,
+      "value": "net.a.b =5"
+    },
+    {
+      "meta": "env",
+      "meta_after": {
+        "envs": [
+          {
+            "key": "MY_ENV_VAR",
+            "value": "test"
+          }
+        ],
+        "exec_commands": [],
+        "ports": [],
+        "scalars": {},
+        "sysctls": [],
+        "ulimits": [],
+        "volumes": []
+      },
+      "ok": true,
+      "previous_is_none": true,
+      "previous_str": "None",
+      "previous_type": "NoneType",
+      "value": "MY_ENV_VAR=test"
+    },
+    {
+      "meta": "env",
+      "meta_after": {
+        "envs": [
+          {
+            "key": "MY_ENV_VAR",
+            "value": "1"
+          }
+        ],
+        "exec_commands": [],
+        "ports": [],
+        "scalars": {},
+        "sysctls": [],
+        "ulimits": [],
+        "volumes": []
+      },
+      "ok": true,
+      "previous_is_none": true,
+      "previous_str": "None",
+      "previous_type": "NoneType",
+      "value": "MY_ENV_VAR=1"
+    },
+    {
+      "meta": "env",
+      "meta_after": {
+        "envs": [
+          {
+            "key": "K",
+            "value": "v"
+          }
+        ],
+        "exec_commands": [],
+        "ports": [],
+        "scalars": {},
+        "sysctls": [],
+        "ulimits": [],
+        "volumes": []
+      },
+      "ok": true,
+      "previous_is_none": true,
+      "previous_str": "None",
+      "previous_type": "NoneType",
+      "value": "K=  v  "
+    },
+    {
+      "meta": "env",
+      "meta_after": {
+        "envs": [
+          {
+            "key": "K",
+            "value": ""
+          }
+        ],
+        "exec_commands": [],
+        "ports": [],
+        "scalars": {},
+        "sysctls": [],
+        "ulimits": [],
+        "volumes": []
+      },
+      "ok": true,
+      "previous_is_none": true,
+      "previous_str": "None",
+      "previous_type": "NoneType",
+      "value": "K="
+    },
+    {
+      "meta": "env",
+      "meta_after": {
+        "envs": [
+          {
+            "key": "K",
+            "value": "1=2"
+          }
+        ],
+        "exec_commands": [],
+        "ports": [],
+        "scalars": {},
+        "sysctls": [],
+        "ulimits": [],
+        "volumes": []
+      },
+      "ok": true,
+      "previous_is_none": true,
+      "previous_str": "None",
+      "previous_type": "NoneType",
+      "value": "K=1=2"
+    },
+    {
+      "meta": "env",
+      "meta_after": {
+        "envs": [
+          {
+            "key": "K",
+            "value": "v"
+          }
+        ],
+        "exec_commands": [],
+        "ports": [],
+        "scalars": {},
+        "sysctls": [],
+        "ulimits": [],
+        "volumes": []
+      },
+      "ok": true,
+      "previous_is_none": true,
+      "previous_str": "None",
+      "previous_type": "NoneType",
+      "value": "K=v\n"
+    },
+    {
+      "error_class": "MachineOptionError",
+      "error_message": "Invalid env value (`K=v\nx`) on `pc1`.",
+      "meta": "env",
+      "ok": false,
+      "value": "K=v\nx"
+    },
+    {
+      "meta": "env",
+      "meta_after": {
+        "envs": [
+          {
+            "key": "ключ",
+            "value": "1"
+          }
+        ],
+        "exec_commands": [],
+        "ports": [],
+        "scalars": {},
+        "sysctls": [],
+        "ulimits": [],
+        "volumes": []
+      },
+      "ok": true,
+      "previous_is_none": true,
+      "previous_str": "None",
+      "previous_type": "NoneType",
+      "value": "ключ=1"
+    },
+    {
+      "meta": "env",
+      "meta_after": {
+        "envs": [
+          {
+            "key": "IFACES",
+            "value": "linux:eth0,name=iface/name"
+          }
+        ],
+        "exec_commands": [],
+        "ports": [],
+        "scalars": {},
+        "sysctls": [],
+        "ulimits": [],
+        "volumes": []
+      },
+      "ok": true,
+      "previous_is_none": true,
+      "previous_str": "None",
+      "previous_type": "NoneType",
+      "value": "IFACES=linux:eth0,name=iface/name"
+    },
+    {
+      "error_class": "MachineOptionError",
+      "error_message": "Invalid env value (`MY_ENV_VAR`) on `pc1`.",
+      "meta": "env",
+      "ok": false,
+      "value": "MY_ENV_VAR"
+    },
+    {
+      "error_class": "MachineOptionError",
+      "error_message": "Invalid env value (`=1`) on `pc1`.",
+      "meta": "env",
+      "ok": false,
+      "value": "=1"
+    },
+    {
+      "error_class": "MachineOptionError",
+      "error_message": "Invalid env value (`a b=1`) on `pc1`.",
+      "meta": "env",
+      "ok": false,
+      "value": "a b=1"
+    },
+    {
+      "meta": "ulimit",
+      "meta_after": {
+        "envs": [],
+        "exec_commands": [],
+        "ports": [],
+        "scalars": {},
+        "sysctls": [],
+        "ulimits": [
+          {
+            "hard": "2048",
+            "key": "nofile",
+            "soft": "1024"
+          }
+        ],
+        "volumes": []
+      },
+      "ok": true,
+      "previous_is_none": true,
+      "previous_str": "None",
+      "previous_type": "NoneType",
+      "value": "nofile=1024:2048"
+    },
+    {
+      "meta": "ulimit",
+      "meta_after": {
+        "envs": [],
+        "exec_commands": [],
+        "ports": [],
+        "scalars": {},
+        "sysctls": [],
+        "ulimits": [
+          {
+            "hard": "1024",
+            "key": "nofile",
+            "soft": "1024"
+          }
+        ],
+        "volumes": []
+      },
+      "ok": true,
+      "previous_is_none": true,
+      "previous_str": "None",
+      "previous_type": "NoneType",
+      "value": "nofile=1024"
+    },
+    {
+      "meta": "ulimit",
+      "meta_after": {
+        "envs": [],
+        "exec_commands": [],
+        "ports": [],
+        "scalars": {},
+        "sysctls": [],
+        "ulimits": [
+          {
+            "hard": "-1",
+            "key": "memlock",
+            "soft": "-1"
+          }
+        ],
+        "volumes": []
+      },
+      "ok": true,
+      "previous_is_none": true,
+      "previous_str": "None",
+      "previous_type": "NoneType",
+      "value": "memlock=-1"
+    },
+    {
+      "meta": "ulimit",
+      "meta_after": {
+        "envs": [],
+        "exec_commands": [],
+        "ports": [],
+        "scalars": {},
+        "sysctls": [],
+        "ulimits": [
+          {
+            "hard": "1024",
+            "key": "nofile",
+            "soft": "1024"
+          }
+        ],
+        "volumes": []
+      },
+      "ok": true,
+      "previous_is_none": true,
+      "previous_str": "None",
+      "previous_type": "NoneType",
+      "value": "nofile=2048:1024"
+    },
+    {
+      "meta": "ulimit",
+      "meta_after": {
+        "envs": [],
+        "exec_commands": [],
+        "ports": [],
+        "scalars": {},
+        "sysctls": [],
+        "ulimits": [
+          {
+            "hard": "-1",
+            "key": "nofile",
+            "soft": "2048"
+          }
+        ],
+        "volumes": []
+      },
+      "ok": true,
+      "previous_is_none": true,
+      "previous_str": "None",
+      "previous_type": "NoneType",
+      "value": "nofile=2048:-1"
+    },
+    {
+      "meta": "ulimit",
+      "meta_after": {
+        "envs": [],
+        "exec_commands": [],
+        "ports": [],
+        "scalars": {},
+        "sysctls": [],
+        "ulimits": [
+          {
+            "hard": "-1",
+            "key": "nofile",
+            "soft": "-1"
+          }
+        ],
+        "volumes": []
+      },
+      "ok": true,
+      "previous_is_none": true,
+      "previous_str": "None",
+      "previous_type": "NoneType",
+      "value": "nofile=-1:-1"
+    },
+    {
+      "meta": "ulimit",
+      "meta_after": {
+        "envs": [],
+        "exec_commands": [],
+        "ports": [],
+        "scalars": {},
+        "sysctls": [],
+        "ulimits": [
+          {
+            "hard": "7",
+            "key": "nofile",
+            "soft": "7"
+          }
+        ],
+        "volumes": []
+      },
+      "ok": true,
+      "previous_is_none": true,
+      "previous_str": "None",
+      "previous_type": "NoneType",
+      "value": "nofile=007"
+    },
+    {
+      "meta": "ulimit",
+      "meta_after": {
+        "envs": [],
+        "exec_commands": [],
+        "ports": [],
+        "scalars": {},
+        "sysctls": [],
+        "ulimits": [
+          {
+            "hard": "5",
+            "key": "n",
+            "soft": "3"
+          }
+        ],
+        "volumes": []
+      },
+      "ok": true,
+      "previous_is_none": true,
+      "previous_str": "None",
+      "previous_type": "NoneType",
+      "value": "n=٣:٥"
+    },
+    {
+      "meta": "ulimit",
+      "meta_after": {
+        "envs": [],
+        "exec_commands": [],
+        "ports": [],
+        "scalars": {},
+        "sysctls": [],
+        "ulimits": [
+          {
+            "hard": "5",
+            "key": "ключ",
+            "soft": "5"
+          }
+        ],
+        "volumes": []
+      },
+      "ok": true,
+      "previous_is_none": true,
+      "previous_str": "None",
+      "previous_type": "NoneType",
+      "value": "ключ=5"
+    },
+    {
+      "meta": "ulimit",
+      "meta_after": {
+        "envs": [],
+        "exec_commands": [],
+        "ports": [],
+        "scalars": {},
+        "sysctls": [],
+        "ulimits": [
+          {
+            "hard": "5",
+            "key": "nofile",
+            "soft": "5"
+          }
+        ],
+        "volumes": []
+      },
+      "ok": true,
+      "previous_is_none": true,
+      "previous_str": "None",
+      "previous_type": "NoneType",
+      "value": "nofile=5\n"
+    },
+    {
+      "error_class": "MachineOptionError",
+      "error_message": "Invalid ulimit value (`nofile=-1:1024`) on `ulimit`. Soft limit (-1) cannot be greater than hard limit (1024).",
+      "meta": "ulimit",
+      "ok": false,
+      "value": "nofile=-1:1024"
+    },
+    {
+      "error_class": "MachineOptionError",
+      "error_message": "Invalid ulimit value (`nofile=-1:007`) on `ulimit`. Soft limit (-1) cannot be greater than hard limit (7).",
+      "meta": "ulimit",
+      "ok": false,
+      "value": "nofile=-1:007"
+    },
+    {
+      "error_class": "MachineOptionError",
+      "error_message": "Invalid ulimit value (`nofile=-1:99999999999999999999999999`) on `ulimit`. Soft limit (-1) cannot be greater than hard limit (99999999999999999999999999).",
+      "meta": "ulimit",
+      "ok": false,
+      "value": "nofile=-1:99999999999999999999999999"
+    },
+    {
+      "error_class": "MachineOptionError",
+      "error_message": "Invalid ulimit value (`nofile=1024:-2`) on `ulimit`. Values must be >= -1.",
+      "meta": "ulimit",
+      "ok": false,
+      "value": "nofile=1024:-2"
+    },
+    {
+      "error_class": "MachineOptionError",
+      "error_message": "Invalid ulimit value (`nofile=1024:2048:4096`) on `ulimit`.",
+      "meta": "ulimit",
+      "ok": false,
+      "value": "nofile=1024:2048:4096"
+    },
+    {
+      "error_class": "MachineOptionError",
+      "error_message": "Invalid ulimit value (`nofile`) on `ulimit`.",
+      "meta": "ulimit",
+      "ok": false,
+      "value": "nofile"
+    },
+    {
+      "error_class": "MachineOptionError",
+      "error_message": "Invalid ulimit value (`no file=1`) on `ulimit`.",
+      "meta": "ulimit",
+      "ok": false,
+      "value": "no file=1"
+    },
+    {
+      "error_class": "MachineOptionError",
+      "error_message": "Invalid ulimit value (`nofile=5\nx`) on `ulimit`.",
+      "meta": "ulimit",
+      "ok": false,
+      "value": "nofile=5\nx"
+    },
+    {
+      "meta": "port",
+      "meta_after": {
+        "envs": [],
+        "exec_commands": [],
+        "ports": [
+          {
+            "guest": 8080,
+            "host": 3000,
+            "protocol": "tcp"
+          }
+        ],
+        "scalars": {},
+        "sysctls": [],
+        "ulimits": [],
+        "volumes": []
+      },
+      "ok": true,
+      "previous_is_none": true,
+      "previous_str": "None",
+      "previous_type": "NoneType",
+      "value": "8080"
+    },
+    {
+      "meta": "port",
+      "meta_after": {
+        "envs": [],
+        "exec_commands": [],
+        "ports": [
+          {
+            "guest": 8080,
+            "host": 3000,
+            "protocol": "udp"
+          }
+        ],
+        "scalars": {},
+        "sysctls": [],
+        "ulimits": [],
+        "volumes": []
+      },
+      "ok": true,
+      "previous_is_none": true,
+      "previous_str": "None",
+      "previous_type": "NoneType",
+      "value": "8080/udp"
+    },
+    {
+      "meta": "port",
+      "meta_after": {
+        "envs": [],
+        "exec_commands": [],
+        "ports": [
+          {
+            "guest": 8080,
+            "host": 2000,
+            "protocol": "udp"
+          }
+        ],
+        "scalars": {},
+        "sysctls": [],
+        "ulimits": [],
+        "volumes": []
+      },
+      "ok": true,
+      "previous_is_none": true,
+      "previous_str": "None",
+      "previous_type": "NoneType",
+      "value": "2000:8080/udp"
+    },
+    {
+      "meta": "port",
+      "meta_after": {
+        "envs": [],
+        "exec_commands": [],
+        "ports": [
+          {
+            "guest": 80,
+            "host": 3000,
+            "protocol": "tcp"
+          }
+        ],
+        "scalars": {},
+        "sysctls": [],
+        "ulimits": [],
+        "volumes": []
+      },
+      "ok": true,
+      "previous_is_none": true,
+      "previous_str": "None",
+      "previous_type": "NoneType",
+      "value": "80/TCP"
+    },
+    {
+      "meta": "port",
+      "meta_after": {
+        "envs": [],
+        "exec_commands": [],
+        "ports": [
+          {
+            "guest": 0,
+            "host": 3000,
+            "protocol": "tcp"
+          }
+        ],
+        "scalars": {},
+        "sysctls": [],
+        "ulimits": [],
+        "volumes": []
+      },
+      "ok": true,
+      "previous_is_none": true,
+      "previous_str": "None",
+      "previous_type": "NoneType",
+      "value": "0"
+    },
+    {
+      "meta": "port",
+      "meta_after": {
+        "envs": [],
+        "exec_commands": [],
+        "ports": [
+          {
+            "guest": 1,
+            "host": 3000,
+            "protocol": "tcp"
+          }
+        ],
+        "scalars": {},
+        "sysctls": [],
+        "ulimits": [],
+        "volumes": []
+      },
+      "ok": true,
+      "previous_is_none": true,
+      "previous_str": "None",
+      "previous_type": "NoneType",
+      "value": "+1"
+    },
+    {
+      "meta": "port",
+      "meta_after": {
+        "envs": [],
+        "exec_commands": [],
+        "ports": [
+          {
+            "guest": 3,
+            "host": 3000,
+            "protocol": "tcp"
+          }
+        ],
+        "scalars": {},
+        "sysctls": [],
+        "ulimits": [],
+        "volumes": []
+      },
+      "ok": true,
+      "previous_is_none": true,
+      "previous_str": "None",
+      "previous_type": "NoneType",
+      "value": "٣"
+    },
+    {
+      "meta": "port",
+      "meta_after": {
+        "envs": [],
+        "exec_commands": [],
+        "ports": [
+          {
+            "guest": 2,
+            "host": 10,
+            "protocol": "tcp"
+          }
+        ],
+        "scalars": {},
+        "sysctls": [],
+        "ulimits": [],
+        "volumes": []
+      },
+      "ok": true,
+      "previous_is_none": true,
+      "previous_str": "None",
+      "previous_type": "NoneType",
+      "value": "1_0:2"
+    },
+    {
+      "meta": "port",
+      "meta_after": {
+        "envs": [],
+        "exec_commands": [],
+        "ports": [
+          {
+            "guest": 8080,
+            "host": 3000,
+            "protocol": "tcp"
+          }
+        ],
+        "scalars": {},
+        "sysctls": [],
+        "ulimits": [],
+        "volumes": []
+      },
+      "ok": true,
+      "previous_is_none": true,
+      "previous_str": "None",
+      "previous_type": "NoneType",
+      "value": "8080\n"
+    },
+    {
+      "error_class": "MachineOptionError",
+      "error_message": "Port protocol value not valid on `pc1`.",
+      "meta": "port",
+      "ok": false,
+      "value": "8080/ppp"
+    },
+    {
+      "error_class": "MachineOptionError",
+      "error_message": "Port protocol value not valid on `pc1`.",
+      "meta": "port",
+      "ok": false,
+      "value": "8080/"
+    },
+    {
+      "error_class": "MachineOptionError",
+      "error_message": "Port value not valid on `pc1`.",
+      "meta": "port",
+      "ok": false,
+      "value": ":2000"
+    },
+    {
+      "error_class": "MachineOptionError",
+      "error_message": "Port value not valid on `pc1`.",
+      "meta": "port",
+      "ok": false,
+      "value": "/tcp"
+    },
+    {
+      "error_class": "MachineOptionError",
+      "error_message": "Port value not valid on `pc1`.",
+      "meta": "port",
+      "ok": false,
+      "value": "abc"
+    },
+    {
+      "error_class": "ValueError",
+      "error_message": "too many values to unpack (expected 2)",
+      "meta": "port",
+      "ok": false,
+      "value": "1:2:3"
+    },
+    {
+      "error_class": "ValueError",
+      "error_message": "too many values to unpack (expected 2)",
+      "meta": "port",
+      "ok": false,
+      "value": "80/tcp/x"
+    },
+    {
+      "meta": "volume",
+      "meta_after": {
+        "envs": [],
+        "exec_commands": [],
+        "ports": [],
+        "scalars": {},
+        "sysctls": [],
+        "ulimits": [],
+        "volumes": [
+          {
+            "guest_path": "/guest/a",
+            "key": "/host/a",
+            "mode": "rw"
+          }
+        ]
+      },
+      "ok": true,
+      "previous_is_none": true,
+      "previous_str": "None",
+      "previous_type": "NoneType",
+      "value": "/host/a|/guest/a|rw"
+    },
+    {
+      "meta": "volume",
+      "meta_after": {
+        "envs": [],
+        "exec_commands": [],
+        "ports": [],
+        "scalars": {},
+        "sysctls": [],
+        "ulimits": [],
+        "volumes": [
+          {
+            "guest_path": "/guest/b",
+            "key": "/host/b",
+            "mode": "ro"
+          }
+        ]
+      },
+      "ok": true,
+      "previous_is_none": true,
+      "previous_str": "None",
+      "previous_type": "NoneType",
+      "value": "/host/b|/guest/b"
+    },
+    {
+      "meta": "volume",
+      "meta_after": {
+        "envs": [],
+        "exec_commands": [],
+        "ports": [],
+        "scalars": {},
+        "sysctls": [],
+        "ulimits": [],
+        "volumes": [
+          {
+            "guest_path": "/guest/c",
+            "key": "/host/c",
+            "mode": "rx"
+          }
+        ]
+      },
+      "ok": true,
+      "previous_is_none": true,
+      "previous_str": "None",
+      "previous_type": "NoneType",
+      "value": "/host/c|/guest/c|rx"
+    },
+    {
+      "meta": "volume",
+      "meta_after": {
+        "envs": [],
+        "exec_commands": [],
+        "ports": [],
+        "scalars": {},
+        "sysctls": [],
+        "ulimits": [],
+        "volumes": [
+          {
+            "guest_path": "/guest/d",
+            "key": "/host/d",
+            "mode": "ro"
+          }
+        ]
+      },
+      "ok": true,
+      "previous_is_none": true,
+      "previous_str": "None",
+      "previous_type": "NoneType",
+      "value": "/host/d|/guest/d|ro"
+    },
+    {
+      "meta": "volume",
+      "meta_after": {
+        "envs": [],
+        "exec_commands": [],
+        "ports": [],
+        "scalars": {},
+        "sysctls": [],
+        "ulimits": [],
+        "volumes": [
+          {
+            "guest_path": "/b",
+            "key": "/a",
+            "mode": "ro"
+          }
+        ]
+      },
+      "ok": true,
+      "previous_is_none": true,
+      "previous_str": "None",
+      "previous_type": "NoneType",
+      "value": "/a||/b"
+    },
+    {
+      "meta": "volume",
+      "meta_after": {
+        "envs": [],
+        "exec_commands": [],
+        "ports": [],
+        "scalars": {},
+        "sysctls": [],
+        "ulimits": [],
+        "volumes": [
+          {
+            "guest_path": "/b",
+            "key": "/a",
+            "mode": "ro"
+          }
+        ]
+      },
+      "ok": true,
+      "previous_is_none": true,
+      "previous_str": "None",
+      "previous_type": "NoneType",
+      "value": "|/a|/b"
+    },
+    {
+      "meta": "volume",
+      "meta_after": {
+        "envs": [],
+        "exec_commands": [],
+        "ports": [],
+        "scalars": {},
+        "sysctls": [],
+        "ulimits": [],
+        "volumes": [
+          {
+            "guest_path": "/g\n",
+            "key": "/h",
+            "mode": "ro"
+          }
+        ]
+      },
+      "ok": true,
+      "previous_is_none": true,
+      "previous_str": "None",
+      "previous_type": "NoneType",
+      "value": "/h|/g\n"
+    },
+    {
+      "error_class": "MachineOptionError",
+      "error_message": "Invalid volume mode `xx` on `/h` mount. Allowed values are ro, rw, rx. ",
+      "meta": "volume",
+      "ok": false,
+      "value": "/h|/g|xx"
+    },
+    {
+      "error_class": "MachineOptionError",
+      "error_message": "The volume specified `/h` is not in a valid format: <host_path>|<guest_path>|[<mode>]",
+      "meta": "volume",
+      "ok": false,
+      "value": "/h"
+    },
+    {
+      "error_class": "MachineOptionError",
+      "error_message": "The volume specified `/h|` is not in a valid format: <host_path>|<guest_path>|[<mode>]",
+      "meta": "volume",
+      "ok": false,
+      "value": "/h|"
+    },
+    {
+      "error_class": "MachineOptionError",
+      "error_message": "The volume specified `|` is not in a valid format: <host_path>|<guest_path>|[<mode>]",
+      "meta": "volume",
+      "ok": false,
+      "value": "|"
+    },
+    {
+      "error_class": "MachineOptionError",
+      "error_message": "The volume specified `/h|/g|rw|extra` is not in a valid format: <host_path>|<guest_path>|[<mode>]",
+      "meta": "volume",
+      "ok": false,
+      "value": "/h|/g|rw|extra"
+    }
+  ],
+  "add_meta_twice": [
+    {
+      "first": "a",
+      "meta": "image",
+      "previous_is_none": false,
+      "previous_str": "a",
+      "previous_type": "str",
+      "second": "b"
+    },
+    {
+      "first": "net.a.b=1",
+      "meta": "sysctl",
+      "previous_is_none": false,
+      "previous_str": "1",
+      "previous_type": "int",
+      "second": "net.a.b=2"
+    },
+    {
+      "first": "K=1",
+      "meta": "env",
+      "previous_is_none": false,
+      "previous_str": "1",
+      "previous_type": "str",
+      "second": "K=2"
+    },
+    {
+      "first": "8080",
+      "meta": "port",
+      "previous_is_none": false,
+      "previous_str": "8080",
+      "previous_type": "int",
+      "second": "9090"
+    },
+    {
+      "first": "nofile=5",
+      "meta": "ulimit",
+      "previous_is_none": false,
+      "previous_str": "{'soft': 5, 'hard': 5}",
+      "previous_type": "dict",
+      "second": "nofile=6"
+    },
+    {
+      "first": "/h|/g",
+      "meta": "volume",
+      "previous_is_none": false,
+      "previous_str": "{'guest_path': '/g', 'mode': 'ro'}",
+      "previous_type": "dict",
+      "second": "/h|/g2|rw"
+    },
+    {
+      "first": "yes",
+      "meta": "privileged",
+      "previous_is_none": false,
+      "previous_str": "True",
+      "previous_type": "bool",
+      "second": "no"
+    },
+    {
+      "first": "1",
+      "meta": "bridged",
+      "previous_is_none": false,
+      "previous_str": "True",
+      "previous_type": "bool",
+      "second": "0"
+    },
+    {
+      "first": "a",
+      "meta": "exec",
+      "previous_is_none": true,
+      "previous_str": "None",
+      "previous_type": "NoneType",
+      "second": "b"
+    }
+  ],
+  "check": [
+    {
+      "bridged_iface": "",
+      "bridged_iface_kind": "",
+      "error_class": "",
+      "error_message": "",
+      "interfaces": [
+        0,
+        1
+      ],
+      "ok": true,
+      "order": [
+        0,
+        1
+      ]
+    },
+    {
+      "bridged_iface": "",
+      "bridged_iface_kind": "",
+      "error_class": "",
+      "error_message": "",
+      "interfaces": [
+        1,
+        0
+      ],
+      "ok": true,
+      "order": [
+        0,
+        1
+      ]
+    },
+    {
+      "bridged_iface": "1",
+      "bridged_iface_kind": "int",
+      "error_class": "",
+      "error_message": "",
+      "interfaces": [
+        0,
+        2
+      ],
+      "ok": true,
+      "order": [
+        0,
+        2
+      ]
+    },
+    {
+      "bridged_iface": "1",
+      "bridged_iface_kind": "str",
+      "error_class": "TypeError",
+      "error_message": "'<' not supported between instances of 'str' and 'int'",
+      "interfaces": [
+        0,
+        2
+      ],
+      "ok": false,
+      "order": []
+    },
+    {
+      "bridged_iface": "1",
+      "bridged_iface_kind": "str",
+      "error_class": "TypeError",
+      "error_message": "'<' not supported between instances of 'str' and 'int'",
+      "interfaces": [
+        0
+      ],
+      "ok": false,
+      "order": []
+    },
+    {
+      "bridged_iface": "1",
+      "bridged_iface_kind": "str",
+      "error_class": "NonSequentialMachineInterfaceError",
+      "error_message": "Interface `0` missing on device `pc1`.",
+      "interfaces": [],
+      "ok": false,
+      "order": []
+    },
+    {
+      "bridged_iface": "0",
+      "bridged_iface_kind": "int",
+      "error_class": "",
+      "error_message": "",
+      "interfaces": [],
+      "ok": true,
+      "order": []
+    },
+    {
+      "bridged_iface": "",
+      "bridged_iface_kind": "",
+      "error_class": "NonSequentialMachineInterfaceError",
+      "error_message": "Interface `0` missing on device `pc1`.",
+      "interfaces": [
+        2,
+        4
+      ],
+      "ok": false,
+      "order": []
+    },
+    {
+      "bridged_iface": "",
+      "bridged_iface_kind": "",
+      "error_class": "NonSequentialMachineInterfaceError",
+      "error_message": "Interface `0` missing on device `pc1`.",
+      "interfaces": [
+        1
+      ],
+      "ok": false,
+      "order": []
+    },
+    {
+      "bridged_iface": "-1",
+      "bridged_iface_kind": "int",
+      "error_class": "NonSequentialMachineInterfaceError",
+      "error_message": "Interface `0` missing on device `pc1`.",
+      "interfaces": [
+        0
+      ],
+      "ok": false,
+      "order": []
+    },
+    {
+      "bridged_iface": "1.5",
+      "bridged_iface_kind": "float",
+      "error_class": "NonSequentialMachineInterfaceError",
+      "error_message": "Interface `1` missing on device `pc1`.",
+      "interfaces": [
+        0
+      ],
+      "ok": false,
+      "order": []
+    },
+    {
+      "bridged_iface": "1.0",
+      "bridged_iface_kind": "float",
+      "error_class": "",
+      "error_message": "",
+      "interfaces": [
+        0
+      ],
+      "ok": true,
+      "order": [
+        0
+      ]
+    },
+    {
+      "bridged_iface": "0.5",
+      "bridged_iface_kind": "float",
+      "error_class": "NonSequentialMachineInterfaceError",
+      "error_message": "Interface `0` missing on device `pc1`.",
+      "interfaces": [],
+      "ok": false,
+      "order": []
+    },
+    {
+      "bridged_iface": "0.0",
+      "bridged_iface_kind": "float",
+      "error_class": "",
+      "error_message": "",
+      "interfaces": [],
+      "ok": true,
+      "order": []
+    },
+    {
+      "bridged_iface": "2.5",
+      "bridged_iface_kind": "float",
+      "error_class": "NonSequentialMachineInterfaceError",
+      "error_message": "Interface `2` missing on device `pc1`.",
+      "interfaces": [
+        0,
+        1
+      ],
+      "ok": false,
+      "order": []
+    },
+    {
+      "bridged_iface": "1.0",
+      "bridged_iface_kind": "float",
+      "error_class": "",
+      "error_message": "",
+      "interfaces": [
+        0,
+        2
+      ],
+      "ok": true,
+      "order": [
+        0,
+        2
+      ]
+    },
+    {
+      "bridged_iface": "nan",
+      "bridged_iface_kind": "float",
+      "error_class": "NonSequentialMachineInterfaceError",
+      "error_message": "Interface `1` missing on device `pc1`.",
+      "interfaces": [
+        0
+      ],
+      "ok": false,
+      "order": []
+    },
+    {
+      "bridged_iface": "nan",
+      "bridged_iface_kind": "float",
+      "error_class": "NonSequentialMachineInterfaceError",
+      "error_message": "Interface `0` missing on device `pc1`.",
+      "interfaces": [],
+      "ok": false,
+      "order": []
+    },
+    {
+      "bridged_iface": "nan",
+      "bridged_iface_kind": "float",
+      "error_class": "NonSequentialMachineInterfaceError",
+      "error_message": "Interface `2` missing on device `pc1`.",
+      "interfaces": [
+        0,
+        1
+      ],
+      "ok": false,
+      "order": []
+    },
+    {
+      "bridged_iface": "inf",
+      "bridged_iface_kind": "float",
+      "error_class": "NonSequentialMachineInterfaceError",
+      "error_message": "Interface `1` missing on device `pc1`.",
+      "interfaces": [
+        0
+      ],
+      "ok": false,
+      "order": []
+    },
+    {
+      "bridged_iface": "-inf",
+      "bridged_iface_kind": "float",
+      "error_class": "NonSequentialMachineInterfaceError",
+      "error_message": "Interface `0` missing on device `pc1`.",
+      "interfaces": [
+        0
+      ],
+      "ok": false,
+      "order": []
+    },
+    {
+      "bridged_iface": "inf",
+      "bridged_iface_kind": "float",
+      "error_class": "NonSequentialMachineInterfaceError",
+      "error_message": "Interface `0` missing on device `pc1`.",
+      "interfaces": [],
+      "ok": false,
+      "order": []
+    },
+    {
+      "bridged_iface": "True",
+      "bridged_iface_kind": "bool",
+      "error_class": "",
+      "error_message": "",
+      "interfaces": [
+        0
+      ],
+      "ok": true,
+      "order": [
+        0
+      ]
+    },
+    {
+      "bridged_iface": "False",
+      "bridged_iface_kind": "bool",
+      "error_class": "",
+      "error_message": "",
+      "interfaces": [],
+      "ok": true,
+      "order": []
+    },
+    {
+      "bridged_iface": "True",
+      "bridged_iface_kind": "bool",
+      "error_class": "",
+      "error_message": "",
+      "interfaces": [
+        0,
+        2
+      ],
+      "ok": true,
+      "order": [
+        0,
+        2
+      ]
+    },
+    {
+      "bridged_iface": "['x']",
+      "bridged_iface_kind": "list",
+      "error_class": "TypeError",
+      "error_message": "'<' not supported between instances of 'list' and 'int'",
+      "interfaces": [
+        0
+      ],
+      "ok": false,
+      "order": []
+    },
+    {
+      "bridged_iface": "['x']",
+      "bridged_iface_kind": "list",
+      "error_class": "NonSequentialMachineInterfaceError",
+      "error_message": "Interface `0` missing on device `pc1`.",
+      "interfaces": [],
+      "ok": false,
+      "order": []
+    },
+    {
+      "bridged_iface": "1e+300",
+      "bridged_iface_kind": "float",
+      "error_class": "NonSequentialMachineInterfaceError",
+      "error_message": "Interface `1` missing on device `pc1`.",
+      "interfaces": [
+        0
+      ],
+      "ok": false,
+      "order": []
+    }
+  ],
+  "lab": {
+    "dependencies": [
+      {
+        "dependencies": [
+          "pc3",
+          "pc1",
+          "pc2"
+        ],
+        "order": [
+          "pc4",
+          "pc3",
+          "pc1",
+          "pc2"
+        ]
+      },
+      {
+        "dependencies": [
+          "pc2",
+          "pc2",
+          "pc1"
+        ],
+        "order": [
+          "pc3",
+          "pc4",
+          "pc2",
+          "pc1"
+        ]
+      },
+      {
+        "dependencies": [],
+        "order": [
+          "pc1",
+          "pc2",
+          "pc3",
+          "pc4"
+        ]
+      },
+      {
+        "dependencies": [
+          "zz"
+        ],
+        "order": [
+          "pc1",
+          "pc2",
+          "pc3",
+          "pc4"
+        ]
+      },
+      {
+        "dependencies": [
+          "pc4",
+          "pc3",
+          "pc2",
+          "pc1"
+        ],
+        "order": [
+          "pc4",
+          "pc3",
+          "pc2",
+          "pc1"
+        ]
+      }
+    ],
+    "hashes": [
+      {
+        "hash": "1B2M2Y8AsgTpgAmY7PhCfg",
+        "source": ""
+      },
+      {
+        "hash": "ndTkYSaMgDT1yFZOFVxnpg",
+        "source": "x"
+      },
+      {
+        "hash": "QVKQdpWURg4uSFkikE80XQ",
+        "source": "y"
+      },
+      {
+        "hash": "G9zqD2PLruJPMJBZriB86A",
+        "source": "test_lab"
+      },
+      {
+        "hash": "rMHnlcI87I74aEZKpwj7Q",
+        "source": "kathara_vlab"
+      },
+      {
+        "hash": "Y1vkIe00KVYUHxUTsv1ojg",
+        "source": "lab con spazi"
+      },
+      {
+        "hash": "WZOoYAzEbNfgdB9jJ4HLQ",
+        "source": "labò"
+      },
+      {
+        "hash": "1B2M2Y8AsgTpgAmY7PhCfg",
+        "source": "日本語"
+      }
+    ],
+    "lab_str": "Name: mylab\nDescription: d\nVersion: 1\nAuthor(s): a\nEmail: e\nWebsite: w",
+    "machine_str": "Name: pc1\nImage: kathara/base\nInterfaces: \n\t- 0: A (MAC Address: 00:00:00:00:00:01)\n\t- 1: B\nBridged Connection: False\nSysctls:\n\t- net.a.b = 1\nExposed Ports:\n\t- Host: (3000, 'tcp') -> Guest: 8080"
+  },
+  "names": [
+    {
+      "name": "pc1",
+      "ok": true,
+      "result_str": "pc1",
+      "result_type": "str"
+    },
+    {
+      "name": " pc1 ",
+      "ok": true,
+      "result_str": "pc1",
+      "result_type": "str"
+    },
+    {
+      "name": "pc1\n",
+      "ok": true,
+      "result_str": "pc1",
+      "result_type": "str"
+    },
+    {
+      "name": "\u001cpc1",
+      "ok": true,
+      "result_str": "pc1",
+      "result_type": "str"
+    },
+    {
+      "name": " pc1 ",
+      "ok": true,
+      "result_str": "pc1",
+      "result_type": "str"
+    },
+    {
+      "name": "_x",
+      "ok": true,
+      "result_str": "_x",
+      "result_type": "str"
+    },
+    {
+      "name": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "ok": true,
+      "result_str": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "result_type": "str"
+    },
+    {
+      "error_class": "SyntaxError",
+      "error_message": "Invalid device name `aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa`.",
+      "name": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "ok": false
+    },
+    {
+      "error_class": "SyntaxError",
+      "error_message": "Invalid device name `PC1`.",
+      "name": "PC1",
+      "ok": false
+    },
+    {
+      "error_class": "SyntaxError",
+      "error_message": "Invalid device name `pc-1`.",
+      "name": "pc-1",
+      "ok": false
+    },
+    {
+      "error_class": "SyntaxError",
+      "error_message": "Invalid device name `pc.1`.",
+      "name": "pc.1",
+      "ok": false
+    },
+    {
+      "error_class": "SyntaxError",
+      "error_message": "Invalid device name ``.",
+      "name": "",
+      "ok": false
+    },
+    {
+      "name": "shared",
+      "ok": true,
+      "result_str": "shared",
+      "result_type": "str"
+    },
+    {
+      "name": "_test",
+      "ok": true,
+      "result_str": "_test",
+      "result_type": "str"
+    },
+    {
+      "error_class": "SyntaxError",
+      "error_message": "Invalid device name `pc1​`.",
+      "name": "pc1​",
+      "ok": false
+    }
+  ]
+}
