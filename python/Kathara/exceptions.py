@@ -1,0 +1,208 @@
+"""Kathará exception classes.
+
+Every class of Kathará v3.8.3 is reproduced here with the same name, the same
+base classes and the same message templates: `ERROR_CODES.md` §4 makes
+``str(e)`` and class identity a load-bearing contract for downstream consumers
+(kathara-lab-checker catches four of them by name).
+
+One class is **added** by the port: :class:`KatharaError`. `JSON_CLI_CONTRACT.md`
+§9.2 requires the client to map an unknown ``error.code`` (a code added by a
+newer binary) to "its base ``KatharaError`` with the message" instead of
+crashing. It is deliberately *not* made a base class of the v3.8.3 classes:
+that would change their MRO, and `InvalidImageArchitectureError` in particular
+must keep subclassing only :class:`ValueError`.
+"""
+
+
+# Generic Exceptions
+class ClassNotFoundError(Exception):
+    pass
+
+
+class HTTPConnectionError(Exception):
+    pass
+
+
+class InstantiationError(Exception):
+    pass
+
+
+class InvocationError(Exception):
+    pass
+
+
+# Settings Exceptions
+class SettingsError(Exception):
+    def __init__(self, message: str) -> None:
+        super().__init__(f"Settings file is not valid: {message} Fix it or delete it before launching.")
+
+
+class SettingsNotFoundError(Exception):
+    def __init__(self, path: str) -> None:
+        super().__init__(f"Settings file not found in path `{path}`.")
+
+
+class DockerDaemonConnectionError(Exception):
+    def __init__(self, message: str) -> None:
+        super().__init__(f"Cannot connect to Docker Daemon, this may indicate that it is not running. {message}")
+
+
+class NotSupportedError(Exception):
+    def __init__(self, message: str) -> None:
+        super().__init__(f"Not Supported: {message}")
+
+
+# OS Exceptions
+class PrivilegeError(Exception):
+    pass
+
+
+class InterfaceNotFoundError(Exception):
+    pass
+
+
+class HostArchitectureError(Exception):
+    def __init__(self, architecture: str) -> None:
+        super().__init__(f"Not implemented for host architecture `{architecture}`.")
+
+
+# Lab Exceptions
+class LabAlreadyExistsError(Exception):
+    pass
+
+
+class LabNotFoundError(Exception):
+    pass
+
+
+class EmptyLabError(Exception):
+    def __init__(self) -> None:
+        super().__init__("No devices in the current network scenario.")
+
+
+class MachineDependencyError(Exception):
+    pass
+
+
+# Machine Exceptions
+class MountDeniedError(Exception):
+    pass
+
+
+class MachineAlreadyExistsError(Exception):
+    def __init__(self, machine_name: str) -> None:
+        super().__init__(f"Device with name `{machine_name}` already exists.")
+
+
+class NonSequentialMachineInterfaceError(Exception):
+    def __init__(self, iface_num: int, machine_name: str) -> None:
+        super().__init__(f"Interface `{iface_num}` missing on device `{machine_name}`.")
+
+
+class MachineOptionError(Exception):
+    pass
+
+
+class MachineCollisionDomainError(Exception):
+    pass
+
+
+class MachineNotFoundError(Exception):
+    pass
+
+
+class MachineNotRunningError(Exception):
+    def __init__(self, machine_name: str) -> None:
+        super().__init__(f"Device `{machine_name}` is not running.")
+
+
+class MachineNotReadyError(Exception):
+    def __init__(self, machine_name: str) -> None:
+        super().__init__(f"Device `{machine_name}` is not ready.")
+
+
+class MachineBinaryError(Exception):
+    __slots__ = ['binary', 'machine_name']
+
+    def __init__(self, binary: str, machine_name: str):
+        self.binary: str = binary
+        self.machine_name: str = machine_name
+
+    def __str__(self):
+        return f"Binary `{self.binary}` not found in device `{self.machine_name}`."
+
+
+# Interface Exceptions
+class InterfaceMacAddressError(Exception):
+    def __init__(self, mac_address: str, interface_num: int, machine_name: str) -> None:
+        super().__init__(
+            f"MAC address {mac_address} on interface `{interface_num}` of device `{machine_name}` is invalid."
+        )
+
+
+# Link Exceptions
+class LinkNotFoundError(Exception):
+    pass
+
+
+class LinkAlreadyExistsError(Exception):
+    pass
+
+
+# Test Exceptions
+class TestError(Exception):
+    pass
+
+
+class MachineSignatureNotFoundError(TestError):
+    __slots__ = ['machine_name']
+
+    def __init__(self, machine_name: str):
+        self.machine_name: str = machine_name
+
+    def __str__(self):
+        return f"Signature for device `{self.machine_name}` not found!"
+
+
+# Docker Exceptions
+class InvalidImageArchitectureError(ValueError):
+    __slots__ = ['image_name', 'arch']
+
+    def __init__(self, image_name: str, arch: str):
+        self.image_name: str = image_name
+        self.arch: str = arch
+
+    def __str__(self):
+        return f"Docker Image `{self.image_name}` is not compatible with your host architecture `{self.arch}`"
+
+
+class DockerImageNotFoundError(Exception):
+    def __init__(self, image_name: str) -> None:
+        super().__init__(f"Docker Image `{image_name}` is not available neither on Docker Hub nor in local repository!")
+
+
+class DockerPluginError(Exception):
+    pass
+
+
+# Kubernetes Exceptions
+class KubernetesConfigMapError(Exception):
+    pass
+
+
+# Port-new: the fallback for error codes this client release does not know
+# (JSON_CLI_CONTRACT.md §9.2 "Clients MUST map unknown codes to a generic
+# error"). Never raised for any code in the frozen registry.
+class KatharaError(Exception):
+    """Raised for an error envelope whose ``code`` this client does not know.
+
+    Attributes:
+        code (str): The stable error code reported by the Kathará binary.
+        fields (dict): The structured fields carried by the error envelope.
+    """
+    __slots__ = ['code', 'fields']
+
+    def __init__(self, message: str, code: str = None, fields: dict = None) -> None:
+        super().__init__(message)
+        self.code: str = code
+        self.fields: dict = fields if fields is not None else {}

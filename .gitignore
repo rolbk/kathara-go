@@ -11,3 +11,6 @@ __pycache__/
 
 # compiled binaries
 tools/goldenharness/goldenharness
+
+# pytest
+.pytest_cache/

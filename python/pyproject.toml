@@ -1,0 +1,87 @@
+[project]
+name = "kathara"
+dynamic = ["version"]
+description = "A lightweight container-based network emulation tool."
+readme = "README.md"
+requires-python = ">=3.10"
+license = 'gpl-3.0'
+license-files = ["LICENSE"]
+keywords = ["NETWORK-EMULATION", "CONTAINERS", "NFV"]
+authors = [
+    { name = "Kathara Framework", email = "contact@kathara.org" }
+]
+
+maintainers = [
+    { name = "Tommaso Caiazzi", email = "contact@kathara.org" },
+    { name = "Mariano Scazzariello", email = "contact@kathara.org" },
+    { name = "Lorenzo Ariemma", email = "contact@kathara.org" },
+]
+
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Science/Research",
+    "Intended Audience :: Education",
+    "Intended Audience :: Telecommunications Industry",
+    "Topic :: Software Development :: Build Tools",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13"
+]
+
+# PORT_SPEC.md §8 lists what the Go port takes OUT of this list: the docker and
+# kubernetes SDKs, requests, pyroute2, rich, chardet, libtmux, appscript,
+# pypiwin32 and windows-curses are all the CLI's business now, and the CLI is a
+# static binary. What is left is what the *model* needs.
+#
+#   fs           — spec §7.1 keeps the pyfilesystem2 model layer, memory FS
+#                  included; `Lab.fs` and `Machine.fs` are public API.
+#   setuptools   — NOT a build dependency: `fs` 2.4.16 calls
+#                  `pkg_resources.declare_namespace` at import time, and
+#                  setuptools >= 81 removed pkg_resources. Same pin as v3.8.3,
+#                  and still load-bearing for the same reason.
+#   binaryornot  — `utils.convert_win_2_linux`, used by `Machine.pack_data` and
+#                  `utils.pack_file_for_tar`. Ported for API parity; it has no
+#                  dependencies of its own since 0.6.0.
+#
+# `chardet` is deliberately absent: an audit of the client code found its only
+# v3.8.3 consumer was `cli/command/ExecCommand.py`'s per-chunk decode, which is
+# now the binary's job (and whose crash-on-undecidable-bytes behaviour the
+# contract replaced with UTF-8 + U+FFFD, JSON_CLI_CONTRACT.md §3.6).
+dependencies = [
+    "fs>=2.4.16",
+    "setuptools<81",
+    "binaryornot>=0.4.4",
+]
+
+[project.optional-dependencies]
+test = ["pytest"]
+
+[project.urls]
+"Homepage" = "https://www.kathara.org"
+"Bug Reports" = "https://github.com/KatharaFramework/Kathara/issues"
+"Source" = "https://github.com/KatharaFramework/kathara-go"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+# One source of truth for the version: `Kathara/version.py`, which is also what
+# `Kathara.version.CURRENT_VERSION` reports at runtime. `build_wheels.py
+# --version` rewrites that file for the duration of a release build so the
+# wheel, the metadata and the runtime constant cannot disagree.
+[tool.hatch.version]
+path = "Kathara/version.py"
+pattern = "CURRENT_VERSION\\s*=\\s*[\"'](?P<version>[^\"']+)[\"']"
+
+[tool.hatch.build.targets.wheel]
+packages = ["Kathara"]
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "/Kathara",
+    "/tests",
+    "/build_wheels.py",
+    "/README.md",
+    "/LICENSE",
+]

@@ -1,0 +1,447 @@
+"""Utility functions, ported from Kathará v3.8.3 ``src/Kathara/utils.py``.
+
+Ported as-is, bugs included (`PORT_SPEC.md` §0.1); the known ones are catalogued
+in ``DIVERGENCES.md`` items 9, 11-14.
+
+Omitted from the client (they belong to the Go binary, not to the Python API):
+
+* ``class_for_name`` — the dynamic-import reflection replaced by an explicit
+  registry (spec §0.2 #7);
+* ``check_python_version`` — the CLI entry point is Go;
+* ``get_executable_path``, ``wait_user_input_linux``, ``wait_user_input_windows``
+  — terminal spawning is a Go concern (spec §3.3);
+* ``pywintypes_import_*`` / ``import_pywintypes`` — a Docker-SDK shim that would
+  drag ``requests`` into the client's dependency set.
+"""
+
+import base64
+import hashlib
+import io
+import logging
+import math
+import os
+import re
+import tarfile
+import tempfile
+import unicodedata
+from io import BytesIO
+from itertools import islice
+from multiprocessing import cpu_count
+from platform import node, machine
+from sys import platform as _platform
+from typing import Any, Optional, Match, Generator, List, Callable, Union, Dict, Iterable, Tuple
+
+from binaryornot.check import is_binary
+
+from .exceptions import HostArchitectureError, InvocationError
+
+# Platforms constants definition.
+MAC_OS: str = "darwin"
+WINDOWS: str = "win32"
+LINUX: str = "linux"
+LINUX2: str = "linux2"
+
+# List of ignored files
+EXCLUDED_FILES: List[str] = ['.DS_Store']
+
+# Reserved names for devices
+RESERVED_MACHINE_NAMES: List[str] = ['shared', '_test']
+
+
+# Generic Functions
+def generate_urlsafe_hash(string: str) -> str:
+    string = re.sub(r'[^\x00-\x7F]+', '', string)
+    return base64.urlsafe_b64encode(hashlib.md5(string.encode('utf-8', errors='ignore')).digest())[:-2] \
+        .decode('utf-8') \
+        .replace('-', '').replace('_', '')
+
+
+def get_absolute_path(path: str) -> str:
+    abs_path = os.path.realpath(path)
+    return abs_path if not os.path.islink(abs_path) else os.readlink(abs_path)
+
+
+def re_search_fail(expression: str, line: str) -> Match:
+    matches = re.search(expression, line)
+
+    if not matches:
+        raise ValueError()
+
+    return matches
+
+
+def list_chunks(iterable: List, size: int) -> Generator:
+    it = iter(iterable)
+    item = list(islice(it, size))
+    while item:
+        yield item
+        item = list(islice(it, size))
+
+
+def chunk_list(iterable: Union[List, Iterable], size: int) -> List[List]:
+    return [iterable] if len(iterable) < size else list_chunks(iterable, size)
+
+
+def get_pool_size() -> int:
+    return cpu_count()
+
+
+def check_single_not_none_var(**kwargs) -> None:
+    not_none = [x for x in kwargs.values() if x is not None]
+
+    if len(not_none) > 1:
+        raise InvocationError(f"You must specify only a parameter among {', '.join(kwargs.keys())}")
+
+
+def check_required_single_not_none_var(**kwargs) -> None:
+    not_none = [x for x in kwargs.values() if x is not None]
+
+    if len(not_none) == 0:
+        raise InvocationError(f"You must specify a parameter among {', '.join(kwargs.keys())}")
+    elif len(not_none) > 1:
+        raise InvocationError(f"You must specify only a parameter among {', '.join(kwargs.keys())}")
+
+
+# Platform Specific Functions
+def is_platform(desired_platform: str) -> bool:
+    return _platform == desired_platform
+
+
+def is_wsl_platform() -> bool:
+    if _platform == LINUX or _platform == LINUX2:
+        info = os.uname()
+        return 'microsoft' in info.release.lower()
+    return False
+
+
+def exec_by_platform(fun_linux: Callable, fun_windows: Callable, fun_mac: Callable) -> Any:
+    if _platform == LINUX or _platform == LINUX2:
+        return fun_linux()
+    elif _platform == WINDOWS:
+        return fun_windows()
+    elif _platform == MAC_OS:
+        return fun_mac()
+
+
+def convert_win_2_linux(filename: str, write: bool = False) -> Optional[bytes]:
+    if not is_binary(filename):
+        file_obj = None
+        try:
+            file_obj = open(filename, mode='r', encoding='utf-8-sig')
+            file_content = file_obj.read().replace("\n\r", "\n").replace("\r\n", "\n")
+            if not write:
+                return file_content.encode('utf-8')
+            else:
+                with open(filename, mode='w', encoding='utf-8', newline="\n") as file_obj_write:
+                    file_obj_write.write(file_content)
+                return
+        except Exception:
+            # In any case the binaryornot heuristics fail (so the file is not a text file), close the stream and
+            # read the file as a standard binary file.
+            if file_obj:
+                file_obj.close()
+            pass
+
+    if not write:
+        return open(filename, mode='rb').read()
+
+
+def is_admin() -> bool:
+    def unix_root():
+        return os.getuid() == 0
+
+    def windows_admin():
+        import ctypes
+        return ctypes.windll.shell32.IsUserAnAdmin() != 0
+
+    return exec_by_platform(unix_root, windows_admin, unix_root)
+
+
+def get_current_user_home() -> str:
+    def passwd_home():
+        user_info = get_current_user_info()
+        return user_info.pw_dir
+
+    def default_home():
+        return os.path.expanduser('~')
+
+    return exec_by_platform(passwd_home, default_home, default_home)
+
+
+def get_current_user_uid_gid() -> (int, int):
+    def unix():
+        user_info = get_current_user_info()
+        return user_info.pw_uid, user_info.pw_gid
+
+    return exec_by_platform(unix, lambda: (None, None), unix)
+
+
+def slug(value):
+    value = unicodedata.normalize("NFKD", value).encode("ascii", "ignore").decode("ascii")
+    value = re.sub(r"[^\w\s-]", "", value).strip().lower()
+    return re.sub(r"[-\s]+", "-", value)
+
+
+def get_current_user_name() -> str:
+    hostname = generate_urlsafe_hash(node())
+
+    def unix():
+        user_info = get_current_user_info()
+        return user_info.pw_name
+
+    def windows():
+        import getpass
+        return getpass.getuser()
+
+    return slug("%s-%s" % (exec_by_platform(unix, windows, unix), hostname))
+
+
+def get_current_user_info() -> Any:
+    def passwd_info():
+        import pwd
+        user_id = os.getuid()
+
+        # It's root, take the real user from env variable
+        if user_id == 0:
+            # If it's a sudoer, take the SUDO_UID and use it as user_id variable
+            # If not, keep using the user_id = 0
+            real_user_id = os.environ.get("SUDO_UID")
+
+            if real_user_id:
+                user_id = int(real_user_id)
+
+        return pwd.getpwuid(user_id)
+
+    return exec_by_platform(passwd_info, lambda: None, passwd_info)
+
+
+def check_directory_permissions(path: str, mode: str = "ro") -> list[str]:
+    """
+    Check directory permissions across different platforms.
+
+    Args:
+        path: Path to check permissions for
+        mode: Permission mode to check ('r' for read, 'w' for write, 'x' for execute)
+
+    Returns:
+        list[str]: A list containing any missing permissions
+    """
+
+    def check_directory_permissions_unix() -> list[str]:
+        if not os.path.exists(path):
+            raise FileExistsError(f"Path `{path}` does not exist.")
+
+        if not os.path.isdir(path):
+            raise NotADirectoryError(f"Path `{path}` must be a directory.")
+
+        missing = []
+
+        if 'r' in mode and not os.access(path, os.R_OK):
+            missing.append("read (r)")
+        if 'w' in mode and not os.access(path, os.W_OK):
+            missing.append("write (w)")
+        if 'x' in mode and not os.access(path, os.X_OK):
+            missing.append("execute (x)")
+
+        return missing
+
+    def check_directory_permissions_windows() -> list[str]:
+        import ctypes
+        from ctypes import wintypes
+
+        if not os.path.exists(path):
+            raise FileExistsError(f"Path `{path}` does not exist.")
+
+        if not os.path.isdir(path):
+            raise NotADirectoryError(f"Path `{path}` must be a directory.")
+
+        missing = []
+
+        generic_read = 0x80000000
+        generic_write = 0x40000000
+        generic_execute = 0x20000000
+
+        kernel32 = ctypes.WinDLL('kernel32', use_last_error=True)
+
+        create_file = kernel32.CreateFileW
+        create_file.argtypes = [
+            wintypes.LPCWSTR,
+            wintypes.DWORD,
+            wintypes.DWORD,
+            wintypes.LPVOID,
+            wintypes.DWORD,
+            wintypes.DWORD,
+            wintypes.HANDLE
+        ]
+        create_file.restype = wintypes.HANDLE
+
+        open_existing = 3
+        file_flag_backup_semantics = 0x02000000
+        invalid_handle_value = wintypes.HANDLE(-1).value
+        file_share_read = 0x00000001
+        file_share_write = 0x00000002
+
+        close_handle = kernel32.CloseHandle
+        close_handle.argtypes = [wintypes.HANDLE]
+        close_handle.restype = wintypes.BOOL
+
+        if 'r' in mode:
+            handle = create_file(
+                path,
+                generic_read,
+                file_share_read | file_share_write,
+                None,
+                open_existing,
+                file_flag_backup_semantics,
+                None
+            )
+
+            if handle == invalid_handle_value:
+                missing.append("read (r)")
+            else:
+                close_handle(handle)
+
+        if 'w' in mode:
+            handle = create_file(
+                path,
+                generic_write,
+                file_share_read | file_share_write,
+                None,
+                open_existing,
+                file_flag_backup_semantics,
+                None
+            )
+
+            if handle == invalid_handle_value:
+                missing.append("write (w)")
+            else:
+                close_handle(handle)
+
+        if 'x' in mode:
+            handle = create_file(
+                path,
+                generic_execute,
+                file_share_read | file_share_write,
+                None,
+                open_existing,
+                file_flag_backup_semantics,
+                None
+            )
+
+            if handle == invalid_handle_value:
+                missing.append("execute (x)")
+            else:
+                close_handle(handle)
+
+        return missing
+
+    return exec_by_platform(
+        check_directory_permissions_unix,
+        check_directory_permissions_windows,
+        check_directory_permissions_unix
+    )
+
+
+# Architecture Test
+def get_architecture() -> str:
+    architecture = machine().lower()
+
+    logging.debug("Machine architecture is `%s`." % architecture)
+
+    if architecture in ["x86_64", "amd64"]:
+        return "amd64"
+    elif architecture == "i686":
+        return "386"
+    elif architecture in ["arm64", "aarch64"]:
+        return "arm64"
+    elif architecture == "armv7l":
+        return "armv7"
+    elif architecture == "armv6l":
+        return "armv6"
+    else:
+        raise HostArchitectureError(architecture)
+
+
+# Formatting Functions
+def human_readable_bytes(size_bytes: int) -> str:
+    if size_bytes == 0:
+        return "0 B"
+
+    size_name = ("B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB")
+    i = int(math.floor(math.log(size_bytes, 1024)))
+    p = math.pow(1024, i)
+    s = round(size_bytes / p, 2)
+
+    return "%s %s" % (s, size_name[i])
+
+
+# Lab Functions
+def pack_file_for_tar(file_obj: Union[str, io.IOBase], arc_name: str) -> (tarfile.TarInfo, bytes):
+    if isinstance(file_obj, str):
+        file_content_patched = convert_win_2_linux(file_obj)
+        file_content = BytesIO(file_content_patched)
+        filesize = len(file_content_patched)
+    elif isinstance(file_obj, io.IOBase):
+        file_content = file_obj.read()
+        file_content = BytesIO(file_content.encode('utf-8') if isinstance(file_obj, io.TextIOBase) else file_content)
+        file_obj.seek(0, 2)
+        filesize = file_obj.tell()
+        file_obj.seek(0)
+    else:
+        raise ValueError("File type %s not supported" % type(file_obj))
+
+    tarinfo = tarfile.TarInfo(arc_name.replace("\\", "/"))  # Tar files must have Linux-style paths
+    tarinfo.size = filesize
+
+    return tarinfo, file_content
+
+
+def pack_files_for_tar(guest_to_host: Dict) -> bytes:
+    with tempfile.NamedTemporaryFile(mode='wb+', suffix='.tar.gz') as temp_file:
+        with tarfile.open(fileobj=temp_file, mode='w:gz') as tar_file:
+            for path, file_obj in guest_to_host.items():
+                tar_info, file_content = pack_file_for_tar(file_obj, arc_name=path)
+                tar_file.addfile(tar_info, file_content)
+
+        temp_file.seek(0)
+
+        tar_data = temp_file.read()
+
+    return tar_data
+
+
+def parse_cd_mac_address(value) -> Tuple[str, str]:
+    if '/' in value:
+        parts = [x for x in value.split('/') if x]
+
+        if len(parts) != 2:
+            raise SyntaxError(f"Invalid interface definition: `{value}`.")
+
+        cd_name = parts[0]
+        mac_address = parts[1]
+    else:
+        (cd_name, mac_address) = value, None
+
+    return cd_name, mac_address
+
+
+# Docker Engine Utils
+def parse_docker_engine_version(v: str) -> str:
+    parts = []
+    for part in v.split('.'):
+        numeric_part = ""
+        # Iterate over the single chars of the part
+        for char in part:
+            # As soon as we get a non-digit value, we break
+            if char.isdigit():
+                numeric_part += char
+            else:
+                break
+
+        # If the numeric_part is not empty, append it as a chunk of the version
+        if numeric_part:
+            parts.append(numeric_part)
+        else:
+            break
+
+    return '.'.join(parts)
