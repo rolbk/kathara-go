@@ -1,0 +1,130 @@
+[
+ {
+  "in": "",
+  "valid": false
+ },
+ {
+  "in": "a",
+  "valid": false
+ },
+ {
+  "in": "ab",
+  "valid": true
+ },
+ {
+  "in": "abc",
+  "valid": true
+ },
+ {
+  "in": "kathara",
+  "valid": true
+ },
+ {
+  "in": "kathara_",
+  "valid": true
+ },
+ {
+  "in": "_kathara",
+  "valid": false
+ },
+ {
+  "in": "ka_th_ara",
+  "valid": true
+ },
+ {
+  "in": "a_b",
+  "valid": true
+ },
+ {
+  "in": "a__b",
+  "valid": true
+ },
+ {
+  "in": "ab_",
+  "valid": true
+ },
+ {
+  "in": "kathara1",
+  "valid": false
+ },
+ {
+  "in": "kathara\n",
+  "valid": true
+ },
+ {
+  "in": "kat\nhara",
+  "valid": false
+ },
+ {
+  "in": "\nkathara",
+  "valid": false
+ },
+ {
+  "in": "AB",
+  "valid": false
+ },
+ {
+  "in": "Ab",
+  "valid": false
+ },
+ {
+  "in": "ab\n\n",
+  "valid": false
+ },
+ {
+  "in": "ab ",
+  "valid": false
+ },
+ {
+  "in": " ab",
+  "valid": false
+ },
+ {
+  "in": "a_",
+  "valid": true
+ },
+ {
+  "in": "_a",
+  "valid": false
+ },
+ {
+  "in": "__",
+  "valid": false
+ },
+ {
+  "in": "_",
+  "valid": false
+ },
+ {
+  "in": "aa_bb_cc",
+  "valid": true
+ },
+ {
+  "in": "abc_def",
+  "valid": true
+ },
+ {
+  "in": "abcdefghijklmnop",
+  "valid": true
+ },
+ {
+  "in": "à_b",
+  "valid": false
+ },
+ {
+  "in": "ab\tcd",
+  "valid": false
+ },
+ {
+  "in": "ab\r\n",
+  "valid": false
+ },
+ {
+  "in": "ab\r",
+  "valid": false
+ },
+ {
+  "in": "aaa\nbbb\n",
+  "valid": false
+ }
+]

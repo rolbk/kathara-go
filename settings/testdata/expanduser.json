@@ -1,0 +1,62 @@
+[
+ {
+  "in": "",
+  "home_set": "/root",
+  "out": ""
+ },
+ {
+  "in": "x",
+  "home_set": "/root",
+  "out": "x"
+ },
+ {
+  "in": "~",
+  "home_set": "/root",
+  "out": "/root"
+ },
+ {
+  "in": "~/",
+  "home_set": "/root",
+  "out": "/root/"
+ },
+ {
+  "in": "~/.docker/config.json",
+  "home_set": "/root",
+  "out": "/root/.docker/config.json"
+ },
+ {
+  "in": "~root/x",
+  "home_set": "/root",
+  "out": "/root/x"
+ },
+ {
+  "in": "~nosuchuser/x",
+  "home_set": "/root",
+  "out": "~nosuchuser/x"
+ },
+ {
+  "in": "a/~/b",
+  "home_set": "/root",
+  "out": "a/~/b"
+ },
+ {
+  "in": "~~",
+  "home_set": "/root",
+  "out": "~~"
+ },
+ {
+  "in": "~/a/~/b",
+  "home_set": "/root",
+  "out": "/root/a/~/b"
+ },
+ {
+  "in": "~root",
+  "home_set": "/root",
+  "out": "/root"
+ },
+ {
+  "in": "./~",
+  "home_set": "/root",
+  "out": "./~"
+ }
+]

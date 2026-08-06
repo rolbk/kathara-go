@@ -1,0 +1,1278 @@
+[
+ {
+  "in": "",
+  "out": "\"\""
+ },
+ {
+  "in": "kathara/base",
+  "out": "\"kathara/base\""
+ },
+ {
+  "in": "/usr/bin/xterm",
+  "out": "\"/usr/bin/xterm\""
+ },
+ {
+  "in": "TMUX",
+  "out": "\"TMUX\""
+ },
+ {
+  "in": "a\"b\\c",
+  "out": "\"a\\\"b\\\\c\""
+ },
+ {
+  "in": "tab\there",
+  "out": "\"tab\\there\""
+ },
+ {
+  "in": "nl\nhere",
+  "out": "\"nl\\nhere\""
+ },
+ {
+  "in": "cr\rhere",
+  "out": "\"cr\\rhere\""
+ },
+ {
+  "in": "bs\bhere",
+  "out": "\"bs\\bhere\""
+ },
+ {
+  "in": "ff\fhere",
+  "out": "\"ff\\fhere\""
+ },
+ {
+  "in": "<&>/'",
+  "out": "\"<&>/'\""
+ },
+ {
+  "in": "del",
+  "out": "\"del\\u007f\""
+ },
+ {
+  "in": "nul\u0000",
+  "out": "\"nul\\u0000\""
+ },
+ {
+  "in": "\u0001\u001f",
+  "out": "\"\\u0001\\u001f\""
+ },
+ {
+  "in": " space ",
+  "out": "\" space \""
+ },
+ {
+  "in": "héllo",
+  "out": "\"h\\u00e9llo\""
+ },
+ {
+  "in": "日本語",
+  "out": "\"\\u65e5\\u672c\\u8a9e\""
+ },
+ {
+  "in": "😀 emoji",
+  "out": "\"\\ud83d\\ude00 emoji\""
+ },
+ {
+  "in": "  ",
+  "out": "\"\\u2028\\u2029\""
+ },
+ {
+  "in": "￿",
+  "out": "\"\\uffff\""
+ },
+ {
+  "in": "C:\\Users\\Ötzi\\Desktop",
+  "out": "\"C:\\\\Users\\\\\\u00d6tzi\\\\Desktop\""
+ },
+ {
+  "in": "ñññ",
+  "out": "\"\\u00f1\\u00f1\\u00f1\""
+ },
+ {
+  "in": "😀􏿿",
+  "out": "\"\\ud83d\\ude00\\udbff\\udfff\""
+ },
+ {
+  "in": "",
+  "out": "\"\""
+ },
+ {
+  "in": "񸼿󀆥򉵳𠦂񙅣𗾄󈩚񘰱",
+  "out": "\"\\ud9a3\\udf3f\\udac0\\udda5\\ud9e7\\udd73\\ud842\\udd82\\ud924\\udd63\\ud81f\\udf84\\udae2\\ude5a\\ud923\\udc31\""
+ },
+ {
+  "in": "񔰯",
+  "out": "\"\\ud913\\udc2f\""
+ },
+ {
+  "in": "򃦽󪰓񢌴𭜟",
+  "out": "\"\\ud9ce\\uddbd\\udb6b\\udc13\\ud948\\udf34\\ud875\\udf1f\""
+ },
+ {
+  "in": "񊊰󶌂򆖋򰑌򑱆񭁐񥇡񹮺񗒖",
+  "out": "\"\\ud8e8\\udeb0\\udb98\\udf02\\ud9d9\\udd8b\\uda81\\udc4c\\uda07\\udc46\\ud974\\udc50\\ud954\\udde1\\ud9a6\\udfba\\ud91d\\udc96\""
+ },
+ {
+  "in": "󜹺󵲱򹎈󾘛򫽟𳭏񅝷",
+  "out": "\"\\udb33\\ude7a\\udb97\\udcb1\\udaa4\\udf88\\udbb9\\ude1b\\uda6f\\udf5f\\ud88e\\udf4f\\ud8d5\\udf77\""
+ },
+ {
+  "in": "򍒒񒥗񼞙󀥇",
+  "out": "\"\\ud9f5\\udc92\\ud90a\\udd57\\ud9b1\\udf99\\udac2\\udd47\""
+ },
+ {
+  "in": "򛯃񛛵󕅛񗰦󦌗񁳥󰛰",
+  "out": "\"\\uda2e\\udfc3\\ud92d\\udef5\\udb14\\udd5b\\ud91f\\udc26\\udb58\\udf17\\ud8c7\\udce5\\udb81\\udef0\""
+ },
+ {
+  "in": "𿢼𐂠񁩵򢶊耑󲲶𾒮",
+  "out": "\"\\ud8be\\udcbc\\ud800\\udca0\\ud8c6\\ude75\\uda4b\\udd8a\\u8011\\udb8b\\udcb6\\ud8b9\\udcae\""
+ },
+ {
+  "in": "򮃚򴏉𻴈󪟴󤲛浠𸉮񿉵🁶񖖨􂮻񤓁",
+  "out": "\"\\uda78\\udcda\\uda90\\udfc9\\ud8af\\udd08\\udb69\\udff4\\udb53\\udc9b\\u6d60\\ud8a0\\ude6e\\ud9bc\\ude75\\ud83c\\udc76\\ud919\\udda8\\udbca\\udfbb\\ud951\\udcc1\""
+ },
+ {
+  "in": "",
+  "out": "\"\""
+ },
+ {
+  "in": "󈋱𫨜﹨",
+  "out": "\"\\udae0\\udef1\\ud86e\\ude1c\\ufe68\""
+ },
+ {
+  "in": "򥝱􎂯􇙟𹫍񣠍𴅸􎹱󌵆򚤥삶񲟰",
+  "out": "\"\\uda55\\udf71\\udbf8\\udcaf\\udbdd\\ude5f\\ud8a6\\udecd\\ud94e\\udc0d\\ud890\\udd78\\udbfb\\ude71\\udaf3\\udd46\\uda2a\\udd25\\uc0b6\\ud989\\udff0\""
+ },
+ {
+  "in": "",
+  "out": "\"\""
+ },
+ {
+  "in": "󋜑򦜫񈹪򣾬󍀙𻟿󶛂𸔦",
+  "out": "\"\\udaed\\udf11\\uda59\\udf2b\\ud8e3\\ude6a\\uda4f\\udfac\\udaf4\\udc19\\ud8ad\\udfff\\udb99\\udec2\\ud8a1\\udd26\""
+ },
+ {
+  "in": "򌦛􆸲󏚥񚭙󖟛𡸮򥤦󀔬򺠲ﶄ",
+  "out": "\"\\ud9f2\\udd9b\\udbdb\\ude32\\udafd\\udea5\\ud92a\\udf59\\udb19\\udfdb\\ud847\\ude2e\\uda56\\udd26\\udac1\\udd2c\\udaaa\\udc32\\ufd84\""
+ },
+ {
+  "in": "󼖻󣝹򿣺𮋾ۼ񸭆񜔸򸫯𝞠򻚳",
+  "out": "\"\\udbb1\\uddbb\\udb4d\\udf79\\udabe\\udcfa\\ud878\\udefe\\u06fc\\ud9a2\\udf46\\ud931\\udd38\\udaa2\\udeef\\ud835\\udfa0\\udaad\\udeb3\""
+ },
+ {
+  "in": "񔞵򳣀𢅱",
+  "out": "\"\\ud911\\udfb5\\uda8e\\udcc0\\ud848\\udd71\""
+ },
+ {
+  "in": "𠎖򕂆󀒷򪛽񅐀⊢􊍢󄬟򱞐򀅀򴲙",
+  "out": "\"\\ud840\\udf96\\uda14\\udc86\\udac1\\udcb7\\uda69\\udefd\\ud8d5\\udc00\\u22a2\\udbe8\\udf62\\udad2\\udf1f\\uda85\\udf90\\ud9c0\\udd40\\uda93\\udc99\""
+ },
+ {
+  "in": "󅟡񖦛󒱈񊒰",
+  "out": "\"\\udad5\\udfe1\\ud91a\\udd9b\\udb0b\\udc48\\ud8e9\\udcb0\""
+ },
+ {
+  "in": "𰍤򐤦򁐯񲔎􀥽򆚘𔚻𖪏􈸂񄧟󘲚",
+  "out": "\"\\ud880\\udf64\\uda02\\udd26\\ud9c5\\udc2f\\ud989\\udd0e\\udbc2\\udd7d\\ud9d9\\ude98\\ud811\\udebb\\ud81a\\ude8f\\udbe3\\ude02\\ud8d2\\udddf\\udb23\\udc9a\""
+ },
+ {
+  "in": "",
+  "out": "\"\""
+ },
+ {
+  "in": "񈂠󱱎𮉍𛦇󏇈򅄄",
+  "out": "\"\\ud8e0\\udca0\\udb87\\udc4e\\ud878\\ude4d\\ud82e\\udd87\\udafc\\uddc8\\ud9d4\\udd04\""
+ },
+ {
+  "in": "󊪶頴񅦪󳡈󜧯𜗞񪨻",
+  "out": "\"\\udaea\\udeb6\\u9834\\ud8d6\\uddaa\\udb8e\\udc48\\udb32\\uddef\\ud831\\uddde\\ud96a\\ude3b\""
+ },
+ {
+  "in": "򚳼𠸣񚹴􄦯񓫚󢡦🅸򞔌󛦡",
+  "out": "\"\\uda2b\\udcfc\\ud843\\ude23\\ud92b\\ude74\\udbd2\\uddaf\\ud90e\\udeda\\udb4a\\udc66\\ud83c\\udd78\\uda39\\udd0c\\udb2e\\udda1\""
+ },
+ {
+  "in": "󴶮򋣎𪟶󄖋𶝷",
+  "out": "\"\\udb93\\uddae\\ud9ee\\udcce\\ud869\\udff6\\udad1\\udd8b\\ud899\\udf77\""
+ },
+ {
+  "in": "󻊞򼯺󔾎𠇦󦻞𣥑",
+  "out": "\"\\udbac\\ude9e\\udab2\\udffa\\udb13\\udf8e\\ud840\\udde6\\udb5b\\udede\\ud84e\\udd51\""
+ },
+ {
+  "in": "󹁖󰯽𧷁󃫇􂬐񲼂򢳻򦢪񢴋򹫿򄦖",
+  "out": "\"\\udba4\\udc56\\udb82\\udffd\\ud85f\\uddc1\\udace\\udec7\\udbca\\udf10\\ud98b\\udf02\\uda4b\\udcfb\\uda5a\\udcaa\\ud94b\\udd0b\\udaa6\\udeff\\ud9d2\\udd96\""
+ },
+ {
+  "in": "󲴽",
+  "out": "\"\\udb8b\\udd3d\""
+ },
+ {
+  "in": "񀆼򾻹򱋧",
+  "out": "\"\\ud8c0\\uddbc\\udabb\\udef9\\uda84\\udee7\""
+ },
+ {
+  "in": "򟠿󖡼𜀥󡼃򉜷󭹨",
+  "out": "\"\\uda3e\\udc3f\\udb1a\\udc7c\\ud830\\udc25\\udb47\\udf03\\ud9e5\\udf37\\udb77\\ude68\""
+ },
+ {
+  "in": "𣿒󫌪򔍮",
+  "out": "\"\\ud84f\\udfd2\\udb6c\\udf2a\\uda10\\udf6e\""
+ },
+ {
+  "in": "𒬣񦆙𦥯򖻴󶔱򼸆𽎞󞘶𗸺󊊜󣉺򋏅",
+  "out": "\"\\ud80a\\udf23\\ud958\\udd99\\ud85a\\udd6f\\uda1b\\udef4\\udb99\\udd31\\udab3\\ude06\\ud8b4\\udf9e\\udb39\\ude36\\ud81f\\ude3a\\udae8\\ude9c\\udb4c\\ude7a\\ud9ec\\udfc5\""
+ },
+ {
+  "in": "􎻒󶂧񓊅򳮶",
+  "out": "\"\\udbfb\\uded2\\udb98\\udca7\\ud90c\\ude85\\uda8e\\udfb6\""
+ },
+ {
+  "in": "䠸񍙗񱬟啉񈼵򶫙",
+  "out": "\"\\u4838\\ud8f5\\ude57\\ud986\\udf1f\\u5549\\ud8e3\\udf35\\uda9a\\uded9\""
+ },
+ {
+  "in": "񊢀󯓚",
+  "out": "\"\\ud8ea\\udc80\\udb7d\\udcda\""
+ },
+ {
+  "in": "󶭪򘲣󢰴",
+  "out": "\"\\udb9a\\udf6a\\uda23\\udca3\\udb4b\\udc34\""
+ },
+ {
+  "in": "󸥩",
+  "out": "\"\\udba2\\udd69\""
+ },
+ {
+  "in": "􉃁񎴆񿧗񶍔󕦄􉫏𙨴墨",
+  "out": "\"\\udbe4\\udcc1\\ud8fb\\udd06\\ud9be\\uddd7\\ud998\\udf54\\udb16\\udd84\\udbe6\\udecf\\ud826\\ude34\\ufa3a\""
+ },
+ {
+  "in": "􃝆񪸠򐵕򥞛􀿟񒒐󤔹񭺢񶥒𺖾",
+  "out": "\"\\udbcd\\udf46\\ud96b\\ude20\\uda03\\udd55\\uda55\\udf9b\\udbc3\\udfdf\\ud909\\udc90\\udb51\\udd39\\ud977\\udea2\\ud99a\\udd52\\ud8a9\\uddbe\""
+ },
+ {
+  "in": "󥔓񚹬񓉃𘁞",
+  "out": "\"\\udb55\\udd13\\ud92b\\ude6c\\ud90c\\ude43\\ud820\\udc5e\""
+ },
+ {
+  "in": "񚈥𧩾𞬸􆲺󩖴𴳷𧪮򰋺򢲸񗸡",
+  "out": "\"\\ud928\\ude25\\ud85e\\ude7e\\ud83a\\udf38\\udbdb\\udcba\\udb65\\uddb4\\ud893\\udcf7\\ud85e\\udeae\\uda80\\udefa\\uda4b\\udcb8\\ud91f\\ude21\""
+ },
+ {
+  "in": "񫱳⿠𣙊🠮𨄉񨕌󆰆",
+  "out": "\"\\ud96f\\udc73\\u2fe0\\ud84d\\ude4a\\ud83e\\udc2e\\ud860\\udd09\\ud961\\udd4c\\udadb\\udc06\""
+ },
+ {
+  "in": "󮰖𨟬򊉞񎊆􂛬",
+  "out": "\"\\udb7b\\udc16\\ud861\\udfec\\ud9e8\\ude5e\\ud8f8\\ude86\\udbc9\\udeec\""
+ },
+ {
+  "in": "􋅛񣲞򲐤򗚥󷆔󓢴󢹢閩",
+  "out": "\"\\udbec\\udd5b\\ud94f\\udc9e\\uda89\\udc24\\uda1d\\udea5\\udb9c\\udd94\\udb0e\\udcb4\\udb4b\\ude62\\u95a9\""
+ },
+ {
+  "in": "򤯷񔨆򓔞򿏳𪯍򷟏",
+  "out": "\"\\uda52\\udff7\\ud912\\ude06\\uda0d\\udd1e\\udabc\\udff3\\ud86a\\udfcd\\uda9d\\udfcf\""
+ },
+ {
+  "in": "􎂕𑁣􂊶󌓝𕽯",
+  "out": "\"\\udbf8\\udc95\\ud804\\udc63\\udbc8\\udeb6\\udaf1\\udcdd\\ud817\\udf6f\""
+ },
+ {
+  "in": "𾹢󕛂񨥈򜼸򥭧𽁍񆘌򑓦񵧽儤",
+  "out": "\"\\ud8bb\\ude62\\udb15\\udec2\\ud962\\udd48\\uda33\\udf38\\uda56\\udf67\\ud8b4\\udc4d\\ud8d9\\ude0c\\uda05\\udce6\\ud996\\uddfd\\u5124\""
+ },
+ {
+  "in": "󧜑󍒙􂃽񍐠􇑱󙙹񇓋𐭔",
+  "out": "\"\\udb5d\\udf11\\udaf5\\udc99\\udbc8\\udcfd\\ud8f5\\udc20\\udbdd\\udc71\\udb25\\ude79\\ud8dd\\udccb\\ud802\\udf54\""
+ },
+ {
+  "in": "򆆩􇬃򏝯󀄘򖅗懘",
+  "out": "\"\\ud9d8\\udda9\\udbde\\udf03\\ud9fd\\udf6f\\udac0\\udd18\\uda18\\udd57\\u61d8\""
+ },
+ {
+  "in": "쫀󃼜􏢯󉆾򲿯񲐭񗝱󅍖꡼񏔑󪃨𬆁",
+  "out": "\"\\ucac0\\udacf\\udf1c\\udbfe\\udcaf\\udae4\\uddbe\\uda8b\\udfef\\ud989\\udc2d\\ud91d\\udf71\\udad4\\udf56\\ua87c\\ud8fd\\udd11\\udb68\\udce8\\ud870\\udd81\""
+ },
+ {
+  "in": "񨷿򤇌􅰳򳸋󏿦񡲌񙓜",
+  "out": "\"\\ud963\\uddff\\uda50\\uddcc\\udbd7\\udc33\\uda8f\\ude0b\\udaff\\udfe6\\ud947\\udc8c\\ud925\\udcdc\""
+ },
+ {
+  "in": "򄬓􄐡񮥁󿌺򭀇𛹘򹺎򔝎󰾌",
+  "out": "\"\\ud9d2\\udf13\\udbd1\\udc21\\ud97a\\udd41\\udbbc\\udf3a\\uda74\\udc07\\ud82f\\ude58\\udaa7\\ude8e\\uda11\\udf4e\\udb83\\udf8c\""
+ },
+ {
+  "in": "󎦋𛇰",
+  "out": "\"\\udafa\\udd8b\\ud82c\\uddf0\""
+ },
+ {
+  "in": "񩲮𛺬񛙨􇒪񲍠󣔊",
+  "out": "\"\\ud967\\udcae\\ud82f\\udeac\\ud92d\\ude68\\udbdd\\udcaa\\ud988\\udf60\\udb4d\\udd0a\""
+ },
+ {
+  "in": "򠣇񑄢𗟗𿤓󯚩񬪰󧀯󈾡󪀿򛺧",
+  "out": "\"\\uda42\\udcc7\\ud904\\udd22\\ud81d\\udfd7\\ud8be\\udd13\\udb7d\\udea9\\ud972\\udeb0\\udb5c\\udc2f\\udae3\\udfa1\\udb68\\udc3f\\uda2f\\udea7\""
+ },
+ {
+  "in": "󖆭󃂷𚦉򎗼𗺄󊇃덩񷘸􃱠誩",
+  "out": "\"\\udb18\\uddad\\ue47f\\udacc\\udcb7\\ud82a\\udd89\\ud9f9\\uddfc\\ud81f\\ude84\\udae8\\uddc3\\ub369\\ud99d\\ude38\\udbcf\\udc60\\u8aa9\""
+ },
+ {
+  "in": "󿔻𕣭񐤍𻽫􇳐񶈼󸚭񩃲𻐈",
+  "out": "\"\\udbbd\\udd3b\\ud816\\udced\\ud902\\udd0d\\ud8af\\udf6b\\udbdf\\udcd0\\ud998\\ude3c\\udba1\\udead\\ud964\\udcf2\\ud8ad\\udc08\""
+ },
+ {
+  "in": "󱃮",
+  "out": "\"\\udb84\\udcee\""
+ },
+ {
+  "in": "򏫢򷐉頁󈍴𥾫㺸񛼴",
+  "out": "\"\\ud9fe\\udee2\\uda9d\\udc09\\u9801\\udae0\\udf74\\ud857\\udfab\\ud87e\\udd2c\\ud92f\\udf34\""
+ },
+ {
+  "in": "򘃈󇎼󏰆񪢡𖇐񶺩􈟽񮸨",
+  "out": "\"\\uda20\\udcc8\\udadc\\udfbc\\udaff\\udc06\\ud96a\\udca1\\ud818\\uddd0\\ud99b\\udea9\\udbe1\\udffd\\ud97b\\ude28\""
+ },
+ {
+  "in": "",
+  "out": "\"\""
+ },
+ {
+  "in": "􃓓󥨺񹵥􅠋𒬟",
+  "out": "\"\\udbcd\\udcd3\\udb56\\ude3a\\ud9a7\\udd65\\udbd6\\udc0b\\ud80a\\udf1f\""
+ },
+ {
+  "in": "",
+  "out": "\"\""
+ },
+ {
+  "in": "򱹖򓞮􂎾򷂂󉕗񋭥",
+  "out": "\"\\uda87\\ude56\\uda0d\\udfae\\udbc8\\udfbe\\uda9c\\udc82\\udae5\\udd57\\ud8ee\\udf65\""
+ },
+ {
+  "in": "󩢹򧹈𘿛񠨶򥂓",
+  "out": "\"\\udb66\\udcb9\\uda5f\\ude48\\ud823\\udfdb\\ud942\\ude36\\uda54\\udc93\""
+ },
+ {
+  "in": "񆂹򄣢񳪾𴋎󽜤󹸿𰹬񆆑𡘩",
+  "out": "\"\\ud8d8\\udcb9\\ud9d2\\udce2\\ud98e\\udebe\\ud890\\udece\\udbb5\\udf24\\udba7\\ude3f\\ud883\\ude6c\\ud8d8\\udd91\\ud845\\ude29\""
+ },
+ {
+  "in": "𯉙񹈁񣵟",
+  "out": "\"\\ud87c\\ude59\\ud9a4\\ude01\\ud94f\\udd5f\""
+ },
+ {
+  "in": "򑏺󕢊󬁇󀧥򰭠𙉩󧐟񚺠󀱄񉡄",
+  "out": "\"\\uda04\\udffa\\udb16\\udc8a\\udb70\\udc47\\udac2\\udde5\\uda82\\udf60\\ud824\\ude69\\udb5d\\udc1f\\ud92b\\udea0\\udac3\\udc44\\ud8e6\\udc44\""
+ },
+ {
+  "in": "򗤋􉊼褬哤񟨨񓗬",
+  "out": "\"\\uda1e\\udd0b\\udbe4\\udebc\\u892c\\u54e4\\ud93e\\ude28\\ud90d\\uddec\""
+ },
+ {
+  "in": "򢁆򩺍𶳗󕖅򠸶񸝸衆",
+  "out": "\"\\uda48\\udc46\\uda67\\ude8d\\ud89b\\udcd7\\udb15\\udd85\\uda43\\ude36\\ud9a1\\udf78\\u8846\""
+ },
+ {
+  "in": "󅍐󹮣򻂴񯭇򿆵񰀖񄭹􄨞󭠐񇎱",
+  "out": "\"\\udad4\\udf50\\udba6\\udfa3\\udaac\\udcb4\\ud97e\\udf47\\udabc\\uddb5\\ud980\\udc16\\ud8d2\\udf79\\udbd2\\ude1e\\udb76\\udc10\\ud8dc\\udfb1\""
+ },
+ {
+  "in": "𜑋򳌁􂮡򙋶񶽏󲉖",
+  "out": "\"\\ud831\\udc4b\\uda8c\\udf01\\udbca\\udfa1\\uda24\\udef6\\ud99b\\udf4f\\udb88\\ude56\""
+ },
+ {
+  "in": "󫲡򫝇礛򈍪󙎤󅄦񻓼𡤾󮠕𿻍񫐇𔪛",
+  "out": "\"\\udb6f\\udca1\\uda6d\\udf47\\u791b\\ud9e0\\udf6a\\udb24\\udfa4\\udad4\\udd26\\ud9ad\\udcfc\\ud846\\udd3e\\udb7a\\udc15\\ud8bf\\udecd\\ud96d\\udc07\\ud812\\ude9b\""
+ },
+ {
+  "in": "𧥆󣗆򬐋󍨃􆳕𛒘𬂬󭢜󩇪󂞪",
+  "out": "\"\\ud85e\\udd46\\udb4d\\uddc6\\uda71\\udc0b\\udaf6\\ude03\\udbdb\\udcd5\\ud82d\\udc98\\ud870\\udcac\\udb76\\udc9c\\udb64\\uddea\\udac9\\udfaa\""
+ },
+ {
+  "in": "񟤮땒񍶮󼔮񋱑",
+  "out": "\"\\ud93e\\udd2e\\ub552\\ud8f7\\uddae\\udbb1\\udd2e\\ud8ef\\udc51\""
+ },
+ {
+  "in": "𓞓񎶹񽀉񟨧򍥂񘔖",
+  "out": "\"\\ud80d\\udf93\\ud8fb\\uddb9\\ud9b4\\udc09\\ud93e\\ude27\\ud9f6\\udd42\\ud921\\udd16\""
+ },
+ {
+  "in": "򤃼󽬗󖍳񒙸󌾄󻆾򁿯򛹙",
+  "out": "\"\\uda50\\udcfc\\udbb6\\udf17\\udb18\\udf73\\ud909\\ude78\\udaf3\\udf84\\udbac\\uddbe\\ud9c7\\udfef\\uda2f\\ude59\""
+ },
+ {
+  "in": "򪎢󨑄뉞󍵶",
+  "out": "\"\\uda68\\udfa2\\udb61\\udc44\\ub25e\\udaf7\\udd76\""
+ },
+ {
+  "in": "󃛍𧏺𒋔򣊇򗆏󿒄򄄇",
+  "out": "\"\\udacd\\udecd\\ud85c\\udffa\\ud808\\uded4\\uda4c\\ude87\\uda1c\\udd8f\\udbbd\\udc84\\ud9d0\\udd07\""
+ },
+ {
+  "in": "𘚃껧󣆸𾃴񼪶򟟰򯜁񓉝󢛭",
+  "out": "\"\\ud821\\ude83\\uaee7\\udb4c\\uddb8\\ud8b8\\udcf4\\ud9b2\\udeb6\\uda3d\\udff0\\uda7d\\udf01\\ud90c\\ude5d\\udb49\\udeed\""
+ },
+ {
+  "in": "񮣹򀦽񛃚􋩱񸑆󛛲􏆀󺠼",
+  "out": "\"\\ud97a\\udcf9\\ud9c2\\uddbd\\ud92c\\udcda\\udbee\\ude71\\ud9a1\\udc46\\udb2d\\udef2\\udbfc\\udd80\\udbaa\\udc3c\""
+ },
+ {
+  "in": "𲈀񻛔򪈩򗆄󟖎򿰚󢯥򑛓󲯑󦴌򣖥򇋔",
+  "out": "\"\\ud888\\ude00\\ud9ad\\uded4\\uda68\\ude29\\uda1c\\udd84\\udb3d\\udd8e\\udabf\\udc1a\\udb4a\\udfe5\\uda05\\uded3\\udb8a\\udfd1\\udb5b\\udd0c\\uda4d\\udda5\\ud9dc\\uded4\""
+ },
+ {
+  "in": "󔎧󲟨𸬣󩤐𡫋󸡱򺕁𑶓񙶭",
+  "out": "\"\\udb10\\udfa7\\udb89\\udfe8\\ud8a2\\udf23\\udb66\\udd10\\ud846\\udecb\\udba2\\udc71\\udaa9\\udd41\\ud807\\udd93\\ud927\\uddad\""
+ },
+ {
+  "in": "",
+  "out": "\"\""
+ },
+ {
+  "in": "򺿤򿷸򜴶􄚞",
+  "out": "\"\\udaab\\udfe4\\udabf\\uddf8\\uda33\\udd36\\udbd1\\ude9e\""
+ },
+ {
+  "in": "򨏋󚔪򪸤𰠗򩠒𼩐񉾜󸦞󗜼򰻥򏫳𩥺",
+  "out": "\"\\uda60\\udfcb\\udb29\\udd2a\\uda6b\\ude24\\ud882\\udc17\\uda66\\udc12\\ud8b2\\ude50\\ud8e7\\udf9c\\udba2\\udd9e\\udb1d\\udf3c\\uda83\\udee5\\ud9fe\\udef3\\ud866\\udd7a\""
+ },
+ {
+  "in": "𓊊񯼄",
+  "out": "\"\\ud80c\\ude8a\\ud97f\\udf04\""
+ },
+ {
+  "in": "󒋮",
+  "out": "\"\\udb08\\udeee\""
+ },
+ {
+  "in": "󵿄󎗄򧈌𕧬󣫕򬘻",
+  "out": "\"\\udb97\\udfc4\\udaf9\\uddc4\\uda5c\\ude0c\\ud816\\uddec\\udb4e\\uded5\\uda71\\ude3b\""
+ },
+ {
+  "in": "򖿒򆩙𩻯񻊽񍃾񶡎򎻅򄏣𙜃𗼧",
+  "out": "\"\\uda1b\\udfd2\\ud9da\\ude59\\ud867\\udeef\\ud9ac\\udebd\\ud8f4\\udcfe\\ud99a\\udc4e\\ud9fb\\udec5\\ud9d0\\udfe3\\ud825\\udf03\\ud81f\\udf27\""
+ },
+ {
+  "in": "񒑠򃫩󐋷򎌖񾃡񼳁򲾳񷷛𗛶򁮈",
+  "out": "\"\\ud909\\udc60\\ud9ce\\udee9\\udb00\\udef7\\ud9f8\\udf16\\ud9b8\\udce1\\ud9b3\\udcc1\\uda8b\\udfb3\\ud99f\\udddb\\ud81d\\udef6\\ud9c6\\udf88\""
+ },
+ {
+  "in": "򂟉󒜺򀿘􉃓񔳐􅵻򅍏񵾚󊐓",
+  "out": "\"\\ud9c9\\udfc9\\udb09\\udf3a\\ud9c3\\udfd8\\udbe4\\udcd3\\ud913\\udcd0\\udbd7\\udd7b\\ud9d4\\udf4f\\ud997\\udf9a\\udae9\\udc13\""
+ },
+ {
+  "in": "",
+  "out": "\"\""
+ },
+ {
+  "in": "􁿺𩀃򿐻񖒭𿔠򃍿󙡷",
+  "out": "\"\\udbc7\\udffa\\ud864\\udc03\\udabd\\udc3b\\ud919\\udcad\\ud8bd\\udd20\\ud9cc\\udf7f\\udb26\\udc77\""
+ },
+ {
+  "in": "񭕌򞲂񱓞",
+  "out": "\"\\ud975\\udd4c\\uda3b\\udc82\\ud985\\udcde\""
+ },
+ {
+  "in": "",
+  "out": "\"\""
+ },
+ {
+  "in": "򞨪",
+  "out": "\"\\uda3a\\ude2a\""
+ },
+ {
+  "in": "񠐟",
+  "out": "\"\\ud941\\udc1f\""
+ },
+ {
+  "in": "𞿣𳶣򪂏񗄳ࣟ𔴛񱦹񿼊",
+  "out": "\"\\ud83b\\udfe3\\ud88f\\udda3\\uda68\\udc8f\\ud91c\\udd33\\u08df\\ud813\\udd1b\\ud986\\uddb9\\ud9bf\\udf0a\""
+ },
+ {
+  "in": "󸕦񗷬󂶐𽀈󭹕",
+  "out": "\"\\udba1\\udd66\\ud91f\\uddec\\udacb\\udd90\\ud8b4\\udc08\\udb77\\ude55\""
+ },
+ {
+  "in": "񺞴򁐛򯤀𚕡򰡃𽘊󍚮򾥐򻻖񽵞񱄒𝣍",
+  "out": "\"\\ud9a9\\udfb4\\ud9c5\\udc1b\\uda7e\\udd00\\ud829\\udd61\\uda82\\udc43\\ud8b5\\ude0a\\udaf5\\udeae\\udaba\\udd50\\udaaf\\uded6\\ud9b7\\udd5e\\ud984\\udd12\\ud836\\udccd\""
+ },
+ {
+  "in": "𣣞񡆰󻾱",
+  "out": "\"\\ud84e\\udcde\\ud944\\uddb0\\udbaf\\udfb1\""
+ },
+ {
+  "in": "",
+  "out": "\"\""
+ },
+ {
+  "in": "𥬑򜯒򘤜񓣙󾏊󪳡궼񑼳󯘢𻏆񟘪",
+  "out": "\"\\ud856\\udf11\\uda32\\udfd2\\uda22\\udd1c\\ud90e\\udcd9\\udbb8\\udfca\\udb6b\\udce1\\uadbc\\ud907\\udf33\\udb7d\\ude22\\ud8ac\\udfc6\\ud93d\\ude2a\""
+ },
+ {
+  "in": "񌆱󛿩񻧅🅩񚖦𴌲򇬶",
+  "out": "\"\\ud8f0\\uddb1\\udb2f\\udfe9\\ud9ae\\uddc5\\ud83c\\udd69\\ud929\\udda6\\ud890\\udf32\\ud9de\\udf36\""
+ },
+ {
+  "in": "􏹆򳽣悬􁋎򏻀󍢋񊋍󫍛𭔖",
+  "out": "\"\\udbff\\ude46\\uda8f\\udf63\\u60ac\\udbc4\\udece\\ud9ff\\udec0\\udaf6\\udc8b\\ud8e8\\udecd\\udb6c\\udf5b\\ud875\\udd16\""
+ },
+ {
+  "in": "񈯩򰎽򎅂񮠬򥳣𑽉󬦤񖦔􀎮񄡘",
+  "out": "\"\\ud8e2\\udfe9\\uda80\\udfbd\\ud9f8\\udd42\\ud97a\\udc2c\\uda57\\udce3\\ud807\\udf49\\udb72\\udda4\\ud91a\\udd94\\udbc0\\udfae\\ud8d2\\udc58\""
+ },
+ {
+  "in": "𗥩򦂇󜯶䜂񩉳񬼐򇜙𐟎񾄐󚢩",
+  "out": "\"\\ud81e\\udd69\\uda58\\udc87\\udb32\\udff6\\u4702\\ud964\\ude73\\ud973\\udf10\\ud9dd\\udf19\\ud801\\udfce\\ud9b8\\udd10\\udb2a\\udca9\""
+ },
+ {
+  "in": "񡆭𷟒",
+  "out": "\"\\ud944\\uddad\\ud89d\\udfd2\""
+ },
+ {
+  "in": "񀠵򽼕󮝁𯏑𩲊𮗊򉧿𸵱񽑳򎬼򿬧𛪄",
+  "out": "\"\\ud8c2\\udc35\\udab7\\udf15\\udb79\\udf41\\ud87c\\udfd1\\ud867\\udc8a\\ud879\\uddca\\ud9e6\\uddff\\ud8a3\\udd71\\ud9b5\\udc73\\ud9fa\\udf3c\\udabe\\udf27\\ud82e\\ude84\""
+ },
+ {
+  "in": "񱣡𧐣󗏁򀻴􉦪򪛷𚏑𯝧󻚼󾀂򣫶",
+  "out": "\"\\ud986\\udce1\\ud85d\\udc23\\udb1c\\udfc1\\ud9c3\\udef4\\udbe6\\uddaa\\uda69\\udef7\\ud828\\udfd1\\ud87d\\udf67\\udbad\\udebc\\udbb8\\udc02\\uda4e\\udef6\""
+ },
+ {
+  "in": "𫹪",
+  "out": "\"\\ud86f\\ude6a\""
+ },
+ {
+  "in": "򠙂󑉁񵆸𰑉",
+  "out": "\"\\uda41\\ude42\\udb04\\ude41\\ud994\\uddb8\\ud881\\udc49\""
+ },
+ {
+  "in": "􊧵󧿀񌡽㟷󡧗񢩍󗍤󊞸",
+  "out": "\"\\udbea\\uddf5\\udb5f\\udfc0\\ud8f2\\udc7d\\u37f7\\udb46\\uddd7\\ud94a\\ude4d\\udb1c\\udf64\\udae9\\udfb8\""
+ },
+ {
+  "in": "󢮛󶏟뤊𘶸󡀶񭏻򻴽󀕞򖜿",
+  "out": "\"\\udb4a\\udf9b\\udb98\\udfdf\\ub90a\\ud823\\uddb8\\udb44\\udc36\\ud974\\udffb\\udaaf\\udd3d\\udac1\\udd5e\\uda19\\udf3f\""
+ },
+ {
+  "in": "􋃨򺪫򡄦򽑯򘄬󄱵",
+  "out": "\"\\udbec\\udce8\\udaaa\\udeab\\uda44\\udd26\\udab5\\udc6f\\uda20\\udd2c\\udad3\\udc75\""
+ },
+ {
+  "in": "񒅥󢭰񲓰󑶦󁅱󗨠񳘲𤍱񴭨",
+  "out": "\"\\ud908\\udd65\\udb4a\\udf70\\ud989\\udcf0\\udb07\\udda6\\udac4\\udd71\\udb1e\\ude20\\ud98d\\ude32\\ud850\\udf71\\ud992\\udf68\""
+ },
+ {
+  "in": "󚳣󃉁񘒊󓻁񱰑",
+  "out": "\"\\udb2b\\udce3\\udacc\\ude41\\ud921\\udc8a\\udb0f\\udec1\\ud987\\udc11\""
+ },
+ {
+  "in": "",
+  "out": "\"\""
+ },
+ {
+  "in": "򢽬󄹚󫁲𬆺򞒓򫯼򫼌􅰜񒫊񠟄짐",
+  "out": "\"\\uda4b\\udf6c\\udad3\\ude5a\\udb6c\\udc72\\ud870\\uddba\\uda39\\udc93\\uda6e\\udffc\\uda6f\\udf0c\\udbd7\\udc1c\\ud90a\\udeca\\ud941\\udfc4\\uc9d0\""
+ },
+ {
+  "in": "󉖹󛆭󷜏򞤅",
+  "out": "\"\\udae5\\uddb9\\udb2c\\uddad\\udb9d\\udf0f\\uda3a\\udd05\""
+ },
+ {
+  "in": "󸆿񍑌𳉗󫌀𮃌𰲊𸿤",
+  "out": "\"\\udba0\\uddbf\\ud8f5\\udc4c\\ud88c\\ude57\\udb6c\\udf00\\ud878\\udccc\\ud883\\udc8a\\ud8a3\\udfe4\""
+ },
+ {
+  "in": "𛏘򜁖򚂷񡜙𢒦ꈿ󥒸",
+  "out": "\"\\ud82c\\udfd8\\uda30\\udc56\\uda28\\udcb7\\ud945\\udf19\\ud849\\udca6\\ua23f\\udb55\\udcb8\""
+ },
+ {
+  "in": "􍦤򹈚",
+  "out": "\"\\udbf6\\udda4\\udaa4\\ude1a\""
+ },
+ {
+  "in": "򋫬񁐺𶪅񾗎󅋖򛵨𥙐튢󣻜돺񘊂",
+  "out": "\"\\ud9ee\\udeec\\ud8c5\\udc3a\\ud89a\\ude85\\ud9b9\\uddce\\udad4\\uded6\\uda2f\\udd68\\ud855\\ude50\\ud2a2\\udb4f\\udedc\\ub3fa\\ud920\\ude82\""
+ },
+ {
+  "in": "򬘱🤞򐁆𪩫񄎘ჵ񶊠񉖃",
+  "out": "\"\\uda71\\ude31\\ud83e\\udd1e\\uda00\\udc46\\ud86a\\ude6b\\ud8d0\\udf98\\u10f5\\ud998\\udea0\\ud8e5\\udd83\""
+ },
+ {
+  "in": "󵃂󣽞⥃񱿨􏈍񌀄󕥻󕴸񟾐񂱵",
+  "out": "\"\\udb94\\udcc2\\udb4f\\udf5e\\u2943\\ud987\\udfe8\\udbfc\\ude0d\\ud8f0\\udc04\\udb16\\udd7b\\udb17\\udd38\\ud93f\\udf90\\ud8cb\\udc75\""
+ },
+ {
+  "in": "򜪽𳳯𤭿𢺠󑭈𗬌󍿁𗃖",
+  "out": "\"\\uda32\\udebd\\ud88f\\udcef\\ud852\\udf7f\\ud84b\\udea0\\udb06\\udf48\\ud81e\\udf0c\\udaf7\\udfc1\\ud81c\\udcd6\""
+ },
+ {
+  "in": "񫎣𩠗񷹞򵒺񹕓򙴇񬿬",
+  "out": "\"\\ud96c\\udfa3\\ud866\\udc17\\ud99f\\ude5e\\uda95\\udcba\\ud9a5\\udd53\\uda27\\udd07\\ud973\\udfec\""
+ },
+ {
+  "in": "򐎊󃂈󙓻񃉠",
+  "out": "\"\\uda00\\udf8a\\udacc\\udc88\\udb25\\udcfb\\ud8cc\\ude60\""
+ },
+ {
+  "in": "󔴄񢉊񋓏󆹠󩙾򭄗𿢅",
+  "out": "\"\\udb13\\udd04\\ud948\\ude4a\\ud8ed\\udccf\\udadb\\ude60\\uf7a3\\udb65\\ude7e\\uda74\\udd17\\ud8be\\udc85\""
+ },
+ {
+  "in": "񷒽񅯞񫾅󚼏",
+  "out": "\"\\ud99d\\udcbd\\ud8d6\\udfde\\ud96f\\udf85\\udb2b\\udf0f\""
+ },
+ {
+  "in": "𧔖򏫬񘂇󚙏򆿁",
+  "out": "\"\\ud85d\\udd16\\ud9fe\\udeec\\ud920\\udc87\\udb29\\ude4f\\ud9db\\udfc1\""
+ },
+ {
+  "in": "򡡮򔇣󙤅𛅓",
+  "out": "\"\\uda46\\udc6e\\uda10\\udde3\\udb26\\udd05\\ud82c\\udd53\""
+ },
+ {
+  "in": "򐩨",
+  "out": "\"\\uda02\\ude68\""
+ },
+ {
+  "in": "󰭄󦢵󙪗򡋁򉖬𢇼񪲞󽪾󿝧򐕱񒥈񖝇",
+  "out": "\"\\udb82\\udf44\\udb5a\\udcb5\\udb26\\ude97\\uda44\\udec1\\ud9e5\\uddac\\ud848\\uddfc\\ud96b\\udc9e\\udbb6\\udebe\\udbbd\\udf67\\uda01\\udd71\\ud90a\\udd48\\ud919\\udf47\""
+ },
+ {
+  "in": "𠲖",
+  "out": "\"\\ud843\\udc96\""
+ },
+ {
+  "in": "𮞴𒶫",
+  "out": "\"\\ud879\\udfb4\\ud80b\\uddab\""
+ },
+ {
+  "in": "񏑻",
+  "out": "\"\\ud8fd\\udc7b\""
+ },
+ {
+  "in": "󖡫񓫌",
+  "out": "\"\\udb1a\\udc6b\\ud90e\\udecc\""
+ },
+ {
+  "in": "󣫋𓊦󪻔􈹪񕯗𖉠󂎿",
+  "out": "\"\\udb4e\\udecb\\ud80c\\udea6\\udb6b\\uded4\\udbe3\\ude6a\\ud916\\udfd7\\ud818\\ude60\\udac8\\udfbf\""
+ },
+ {
+  "in": "񄇬񂣛戡􏌍阻𩻹􇗹򼴌򇷇򹢉",
+  "out": "\"\\ud8d0\\uddec\\ud8ca\\udcdb\\u6221\\udbfc\\udf0d\\u963b\\ud867\\udef9\\udbdd\\uddf9\\udab3\\udd0c\\ud9df\\uddc7\\udaa6\\udc89\""
+ },
+ {
+  "in": "􏄺񐲩򎻎󎐼",
+  "out": "\"\\udbfc\\udd3a\\ud903\\udca9\\ud9fb\\udece\\udaf9\\udc3c\""
+ },
+ {
+  "in": "󌽅󲌬񗰱򳨮𽧅򅹱󧌷󞇰򜎦𖼝󧲚􃧞",
+  "out": "\"\\udaf3\\udf45\\udb88\\udf2c\\ud91f\\udc31\\uda8e\\ude2e\\ud8b6\\uddc5\\ud9d7\\ude71\\udb5c\\udf37\\udb38\\uddf0\\uda30\\udfa6\\ud81b\\udf1d\\udb5f\\udc9a\\udbce\\uddde\""
+ },
+ {
+  "in": "񑋌񕀪𕲙񘛏𻟆",
+  "out": "\"\\ud904\\udecc\\ud914\\udc2a\\ud817\\udc99\\ud921\\udecf\\ud8ad\\udfc6\""
+ },
+ {
+  "in": "󜿄𷨍񽐅𺒞񲚂򢝐񯕫󧷾󇓣򬤉",
+  "out": "\"\\udb33\\udfc4\\ud89e\\ude0d\\ud9b5\\udc05\\ud8a9\\udc9e\\ud989\\ude82\\uda49\\udf50\\ud97d\\udd6b\\udb5f\\uddfe\\udadd\\udce3\\uda72\\udd09\""
+ },
+ {
+  "in": "񎡧󕄸񻇂𴧋򜢫򥞧󴚟𧊱񳩷䬧",
+  "out": "\"\\ud8fa\\udc67\\udb14\\udd38\\ud9ac\\uddc2\\ud892\\uddcb\\uda32\\udcab\\uda55\\udfa7\\udb91\\ude9f\\ud85c\\udeb1\\ud98e\\ude77\\u4b27\""
+ },
+ {
+  "in": "񰀡򑛭",
+  "out": "\"\\ud980\\udc21\\uda05\\udeed\""
+ },
+ {
+  "in": "󃚶򹼎󑾉񆶽𷧎𼘀",
+  "out": "\"\\udacd\\udeb6\\udaa7\\udf0e\\udb07\\udf89\\ud8db\\uddbd\\ud89e\\uddce\\ud8b1\\ude00\""
+ },
+ {
+  "in": "򅓉􃝖􉑙񶗐򜚟򞤩󉯾􅑭񜭐󊝉򘚫稡",
+  "out": "\"\\ud9d5\\udcc9\\udbcd\\udf56\\udbe5\\udc59\\ud999\\uddd0\\uda31\\ude9f\\uda3a\\udd29\\udae6\\udffe\\udbd5\\udc6d\\ud932\\udf50\\udae9\\udf49\\uda21\\udeab\\u7a21\""
+ },
+ {
+  "in": "",
+  "out": "\"\""
+ },
+ {
+  "in": "󒂯񢲟󷚎",
+  "out": "\"\\udb08\\udcaf\\ud94b\\udc9f\\udb9d\\ude8e\""
+ },
+ {
+  "in": "􊀊򮋇",
+  "out": "\"\\udbe8\\udc0a\\uda78\\udec7\""
+ },
+ {
+  "in": "󄗖񟳾뵖򲰤񘋞",
+  "out": "\"\\udad1\\uddd6\\ud93f\\udcfe\\ubd56\\uda8b\\udc24\\ud920\\udede\""
+ },
+ {
+  "in": "񆶇򸢌򷹇򹺵󋴊󿍦񟙤򩼄򛡚㭷􎖐񾑃",
+  "out": "\"\\ud8db\\udd87\\udaa2\\udc8c\\uda9f\\ude47\\udaa7\\udeb5\\udaef\\udd0a\\udbbc\\udf66\\ud93d\\ude64\\uda67\\udf04\\uda2e\\udc5a\\u3b77\\udbf9\\udd90\\ud9b9\\udc43\""
+ },
+ {
+  "in": "򘥆򝆴𯽡",
+  "out": "\"\\uda22\\udd46\\uda34\\uddb4\\ud87f\\udf61\""
+ },
+ {
+  "in": "󷚑񝰝𴛨򏋌񭝬𔀦󆐙􆐷򔺤𳿔",
+  "out": "\"\\udb9d\\ude91\\ud937\\udc1d\\ud891\\udee8\\ud9fc\\udecc\\ud975\\udf6c\\ud810\\udc26\\udad9\\udc19\\udbd9\\udc37\\uda13\\udea4\\ud88f\\udfd4\""
+ },
+ {
+  "in": "񡂭񇜑񣦏󮹉𲉧",
+  "out": "\"\\ud944\\udcad\\ud8dd\\udf11\\ud94e\\udd8f\\udb7b\\ude49\\ud888\\ude67\""
+ },
+ {
+  "in": "񒣔񸒂",
+  "out": "\"\\ud90a\\udcd4\\ud9a1\\udc82\""
+ },
+ {
+  "in": "򝱈򣕚󮬲􅑜򄄌򌰆󜵨",
+  "out": "\"\\uda37\\udc48\\uda4d\\udd5a\\udb7a\\udf32\\udbd5\\udc5c\\ud9d0\\udd0c\\ud9f3\\udc06\\udb33\\udd68\""
+ },
+ {
+  "in": "󡼄򴭶򖘸򇎼򚏛񍭢𳭘򥀯򼄸󛻬񠏧",
+  "out": "\"\\udb47\\udf04\\uda92\\udf76\\uda19\\ude38\\ud9dc\\udfbc\\uda28\\udfdb\\ud8f6\\udf62\\ud88e\\udf58\\uda54\\udc2f\\udab0\\udd38\\udb2f\\udeec\\ud940\\udfe7\""
+ },
+ {
+  "in": "󞎇򨯃񥆙",
+  "out": "\"\\udb38\\udf87\\uda62\\udfc3\\ud954\\udd99\""
+ },
+ {
+  "in": "󅂥ⳉ𧬫",
+  "out": "\"\\udad4\\udca5\\u2cc9\\ud85e\\udf2b\""
+ },
+ {
+  "in": "",
+  "out": "\"\""
+ },
+ {
+  "in": "󘯨󗬿𒍯򡦬𻽄󋀼󴶕򼭱񂞮𮃦",
+  "out": "\"\\udb22\\udfe8\\udb1e\\udf3f\\ud808\\udf6f\\uda46\\uddac\\ud8af\\udf44\\udaec\\udc3c\\udb93\\udd95\\udab2\\udf71\\ud8c9\\udfae\\ud878\\udce6\""
+ },
+ {
+  "in": "𻯔󼼕𳹨󦇐񏌺㳐򉶲󣨮񒠝",
+  "out": "\"\\ud8ae\\udfd4\\udbb3\\udf15\\ud88f\\ude68\\udb58\\uddd0\\ud8fc\\udf3a\\u3cd0\\ud9e7\\uddb2\\udb4e\\ude2e\\ud90a\\udc1d\""
+ },
+ {
+  "in": "",
+  "out": "\"\""
+ },
+ {
+  "in": "񒼥𠸌󓽩򥕶򛔺򝟀񪠕򳊻",
+  "out": "\"\\ud90b\\udf25\\ud843\\ude0c\\udb0f\\udf69\\uda55\\udd76\\uda2d\\udd3a\\uda35\\udfc0\\ud96a\\udc15\\uda8c\\udebb\""
+ },
+ {
+  "in": "𴚾",
+  "out": "\"\\ud891\\udebe\""
+ },
+ {
+  "in": "𝨫󻚫忊񦯰󬹾𡰞򡟁󊳞񪇿󵮿",
+  "out": "\"\\ud836\\ude2b\\udbad\\udeab\\u5fca\\ud95a\\udff0\\udb73\\ude7e\\ud847\\udc1e\\uda45\\udfc1\\udaeb\\udcde\\ud968\\uddff\\udb96\\udfbf\""
+ },
+ {
+  "in": "򼀤񇥄򣼪𴰑񪽿󤰨𑞗򯠰",
+  "out": "\"\\udab0\\udc24\\ud8de\\udd44\\uda4f\\udf2a\\ud893\\udc11\\ud96b\\udf7f\\udb53\\udc28\\ud805\\udf97\\uda7e\\udc30\""
+ },
+ {
+  "in": "򺳟񸵋󡯌򡫭󨇏񪋭򃫢񏻀񶅠",
+  "out": "\"\\udaab\\udcdf\\ud9a3\\udd4b\\udb46\\udfcc\\uda46\\udeed\\udb60\\uddcf\\ud968\\udeed\\ud9ce\\udee2\\ud8ff\\udec0\\ud998\\udd60\""
+ },
+ {
+  "in": "𒀲硟񌢎󍵬񑁧흵񭃗򽶎𑰚񟷑",
+  "out": "\"\\ud808\\udc32\\u785f\\ud8f2\\udc8e\\udaf7\\udd6c\\ud904\\udc67\\ud775\\ud974\\udcd7\\udab7\\udd8e\\ud807\\udc1a\\ud93f\\uddd1\""
+ },
+ {
+  "in": "󠲸󇠋򥐝",
+  "out": "\"\\udb43\\udcb8\\udade\\udc0b\\uda55\\udc1d\""
+ },
+ {
+  "in": "𧍜񹓉󴑧򓽏砧򔳒󚼫",
+  "out": "\"\\ud85c\\udf5c\\ud9a5\\udcc9\\udb91\\udc67\\uda0f\\udf4f\\u7827\\uda13\\udcd2\\udb2b\\udf2b\""
+ },
+ {
+  "in": "򏏀򡄲󹆯󂂡􇿢𿁳𭓚񮠥򾘜",
+  "out": "\"\\ud9fc\\udfc0\\uda44\\udd32\\udba4\\uddaf\\udac8\\udca1\\udbdf\\udfe2\\ud8bc\\udc73\\ud875\\udcda\\ud97a\\udc25\\udab9\\ude1c\""
+ },
+ {
+  "in": "󡬩󬺔񴳳츘󍬋񡘘򇭹񶏻򈍢󥄊",
+  "out": "\"\\udb46\\udf29\\udb73\\ude94\\ud993\\udcf3\\uce18\\udaf6\\udf0b\\ud945\\ude18\\ud9de\\udf79\\ud998\\udffb\\ud9e0\\udf62\\udb54\\udd0a\""
+ },
+ {
+  "in": "񵧁魄򤜛ὦ󢜈",
+  "out": "\"\\ud996\\uddc1\\u9b44\\uda51\\udf1b\\u1f66\\udb49\\udf08\""
+ },
+ {
+  "in": "閇񤪯򎈩򼡺󮤍񬺋",
+  "out": "\"\\u9587\\ud952\\udeaf\\ud9f8\\ude29\\udab2\\udc7a\\udb7a\\udd0d\\ud973\\ude8b\""
+ },
+ {
+  "in": "󇉥󲉟񆻨𡟈񙣑񃟸ꉩ",
+  "out": "\"\\udadc\\ude65\\udb88\\ude5f\\ud8db\\udee8\\ud845\\udfc8\\ud926\\udcd1\\ud8cd\\udff8\\ua269\""
+ },
+ {
+  "in": "򍅙򱮰",
+  "out": "\"\\ud9f4\\udd59\\uda86\\udfb0\""
+ },
+ {
+  "in": "򧘽",
+  "out": "\"\\uda5d\\ude3d\""
+ },
+ {
+  "in": "񫰽覴񺙾􊿂򃟖񞵔򁟗񩷁",
+  "out": "\"\\ud96f\\udc3d\\u89b4\\ud9a9\\ude7e\\udbeb\\udfc2\\ud9cd\\udfd6\\ud93b\\udd54\\ud9c5\\udfd7\\ud967\\uddc1\""
+ },
+ {
+  "in": "󞎼򮙫綯񻥌򚏠񾳢󾵺􈸝򞧳񞄰",
+  "out": "\"\\udb38\\udfbc\\uda79\\ude6b\\u7daf\\ud9ae\\udd4c\\uda28\\udfe0\\ud9bb\\udce2\\udbbb\\udd7a\\udbe3\\ude1d\\uda3a\\uddf3\\ud938\\udd30\""
+ },
+ {
+  "in": "𣯫󂧤񤚇",
+  "out": "\"\\ud84e\\udfeb\\udaca\\udde4\\ud951\\ude87\""
+ },
+ {
+  "in": "",
+  "out": "\"\""
+ },
+ {
+  "in": "򷀙񜙛񙲡",
+  "out": "\"\\uda9c\\udc19\\ud931\\ude5b\\ud927\\udca1\""
+ },
+ {
+  "in": "򞽌󙭟򰃢񂊹񹺒畮",
+  "out": "\"\\uda3b\\udf4c\\udb26\\udf5f\\uda80\\udce2\\ud8c8\\udeb9\\ud9a7\\ude92\\u756e\""
+ },
+ {
+  "in": "𒁠󀮇󩥲󔆅򐬗񏼻􈂝򞱥򃑣󔥯􆶇",
+  "out": "\"\\ud808\\udc60\\udac2\\udf87\\udb66\\udd72\\udb10\\udd85\\uda02\\udf17\\ud8ff\\udf3b\\udbe0\\udc9d\\uda3b\\udc65\\ud9cd\\udc63\\udb12\\udd6f\\udbdb\\udd87\""
+ },
+ {
+  "in": "󈩣𯪦𒱷𻋐",
+  "out": "\"\\udae2\\ude63\\ud87e\\udea6\\ud80b\\udc77\\ud8ac\\uded0\""
+ },
+ {
+  "in": "",
+  "out": "\"\""
+ },
+ {
+  "in": "𾬲󒝸󇪔󾶜퓟񭌍􀞚򞨏򲅜𪐁󹂇󎡇",
+  "out": "\"\\ud8ba\\udf32\\udb09\\udf78\\udade\\ude94\\udbbb\\udd9c\\ud4df\\ud974\\udf0d\\udbc1\\udf9a\\uda3a\\ude0f\\uda88\\udd5c\\ud869\\udc01\\udba4\\udc87\\udafa\\udc47\""
+ },
+ {
+  "in": "􊾑󭋪񯪂񟋃",
+  "out": "\"\\udbeb\\udf91\\udb74\\udeea\\ud97e\\ude82\\ud93c\\udec3\""
+ },
+ {
+  "in": "𵎀롬񠰆󦰟𥍀񻺿򄟆񚻕𛳤򩁦󬂹񅍜",
+  "out": "\"\\ud894\\udf80\\ub86c\\ud943\\udc06\\udb5b\\udc1f\\ud854\\udf40\\ud9af\\udebf\\ud9d1\\udfc6\\ud92b\\uded5\\ud82f\\udce4\\uda64\\udc66\\udb70\\udcb9\\ud8d4\\udf5c\""
+ },
+ {
+  "in": "򑇑򒾤񛒏裣򨁬񘵲󳄯񋼠񇼑񃟃򋾵",
+  "out": "\"\\uda04\\uddd1\\uda0b\\udfa4\\ud92d\\udc8f\\u88e3\\uda60\\udc6c\\ud923\\udd72\\udb8c\\udd2f\\ud8ef\\udf20\\ud8df\\udf11\\ud8cd\\udfc3\\ud9ef\\udfb5\""
+ },
+ {
+  "in": "񅉡𡬉򓱝흪𛟜𬽖󋤰󊸾𮊙",
+  "out": "\"\\ud8d4\\ude61\\ud846\\udf09\\uda0f\\udc5d\\ud76a\\ud82d\\udfdc\\ud873\\udf56\\udaee\\udd30\\udaeb\\ude3e\\ud878\\ude99\""
+ },
+ {
+  "in": "𑞞𢿽񸏚𤞒",
+  "out": "\"\\ud805\\udf9e\\ud84b\\udffd\\ud9a0\\udfda\\ud851\\udf92\""
+ },
+ {
+  "in": "𜌻􂬘󌢽󆮤",
+  "out": "\"\\ud830\\udf3b\\udbca\\udf18\\udaf2\\udcbd\\udada\\udfa4\""
+ },
+ {
+  "in": "򔅮󑴩񦤐↊",
+  "out": "\"\\uda10\\udd6e\\udb07\\udd29\\ud95a\\udd10\\u218a\""
+ },
+ {
+  "in": "񏃥򹀣𧚌󱜭􉯼򝮙􂁥񾻫󢘨",
+  "out": "\"\\ud8fc\\udce5\\udaa4\\udc23\\ud85d\\ude8c\\udb85\\udf2d\\udbe6\\udffc\\uda36\\udf99\\udbc8\\udc65\\ud9bb\\udeeb\\udb49\\ude28\""
+ },
+ {
+  "in": "񗙒𖭃򓙱򰒉񧋟񺮃",
+  "out": "\"\\ud91d\\ude52\\ud81a\\udf43\\uda0d\\ude71\\uda81\\udc89\\ud95c\\udedf\\ud9aa\\udf83\""
+ },
+ {
+  "in": "𨸠󣼃𖄂",
+  "out": "\"\\ud863\\ude20\\udb4f\\udf03\\ud818\\udd02\""
+ },
+ {
+  "in": "񇬏𧝇𨔵񇛶𔞓􊧑",
+  "out": "\"\\ud8de\\udf0f\\ud85d\\udf47\\ud861\\udd35\\ud8dd\\udef6\\ud811\\udf93\\udbea\\uddd1\""
+ },
+ {
+  "in": "􏀛",
+  "out": "\"\\udbfc\\udc1b\""
+ },
+ {
+  "in": "􀦌𸿮𷙩",
+  "out": "\"\\udbc2\\udd8c\\ud8a3\\udfee\\ud89d\\ude69\""
+ },
+ {
+  "in": "񓛈",
+  "out": "\"\\ud90d\\udec8\""
+ },
+ {
+  "in": "򹾫𤴣򍩎򮰳󶃕􎃢􊙀𠻚",
+  "out": "\"\\udaa7\\udfab\\ud853\\udd23\\ud9f6\\ude4e\\uda7b\\udc33\\udb98\\udcd5\\udbf8\\udce2\\udbe9\\ude40\\ud843\\udeda\""
+ },
+ {
+  "in": "󈱫񃵬򖒎򤷯񸶾",
+  "out": "\"\\udae3\\udc6b\\ud8cf\\udd6c\\uda19\\udc8e\\uda53\\uddef\\ud9a3\\uddbe\""
+ },
+ {
+  "in": "򥏼񢠘󠆹",
+  "out": "\"\\uda54\\udffc\\ud94a\\udc18\\udb40\\uddb9\""
+ },
+ {
+  "in": "򇶗",
+  "out": "\"\\ud9df\\udd97\""
+ },
+ {
+  "in": "󟽻󈢌񅼼𛾯񱯬񹠌򔨅󶣠",
+  "out": "\"\\udb3f\\udf7b\\udae2\\udc8c\\ud8d7\\udf3c\\ud82f\\udfaf\\ud986\\udfec\\ud9a6\\udc0c\\uda12\\ude05\\uf46c\\udb9a\\udce0\""
+ },
+ {
+  "in": "𙁠򩎌󨚿񐍌󪢴񀿞괲𡟋񴮉",
+  "out": "\"\\ud824\\udc60\\uda64\\udf8c\\udb61\\udebf\\ud900\\udf4c\\udb6a\\udcb4\\ud8c3\\udfde\\uad32\\ud845\\udfcb\\ud992\\udf89\""
+ },
+ {
+  "in": "񁷸𣂗뱞񽚙󷤓󘎇󆭟󬎏򰋞񩸕",
+  "out": "\"\\ud8c7\\uddf8\\ud84c\\udc97\\ubc5e\\ud9b5\\ude99\\udb9e\\udd13\\udb20\\udf87\\udada\\udf5f\\udb70\\udf8f\\uda80\\udede\\ud967\\ude15\""
+ },
+ {
+  "in": "򭯖򙗩򫓓򫖡󆥏",
+  "out": "\"\\uda76\\udfd6\\uda25\\udde9\\uda6d\\udcd3\\uda6d\\udda1\\udada\\udd4f\""
+ },
+ {
+  "in": "񢻾򁥤󫰑􍽪񲄳󭥫򧡧󂥒󴈋򖎕𵨃",
+  "out": "\"\\ud94b\\udefe\\ud9c6\\udd64\\udb6f\\udc11\\udbf7\\udf6a\\ud988\\udd33\\udb76\\udd6b\\uda5e\\udc67\\udaca\\udd52\\udb90\\ude0b\\uda18\\udf95\\ud896\\ude03\""
+ },
+ {
+  "in": "񝋶𴁟򉝟",
+  "out": "\"\\ud934\\udef6\\ud890\\udc5f\\ud9e5\\udf5f\""
+ },
+ {
+  "in": "󶫊򗨘󤥠𝛪򬌸񅻮򁑌򘆬",
+  "out": "\"\\udb9a\\udeca\\uda1e\\ude18\\udb52\\udd60\\ud835\\udeea\\uda70\\udf38\\ud8d7\\udeee\\ud9c5\\udc4c\\uda20\\uddac\""
+ },
+ {
+  "in": "󑩜񉅄𵃱󀓲",
+  "out": "\"\\udb06\\ude5c\\ud8e4\\udd44\\ud894\\udcf1\\udac1\\udcf2\""
+ },
+ {
+  "in": "󘇼𩛒񋹏򪜵𚡉񱐅𩎨",
+  "out": "\"\\udb20\\uddfc\\ud865\\uded2\\ud8ef\\ude4f\\uda69\\udf35\\ud82a\\udc49\\ud985\\udc05\\ud864\\udfa8\""
+ },
+ {
+  "in": "󶣇󟂆𖚄󲦙򰌌",
+  "out": "\"\\udb9a\\udcc7\\udb3c\\udc86\\ud819\\ude84\\udb8a\\udd99\\uda80\\udf0c\""
+ },
+ {
+  "in": "򉿛򅨄􎴄𠻒",
+  "out": "\"\\ud9e7\\udfdb\\ud9d6\\ude04\\udbfb\\udd04\\ud843\\uded2\""
+ },
+ {
+  "in": "𦄿𘶔򴮞",
+  "out": "\"\\ud858\\udd3f\\ud823\\udd94\\uda92\\udf9e\""
+ },
+ {
+  "in": "󕡴󢀛򤂌񗓛󐗌󹖣򡐜񃀙񎏢",
+  "out": "\"\\udb16\\udc74\\udb48\\udc1b\\uda50\\udc8c\\ud91d\\udcdb\\udb01\\uddcc\\udba5\\udda3\\uda45\\udc1c\\ud8cc\\udc19\\ud8f8\\udfe2\""
+ },
+ {
+  "in": "񄽊󼪙򆐺򹋐򔉧",
+  "out": "\"\\ud8d3\\udf4a\\udbb2\\ude99\\ud9d9\\udc3a\\udaa4\\uded0\\uda10\\ude67\""
+ },
+ {
+  "in": "𺚲񠛱򳈐񹅂᚝󍤃񶉛򩻸񯑱𚋎򓞸",
+  "out": "\"\\ud8a9\\udeb2\\ud941\\udef1\\uda8c\\ude10\\ud9a4\\udd42\\u169d\\udaf6\\udd03\\ud998\\ude5b\\uda67\\udef8\\ud97d\\udc71\\ud828\\udece\\uda0d\\udfb8\""
+ },
+ {
+  "in": "􆣮񄏞",
+  "out": "\"\\udbda\\udcee\\ud8d0\\udfde\""
+ },
+ {
+  "in": "",
+  "out": "\"\""
+ },
+ {
+  "in": "񤼗򰷪쀉",
+  "out": "\"\\ud953\\udf17\\uda83\\uddea\\uc009\""
+ },
+ {
+  "in": "󒫎",
+  "out": "\"\\udb0a\\udece\""
+ },
+ {
+  "in": "󝞛󑍾󻫕劐",
+  "out": "\"\\udb35\\udf9b\\udb04\\udf7e\\udbae\\uded5\\u5290\""
+ },
+ {
+  "in": "󷤄򯀗񝱐",
+  "out": "\"\\udb9e\\udd04\\uda7c\\udc17\\ud937\\udc50\""
+ },
+ {
+  "in": "񓧲򏛋",
+  "out": "\"\\ud90e\\uddf2\\ud9fd\\udecb\""
+ },
+ {
+  "in": "򼼐󍠿𛣤𩤍󆔗𞫛򺞌𡣕󕆳𔧑",
+  "out": "\"\\udab3\\udf10\\udaf6\\udc3f\\ud82e\\udce4\\ud866\\udd0d\\udad9\\udd17\\ud83a\\udedb\\udaa9\\udf8c\\ud846\\udcd5\\udb14\\uddb3\\ud812\\uddd1\""
+ },
+ {
+  "in": "񷞲𚊅𓃫񥐼𒡭󆛈񙲛󵉱􉇢񪕭",
+  "out": "\"\\ud99d\\udfb2\\ud828\\ude85\\ud80c\\udceb\\ud955\\udc3c\\ud80a\\udc6d\\udad9\\udec8\\ud927\\udc9b\\udb94\\ude71\\udbe4\\udde2\\ud969\\udd6d\""
+ },
+ {
+  "in": "񅎖򷮆򗉺􍊠𰡌󠚂񖲚󲺕񙹫񂄭񱃊򽚴",
+  "out": "\"\\ud8d4\\udf96\\uda9e\\udf86\\uda1c\\ude7a\\udbf4\\udea0\\ud882\\udc4c\\udb41\\ude82\\ud91b\\udc9a\\udb8b\\ude95\\ud927\\ude6b\\ud8c8\\udd2d\\ud984\\udcca\\udab5\\udeb4\""
+ },
+ {
+  "in": "󎁸𒺒򿫃񯆻񎶚땢񎎽",
+  "out": "\"\\udaf8\\udc78\\ud80b\\ude92\\udabe\\udec3\\ud97c\\uddbb\\ud8fb\\udd9a\\ub562\\ud8f8\\udfbd\""
+ },
+ {
+  "in": "񉜺񩺻񘕳眪",
+  "out": "\"\\ud8e5\\udf3a\\ud967\\udebb\\ud921\\udd73\\u772a\""
+ },
+ {
+  "in": "񚢟󽈂󍯢",
+  "out": "\"\\ud92a\\udc9f\\udbb4\\ude02\\udaf6\\udfe2\""
+ },
+ {
+  "in": "񚘎󿟞",
+  "out": "\"\\ud929\\ude0e\\udbbd\\udfde\""
+ },
+ {
+  "in": "񆨚󝂢􇇦󒈍🬇ｃ񷬩",
+  "out": "\"\\ud8da\\ude1a\\udb34\\udca2\\udbdc\\udde6\\udb08\\ude0d\\ud83e\\udf07\\uff43\\ud99e\\udf29\""
+ },
+ {
+  "in": "񢾪􈺲",
+  "out": "\"\\ud94b\\udfaa\\udbe3\\udeb2\""
+ },
+ {
+  "in": "򲾮򆓧򑒛󜷡􇤪",
+  "out": "\"\\uda8b\\udfae\\ud9d9\\udce7\\uda05\\udc9b\\udb33\\udde1\\udbde\\udd2a\""
+ },
+ {
+  "in": "򦾄񉂏󇨽絗򷫧𒪼",
+  "out": "\"\\uda5b\\udf84\\ud8e4\\udc8f\\udade\\ude3d\\u7d57\\uda9e\\udee7\\ud80a\\udebc\""
+ },
+ {
+  "in": "𝶆𘒴􆨘􅟭",
+  "out": "\"\\ud837\\udd86\\ud821\\udcb4\\udbda\\ude18\\udbd5\\udfed\""
+ },
+ {
+  "in": "􃜮𰖤񇘊򌝶𙀽󴳆򺮉􅜙򯊤񝤰",
+  "out": "\"\\udbcd\\udf2e\\ud881\\udda4\\ud8dd\\ude0a\\ud9f1\\udf76\\ud824\\udc3d\\udb93\\udcc6\\udaaa\\udf89\\udbd5\\udf19\\uda7c\\udea4\\ud936\\udd30\""
+ },
+ {
+  "in": "󂕴󕔺񾸺",
+  "out": "\"\\udac9\\udd74\\udb15\\udd3a\\ud9bb\\ude3a\""
+ },
+ {
+  "in": "򛣶򋌷󥏰",
+  "out": "\"\\uda2e\\udcf6\\ud9ec\\udf37\\udb54\\udff0\""
+ },
+ {
+  "in": "𻃊𪷉󴣵󬮐򞤅񌬎",
+  "out": "\"\\ud8ac\\udcca\\ud86b\\uddc9\\udb92\\udcf5\\udb72\\udf90\\uda3a\\udd05\\ud8f2\\udf0e\""
+ },
+ {
+  "in": "񐱯",
+  "out": "\"\\ud903\\udc6f\""
+ },
+ {
+  "in": "",
+  "out": "\"\""
+ },
+ {
+  "in": "􎓋𙞬󴮄򩠟񠐌ⴀ򘴵񯺞񾮩򱅭󑹩",
+  "out": "\"\\udbf9\\udccb\\ud825\\udfac\\udb92\\udf84\\uda66\\udc1f\\ud941\\udc0c\\u2d00\\uda23\\udd35\\ud97f\\ude9e\\ud9ba\\udfa9\\uda84\\udd6d\\udb07\\ude69\""
+ },
+ {
+  "in": "𺅥򸝶񀾚󵕤񴨕󼠋􉛓򣫺񃷤벁򖤸",
+  "out": "\"\\ud8a8\\udd65\\udaa1\\udf76\\ud8c3\\udf9a\\udb95\\udd64\\ud992\\ude15\\udbb2\\udc0b\\udbe5\\uded3\\uda4e\\udefa\\ud8cf\\udde4\\ubc81\\uda1a\\udd38\""
+ },
+ {
+  "in": "񂆈󚨈񥄾򤶇򃱂񕞶򼞰󕎜󷃔񤭔𫄴񼐙",
+  "out": "\"\\ud8c8\\udd88\\udb2a\\ude08\\ud954\\udd3e\\uda53\\udd87\\ud9cf\\udc42\\ud915\\udfb6\\udab1\\udfb0\\udb14\\udf9c\\udb9c\\udcd4\\ud952\\udf54\\ud86c\\udd34\\ud9b1\\udc19\""
+ },
+ {
+  "in": "񖖑",
+  "out": "\"\\ud919\\udd91\""
+ },
+ {
+  "in": "񇔽򒇎",
+  "out": "\"\\ud8dd\\udd3d\\uda08\\uddce\""
+ },
+ {
+  "in": "뫥𣷱󇓛􅔩󹩙򘤛包𞶑򇝽󸷠",
+  "out": "\"\\ubae5\\ud84f\\uddf1\\udadd\\udcdb\\ue756\\udbd5\\udd29\\udba6\\ude59\\uda22\\udd1b\\ud87e\\udc29\\ud83b\\udd91\\ud9dd\\udf7d\\udba3\\udde0\""
+ },
+ {
+  "in": "􃤦𕞹掫񆹚󱲖񖐕",
+  "out": "\"\\udbce\\udd26\\ud815\\udfb9\\u63ab\\ud8db\\ude5a\\udb87\\udc96\\ud919\\udc15\""
+ },
+ {
+  "in": "",
+  "out": "\"\""
+ },
+ {
+  "in": "𔈤􊨉",
+  "out": "\"\\ud810\\ude24\\udbea\\ude09\""
+ },
+ {
+  "in": "򸀺񲏟񁠨򮋹񖰨񜟪򉬀􎬚",
+  "out": "\"\\udaa0\\udc3a\\ud988\\udfdf\\ud8c6\\udc28\\uda78\\udef9\\ud91b\\udc28\\ud931\\udfea\\ud9e6\\udf00\\udbfa\\udf1a\""
+ },
+ {
+  "in": "𚲋򠒮񼢉򙀦𾺔񌽚𿃞",
+  "out": "\"\\ud82b\\udc8b\\uda41\\udcae\\ud9b2\\udc89\\uda24\\udc26\\ud8bb\\ude94\\ud8f3\\udf5a\\ud8bc\\udcde\""
+ },
+ {
+  "in": "",
+  "out": "\"\""
+ },
+ {
+  "in": "򈨱󛇾󺤑󇪉򥠋􈳹𺁯򰯻𶷰󻯐񹻲",
+  "out": "\"\\ud9e2\\ude31\\udb2c\\uddfe\\udbaa\\udd11\\udade\\ude89\\uda56\\udc0b\\udbe3\\udcf9\\ud8a8\\udc6f\\uda82\\udffb\\ud89b\\uddf0\\udbae\\udfd0\\ud9a7\\udef2\""
+ },
+ {
+  "in": "􉄕񝶃򛔆񻃂񹃮򔛪򪮴􆚑񁁍󘙣򑭻񅻠",
+  "out": "\"\\udbe4\\udd15\\ud937\\udd83\\uda2d\\udd06\\ud9ac\\udcc2\\ud9a4\\udcee\\uda11\\udeea\\uda6a\\udfb4\\udbd9\\ude91\\ud8c4\\udc4d\\udb21\\ude63\\uda06\\udf7b\\ud8d7\\udee0\""
+ },
+ {
+  "in": "⫑󇈳",
+  "out": "\"\\u2ad1\\udadc\\ude33\""
+ },
+ {
+  "in": "􆡞񹞑񔆉",
+  "out": "\"\\udbda\\udc5e\\ud9a5\\udf91\\ud910\\udd89\""
+ },
+ {
+  "in": "",
+  "out": "\"\""
+ },
+ {
+  "in": "􁹏񵵻",
+  "out": "\"\\udbc7\\ude4f\\ud997\\udd7b\""
+ },
+ {
+  "in": "񋆼",
+  "out": "\"\\ud8ec\\uddbc\""
+ },
+ {
+  "in": "𡞙𱔷󝁕񑁙⺿",
+  "out": "\"\\ud845\\udf99\\ud885\\udd37\\udb34\\udc55\\ud904\\udc59\\u2ebf\""
+ },
+ {
+  "in": "񣫠",
+  "out": "\"\\ud94e\\udee0\""
+ },
+ {
+  "in": "粓󧠏󌶵𔋯񬜑򳿇񫹽󍤧󋋬",
+  "out": "\"\\u7c93\\udb5e\\udc0f\\udaf3\\uddb5\\ud810\\udeef\\ud971\\udf11\\uda8f\\udfc7\\ud96f\\ude7d\\udaf6\\udd27\\udaec\\udeec\""
+ },
+ {
+  "in": "򣑜󂻮󬉛򐊹񱒗򈇒𝤍󪀐򳾺񳹃",
+  "out": "\"\\uda4d\\udc5c\\uf2f2\\ue811\\udacb\\udeee\\udb70\\ude5b\\uda00\\udeb9\\ud985\\udc97\\ud9e0\\uddd2\\ud836\\udd0d\\udb68\\udc10\\uda8f\\udfba\\ud98f\\ude43\""
+ },
+ {
+  "in": "󍎻򳾣񰷋󆷗𵽙񻶛򀉲",
+  "out": "\"\\udaf4\\udfbb\\uda8f\\udfa3\\ud983\\uddcb\\udadb\\uddd7\\ud897\\udf59\\ud9af\\udd9b\\ud9c0\\ude72\""
+ },
+ {
+  "in": "",
+  "out": "\"\""
+ },
+ {
+  "in": "򰒋𥀝󃛫惃𻥎󁵴򤿴􍓝򟏒󏫻𥳑񃃕",
+  "out": "\"\\uda81\\udc8b\\ud854\\udc1d\\udacd\\udeeb\\u60c3\\ud8ae\\udd4e\\udac7\\udd74\\uda53\\udff4\\udbf5\\udcdd\\uda3c\\udfd2\\udafe\\udefb\\ud857\\udcd1\\ud8cc\\udcd5\""
+ },
+ {
+  "in": "󳴈􊎀򮄊񓁃򡂵󏅟𣼴𢔷񸓡򖲐򋓚􃊋",
+  "out": "\"\\udb8f\\udd08\\udbe8\\udf80\\uda78\\udd0a\\ud90c\\udc43\\uda44\\udcb5\\udafc\\udd5f\\ud84f\\udf34\\ud849\\udd37\\ud9a1\\udce1\\uda1b\\udc90\\ud9ed\\udcda\\udbcc\\ude8b\""
+ },
+ {
+  "in": "𣥺󃧘򳈜󕛨򦖱񴿟񑡲န",
+  "out": "\"\\ud84e\\udd7a\\udace\\uddd8\\uda8c\\ude1c\\udb15\\udee8\\uda59\\uddb1\\ud993\\udfdf\\ud906\\udc72\\uf41e\\u1014\""
+ },
+ {
+  "in": "𐭻󦎩򍙮􇩑񟵜",
+  "out": "\"\\ud802\\udf7b\\udb58\\udfa9\\uf200\\ud9f5\\ude6e\\udbde\\ude51\\ud93f\\udd5c\""
+ },
+ {
+  "in": "򍀮򻳛󐏸󨗓򛰬򐫰򣕇񥹾򾪂蔭񔄱",
+  "out": "\"\\ud9f4\\udc2e\\udaaf\\udcdb\\udb00\\udff8\\udb61\\uddd3\\uda2f\\udc2c\\uda02\\udef0\\uda4d\\udd47\\ud957\\ude7e\\udaba\\ude82\\u852d\\ud910\\udd31\""
+ },
+ {
+  "in": "򟰪󜮠𯐽󀂏󠻢𨝈󲺐􉜐𝏋",
+  "out": "\"\\uda3f\\udc2a\\udb32\\udfa0\\ud87d\\udc3d\\udac0\\udc8f\\udb43\\udee2\\ud861\\udf48\\udb8b\\ude90\\udbe5\\udf10\\ud834\\udfcb\""
+ },
+ {
+  "in": "󍻸򯉢퉔񼮳񠏤񡽙󝉒",
+  "out": "\"\\udaf7\\udef8\\uda7c\\ude62\\ud254\\ud9b2\\udfb3\\ud940\\udfe4\\ud947\\udf59\\udb34\\ude52\""
+ },
+ {
+  "in": "񷵸󛖟򭳒񧱺򬔟򩄽󼾬󩲗񔀤񅔣񹷼",
+  "out": "\"\\ud99f\\udd78\\udb2d\\udd9f\\uda77\\udcd2\\ud95f\\udc7a\\uda71\\udd1f\\uda64\\udd3d\\udbb3\\udfac\\udb67\\udc97\\ud910\\udc24\\ud8d5\\udd23\\ud9a7\\uddfc\""
+ },
+ {
+  "in": "򁼻񷻊򜞆󈓵򲍊",
+  "out": "\"\\ud9c7\\udf3b\\ud99f\\udeca\\uda31\\udf86\\udae1\\udcf5\\uda88\\udf4a\""
+ },
+ {
+  "in": "󹲬󤈊򙬭ࣦ򁅞񳖓򮻙󝐖񌪯򡤓",
+  "out": "\"\\udba7\\udcac\\udb50\\ude0a\\uda26\\udf2d\\u08e6\\ud9c4\\udd5e\\ud98d\\udd93\\uda7b\\uded9\\udb35\\udc16\\ud8f2\\udeaf\\uda46\\udd13\""
+ },
+ {
+  "in": "󝡦𫍈񀩯񣋬񷸳񁜸",
+  "out": "\"\\udb36\\udc66\\ud86c\\udf48\\ud8c2\\ude6f\\ud94c\\udeec\\ud99f\\ude33\\ud8c5\\udf38\""
+ },
+ {
+  "in": "񆗓򊀜𣭠🛖񕹃𰚻񓳗𿘿򤴺𬯒",
+  "out": "\"\\ud8d9\\uddd3\\ud9e8\\udc1c\\ud84e\\udf60\\ud83d\\uded6\\ud917\\ude43\\ud881\\udebb\\ud90f\\udcd7\\ud8bd\\ude3f\\uda53\\udd3a\\ud872\\udfd2\""
+ },
+ {
+  "in": "򒜮󴰀򆢬򩎍􌊋򳡞􈋃򭾽񚃴򷥫󗦁",
+  "out": "\"\\uda09\\udf2e\\udb93\\udc00\\ud9da\\udcac\\uda64\\udf8d\\udbf0\\ude8b\\uda8e\\udc5e\\udbe0\\udec3\\uda77\\udfbd\\ud928\\udcf4\\uda9e\\udd6b\\udb1e\\udd81\""
+ },
+ {
+  "in": "Უ",
+  "out": "\"\\u1ca3\""
+ },
+ {
+  "in": "󋏠𘷭󽧩󨆺򴈊񑀄򡣥",
+  "out": "\"\\udaec\\udfe0\\ud823\\udded\\udbb6\\udde9\\udb60\\uddba\\uda90\\ude0a\\ud904\\udc04\\uda46\\udce5\""
+ },
+ {
+  "in": "𥋈󛑪򀋾􈡦󺦣񏡸㴖񈁙𰚛񀼕񔖆",
+  "out": "\"\\ud854\\udec8\\udb2d\\udc6a\\ud9c0\\udefe\\udbe2\\udc66\\udbaa\\udda3\\ud8fe\\udc78\\u3d16\\ud8e0\\udc59\\ud881\\ude9b\\ud8c3\\udf15\\ud911\\udd86\""
+ },
+ {
+  "in": "𾭤񘒍񇀤񁑓򋁅򟬾򦛌屛𥥶􌍰񾔵",
+  "out": "\"\\ud8ba\\udf64\\ud921\\udc8d\\ud8dc\\udc24\\ud8c5\\udc53\\ud9ec\\udc45\\uda3e\\udf3e\\uda59\\udecc\\u5c5b\\ud856\\udd76\\udbf0\\udf70\\ud9b9\\udd35\""
+ },
+ {
+  "in": "􂙦򜼛󚇢񚺉𾲔",
+  "out": "\"\\udbc9\\ude66\\uda33\\udf1b\\udb28\\udde2\\ud92b\\ude89\\ud8bb\\udc94\""
+ },
+ {
+  "in": "𪅇",
+  "out": "\"\\ud868\\udd47\""
+ },
+ {
+  "in": "񄺠򳹰󠷤",
+  "out": "\"\\ud8d3\\udea0\\uda8f\\ude70\\udb43\\udde4\""
+ }
+]

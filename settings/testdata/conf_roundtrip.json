@@ -1,0 +1,92 @@
+[
+ {
+  "name": "real_3_8_3",
+  "note": "the file 3.8.3 writes on a fresh Linux install",
+  "input": "{\n \"image\": \"kathara/base\",\n \"manager_type\": \"docker\",\n \"terminal\": \"/usr/bin/xterm\",\n \"open_terminals\": true,\n \"device_shell\": \"/bin/bash\",\n \"net_prefix\": \"kathara\",\n \"device_prefix\": \"kathara\",\n \"debug_level\": \"INFO\",\n \"print_startup_log\": true,\n \"enable_ipv6\": false,\n \"volume_mount_policy\": \"Always\",\n \"last_checked\": 1785923124.0260758,\n \"hosthome_mount\": false,\n \"shared_mount\": true,\n \"image_update_policy\": \"Prompt\",\n \"shared_cds\": 1,\n \"remote_url\": null,\n \"cert_path\": null,\n \"network_plugin\": \"kathara/katharanp_vde\"\n}",
+  "output": "{\n \"image\": \"kathara/base\",\n \"manager_type\": \"docker\",\n \"terminal\": \"/usr/bin/xterm\",\n \"open_terminals\": true,\n \"device_shell\": \"/bin/bash\",\n \"net_prefix\": \"kathara\",\n \"device_prefix\": \"kathara\",\n \"debug_level\": \"INFO\",\n \"print_startup_log\": true,\n \"enable_ipv6\": false,\n \"volume_mount_policy\": \"Always\",\n \"last_checked\": 1785923124.0260758,\n \"hosthome_mount\": false,\n \"shared_mount\": true,\n \"image_update_policy\": \"Prompt\",\n \"shared_cds\": 1,\n \"remote_url\": null,\n \"cert_path\": null,\n \"network_plugin\": \"kathara/katharanp_vde\"\n}"
+ },
+ {
+  "name": "unknown_keys",
+  "note": "unknown keys are ignored on load and dropped on save",
+  "input": "{\n \"image\": \"kathara/base\",\n \"manager_type\": \"docker\",\n \"terminal\": \"/usr/bin/xterm\",\n \"open_terminals\": true,\n \"device_shell\": \"/bin/bash\",\n \"net_prefix\": \"kathara\",\n \"device_prefix\": \"kathara\",\n \"debug_level\": \"INFO\",\n \"print_startup_log\": true,\n \"enable_ipv6\": false,\n \"volume_mount_policy\": \"Always\",\n \"last_checked\": 1785923124.0260758,\n \"hosthome_mount\": false,\n \"shared_mount\": true,\n \"image_update_policy\": \"Prompt\",\n \"shared_cds\": 1,\n \"remote_url\": null,\n \"cert_path\": null,\n \"network_plugin\": \"kathara/katharanp_vde\",\n \"unknown_key\": \"hello\",\n \"another\": [\n  1,\n  2\n ],\n \"addons\": \"x\"\n}",
+  "output": "{\n \"image\": \"kathara/base\",\n \"manager_type\": \"docker\",\n \"terminal\": \"/usr/bin/xterm\",\n \"open_terminals\": true,\n \"device_shell\": \"/bin/bash\",\n \"net_prefix\": \"kathara\",\n \"device_prefix\": \"kathara\",\n \"debug_level\": \"INFO\",\n \"print_startup_log\": true,\n \"enable_ipv6\": false,\n \"volume_mount_policy\": \"Always\",\n \"last_checked\": 1785923124.0260758,\n \"hosthome_mount\": false,\n \"shared_mount\": true,\n \"image_update_policy\": \"Prompt\",\n \"shared_cds\": 1,\n \"remote_url\": null,\n \"cert_path\": null,\n \"network_plugin\": \"kathara/katharanp_vde\"\n}"
+ },
+ {
+  "name": "switch_to_kubernetes",
+  "note": "docker addon keys are replaced by the kubernetes ones",
+  "input": "{\n \"image\": \"kathara/base\",\n \"manager_type\": \"kubernetes\",\n \"terminal\": \"/usr/bin/xterm\",\n \"open_terminals\": true,\n \"device_shell\": \"/bin/bash\",\n \"net_prefix\": \"kathara\",\n \"device_prefix\": \"kathara\",\n \"debug_level\": \"INFO\",\n \"print_startup_log\": true,\n \"enable_ipv6\": false,\n \"volume_mount_policy\": \"Always\",\n \"last_checked\": 1785923124.0260758,\n \"hosthome_mount\": false,\n \"shared_mount\": true,\n \"image_update_policy\": \"Prompt\",\n \"shared_cds\": 1,\n \"remote_url\": null,\n \"cert_path\": null,\n \"network_plugin\": \"kathara/katharanp_vde\"\n}",
+  "output": "{\n \"image\": \"kathara/base\",\n \"manager_type\": \"kubernetes\",\n \"terminal\": \"/usr/bin/xterm\",\n \"open_terminals\": true,\n \"device_shell\": \"/bin/bash\",\n \"net_prefix\": \"kathara\",\n \"device_prefix\": \"kathara\",\n \"debug_level\": \"INFO\",\n \"print_startup_log\": true,\n \"enable_ipv6\": false,\n \"volume_mount_policy\": \"Always\",\n \"last_checked\": 1785923124.0260758,\n \"api_server_url\": null,\n \"api_token\": null,\n \"host_shared\": true,\n \"image_pull_policy\": \"IfNotPresent\",\n \"docker_config_json\": null\n}"
+ },
+ {
+  "name": "manager_type_capitalized",
+  "note": "str.capitalize() makes the addon lookup case-insensitive; check() still rejects it",
+  "input": "{\n \"image\": \"kathara/base\",\n \"manager_type\": \"DOCKER\",\n \"terminal\": \"/usr/bin/xterm\",\n \"open_terminals\": true,\n \"device_shell\": \"/bin/bash\",\n \"net_prefix\": \"kathara\",\n \"device_prefix\": \"kathara\",\n \"debug_level\": \"INFO\",\n \"print_startup_log\": true,\n \"enable_ipv6\": false,\n \"volume_mount_policy\": \"Always\",\n \"last_checked\": 1785923124.0260758,\n \"hosthome_mount\": false,\n \"shared_mount\": true,\n \"image_update_policy\": \"Prompt\",\n \"shared_cds\": 1,\n \"remote_url\": null,\n \"cert_path\": null,\n \"network_plugin\": \"kathara/katharanp_vde\"\n}",
+  "output": "{\n \"image\": \"kathara/base\",\n \"manager_type\": \"DOCKER\",\n \"terminal\": \"/usr/bin/xterm\",\n \"open_terminals\": true,\n \"device_shell\": \"/bin/bash\",\n \"net_prefix\": \"kathara\",\n \"device_prefix\": \"kathara\",\n \"debug_level\": \"INFO\",\n \"print_startup_log\": true,\n \"enable_ipv6\": false,\n \"volume_mount_policy\": \"Always\",\n \"last_checked\": 1785923124.0260758,\n \"hosthome_mount\": false,\n \"shared_mount\": true,\n \"image_update_policy\": \"Prompt\",\n \"shared_cds\": 1,\n \"remote_url\": null,\n \"cert_path\": null,\n \"network_plugin\": \"kathara/katharanp_vde\"\n}"
+ },
+ {
+  "name": "all_docker_nulls",
+  "note": "JSON null round-trips on every nullable key",
+  "input": "{\n \"image\": \"kathara/base\",\n \"manager_type\": \"docker\",\n \"terminal\": \"/usr/bin/xterm\",\n \"open_terminals\": true,\n \"device_shell\": \"/bin/bash\",\n \"net_prefix\": \"kathara\",\n \"device_prefix\": \"kathara\",\n \"debug_level\": \"INFO\",\n \"print_startup_log\": true,\n \"enable_ipv6\": false,\n \"volume_mount_policy\": \"Always\",\n \"last_checked\": 1785923124.0260758,\n \"hosthome_mount\": false,\n \"shared_mount\": true,\n \"image_update_policy\": \"Prompt\",\n \"shared_cds\": 1,\n \"remote_url\": null,\n \"cert_path\": null,\n \"network_plugin\": null\n}",
+  "output": "{\n \"image\": \"kathara/base\",\n \"manager_type\": \"docker\",\n \"terminal\": \"/usr/bin/xterm\",\n \"open_terminals\": true,\n \"device_shell\": \"/bin/bash\",\n \"net_prefix\": \"kathara\",\n \"device_prefix\": \"kathara\",\n \"debug_level\": \"INFO\",\n \"print_startup_log\": true,\n \"enable_ipv6\": false,\n \"volume_mount_policy\": \"Always\",\n \"last_checked\": 1785923124.0260758,\n \"hosthome_mount\": false,\n \"shared_mount\": true,\n \"image_update_policy\": \"Prompt\",\n \"shared_cds\": 1,\n \"remote_url\": null,\n \"cert_path\": null,\n \"network_plugin\": null\n}"
+ },
+ {
+  "name": "remote_docker",
+  "note": "non-null nullable keys",
+  "input": "{\n \"image\": \"kathara/base\",\n \"manager_type\": \"docker\",\n \"terminal\": \"/usr/bin/xterm\",\n \"open_terminals\": true,\n \"device_shell\": \"/bin/bash\",\n \"net_prefix\": \"kathara\",\n \"device_prefix\": \"kathara\",\n \"debug_level\": \"INFO\",\n \"print_startup_log\": true,\n \"enable_ipv6\": false,\n \"volume_mount_policy\": \"Always\",\n \"last_checked\": 1785923124.0260758,\n \"hosthome_mount\": false,\n \"shared_mount\": true,\n \"image_update_policy\": \"Prompt\",\n \"shared_cds\": 1,\n \"remote_url\": \"https://docker.example.com:2376\",\n \"cert_path\": \"/etc/ssl/ca.pem\",\n \"network_plugin\": \"kathara/katharanp_vde\"\n}",
+  "output": "{\n \"image\": \"kathara/base\",\n \"manager_type\": \"docker\",\n \"terminal\": \"/usr/bin/xterm\",\n \"open_terminals\": true,\n \"device_shell\": \"/bin/bash\",\n \"net_prefix\": \"kathara\",\n \"device_prefix\": \"kathara\",\n \"debug_level\": \"INFO\",\n \"print_startup_log\": true,\n \"enable_ipv6\": false,\n \"volume_mount_policy\": \"Always\",\n \"last_checked\": 1785923124.0260758,\n \"hosthome_mount\": false,\n \"shared_mount\": true,\n \"image_update_policy\": \"Prompt\",\n \"shared_cds\": 1,\n \"remote_url\": \"https://docker.example.com:2376\",\n \"cert_path\": \"/etc/ssl/ca.pem\",\n \"network_plugin\": \"kathara/katharanp_vde\"\n}"
+ },
+ {
+  "name": "non_ascii_terminal",
+  "note": "ensure_ascii escaping, surrogate pairs, and the characters Go escapes but Python does not",
+  "input": "{\n \"image\": \"kathara/base\",\n \"manager_type\": \"docker\",\n \"terminal\": \"/usr/bin/\\u00d6tzi's terminal \\\\ \\\"quoted\\\" <&> \\u2028 \\ud83d\\ude00\",\n \"open_terminals\": true,\n \"device_shell\": \"/bin/bash\",\n \"net_prefix\": \"kathara\",\n \"device_prefix\": \"kathara\",\n \"debug_level\": \"INFO\",\n \"print_startup_log\": true,\n \"enable_ipv6\": false,\n \"volume_mount_policy\": \"Always\",\n \"last_checked\": 1785923124.0260758,\n \"hosthome_mount\": false,\n \"shared_mount\": true,\n \"image_update_policy\": \"Prompt\",\n \"shared_cds\": 1,\n \"remote_url\": null,\n \"cert_path\": null,\n \"network_plugin\": \"kathara/katharanp_vde\"\n}",
+  "output": "{\n \"image\": \"kathara/base\",\n \"manager_type\": \"docker\",\n \"terminal\": \"/usr/bin/\\u00d6tzi's terminal \\\\ \\\"quoted\\\" <&> \\u2028 \\ud83d\\ude00\",\n \"open_terminals\": true,\n \"device_shell\": \"/bin/bash\",\n \"net_prefix\": \"kathara\",\n \"device_prefix\": \"kathara\",\n \"debug_level\": \"INFO\",\n \"print_startup_log\": true,\n \"enable_ipv6\": false,\n \"volume_mount_policy\": \"Always\",\n \"last_checked\": 1785923124.0260758,\n \"hosthome_mount\": false,\n \"shared_mount\": true,\n \"image_update_policy\": \"Prompt\",\n \"shared_cds\": 1,\n \"remote_url\": null,\n \"cert_path\": null,\n \"network_plugin\": \"kathara/katharanp_vde\"\n}"
+ },
+ {
+  "name": "docker_non_defaults",
+  "note": "every docker addon key off its default",
+  "input": "{\n \"image\": \"kathara/base\",\n \"manager_type\": \"docker\",\n \"terminal\": \"/usr/bin/xterm\",\n \"open_terminals\": true,\n \"device_shell\": \"/bin/bash\",\n \"net_prefix\": \"kathara\",\n \"device_prefix\": \"kathara\",\n \"debug_level\": \"INFO\",\n \"print_startup_log\": true,\n \"enable_ipv6\": false,\n \"volume_mount_policy\": \"Always\",\n \"last_checked\": 1785923124.0260758,\n \"hosthome_mount\": true,\n \"shared_mount\": false,\n \"image_update_policy\": \"Never\",\n \"shared_cds\": 3,\n \"remote_url\": null,\n \"cert_path\": null,\n \"network_plugin\": \"kathara/katharanp\"\n}",
+  "output": "{\n \"image\": \"kathara/base\",\n \"manager_type\": \"docker\",\n \"terminal\": \"/usr/bin/xterm\",\n \"open_terminals\": true,\n \"device_shell\": \"/bin/bash\",\n \"net_prefix\": \"kathara\",\n \"device_prefix\": \"kathara\",\n \"debug_level\": \"INFO\",\n \"print_startup_log\": true,\n \"enable_ipv6\": false,\n \"volume_mount_policy\": \"Always\",\n \"last_checked\": 1785923124.0260758,\n \"hosthome_mount\": true,\n \"shared_mount\": false,\n \"image_update_policy\": \"Never\",\n \"shared_cds\": 3,\n \"remote_url\": null,\n \"cert_path\": null,\n \"network_plugin\": \"kathara/katharanp\"\n}"
+ },
+ {
+  "name": "kubernetes_non_defaults",
+  "note": "every kubernetes addon key off its default",
+  "input": "{\n \"image\": \"kathara/base\",\n \"manager_type\": \"kubernetes\",\n \"terminal\": \"/usr/bin/xterm\",\n \"open_terminals\": true,\n \"device_shell\": \"/bin/bash\",\n \"net_prefix\": \"kathara\",\n \"device_prefix\": \"kathara\",\n \"debug_level\": \"INFO\",\n \"print_startup_log\": true,\n \"enable_ipv6\": false,\n \"volume_mount_policy\": \"Always\",\n \"last_checked\": 1785923124.0260758,\n \"hosthome_mount\": false,\n \"shared_mount\": true,\n \"image_update_policy\": \"Prompt\",\n \"shared_cds\": 1,\n \"remote_url\": null,\n \"cert_path\": null,\n \"network_plugin\": \"kathara/katharanp_vde\",\n \"api_server_url\": \"https://k8s.example.com:6443\",\n \"api_token\": \"tok\",\n \"host_shared\": false,\n \"image_pull_policy\": \"Always\",\n \"docker_config_json\": \"eyJhdXRocyI6IHt9fQ==\"\n}",
+  "output": "{\n \"image\": \"kathara/base\",\n \"manager_type\": \"kubernetes\",\n \"terminal\": \"/usr/bin/xterm\",\n \"open_terminals\": true,\n \"device_shell\": \"/bin/bash\",\n \"net_prefix\": \"kathara\",\n \"device_prefix\": \"kathara\",\n \"debug_level\": \"INFO\",\n \"print_startup_log\": true,\n \"enable_ipv6\": false,\n \"volume_mount_policy\": \"Always\",\n \"last_checked\": 1785923124.0260758,\n \"api_server_url\": \"https://k8s.example.com:6443\",\n \"api_token\": \"tok\",\n \"host_shared\": false,\n \"image_pull_policy\": \"Always\",\n \"docker_config_json\": \"eyJhdXRocyI6IHt9fQ==\"\n}"
+ },
+ {
+  "name": "only_last_checked",
+  "note": "every other key falls back to DEFAULTS (Linux terminal)",
+  "input": "{\n \"last_checked\": 1785923124.0260758\n}",
+  "output": "{\n \"image\": \"kathara/base\",\n \"manager_type\": \"docker\",\n \"terminal\": \"/usr/bin/xterm\",\n \"open_terminals\": true,\n \"device_shell\": \"/bin/bash\",\n \"net_prefix\": \"kathara\",\n \"device_prefix\": \"kathara\",\n \"debug_level\": \"INFO\",\n \"print_startup_log\": true,\n \"enable_ipv6\": false,\n \"volume_mount_policy\": \"Always\",\n \"last_checked\": 1785923124.0260758,\n \"hosthome_mount\": false,\n \"shared_mount\": true,\n \"image_update_policy\": \"Prompt\",\n \"shared_cds\": 1,\n \"remote_url\": null,\n \"cert_path\": null,\n \"network_plugin\": \"kathara/katharanp_vde\"\n}"
+ },
+ {
+  "name": "integral_last_checked",
+  "note": "repr() keeps the .0 on a whole-second float",
+  "input": "{\n \"image\": \"kathara/base\",\n \"manager_type\": \"docker\",\n \"terminal\": \"/usr/bin/xterm\",\n \"open_terminals\": true,\n \"device_shell\": \"/bin/bash\",\n \"net_prefix\": \"kathara\",\n \"device_prefix\": \"kathara\",\n \"debug_level\": \"INFO\",\n \"print_startup_log\": true,\n \"enable_ipv6\": false,\n \"volume_mount_policy\": \"Always\",\n \"last_checked\": 1785923124.0,\n \"hosthome_mount\": false,\n \"shared_mount\": true,\n \"image_update_policy\": \"Prompt\",\n \"shared_cds\": 1,\n \"remote_url\": null,\n \"cert_path\": null,\n \"network_plugin\": \"kathara/katharanp_vde\"\n}",
+  "output": "{\n \"image\": \"kathara/base\",\n \"manager_type\": \"docker\",\n \"terminal\": \"/usr/bin/xterm\",\n \"open_terminals\": true,\n \"device_shell\": \"/bin/bash\",\n \"net_prefix\": \"kathara\",\n \"device_prefix\": \"kathara\",\n \"debug_level\": \"INFO\",\n \"print_startup_log\": true,\n \"enable_ipv6\": false,\n \"volume_mount_policy\": \"Always\",\n \"last_checked\": 1785923124.0,\n \"hosthome_mount\": false,\n \"shared_mount\": true,\n \"image_update_policy\": \"Prompt\",\n \"shared_cds\": 1,\n \"remote_url\": null,\n \"cert_path\": null,\n \"network_plugin\": \"kathara/katharanp_vde\"\n}"
+ },
+ {
+  "name": "huge_last_checked",
+  "note": "repr() switches to scientific past decpt 16",
+  "input": "{\n \"image\": \"kathara/base\",\n \"manager_type\": \"docker\",\n \"terminal\": \"/usr/bin/xterm\",\n \"open_terminals\": true,\n \"device_shell\": \"/bin/bash\",\n \"net_prefix\": \"kathara\",\n \"device_prefix\": \"kathara\",\n \"debug_level\": \"INFO\",\n \"print_startup_log\": true,\n \"enable_ipv6\": false,\n \"volume_mount_policy\": \"Always\",\n \"last_checked\": 1e+17,\n \"hosthome_mount\": false,\n \"shared_mount\": true,\n \"image_update_policy\": \"Prompt\",\n \"shared_cds\": 1,\n \"remote_url\": null,\n \"cert_path\": null,\n \"network_plugin\": \"kathara/katharanp_vde\"\n}",
+  "output": "{\n \"image\": \"kathara/base\",\n \"manager_type\": \"docker\",\n \"terminal\": \"/usr/bin/xterm\",\n \"open_terminals\": true,\n \"device_shell\": \"/bin/bash\",\n \"net_prefix\": \"kathara\",\n \"device_prefix\": \"kathara\",\n \"debug_level\": \"INFO\",\n \"print_startup_log\": true,\n \"enable_ipv6\": false,\n \"volume_mount_policy\": \"Always\",\n \"last_checked\": 1e+17,\n \"hosthome_mount\": false,\n \"shared_mount\": true,\n \"image_update_policy\": \"Prompt\",\n \"shared_cds\": 1,\n \"remote_url\": null,\n \"cert_path\": null,\n \"network_plugin\": \"kathara/katharanp_vde\"\n}"
+ },
+ {
+  "name": "not_json",
+  "note": "SettingsError",
+  "input": "not json at all",
+  "error": "SettingsError: Settings file is not valid: Not a valid JSON. Fix it or delete it before launching."
+ },
+ {
+  "name": "json_list",
+  "note": "AttributeError: Python crashes on a non-object document",
+  "input": "[1, 2, 3]",
+  "error": "AttributeError: 'list' object has no attribute 'items'"
+ },
+ {
+  "name": "unknown_manager",
+  "note": "ClassNotFoundError out of the addon factory",
+  "input": "{\n \"image\": \"kathara/base\",\n \"manager_type\": \"podman\",\n \"terminal\": \"/usr/bin/xterm\",\n \"open_terminals\": true,\n \"device_shell\": \"/bin/bash\",\n \"net_prefix\": \"kathara\",\n \"device_prefix\": \"kathara\",\n \"debug_level\": \"INFO\",\n \"print_startup_log\": true,\n \"enable_ipv6\": false,\n \"volume_mount_policy\": \"Always\",\n \"last_checked\": 1785923124.0260758,\n \"hosthome_mount\": false,\n \"shared_mount\": true,\n \"image_update_policy\": \"Prompt\",\n \"shared_cds\": 1,\n \"remote_url\": null,\n \"cert_path\": null,\n \"network_plugin\": \"kathara/katharanp_vde\"\n}",
+  "error": "ClassNotFoundError: "
+ }
+]
