@@ -71,8 +71,8 @@ func TestWriteTarHeaderFields(t *testing.T) {
 	if len(got) != 2 {
 		t.Fatalf("member count = %d, want 2", len(got))
 	}
-	// Sorted by canonical name: "/a.txt" < "sub/win/b.txt".
-	wantNames := []string{"/a.txt", "sub/win/b.txt"}
+	// Caller order, not sorted order: the backslash entry was passed first.
+	wantNames := []string{"sub/win/b.txt", "/a.txt"}
 	for i, h := range got {
 		if h.Name != wantNames[i] {
 			t.Errorf("member %d name = %q, want %q", i, h.Name, wantNames[i])
@@ -96,42 +96,42 @@ func TestWriteTarHeaderFields(t *testing.T) {
 }
 
 func TestWriteTarOrdering(t *testing.T) {
-	// Ordering ruling: members come out in sorted CANONICAL-name order, not
-	// in caller order. Python iterates dict insertion order, so its output is
-	// call-site dependent; tar assigns no meaning to member order, so sorting
-	// stays inside the observable envelope and makes archives comparable.
+	// ORDERING.tsv (utils.py:452): "API takes ordered pairs; Python client must
+	// preserve caller order". Python iterates `guest_to_host.items()`, i.e.
+	// dict insertion order, and member order is observable — extraction is
+	// last-wins for two entries whose arcnames collide.
 	tests := []struct {
 		name    string
 		entries []TarEntry
 		want    []string
 	}{
 		{
-			name: "reverse input sorts",
+			name: "descending input stays descending",
 			entries: []TarEntry{
 				{Path: "/z", Content: []byte("z")},
 				{Path: "/m", Content: []byte("m")},
 				{Path: "/a", Content: []byte("a")},
 			},
-			want: []string{"/a", "/m", "/z"},
+			want: []string{"/z", "/m", "/a"},
 		},
 		{
-			name: "sorted on the canonical name, not the raw one",
+			name: "backslash entry keeps its slot",
 			entries: []TarEntry{
 				{Path: `sub\b`, Content: []byte("b")},
 				{Path: "sub/a", Content: []byte("a")},
 			},
-			want: []string{"sub/a", "sub/b"},
+			want: []string{"sub/b", "sub/a"},
 		},
 		{
-			name: "byte order, so uppercase precedes lowercase",
+			name: "case is not reordered either",
 			entries: []TarEntry{
 				{Path: "/b", Content: []byte("b")},
 				{Path: "/B", Content: []byte("B")},
 			},
-			want: []string{"/B", "/b"},
+			want: []string{"/b", "/B"},
 		},
 		{
-			name: "colliding canonical names both survive",
+			name: "colliding canonical names keep caller order, so extraction is last-wins on the later entry",
 			entries: []TarEntry{
 				{Path: `a\b`, Content: []byte("backslash")},
 				{Path: "a/b", Content: []byte("slash")},
@@ -158,42 +158,98 @@ func TestWriteTarOrdering(t *testing.T) {
 	}
 }
 
+// TestWriteTarCollidingNamesLastWins pins the consequence of caller order for
+// two paths that canonicalise to the same member name: `tarfile` writes both,
+// and an extractor keeps the *later* one. Python's later one is the later dict
+// insertion; this port's is the later slice element.
+func TestWriteTarCollidingNamesLastWins(t *testing.T) {
+	for _, tt := range []struct {
+		name    string
+		entries []TarEntry
+		want    string
+	}{
+		{"backslash first", []TarEntry{
+			{Path: `a\b`, Content: []byte("backslash")},
+			{Path: "a/b", Content: []byte("slash")},
+		}, "slash"},
+		{"slash first", []TarEntry{
+			{Path: "a/b", Content: []byte("slash")},
+			{Path: `a\b`, Content: []byte("backslash")},
+		}, "backslash"},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			var buf bytes.Buffer
+			if err := WriteTar(&buf, tt.entries); err != nil {
+				t.Fatal(err)
+			}
+			tr := tar.NewReader(bytes.NewReader(buf.Bytes()))
+			var last []byte
+			for {
+				h, err := tr.Next()
+				if err == io.EOF {
+					break
+				}
+				if err != nil {
+					t.Fatal(err)
+				}
+				if h.Name != "a/b" {
+					t.Fatalf("member name = %q, want %q", h.Name, "a/b")
+				}
+				body, err := io.ReadAll(tr)
+				if err != nil {
+					t.Fatal(err)
+				}
+				last = body
+			}
+			if string(last) != tt.want {
+				t.Errorf("last member content = %q, want %q", last, tt.want)
+			}
+		})
+	}
+}
+
 func TestWriteTarDeterministic(t *testing.T) {
-	// The point of the whole exercise: identical inputs, byte-identical
-	// archives, including the gzip wrapper (Python's stamps time.time() in the
-	// gzip MTIME field, so two Python calls seconds apart differ).
+	// Identical input, byte-identical archive, including the gzip wrapper.
+	// Python's wrapper is not reproducible at all: `w:gz` over a
+	// NamedTemporaryFile stamps time.time() into MTIME and the random temp
+	// basename into FNAME, so two Python calls on the same dict already differ
+	// (PROPOSED-DIVERGENCES.md).
 	entries := []TarEntry{
 		{Path: "/etc/frr/frr.conf", Content: []byte("hostname r1\n")},
 		{Path: "/hosthome/x", Content: bytes.Repeat([]byte("x"), 5000)},
 	}
-	shuffled := []TarEntry{entries[1], entries[0]}
 
 	a, err := PackFilesForTar(entries)
 	if err != nil {
 		t.Fatal(err)
 	}
-	b, err := PackFilesForTar(shuffled)
+	b, err := PackFilesForTar(entries)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if !bytes.Equal(a, b) {
-		t.Error("gzip output differs between two orderings of the same input")
+		t.Error("gzip output differs between two calls on the same input")
 	}
 
-	c, err := PackFilesForTarMap(map[string][]byte{
-		"/etc/frr/frr.conf": []byte("hostname r1\n"),
-		"/hosthome/x":       bytes.Repeat([]byte("x"), 5000),
-	})
+	// Reordering the caller's pairs must change the bytes: member order is
+	// carried, not canonicalised away.
+	shuffled := []TarEntry{entries[1], entries[0]}
+	s, err := PackFilesForTar(shuffled)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !bytes.Equal(a, c) {
-		t.Error("map entry point differs from slice entry point")
+	if bytes.Equal(a, s) {
+		t.Error("reordering the entries left the archive unchanged; caller order is being dropped")
 	}
 
 	// gzip MTIME lives at bytes 4..7 of the header and must be zero.
 	if !bytes.Equal(a[4:8], []byte{0, 0, 0, 0}) {
 		t.Errorf("gzip MTIME = % x, want zeroed", a[4:8])
+	}
+	// FLG is byte 3; bit 3 (FNAME) is what carries CPython's random
+	// NamedTemporaryFile basename. It must be clear.
+	if a[3]&0x08 != 0 {
+		t.Errorf("gzip FLG = %#02x, want the FNAME bit clear", a[3])
 	}
 
 	zr, err := gzip.NewReader(bytes.NewReader(a))

@@ -10,7 +10,6 @@ import (
 	"bytes"
 	"compress/gzip"
 	"io"
-	"sort"
 	"strings"
 	"time"
 )
@@ -48,7 +47,7 @@ func TarName(p string) string {
 }
 
 // PackFilesForTar is utils.pack_files_for_tar: a gzip-compressed tar carrying
-// one regular-file member per entry.
+// one regular-file member per entry, in the order the caller passed them.
 //
 // Header fields come straight from tarfile.TarInfo's defaults, which
 // pack_file_for_tar never overrides (verified: mode 0644, uid 0, gid 0,
@@ -56,17 +55,21 @@ func TarName(p string) string {
 // files only — it never adds a directory member, so there is no separate
 // directory mode to reproduce.
 //
-// Two deliberate divergences from Python, both for determinism:
+// The entry slice is the whole reason the signature is not a map: Python
+// iterates `guest_to_host.items()` in dict insertion order (utils.py:452), and
+// ORDERING.tsv row for utils.py:452 binds this port to "API takes ordered
+// pairs; Python client must preserve caller order". Member order is observable
+// — extraction is last-wins for two entries whose arcnames collide, which two
+// keys differing only in separator style do.
 //
-//  1. Member order is the sorted arcname, not the caller's map iteration
-//     order. Python iterates dict insertion order, so its output depends on
-//     call-site ordering; tar has no ordering semantics, so sorting is inside
-//     the observable envelope and makes archives comparable.
-//  2. The gzip header's MTIME field is zeroed. Python's `w:gz` stamps
-//     time.time() there, which makes two identical inputs produce different
-//     bytes seconds apart (verified: byte-identical across two calls == False).
-//     The tar payload underneath is already deterministic in Python; this
-//     extends that to the compressed wrapper.
+// The compressed wrapper is the one thing that is *not* byte-reproducible.
+// CPython builds it as `gzip.GzipFile(fileobj=NamedTemporaryFile(...))`, so
+// its header carries `time.time()` in MTIME and the random temp-file basename
+// in FNAME (measured: `tmpsuqwxwrx.tar`, different on every call). Two Python
+// calls on identical input already differ, so there is no Python byte string to
+// match; the Go writer emits neither field. Recorded in
+// PROPOSED-DIVERGENCES.md. The tar payload underneath — the layer both Docker
+// and Kubernetes decompress before extracting — is byte-identical.
 func PackFilesForTar(entries []TarEntry) ([]byte, error) {
 	var raw bytes.Buffer
 	if err := WriteTar(&raw, entries); err != nil {
@@ -87,21 +90,19 @@ func PackFilesForTar(entries []TarEntry) ([]byte, error) {
 	return out.Bytes(), nil
 }
 
-// PackFilesForTarMap is the map-shaped entry point matching the Python
-// signature pack_files_for_tar(guest_to_host: Dict[str, ...]).
-func PackFilesForTarMap(files map[string][]byte) ([]byte, error) {
-	return PackFilesForTar(entriesFromMap(files))
-}
-
-// WriteTar emits the uncompressed archive. It is exported because the
-// uncompressed stream is the layer that is byte-identical to Python's, and is
-// therefore what golden vectors compare.
+// WriteTar emits the uncompressed archive, one member per entry in slice
+// order. It is exported because the uncompressed stream is the layer that is
+// byte-identical to Python's, and is therefore what golden vectors compare.
+//
+// There is deliberately no map-shaped entry point. Python's parameter is a
+// dict and its iteration order is the caller's insertion order; a Go map has
+// no order to preserve, and ranging over one here would put an unordered
+// iteration on a path that reaches a container (PORT_SPEC §10, "Reject any
+// `for ... range` over a map whose iteration order can reach a container").
 func WriteTar(w io.Writer, entries []TarEntry) error {
-	sorted := canonicalize(entries)
-
 	counting := &countingWriter{w: w}
 	tw := tar.NewWriter(counting)
-	for _, e := range sorted {
+	for _, e := range entries {
 		hdr := &tar.Header{
 			Name:     TarName(e.Path),
 			Size:     int64(len(e.Content)),
@@ -125,35 +126,6 @@ func WriteTar(w io.Writer, entries []TarEntry) error {
 		return err
 	}
 	return padToRecord(counting)
-}
-
-// canonicalize applies the arcname transformation and sorts.
-//
-// Ordering ruling: sort by the CANONICAL (backslash-translated) name, because
-// that is the string that ends up in the header and therefore the only one a
-// consumer can observe. Two inputs that differ only in separator style then
-// produce the same order. The original path breaks ties so the result stays
-// total even when two distinct keys canonicalise to the same member name
-// (Python would emit both members too, last-one-wins on extraction).
-func canonicalize(entries []TarEntry) []TarEntry {
-	out := make([]TarEntry, len(entries))
-	copy(out, entries)
-	sort.SliceStable(out, func(i, j int) bool {
-		ni, nj := TarName(out[i].Path), TarName(out[j].Path)
-		if ni != nj {
-			return ni < nj
-		}
-		return out[i].Path < out[j].Path
-	})
-	return out
-}
-
-func entriesFromMap(files map[string][]byte) []TarEntry {
-	out := make([]TarEntry, 0, len(files))
-	for p, c := range files {
-		out = append(out, TarEntry{Path: p, Content: c})
-	}
-	return out
 }
 
 // padToRecord writes zero bytes until the stream length is a multiple of
