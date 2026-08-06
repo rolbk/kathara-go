@@ -8,3 +8,6 @@
 /python/build/
 __pycache__/
 *.egg-info/
+
+# compiled binaries
+tools/goldenharness/goldenharness
