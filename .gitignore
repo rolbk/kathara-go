@@ -3,6 +3,7 @@
 *.test
 # `go build ./...` drops main-package binaries in the repository root.
 /kathara
+!/kathara/
 /goldenharness
 /python/dist/
 /python/build/
