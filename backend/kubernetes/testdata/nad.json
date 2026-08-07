@@ -1,0 +1,14 @@
+{
+  "apiVersion": "k8s.cni.cncf.io/v1",
+  "kind": "NetworkAttachmentDefinition",
+  "metadata": {
+    "labels": {
+      "app": "kathara",
+      "name": "A"
+    },
+    "name": "netprefix-a"
+  },
+  "spec": {
+    "config": "{\n                            \"cniVersion\": \"0.3.0\",\n                            \"name\": \"a\",\n                            \"type\": \"megalos\",\n                            \"suffix\": \"FwFaxb\",\n                            \"vxlanId\": 1\n                        }"
+  }
+}

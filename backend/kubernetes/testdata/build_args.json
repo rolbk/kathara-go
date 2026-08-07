@@ -1,0 +1,87 @@
+{
+  "apiVersion": "apps/v1",
+  "kind": "Deployment",
+  "metadata": {
+    "labels": {
+      "app": "kathara",
+      "name": "test_device"
+    },
+    "name": "devprefix-test-device-ec84ad3b"
+  },
+  "spec": {
+    "replicas": 1,
+    "selector": {
+      "matchLabels": {
+        "app": "kathara",
+        "name": "test_device"
+      }
+    },
+    "template": {
+      "metadata": {
+        "annotations": {
+          "k8s.v1.cni.cncf.io/networks": "[]"
+        },
+        "deletionGracePeriodSeconds": 0,
+        "labels": {
+          "app": "kathara",
+          "name": "test_device"
+        }
+      },
+      "spec": {
+        "containers": [
+          {
+            "args": [
+              "-n",
+              "20",
+              "-c",
+              "10",
+              "-f",
+              "30"
+            ],
+            "env": [
+              {
+                "name": "_MEGALOS_SHELL",
+                "value": "/bin/bash"
+              }
+            ],
+            "image": "kathara/test",
+            "imagePullPolicy": "Always",
+            "lifecycle": {
+              "postStart": {
+                "exec": {
+                  "command": [
+                    "/bin/bash",
+                    "-c",
+                    "if [ -f \"/tmp/post_start\" ]; then exit; else touch /tmp/post_start; fi; ; rm -Rf /etc/bind/*; umount /etc/resolv.conf; umount /etc/hosts; if [ -f \"/tmp/kathara/hostlab.b64\" ]; then base64 -d /tmp/kathara/hostlab.b64 > /hostlab.tar.gz; tar xmfz /hostlab.tar.gz -C /; rm -f hostlab.tar.gz; fi; if [ -d \"/hostlab/test_device\" ]; then (cd /hostlab/test_device && tar c .) | (cd / && tar xhf - --no-same-owner --no-same-permissions); fi; if [ ! -s \"/etc/hosts\" ]; then echo '127.0.0.1 localhost' > /etc/hosts; echo '::1 localhost' >> /etc/hosts; echo '127.0.1.1 test_device' >> /etc/hosts; fi; if [ -d \"/var/www\" ]; then chmod -R 777 /var/www/*; fi; if [ -d \"/etc/quagga\" ]; then chown -R quagga:quagga /etc/quagga/; chmod 640 /etc/quagga/*; fi; if [ -d \"/etc/frr\" ]; then chown -R frr:frr /etc/frr/; chmod 640 /etc/frr/*; fi; if [ -f \"/hostlab/shared.startup\" ]; then chmod u+x /hostlab/shared.startup; sed -i \"1s;^;set -x\\n\\n;\" /hostlab/shared.startup; /hostlab/shared.startup &> /var/log/shared.log; fi; if [ -f \"/hostlab/test_device.startup\" ]; then chmod u+x /hostlab/test_device.startup; sed -i \"1s;^;set -x\\n\\n;\" /hostlab/test_device.startup; /hostlab/test_device.startup &> /var/log/startup.log; fi; ip route del default dev eth0 || true; ls; touch /tmp/EOS"
+                  ]
+                }
+              }
+            },
+            "name": "devprefix-test-device-ec84ad3b",
+            "resources": {
+              "limits": {
+                "cpu": "2000m",
+                "memory": "64M"
+              }
+            },
+            "securityContext": {
+              "privileged": true
+            },
+            "stdin": true,
+            "tty": true,
+            "volumeMounts": []
+          }
+        ],
+        "dnsConfig": {
+          "nameservers": [
+            "127.0.0.1"
+          ]
+        },
+        "dnsPolicy": "None",
+        "hostname": "devprefix-test-device-ec84ad3b",
+        "imagePullSecrets": [],
+        "volumes": []
+      }
+    }
+  }
+}

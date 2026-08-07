@@ -1,0 +1,187 @@
+{
+  "split": [
+    {
+      "input": "ls",
+      "output": [
+        "ls"
+      ]
+    },
+    {
+      "input": "ls -la",
+      "output": [
+        "ls",
+        "-la"
+      ]
+    },
+    {
+      "input": "echo 'a b'",
+      "output": [
+        "echo",
+        "a b"
+      ]
+    },
+    {
+      "input": "echo \"a b\"",
+      "output": [
+        "echo",
+        "a b"
+      ]
+    },
+    {
+      "input": "a'b'c",
+      "output": [
+        "abc"
+      ]
+    },
+    {
+      "input": "a\\ b",
+      "output": [
+        "a b"
+      ]
+    },
+    {
+      "input": "'a\\b'",
+      "output": [
+        "a\\b"
+      ]
+    },
+    {
+      "input": "\"a\\\"b\"",
+      "output": [
+        "a\"b"
+      ]
+    },
+    {
+      "input": "\"a\\b\"",
+      "output": [
+        "a\\b"
+      ]
+    },
+    {
+      "input": "''",
+      "output": [
+        ""
+      ]
+    },
+    {
+      "input": "  a   b  ",
+      "output": [
+        "a",
+        "b"
+      ]
+    },
+    {
+      "input": "#x y",
+      "output": [
+        "#x",
+        "y"
+      ]
+    },
+    {
+      "input": "/bin/bash",
+      "output": [
+        "/bin/bash"
+      ]
+    },
+    {
+      "input": "/usr/bin/env python3 -c 'print(1)'",
+      "output": [
+        "/usr/bin/env",
+        "python3",
+        "-c",
+        "print(1)"
+      ]
+    },
+    {
+      "input": "\ta\nb",
+      "output": [
+        "a",
+        "b"
+      ]
+    },
+    {
+      "input": "é ü",
+      "output": [
+        "é",
+        "ü"
+      ]
+    }
+  ],
+  "split_errors": [
+    {
+      "input": "\"unterminated",
+      "error": "No closing quotation"
+    },
+    {
+      "input": "'unterminated",
+      "error": "No closing quotation"
+    },
+    {
+      "input": "trailing\\",
+      "error": "No escaped character"
+    }
+  ],
+  "join": [
+    {
+      "input": [
+        "ls"
+      ],
+      "output": "ls"
+    },
+    {
+      "input": [
+        "ls",
+        "-la"
+      ],
+      "output": "ls -la"
+    },
+    {
+      "input": [
+        "a b"
+      ],
+      "output": "'a b'"
+    },
+    {
+      "input": [
+        ""
+      ],
+      "output": "''"
+    },
+    {
+      "input": [
+        "it's"
+      ],
+      "output": "'it'\"'\"'s'"
+    },
+    {
+      "input": [
+        "a@b%c+d=e:f,g./h-i"
+      ],
+      "output": "a@b%c+d=e:f,g./h-i"
+    },
+    {
+      "input": [
+        "~x"
+      ],
+      "output": "'~x'"
+    },
+    {
+      "input": [
+        "é"
+      ],
+      "output": "'é'"
+    },
+    {
+      "input": [
+        "a\\b"
+      ],
+      "output": "'a\\b'"
+    },
+    {
+      "input": [
+        "a\"b"
+      ],
+      "output": "'a\"b'"
+    }
+  ]
+}

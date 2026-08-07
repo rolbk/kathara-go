@@ -1,0 +1,59 @@
+{
+  "cases": [
+    {
+      "entries": [],
+      "output": "[]"
+    },
+    {
+      "entries": [
+        {
+          "name": "netprefix-a",
+          "namespace": "h",
+          "interface": "net0",
+          "kathara.link": "A"
+        }
+      ],
+      "output": "[{\"name\": \"netprefix-a\", \"namespace\": \"h\", \"interface\": \"net0\", \"kathara.link\": \"A\"}]"
+    },
+    {
+      "entries": [
+        {
+          "name": "netprefix-a",
+          "namespace": "h",
+          "interface": "net0",
+          "kathara.link": "A"
+        },
+        {
+          "name": "netprefix-b",
+          "namespace": "h",
+          "interface": "net1",
+          "kathara.link": "B",
+          "mac": "00:11:22:33:44:55"
+        }
+      ],
+      "output": "[{\"name\": \"netprefix-a\", \"namespace\": \"h\", \"interface\": \"net0\", \"kathara.link\": \"A\"}, {\"name\": \"netprefix-b\", \"namespace\": \"h\", \"interface\": \"net1\", \"kathara.link\": \"B\", \"mac\": \"00:11:22:33:44:55\"}]"
+    },
+    {
+      "entries": [
+        {
+          "name": "n",
+          "namespace": "h",
+          "interface": "net0",
+          "kathara.link": "Aé<>&\"\\\n\t"
+        }
+      ],
+      "output": "[{\"name\": \"n\", \"namespace\": \"h\", \"interface\": \"net0\", \"kathara.link\": \"A\\u00e9<>&\\\"\\\\\\n\\t\"}]"
+    },
+    {
+      "entries": [
+        {
+          "name": "n",
+          "namespace": "h",
+          "interface": "net0",
+          "kathara.link": "😀"
+        }
+      ],
+      "output": "[{\"name\": \"n\", \"namespace\": \"h\", \"interface\": \"net0\", \"kathara.link\": \"\\ud83d\\ude00\"}]"
+    }
+  ]
+}

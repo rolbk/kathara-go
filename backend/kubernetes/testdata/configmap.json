@@ -1,0 +1,11 @@
+{
+  "apiVersion": "v1",
+  "data": {
+    "hostlab.b64": "<TARBALL>"
+  },
+  "kind": "ConfigMap",
+  "metadata": {
+    "deletionGracePeriodSeconds": 0,
+    "name": "devprefix-test-device-ec84ad3b-FwFaxbiuhvSWb2KpN5zw-files"
+  }
+}
