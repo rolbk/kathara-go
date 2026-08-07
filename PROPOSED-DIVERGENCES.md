@@ -9,6 +9,7 @@ The network plugin derives deterministic MACs only when the `kathara.machine`+`k
 
 ## FolderParser machine order (OQ-15a ruling applied)
 Python's conf-less machine order is `glob` order = readdir order (ext4 hash order, effectively random per filesystem). Go sorts names. Any fixed order is within Python's observable envelope; vectors are marked order-insensitive. Recorded here because it is technically a behaviour change on any single given filesystem.
+**Implemented** (`labfile/folder.go`, `machineFolders`). Everything else about the glob is reproduced rather than tidied: the leading-dot skip, the single level, `os.path.isdir`'s symlink following (a symlink to a directory IS a device, under both names — oracle-verified), the swallowed listing error, and the string-concatenated pattern — which makes an empty path glob the filesystem root *and* makes the scenario path itself part of the pattern. That last one is a real behaviour, not a curiosity: with `lab1/` next to `lab[1]/`, `glob(".../lab[1]/*/")` lists the subdirectories of the SIBLING `lab1` and never opens the bracketed directory, so `lstart -F` in a path containing `[`, `]`, `*` or `?` builds its devices from somewhere else while the scenario filesystem stays rooted at the literal path (oracle-verified). `globDirs`/`fnTranslate` reproduce CPython's `glob` + `fnmatch` for it rather than reading the directory literally, which would have been a silent improvement §0.1 forbids; the translation targets RE2, which differs from CPython's `re` in three places the function documents (no lookaround for the `(?!)` empty range, `]`/`[` escaping inside a class, no atomic groups) and in none that change which names match — 36,500 differential cases against `fnmatch.filter` and ~1,200 against `glob` agree exactly. Pinned by `TestFolderParserSortsNames`, `TestFolderParserFollowsSymlinks`, `TestFolderParserGlobsTheScenarioPath`, `TestGlobPatternMatching` and the nine `labfolder/` vectors (which cannot reach the path expansion: the harness materialises every scenario into a `t.TempDir()`, whose name never carries a metacharacter).
 
 ## Python `set` repr quoting in the plural MachineNotFound message
 `DockerManager.py:151,155` / `KubernetesManager.py:111,115` interpolate a `set` of the argv
@@ -69,6 +70,24 @@ whose magnitude exceeds `math.MaxInt`. The reachable input is a lab.conf interfa
 only `ErrPyIntSyntax` may route a `key[arg]` line to the meta path. An out-of-range literal is
 still a number and must stay on the interface path, where the sequential-interface check
 produces the same error Python produces. Pinned by `TestPyIntRangeIsBounded`.
+**Applied** (`labfile/labconf.go`, `interfaceNumber`): `ErrPyIntRange` claims slot
+`math.MaxInt`. For a single out-of-range number the value is unobservable — the parse cannot
+then succeed, and any non-zero slot fails `check_integrity` with the same ``Interface `0`
+missing`` message. For two on one device it IS observable, and the earlier claim that it never
+is was wrong: distinct numbers collapse onto one slot, so `pc1[99999999999999999999]=A` +
+`pc1[88888888888888888888]=B` is `MachineCollisionDomainError` here and
+`NonSequentialMachineInterfaceError` in 3.8.3 — a different frozen code at the JSON boundary —
+and a repeated literal prints the saturated value where Python prints its twenty digits (both
+measured). `math.MinInt` is spelled for the negative twin but is unreachable from a file: the
+arg class is `\w+`, which has no `-`. `DIVERGENCES.md` 45; pinned by
+`TestInterfaceNumberDispatch`, `TestInterfaceNumberSaturationIsObservable` and vector
+`labconf/interface_number_overflow`.
+**Action for the contract owner:** the fix is an arbitrary-precision interface key in `model`
+(`Machine.interfaces` is keyed by `int`, and `AddInterfaceOptions.Number` with it), reached
+through `labfile` carrying the out-of-range digit string instead of a saturated `int` — the
+shape `DIVERGENCES.md` 37 already uses for ulimit rendering via `math/big`. It is a `model` API
+change for a doubly-pathological input, so it is recorded rather than done; `ERROR_CODES.md`
+concedes nothing here, which is the reason it needs a decision rather than a comment.
 
 ## `shutil.which`'s unset-PATH fallback is a constant, not `confstr`
 **Implemented** (`internal/util/pypath_unix.go`). With PATH removed from the environment
@@ -96,3 +115,20 @@ Two closes, both cheap: **(a)** amend `PACKAGE_GRAPH.md` to list `term/tmuxdrv` 
 and keep the code as-is, or **(b)** fold the six files into package `term` as `tmux.go` and
 rename the colliding identifiers. Either way it is a documentation-or-move decision, not a
 behaviour one; nothing else in this review depends on which is chosen.
+
+## `model.PackData` is registered but not implemented, and nothing tracks it
+**In the tree as a gap, needs a human to schedule or re-assign.** `PACKAGE_GRAPH.md` §1.1 row 5
+lists `PackData` among `model`'s contents and §2.2 maps `Machine.pack_data`
+(`model/Machine.py:381`) onto `model/pack.go`; there is no `model/pack.go`. `model/doc.go`
+explains why — the function needs a bytes-level `convert_win_2_linux` (`internal/util` exposes it
+over a host *path*, because Python's `WriteTarFS` buffers on a real filesystem before writing the
+archive) and a tar writer that can emit directory members (`util.WriteTar` emits regular files
+only, which is all `pack_files_for_tar` ever needed) — but an explanation in a package doc is not
+a tracked deliverable, and neither `PROGRESS.md` nor this file carried it.
+
+Nothing is currently broken by the gap: `pack_data`'s only consumers are the two backends'
+`copy_files`, and neither backend is ported. **Action for the contract owner:** either schedule
+`model/pack.go` together with the `internal/util` widening it needs (a `[]byte` overload of
+`convert_win_2_linux` and directory members in `WriteTar`), or move the symbol to whichever
+package ends up owning the tar layer and errata the `PACKAGE_GRAPH.md` rows. It must not ship as
+a silent omission: a backend written against the register will expect the symbol to exist.

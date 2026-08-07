@@ -298,3 +298,227 @@ belong with items 24-26.
     re-emits verbatim, is folded to U+FFFD by `encoding/json` and would be
     saved back as `�`. Neither is reachable from a file 3.8.3 itself
     wrote. Pinned by `TestLoadErrors/not_UTF-8`.
+
+## From `model/` (port divergences, not Python bugs)
+
+Numbered after the `setting/` second pass so every identifier above stays
+stable. The Python bugs `model/` reproduces — the ulimit messages naming the
+option, the fatal `bridged_iface`, the tombstone crashes, the trailing space in
+the volume-mode message — are items 1-8 and 28 above and are NOT repeated here;
+what follows is where the *port* behaves differently from 3.8.3.
+
+36. **`Machine.interfaces` is kept sorted by number at all times, where Python
+    sorts only in `check()`.** PORT_SPEC §0.2 #4 and ORDERING.tsv
+    (`model/Machine.py:67`) sanction the ordered slice and say `check()`'s
+    re-sort "becomes a no-op" under it, which is what this implements. The
+    residue is a window Python has and the port does not: between
+    `add_interface(link, number=2)` and `check()`, 3.8.3 iterates in *insertion*
+    order, so `Machine.__str__` prints interface 2 before interface 1 and a
+    manager that deployed without calling `check_integrity` would wire them in
+    that order. Both backends call `check_integrity` at the top of `deploy_lab`
+    and `LabParser.parse` calls it too, so no CLI path can observe it; only an
+    API user who numbers interfaces out of order and prints the device before
+    deploying can. Pinned by `TestCheck/sequential`.
+
+    A second window the sorted slice closes is on the *crash* path of
+    `Lab.remove_machine` (item 28): the loop walks `interfaces.values()` in
+    insertion order and dies at the first tombstone, so which collision domains
+    have already lost their back-reference depends on that order. With slot 5
+    added before slot 0 and slot 5 then disconnected, 3.8.3 raises before it
+    touches slot 0 and that link keeps `pc1` in `link.machines`; the port walks
+    0 first and clears it. Same error, same "device stays registered" effect,
+    different surviving `Link.machines` — and `Link.MachineNames()` is public
+    and feeds topology output. Exact parity is impossible once insertion order
+    is gone. Pinned by `TestLabRemoveMachineTombstoneCrashOrder`.
+37. **Integers wider than an int64 saturate.** Python's ints are arbitrary
+    precision and five model values are not: a port number, a ulimit's soft and
+    hard limits, a numeric sysctl value, `get_num_terms`'s result and
+    `get_cpu`'s. All five are stored as fixed-width integers because that is
+    what a container runtime accepts, and a literal beyond the range clamps to
+    `math.MaxInt64` / `math.MinInt64` instead of erroring — keeping Python's
+    "this is not a failure" behaviour. `pc1[cpus]=1e300` is the widest reachable
+    one: 3.8.3 hands Docker the 301-digit `int(1e300)` (which Docker then
+    rejects), the port hands it `math.MaxInt64`. Everything that *renders* such
+    a number stays exact: `get_mem` and the ulimit soft/hard message go through
+    `math/big`, so `nofile=-1:99999999999999999999999999` reports all 26 digits,
+    as `kerrors.NewOptionUlimitSoftHard` requires. Pinned by
+    `TestSaturate`, `TestAddMetaUlimit/hard_limit_beyond_int64` and the
+    `num_terms` and `cpu` arms of `TestAccessorsAgainstOracle`.
+38. **`str.isnumeric()` is approximated by the Unicode N categories, so the CJK
+    ideographic numerals answer false.** Python's predicate is
+    `Numeric_Type != None`, which also covers `一`, `二`, `〇` and their kin;
+    Go's tables carry no Numeric_Type, and `unicode.Nd|Nl|No` is the closest
+    total function. The gate has exactly one consumer, the sysctl int coercion
+    (`model/Machine.py:182`), so the only affected input is a sysctl value made
+    entirely of those characters: 3.8.3 accepts it as numeric and then dies with
+    an uncaught `ValueError` from `int()`, while the port stores it as a string.
+    Every other numeric-but-not-decimal character (`²`, `½`, `Ⅷ`) is in N and
+    crashes identically. Pinned by `TestPyIsNumeric`.
+39. **A meta explicitly set to Python `None` is not representable.** `add_meta`
+    stores whatever it is given, so `add_meta("shell", None)` puts a None in the
+    dict and `get_shell()` then returns None rather than the settings default —
+    reachable from `KubernetesManager.get_lab_from_api` when `_MEGALOS_SHELL` is
+    unset. The typed `Meta` spells "absent" and "None" the same way (`Scalar`'s
+    zero value), so the port falls back to the default there. The Go `AddMeta`
+    takes a string and cannot express the input at all; the k8s backend, when it
+    is ported, must decide what it wants explicitly rather than inheriting a
+    None.
+40. **`Lab.remove_machine`'s InvocationError is reachable only as a nil device
+    object.** Python takes `name` and `machine` as two optional arguments and
+    raises `You must specify a device name or object.` when both are None
+    (`model/Lab.py:326`); the port splits them into `RemoveMachine(name, …)` and
+    `RemoveMachineObj(machine, …)`, which NILABILITY.tsv:27 offers as one of the
+    two accepted shapes. The frozen message stays reachable —
+    `RemoveMachineObj(nil, …)` returns it — but `RemoveMachine("")` is a
+    MachineNotFound rather than an Invocation, because no registered device can
+    be named the empty string. Pinned by `TestLabMachines/remove_by_object`.
+41. **`Lab(None, None)` has no spelling.** It is a `TypeError` inside `re.sub`
+    in 3.8.3 — the model does not guard it — and NILABILITY.tsv:24 maps Python's
+    None path onto `""`, so `NewLabFromPath("")` is `Lab(None, "")`: the empty
+    string is hashed and the filesystem is in memory. Nothing can ask for the
+    crash. Pinned by `TestLabConstruction/empty_path_is_the_memory_filesystem`.
+42. **`add_meta` with one of the six *plural* container names cannot poison the
+    device.** `add_meta` has no case for `exec_commands`, `sysctls`, `envs`,
+    `ports`, `ulimits` or `volumes`, so those names fall into the generic branch
+    (`model/Machine.py:289-291`) and **replace the container with the string**.
+    3.8.3 then dies at the first use of it: `str(machine)` raises
+    `AttributeError: 'str' object has no attribute 'items'`, a following
+    `pc1[sysctl]=…` raises `TypeError: 'str' object does not support item
+    assignment`, and `pc1[exec_commands]=foo` makes the managers iterate the
+    characters of `foo` as boot commands (all oracle-verified). It is
+    lab.conf-reachable: `LabParser`'s `arg` class is `\w+` and it filters no
+    key. The typed `Meta` (§0.2 #5) has no way to hold a string in a container
+    field, so the port keeps the container intact and stores the value in
+    `Meta.Extras` under the same name. What IS reproduced is the return
+    contract, which is the CLI-visible half: the container was always present,
+    so the first such line reports a previous value and `LabParser` prints its
+    duplicate-meta warning, and a second one reports the string the first
+    stored. The residue is that 3.8.3 crashes where the port carries on. Pinned
+    by `TestAddMetaContainerNames`.
+43. **The scenario path is opened literally, where `open_fs("osfs://…")` first
+    runs it through a URL parser and a shell-style expansion.** `Lab.__init__`
+    builds a pyfilesystem URL out of the raw path (`model/Lab.py:79`), so
+    `parse_fs_url` splits it at a `?` or a `!` and `OSFS.__init__` then applies
+    `expandvars` + `expanduser` + `abspath` + `normpath` to what is left.
+    Measured: `Lab(None, "/x/my?lab")` opens **`/x/my`** — the wrong directory,
+    while `Lab.hash` is computed from the full path — `Lab(None, "/x/a!b")`
+    opens `/x/a`, and `Lab(None, "~")` opens the home directory. The port stats
+    and opens the string it was given, and `CreateFailed`'s message quotes that
+    string rather than its absolutised form. PORT_SPEC §6 replaced pyfilesystem
+    with `vfs` wholesale, so there is no URL layer to reproduce this in, and
+    reproducing it by hand would mean re-implementing `parse_fs_url` in order to
+    open the wrong directory. CLI-reachable through `lstart -d` on a path
+    containing `?` or `!` (`LstartCommand.py:150` realpaths the argument, which
+    strips a leading `~` or `$VAR` case but not those two); every other path
+    behaves identically.
+
+## From `event/` (Python bug, validated against 3.8.3)
+
+Ported as-is. The bug's *reproduction* is `internal/cliout`'s, not `event`'s —
+`event` only has to make it expressible, which is why `PullProgress` carries
+pointers.
+
+44. **A Docker pull that fails mid-stream crashes the CLI with
+    `KeyError: 'status'` instead of reporting the failure.**
+    `DockerImage.pull` iterates `client.api.pull(..., stream=True, decode=True)`
+    and dispatches every decoded line as `docker_pull_progress`
+    (`manager/docker/DockerImage.py:61-62`). docker-py `_raise_for_status`es
+    only the *initial* HTTP response and then hands the stream through
+    untouched (`APIClient.pull` → `_stream_helper`), so a failure that happens
+    after the stream opened — a layer download that dies, an expired registry
+    token, no disk left — arrives as a line
+    `{"errorDetail": {"message": …}, "error": …}` with **no `status` key**.
+    `HandleDockerImagePull.update` opens with `progress['status']`
+    (`cli/ui/event/HandleDockerImagePull.py:42`), so it raises `KeyError`, and
+    nothing on the path has a `try`: it unwinds through `EventDispatcher.dispatch`
+    (`event/EventDispatcher.py:85-86`) and out of `pull`, aborting the loop.
+    Oracle-verified: `update({'errorDetail': {'message': 'boom'}, 'error': 'boom'})`
+    → `KeyError: 'status'`; the same through `dispatch` → `KeyError: KeyError('status')`.
+    The user sees a traceback naming a dict key rather than the registry's error
+    message. Reachable on any flaky pull, which is the common case this handler
+    exists for.
+    `event.PullProgress` therefore spells `Status`, `ID` and `Detail` as
+    pointers: a plain `string` would collapse the absent key to `""`, land in
+    the handler's `else: return` branch, and let the failed pull go on to report
+    success through `docker_pull_ended` — a silent fix of a crash, which §0.1
+    forbids. Pinned by `TestPullProgressCanCarryAnErrorLine`; the handler side
+    is `internal/cliout`'s to reproduce when it lands.
+
+## From `labfile/` (port divergences, not Python bugs)
+
+The Python bugs `labfile` reproduces — the swallowed trailing comment, the
+BOM that breaks line 1, the `LAB_*` value with a second `=`, the fatal
+`bridged_iface`, the reserved-name asymmetry, the one bad folder that kills a
+`FolderParser` run — are items 1-8 above and the SURPRISES list in
+`labfile/testdata/vectors/README.md`. All 142 vectors pass unchanged. What
+follows is where the *port* behaves differently from 3.8.3.
+
+45. **An interface number wider than a Go int saturates instead of being kept
+    exact.** `LabParser` dispatches on `int(arg)` and CPython's ints are
+    arbitrary precision, so `pc1[99999999999999999999]=A` is an *interface*
+    line carrying a twenty-digit number. `util.PyInt` answers `ErrPyIntRange`
+    for it — deliberately not `ErrPyIntSyntax`, so RULINGS.md OQ-14a's "dispatch
+    on the int-parse result only" keeps the line on the interface path — and
+    `labfile.interfaceNumber` then claims slot `math.MaxInt`. For ONE such
+    number both implementations end at the same place, `check_integrity`
+    reporting ``Interface `0` missing on device `pc1`.``, because any number
+    other than 0 fails the sequence check identically. For two, the saturation
+    is observable, in two ways (both measured against 3.8.3):
+
+    - *Distinct* numbers collapse onto one slot. `pc1[99999999999999999999]=A`
+      followed by `pc1[88888888888888888888]=B` is a hole in the numbering in
+      Python — `NonSequentialMachineInterfaceError`, ``Interface `0` missing on
+      device `pc1`.`` — and a collision here: `MachineCollisionDomainError`,
+      ``Interface 9223372036854775807 already set on device `pc1`.`` A different
+      class, a different frozen code and a different message, at the JSON
+      boundary as well as the human one.
+    - A *repeated* number gets the right class and the wrong bytes: Python
+      prints the twenty digits it read, the port prints the saturated value.
+
+    Closing either needs an arbitrary-precision interface key in `model`
+    (`Machine.interfaces` is keyed by `int`), which is out of proportion to a
+    doubly-pathological input; the honest record is here rather than a silent
+    claim of parity. The negative twin is unreachable from a file at all — the
+    arg class is `\w+`, which has no `-`. Recorded in PROPOSED-DIVERGENCES.md
+    ("`PyInt` is bounded"), pinned by `TestInterfaceNumberDispatch` and
+    `TestInterfaceNumberSaturationIsObservable`. Vector
+    `labconf/interface_number_overflow`.
+46. **`depgen.flatten` refuses to re-enter a name already on its path, where
+    Python recurses until RecursionError.** `_order` has no cycle guard: it
+    walks the inverted graph depth-first and a cycle makes it recurse until
+    CPython's 1000-frame limit raises. Go has no such limit — the goroutine
+    stack grows to 1 GB and then the runtime *fatals*, which is not recoverable
+    and which PORT_SPEC §10 forbids on any Python-reachable path. `Flatten`
+    therefore skips a dependency it is already inside, which terminates and
+    still names every device exactly once. `ParseDep` calls `HasLoop` first and
+    answers `MachineDependencyError` (`Machines' dependency loop in lab.dep
+    file.`), so no lab.dep can reach the guard; it exists because `Flatten` is
+    exported. `HasLoop` needs no such treatment — it already returns as soon as
+    a name repeats on the path. Pinned by `TestFlattenCycleGuard`; the
+    cycle-free behaviour is pinned against the oracle over 590 random graphs by
+    `TestDepGenAgainstOracle`.
+47. **`LAB_DESCRIPTION=` and an omitted `LAB_DESCRIPTION` are one value.**
+    NILABILITY.tsv:25 freezes `Lab.description/version/author/email/web` as
+    plain Go strings with `"" = absent`, because every 3.8.3 reader tests them
+    for truthiness; Python distinguishes `""` from `None` in `Lab.__dict__` and
+    nothing in 1.0 looks. The Layer B vectors *do* look — `expected.json`
+    records `"author": ""` next to `"email": null` — so `vector_test.go` folds
+    `null` onto `""` for exactly those five fields and asserts everything else
+    about them unchanged (`metadataFields`). `LAB_NAME` is NOT folded: the
+    tri-state survives as `Lab.HasName`, because an empty name hashes the empty
+    string while an absent one hashes the scenario path, and the hash is the
+    identity every container is created under. Pinned by
+    `TestParseLabMetadataEmptyName`.
+48. **`\w` is the Go toolchain's Unicode tables, not CPython's, and the two
+    editions differ by 622 codepoints.** `labfile.isWordRune` is
+    `[\p{L}\p{N}_]` (RULINGS.md OQ-14a), which decides meta names,
+    collision-domain names and lab.dep device names. A full 0–0x10FFFF sweep
+    against the oracle finds exactly one disagreement: U+2EBF0–U+2EE5D, CJK
+    Unified Ideographs Extension I, which is `Lo` in CPython 3.13's UCD 15.1.0
+    and unassigned in `unicode.Version` 15.0.0, the table Go 1.26 ships. A
+    collision domain or a lab.dep device named in those ideographs parses in
+    3.8.3 and is a syntax error here. Every other codepoint agrees, `\s`
+    (`pySpace`) and `str.strip`'s set included, so the class *logic* is exact
+    and this is toolchain versioning: it closes itself when Go's tables catch
+    up, and cannot be closed inside `labfile` without shipping a private copy of
+    the UCD.
