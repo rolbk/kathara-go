@@ -1,0 +1,14 @@
+usage: kathara wipe [-h] [-f] [-s | -a]
+
+Delete all Kathara devices and collision domains, optionally also delete
+settings
+
+options:
+  -h, --help      Show a help message and exit.
+  -f, --force     Force the wipe.
+  -s, --settings  Wipe the stored settings of the current user.
+  -a, --all       Wipe all Kathara devices and collision domains of all users.
+                  MUST BE ROOT FOR THIS OPTION.
+
+For examples and further information visit:
+https://github.com/KatharaFramework/Kathara/wiki

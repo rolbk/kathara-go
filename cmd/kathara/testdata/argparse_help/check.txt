@@ -1,0 +1,9 @@
+usage: kathara check [-h]
+
+Check your system environment
+
+options:
+  -h, --help  Show a help message and exit.
+
+For examples and further information visit:
+https://github.com/KatharaFramework/Kathara/wiki

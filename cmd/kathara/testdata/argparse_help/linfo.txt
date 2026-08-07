@@ -1,0 +1,18 @@
+usage: kathara linfo [-h] [-d DIRECTORY] [-w | -c] [-n DEVICE_NAME | -t]
+
+Show information about a Kathara network scenario
+
+options:
+  -h, --help            Show a help message and exit.
+  -d, --directory DIRECTORY
+                        Specify the folder containing the network scenario.
+  -w, -l, --watch, --live
+                        Watch mode, can be used only when a network scenario
+                        is launched.
+  -c, --conf            Read static information from lab.conf.
+  -n, --name DEVICE_NAME
+                        Show only information about a specified device.
+  -t, --topology        Get running topology info
+
+For examples and further information visit:
+https://github.com/KatharaFramework/Kathara/wiki

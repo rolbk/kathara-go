@@ -1,0 +1,18 @@
+usage: kathara lclean [-h] [-d DIRECTORY]
+                      [--exclude DEVICE_NAME [DEVICE_NAME ...]]
+                      [DEVICE_NAME ...]
+
+Stop a Kathara network scenario
+
+positional arguments:
+  DEVICE_NAME           Clean only specified devices.
+
+options:
+  -h, --help            Show a help message and exit.
+  -d, --directory DIRECTORY
+                        Specify the folder containing the network scenario.
+  --exclude DEVICE_NAME [DEVICE_NAME ...]
+                        Exclude specified devices from clean.
+
+For examples and further information visit:
+https://github.com/KatharaFramework/Kathara/wiki

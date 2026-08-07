@@ -1,0 +1,15 @@
+usage: kathara list [-h] [-a] [-w] [-n DEVICE_NAME]
+
+Show all running Kathara devices of the current user
+
+options:
+  -h, --help            Show a help message and exit.
+  -a, --all             Show all running Kathara devices of all users. MUST BE
+                        ROOT FOR THIS OPTION.
+  -w, -l, --watch, --live
+                        Watch mode.
+  -n, --name DEVICE_NAME
+                        Show only information about a specified device.
+
+For examples and further information visit:
+https://github.com/KatharaFramework/Kathara/wiki

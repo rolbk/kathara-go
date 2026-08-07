@@ -1,0 +1,60 @@
+usage: kathara vstart [-h] [--noterminals | --terminals |
+                      --num_terms NUM_TERMS] [--privileged] -n DEVICE_NAME
+                      [--eth N:CD/MAC [N:CD/MAC ...]] [-e [EXEC_COMMANDS ...]]
+                      [--mem MEM] [--cpus CPUS] [-i IMAGE] [--no-hosthome |
+                      --hosthome] [--terminal-emu TERMINAL_EMU] [--print]
+                      [--bridged]
+                      [--port [HOST:]GUEST[/PROTOCOL] [[HOST:]GUEST[/PROTOCOL] ...]]
+                      [--sysctl SYSCTL [SYSCTL ...]] [--env ENV [ENV ...]]
+                      [--ulimit KEY=SOFT[:HARD] [KEY=SOFT[:HARD] ...]]
+                      [--volume HOST|GUEST|[MODE] [HOST|GUEST|[MODE] ...]]
+                      [--shell SHELL] [--entrypoint ENTRYPOINT]
+                      ...
+
+Start a new Kathara device
+
+positional arguments:
+  ARG                   Specify extra arguments for the entrypoint command.
+
+options:
+  -h, --help            Show a help message and exit.
+  --noterminals         Start the device without opening a terminal window.
+  --terminals           Start the device opening its terminal window.
+  --num_terms NUM_TERMS
+                        Choose the number of terminals to open for the device.
+  --privileged          Start the device in privileged mode. MUST BE ROOT FOR
+                        THIS OPTION.
+  -n, --name DEVICE_NAME
+                        Name of the device to be started.
+  --eth N:CD/MAC [N:CD/MAC ...]
+                        Set a specific interface on a collision domain.
+  -e, --exec [EXEC_COMMANDS ...]
+                        Execute a specific command in the device during
+                        startup.
+  --mem MEM             Limit the amount of RAM available for this device.
+  --cpus CPUS           Limit the amount of CPU available for this device.
+  -i, --image IMAGE     Run this device with a specific Docker Image.
+  --no-hosthome, -H     Do not mount "/hosthome" directory inside the device.
+  --hosthome            Mount "/hosthome" directory inside the device.
+  --terminal-emu TERMINAL_EMU
+                        Set a different terminal emulator application (Unix
+                        only).
+  --print, --dry-run    Check if the device parameters are correct (dry run).
+  --bridged             Add a bridge interface to the device.
+  --port [HOST:]GUEST[/PROTOCOL] [[HOST:]GUEST[/PROTOCOL] ...]
+                        Map localhost port HOST to the internal port GUEST of
+                        the device for the specified PROTOCOL.
+  --sysctl SYSCTL [SYSCTL ...]
+                        Set sysctl option for the device.
+  --env ENV [ENV ...]   Set environment variable for the device.
+  --ulimit KEY=SOFT[:HARD] [KEY=SOFT[:HARD] ...]
+                        Set ulimit for the device.
+  --volume HOST|GUEST|[MODE] [HOST|GUEST|[MODE] ...]
+                        Specify a volume to mount.
+  --shell SHELL         Set the shell (sh, bash, etc.) that should be used
+                        inside the device.
+  --entrypoint ENTRYPOINT
+                        Specify the entrypoint command of the device.
+
+For examples and further information visit:
+https://github.com/KatharaFramework/Kathara/wiki

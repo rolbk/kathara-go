@@ -1,0 +1,18 @@
+usage: kathara connect [-h] [-d DIRECTORY | -v] [--shell SHELL] [-l]
+                       DEVICE_NAME
+
+Connect to a Kathara device
+
+positional arguments:
+  DEVICE_NAME           Name of the device to connect to.
+
+options:
+  -h, --help            Show a help message and exit.
+  -d, --directory DIRECTORY
+                        Specify the folder containing the network scenario.
+  -v, --vmachine        The device has been started with vstart command.
+  --shell SHELL         Shell that should be used inside the device.
+  -l, --logs            Print device startup logs before launching the shell.
+
+For examples and further information visit:
+https://github.com/KatharaFramework/Kathara/wiki

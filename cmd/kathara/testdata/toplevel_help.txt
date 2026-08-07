@@ -1,0 +1,29 @@
+usage: kathara [-h] [-v] <command> [<args>]
+
+Possible Kathara commands are:
+
+ vstart    Start a new Kathara device                                           
+ vclean    Stop a single Kathara device                                         
+ vconfig   Manage the network interfaces of a running Kathara device            
+ lstart    Start a Kathara network scenario                                     
+ lclean    Stop a Kathara network scenario                                      
+ linfo     Show information about a Kathara network scenario                    
+ lrestart  Restart a Kathara network scenario                                   
+ lconfig   Manage the network interfaces of a running Kathara device in a       
+           Kathara network scenario                                             
+ connect   Connect to a Kathara device                                          
+ exec      Execute a command in a Kathara device                                
+ wipe      Delete all Kathara devices and collision domains, optionally also    
+           delete settings                                                      
+ list      Show all running Kathara devices of the current user                 
+ settings  Show and edit Kathara settings                                       
+ check     Check your system environment                                        
+
+A network emulation tool.
+
+positional arguments:
+  command        Command to run.
+
+options:
+  -h, --help     Show an help message and exit.
+  -v, --version  Print the current Kathara version.

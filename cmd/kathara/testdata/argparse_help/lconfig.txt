@@ -1,0 +1,19 @@
+usage: kathara lconfig [-h] [-d LAB_PATH] -n DEVICE_NAME
+                       (--add CD/MAC [CD/MAC ...] | --rm CD [CD ...])
+
+Manage the network interfaces of a running Kathara device in a Kathara network
+scenario
+
+options:
+  -h, --help            Show a help message and exit.
+  -d, --directory LAB_PATH
+                        Path of the network scenario to configure, if not
+                        specified the current path is used
+  -n, --name DEVICE_NAME
+                        Name of the device to configure.
+  --add CD/MAC [CD/MAC ...]
+                        Specify the collision domain to add.
+  --rm CD [CD ...]      Specify the collision domain to remove.
+
+For examples and further information visit:
+https://github.com/KatharaFramework/Kathara/wiki

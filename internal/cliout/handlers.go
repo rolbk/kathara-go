@@ -1,0 +1,441 @@
+// This file is the five subscribers of `cli/ui/event/`: `HandleProgressBar`,
+// `HandleDockerImagePull`, `UpdateDockerImage`, `MountDevicesVolumes`, and the
+// two `HandleMachineTerminal` methods that only write to stdout
+// (`print_wait_msg` and `flush` — the terminal-opening half stays in
+// `cmd/kathara`, PACKAGE_GRAPH.md row `cli/ui/event/HandleMachineTerminal.py`).
+//
+// All of them are drawn only in `human` mode. JSON_CLI_CONTRACT.md §1.3 makes
+// progress bars, spinners and live screens "UI, not logs", so json/jsonl render
+// nothing at all — and §1.5 replaces the two prompts with the pinned
+// auto-answers instead of blocking on a stdin no client is driving.
+
+package cliout
+
+import (
+	"fmt"
+	"strings"
+	"sync"
+
+	"github.com/KatharaFramework/kathara-go/event"
+	"github.com/KatharaFramework/kathara-go/model"
+)
+
+// barGlyph is `rich.progress.BarColumn`'s complete block. The Layer A harness
+// drops any line containing it (NORMALIZATION.md §6.6), because the bar's width
+// is a function of the console width and of how many redraws a run happened to
+// emit; a progress line the port renders must therefore carry it, or it would
+// survive normalization and diff against a golden that has none.
+const barGlyph = "━"
+
+// spinnerFrames is `rich`'s "dots" spinner, the braille cycle that
+// NORMALIZATION.md §6.6 drops alongside the bar.
+var spinnerFrames = []rune("⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏")
+
+// ProgressBar is `cli/ui/event/HandleProgressBar.py`: one bar per message,
+// subscribed to a started/item/ended triple.
+//
+// The three methods keep Python's names and Python's tolerance — `update` and
+// `finish` both test `if self.progress_bar` first, so an `item` event that
+// arrives after the bar was torn down (or before it was built) is a no-op
+// rather than an error. That tolerance is load-bearing: `unregister_cli_events`
+// runs `finish` through the unsubscribe hook on every exit path, including the
+// ones where the bar was never opened.
+type ProgressBar struct {
+	// Message is the bar's description, e.g. "Deploying devices".
+	Message string
+	// Console is where the bar is drawn.
+	Console *Console
+
+	mu      sync.Mutex
+	active  bool
+	total   int
+	done    int
+	frame   int
+	painted bool
+}
+
+// NewProgressBar is `HandleProgressBar(message)`.
+func NewProgressBar(message string, console *Console) *ProgressBar {
+	return &ProgressBar{Message: message, Console: console}
+}
+
+// Init is `HandleProgressBar.init(items)`: build the bar with `total=len(items)`.
+func (b *ProgressBar) Init(total int) {
+	if b.Console == nil || b.Console.Format.Machine() {
+		return
+	}
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	b.active = true
+	b.total = total
+	b.done = 0
+	b.frame = 0
+	b.painted = false
+	b.paintLocked(false)
+}
+
+// Advance is `HandleProgressBar.update(item)`: `advance=1`, ignoring the item —
+// the Python body reads nothing off it (`HandleProgressBar.py:37-47`).
+func (b *ProgressBar) Advance() {
+	if b.Console == nil || b.Console.Format.Machine() {
+		return
+	}
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	if !b.active {
+		return
+	}
+	b.done++
+	b.frame++
+	b.paintLocked(false)
+}
+
+// Finish is `HandleProgressBar.finish()` and, through the subscription hook,
+// `HandleProgressBar.unregister()`. It is idempotent for the same reason
+// Python's is: the body is guarded by `if self.progress_bar`.
+func (b *ProgressBar) Finish() error {
+	if b.Console == nil || b.Console.Format.Machine() {
+		return nil
+	}
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	if !b.active {
+		return nil
+	}
+	b.paintLocked(true)
+	b.active = false
+	return nil
+}
+
+// paintLocked draws the bar. On a terminal it redraws in place with a carriage
+// return, which is what `rich.live.Live` does; on a file or a dumb terminal
+// rich suppresses every intermediate refresh and prints the final state once at
+// stop (`rich/live.py`, the `not self._started and not self.transient` arm), so
+// this does too.
+func (b *ProgressBar) paintLocked(final bool) {
+	c := b.Console
+	if !c.TTY && !final {
+		return
+	}
+
+	width := c.Width
+	desc := fmt.Sprintf("[%s]", b.Message)
+	counts := fmt.Sprintf("%d/%d", b.done, b.total)
+	spinner := string(spinnerFrames[b.frame%len(spinnerFrames)])
+	if final {
+		spinner = " "
+	}
+
+	barWidth := width - CellLen(desc) - CellLen(counts) - 4
+	if barWidth < 1 {
+		barWidth = 1
+	}
+	filled := barWidth
+	if b.total > 0 && b.done < b.total {
+		filled = b.done * barWidth / b.total
+	}
+	if filled < 1 {
+		// The line must carry at least one bar glyph so that the Layer A
+		// normalizer drops it; an empty bar would leave a bare
+		// "[Deploying devices]  0/3" in the recording.
+		filled = 1
+	}
+	if filled > barWidth {
+		filled = barWidth
+	}
+	bar := strings.Repeat(barGlyph, filled) + strings.Repeat(" ", barWidth-filled)
+
+	line := fmt.Sprintf("%s %s %s %s", desc, spinner, bar, counts)
+
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if c.TTY {
+		_, _ = fmt.Fprintf(c.Out, "\r%s", line)
+		if final {
+			_, _ = fmt.Fprintln(c.Out)
+		}
+		b.painted = true
+		return
+	}
+	_, _ = fmt.Fprintln(c.Out, line)
+	b.painted = true
+}
+
+// ImagePullBar is `cli/ui/event/HandleDockerImagePull.py`: one task per Docker
+// layer, keyed by the layer id.
+//
+// The two statuses it acts on are the two Python acts on; every other line
+// returns early (`HandleDockerImagePull.py:48-49`). A `progress` line with no
+// `status` key is a *failed* pull, and 3.8.3 raises `KeyError: 'status'` on it
+// — see [event.PullProgress]. That bug is reproduced by [ImagePullBar.Update]
+// returning an error, which `event.Dispatch` propagates exactly as `dispatch`
+// let the KeyError unwind.
+type ImagePullBar struct {
+	// Console is where the bar is drawn.
+	Console *Console
+
+	mu     sync.Mutex
+	active bool
+	order  []string
+	layers map[string]pullLayer
+}
+
+type pullLayer struct {
+	complete bool
+	current  int64
+	total    int64
+	hasTotal bool
+}
+
+// NewImagePullBar is `HandleDockerImagePull()`.
+func NewImagePullBar(console *Console) *ImagePullBar {
+	return &ImagePullBar{Console: console}
+}
+
+// Init is `HandleDockerImagePull.init()`.
+func (b *ImagePullBar) Init() {
+	if b.Console == nil || b.Console.Format.Machine() {
+		return
+	}
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	b.active = true
+	b.order = nil
+	b.layers = make(map[string]pullLayer)
+}
+
+// Update is `HandleDockerImagePull.update(progress)`.
+func (b *ImagePullBar) Update(p event.PullProgress) error {
+	if b.Console == nil || b.Console.Format.Machine() {
+		return nil
+	}
+	if p.Status == nil {
+		// `progress['status']` on a line that carries no status: CPython
+		// raises KeyError and nothing on the path catches it.
+		return &model.PyRuntimeError{Class: "KeyError", Msg: "'status'"}
+	}
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	if !b.active {
+		return nil
+	}
+
+	var complete bool
+	switch *p.Status {
+	case "Download complete":
+		complete = true
+	case "Downloading":
+		complete = false
+	default:
+		return nil
+	}
+	if p.ID == nil {
+		return &model.PyRuntimeError{Class: "KeyError", Msg: "'id'"}
+	}
+	id := *p.ID
+
+	layer, seen := b.layers[id]
+	if !seen {
+		b.order = append(b.order, id)
+	}
+	layer.complete = complete
+	if complete {
+		layer.total, layer.hasTotal, layer.current = 100, true, 100
+	} else {
+		if p.Detail == nil {
+			return &model.PyRuntimeError{Class: "KeyError", Msg: "'progressDetail'"}
+		}
+		if !seen {
+			if p.Detail.Total != nil {
+				layer.total, layer.hasTotal = *p.Detail.Total, true
+			}
+		}
+		if p.Detail.Current != nil {
+			layer.current = *p.Detail.Current
+		}
+	}
+	b.layers[id] = layer
+	b.paintLocked()
+	return nil
+}
+
+// Finish is `HandleDockerImagePull.finish()`: every task is forced to its own
+// total and relabelled "Download Complete" before the display stops.
+func (b *ImagePullBar) Finish() error {
+	if b.Console == nil || b.Console.Format.Machine() {
+		return nil
+	}
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	if !b.active {
+		return nil
+	}
+	for id, layer := range b.layers {
+		layer.complete = true
+		layer.current = layer.total
+		b.layers[id] = layer
+	}
+	b.paintLocked()
+	b.active = false
+	b.order = nil
+	b.layers = nil
+	return nil
+}
+
+// paintLocked draws one line per layer. It only draws on a terminal: a
+// per-layer redraw of a whole block has no meaningful non-TTY rendering, and
+// the Layer A normalizer drops the lines anyway.
+func (b *ImagePullBar) paintLocked() {
+	c := b.Console
+	if !c.TTY {
+		return
+	}
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	for _, id := range b.order {
+		layer := b.layers[id]
+		label := fmt.Sprintf("[Downloading %s]", id)
+		pct := "  ?%"
+		if layer.complete {
+			label = fmt.Sprintf("[Download Complete %s]", id)
+			pct = "100%"
+		} else if layer.hasTotal && layer.total > 0 {
+			pct = fmt.Sprintf("%3d%%", layer.current*100/layer.total)
+		}
+		_, _ = fmt.Fprintf(c.Out, "\r%s %s %s\n", label, barGlyph, pct)
+	}
+}
+
+// ImageUpdatePolicy answers `UpdateDockerImage.run` for one image whose remote
+// digest moved.
+//
+// The three policies are Python's (`cli/ui/event/UpdateDockerImage.py:19-27`);
+// what the port adds is the machine-mode arm of JSON_CLI_CONTRACT.md §1.5,
+// where `Prompt` **auto-answers no** — the local image is used, no pull — and a
+// notice goes to stderr. The rationale is pinned there: never block a scripted
+// client on a question.
+type ImageUpdatePolicy struct {
+	// Policy is `Setting.image_update_policy`.
+	Policy string
+	// Console renders the question, or the notice that replaced it.
+	Console *Console
+	// Prompter reads the answer in human mode.
+	Prompter *Prompter
+}
+
+// Run is `UpdateDockerImage.run(docker_image, image_name)`.
+func (u *ImageUpdatePolicy) Run(e event.DockerImageUpdateFound) error {
+	switch u.Policy {
+	case PolicyAlways:
+		return e.Image.Pull(e.ImageName)
+	case PolicyPrompt:
+		if u.Console.Format.Machine() {
+			u.Console.Log(LevelInfo,
+				"a new version of image `%s` is available; not pulling it (--format %s never prompts)",
+				e.ImageName, u.Console.Format)
+			return nil
+		}
+		yes, err := u.Prompter.Confirm(fmt.Sprintf(
+			"A new version of image `%s` has been found on Docker Hub. Do you want to pull it?",
+			e.ImageName))
+		if err != nil {
+			return err
+		}
+		if yes {
+			return e.Image.Pull(e.ImageName)
+		}
+	}
+	return nil
+}
+
+// VolumeMountPolicy is `cli/ui/event/MountDevicesVolumes.py`: print the tree of
+// host-to-guest mounts, then, under `Prompt`, ask whether to go ahead.
+//
+// JSON_CLI_CONTRACT.md §1.5 pins the machine-mode answer to **yes** — the
+// opposite of the image prompt, and deliberately so: the volumes are what the
+// scenario declared, so mounting them is the declared intent, while pulling a
+// new image is a change nobody asked for.
+type VolumeMountPolicy struct {
+	// Policy is `Setting.volume_mount_policy`.
+	Policy string
+	// Console prints the tree and the question.
+	Console *Console
+	// Prompter reads the answer in human mode.
+	Prompter *Prompter
+}
+
+// Run is `MountDevicesVolumes.run(lab, machines_with_volumes)`. Declining sets
+// the scenario option `_mount_volumes` to false, which is how the backend is
+// told to deploy without the mounts.
+func (v *VolumeMountPolicy) Run(e event.MachinesWithVolumes) error {
+	if !v.Console.Format.Machine() {
+		v.Console.Print("The following devices have volumes configured:")
+		for _, machine := range e.Machines {
+			node := TreeNode{Label: fmt.Sprintf("* Device `%s`", machine.Name)}
+			volumes, err := machine.GetVolumes()
+			if err != nil {
+				return err
+			}
+			for _, entry := range volumes.Entries() {
+				guest := entry.Value.GuestPath
+				if guest == "" {
+					guest = "<missing guest_path>"
+				}
+				node.Children = append(node.Children, TreeNode{
+					Label: fmt.Sprintf("Host Path: %s -> Device Path: %s", entry.Key, guest),
+				})
+			}
+			v.Console.PrintLines(Tree(node, v.Console.Width))
+		}
+	}
+
+	if v.Policy != PolicyPrompt {
+		return nil
+	}
+	if v.Console.Format.Machine() {
+		v.Console.Log(LevelInfo, "mounting the declared volumes (--format %s never prompts)", v.Console.Format)
+		return nil
+	}
+
+	yes, err := v.Prompter.Confirm("Continue with volume mounting?")
+	if err != nil {
+		return err
+	}
+	if !yes && e.Lab != nil {
+		e.Lab.AddOption("_mount_volumes", model.Bool(false))
+	}
+	return nil
+}
+
+// PrintWaitMessage is `HandleMachineTerminal.print_wait_msg`: the one-line
+// notice that `connect` prints while it waits for `/tmp/EOS`, with no newline
+// so that the ENTER the user presses lands on the same row.
+func (c *Console) PrintWaitMessage() {
+	if c.Format.Machine() {
+		return
+	}
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	_, _ = fmt.Fprint(c.Out, "Waiting startup commands execution. Press [ENTER] to override...")
+}
+
+// ClearScreen is `HandleMachineTerminal.flush`: erase the display and home the
+// cursor. Python spells it `\033[2J` then `\033[0;0H` on Unix and shells out to
+// `cls` on Windows; the escape sequence works on both since Windows 10's
+// virtual-terminal support, and shelling out to a command interpreter to clear
+// a screen is not something the port reproduces (DIVERGENCES.md).
+func (c *Console) ClearScreen() {
+	if c.Format.Machine() || !c.TTY {
+		return
+	}
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	_, _ = fmt.Fprint(c.Out, "\033[2J\033[0;0H")
+}
+
+// PolicyPrompt is the `image_update_policy` / `volume_mount_policy` value that
+// makes the two handlers ask a question (`setting/Setting.py`'s menus).
+const PolicyPrompt = "Prompt"
+
+// PolicyAlways is the `image_update_policy` value that pulls without asking.
+const PolicyAlways = "Always"

@@ -1,0 +1,39 @@
+usage: kathara lrestart [-h] [--noterminals | --terminals] [--privileged]
+                        [-d DIRECTORY] [-F] [-l] [-o [METADATA ...]]
+                        [--xterm XTERM] [--no-hosthome | --hosthome]
+                        [--no-shared | --shared]
+                        [--exclude DEVICE_NAME [DEVICE_NAME ...]]
+                        [DEVICE_NAME ...]
+
+Restart a Kathara network scenario
+
+positional arguments:
+  DEVICE_NAME           Restarts only specified devices.
+
+options:
+  -h, --help            Show a help message and exit.
+  --noterminals         Start the network scenario without opening terminal
+                        windows.
+  --terminals           Start the network scenario opening terminal windows.
+  --privileged          Start the devices in privileged mode. MUST BE ROOT FOR
+                        THIS OPTION.
+  -d, --directory DIRECTORY
+                        Specify the folder containing the network scenario.
+  -F, --force-lab       Force the network scenario to start without a lab.conf
+                        or lab.dep file.
+  -l, --list            Show information about running devices after the
+                        network scenario has been started.
+  -o, --pass [METADATA ...]
+                        Apply metadata to all devices of a network scenario
+                        during startup.
+  --xterm XTERM         Set a different terminal emulator application (Unix
+                        only).
+  --no-hosthome, -H     Do not mount "/hosthome" directory inside devices.
+  --hosthome            Mount "/hosthome" directory inside devices.
+  --no-shared, -S       Do not mount "/shared" directory inside devices.
+  --shared              Mount "/shared" directory inside devices.
+  --exclude DEVICE_NAME [DEVICE_NAME ...]
+                        Exclude specified devices.
+
+For examples and further information visit:
+https://github.com/KatharaFramework/Kathara/wiki

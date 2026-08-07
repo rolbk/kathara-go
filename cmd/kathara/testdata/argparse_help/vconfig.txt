@@ -1,0 +1,16 @@
+usage: kathara vconfig [-h] -n DEVICE_NAME (--add CD/MAC [CD/MAC ...] |
+                       --rm CD [CD ...])
+
+Manage the network interfaces of a running Kathara device
+
+options:
+  -h, --help            Show a help message and exit.
+  -n, --name DEVICE_NAME
+                        Name of the device to be connected on desired
+                        collision domains.
+  --add CD/MAC [CD/MAC ...]
+                        Specify the collision domain to add.
+  --rm CD [CD ...]      Specify the collision domain to remove.
+
+For examples and further information visit:
+https://github.com/KatharaFramework/Kathara/wiki

@@ -1,0 +1,11 @@
+usage: kathara vclean [-h] -n DEVICE_NAME
+
+Stop a single Kathara device
+
+options:
+  -h, --help            Show a help message and exit.
+  -n, --name DEVICE_NAME
+                        The name of the device to clean.
+
+For examples and further information visit:
+https://github.com/KatharaFramework/Kathara/wiki

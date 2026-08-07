@@ -522,3 +522,717 @@ follows is where the *port* behaves differently from 3.8.3.
     and this is toolchain versioning: it closes itself when Go's tables catch
     up, and cannot be closed inside `labfile` without shipping a private copy of
     the UCD.
+
+## From `kathara/` (port divergences, not Python bugs)
+
+The public API package holds no behaviour of its own — it is interfaces, value
+types, a registry and a facade that delegates — so everything here is a *shape*
+decision that pins what the backends will be able to do. Each one is recorded
+because it is visible from the §7 client API.
+
+49. **The stats generators yield an ordered slice, not a map, and the order is
+    canonical.** Python's `get_machines_stats`/`get_links_stats` yield a
+    `Dict[str, IMachineStats]` filled by a `multiprocessing.dummy.Pool`, so the
+    dict's insertion order — and therefore the row order of `kathara list` and
+    of `lstart -l` — is thread-completion order and differs run to run.
+    ORDERING.tsv rows 44, 59, 79 and 88 rule that the port sorts by the dict key
+    instead; `kathara.MachinesStatsStream.Next` returns
+    `[]MachineStatsEntry` sorted by `ID` (the container name on Docker, the pod
+    name on Kubernetes) and the singular `MachineStatsStream.Next` picks the
+    *first* entry by that sort where Python's `dict.popitem()` picked the
+    last-inserted. A Go map could not have carried the rule at all: PORT_SPEC
+    §10 rejects ranging over one whose order can reach a container. Row order
+    becomes stable, which is strictly a narrowing of Python's observable
+    envelope; the `popitem` change is only reachable when more than one
+    container matches a device name, i.e. under `all_users` or across
+    scenarios. The register asks for both, and both are pinned by the interface
+    contract in `kathara/stats.go` rather than by a test here, because the
+    backends that must honour it do not exist yet.
+50. **`ExecStream.ExitCode` returns `(int, error)` where PACKAGE_GRAPH.md §2.7
+    sketches `ExitCode() int`.** The value is a live API round-trip —
+    `exec_inspect(...)["ExitCode"]` on Docker — which can fail for reasons that
+    have nothing to do with the command's status, and Python lets that raise. A
+    bare `int` would have to swallow the failure or panic, and PORT_SPEC §10
+    forbids panicking on a Python-reachable path. The extra result is additive:
+    it cannot change the code a successful call reports, which is what
+    JSON_CLI_CONTRACT.md §3.6 makes the process exit code. **Action for the
+    contract owner:** errata the §2.7 cell, or say the error must be dropped.
+51. **`TTYSession` has no `fileno()`.** `ITerminalSession.fileno()` returns
+    `Optional[int]` and existed for one reason: `TerminalRunner` used it to
+    choose between an fd-readiness loop and a thread pumping blocking reads,
+    with `None` meaning "no fd, use the thread" (NILABILITY.tsv:178). In Go a
+    goroutine blocked on `Read` *is* the threaded pump and costs nothing, so
+    there is no choice to make and no fd to expose. Two Python properties go
+    with it: the trap that `fileno()` is tested with `is None` because fd 0 is
+    valid, and the EOF asymmetry between the two pumps — the fd path treats an
+    empty read as EOF and closes, the threaded path treats it as "poll again"
+    (analysis/manager-foundation.md §7 gotchas 14-15). The port has one rule
+    instead: `io.EOF` ends the session, a zero-byte read with a nil error does
+    not.
+52. **`ExecStream`, `TTYSession` and the four stats streams have a `Close`
+    Python has no counterpart for.** CPython's refcounting closed the hijacked
+    socket when the generator or the session object went out of scope. Go has no
+    such moment, so an abandoned stream would hold a connection for the life of
+    the process. Every `Close` is idempotent and safe before exhaustion, which
+    is what `ITerminalSession`'s `_closed` flag effectively provided on the one
+    object that had it.
+53. **`LinkStats` emits a `user` key Kubernetes' Python class does not have.**
+    One Go struct stands in for `DockerLinkStats` and `KubernetesLinkStats`, and
+    the two `to_dict()`s are not the same shape: Docker's is
+    `{network_scenario_id, name, network_name, user, enable_ipv6, external,
+    containers}` and Kubernetes' is `{network_scenario_id, name, network_name,
+    vxlan_id}` with no `user` at all (`KubernetesLinkStats.py:40-45`). The
+    port's `user` has no `omitempty`, so a Kubernetes record serialises
+    `"user":null` before `vxlan_id`, where Python's dict has no such key. This
+    is the same treatment `MachineStats` gets, where JSON_CLI_CONTRACT.md
+    §3.0.2 *requires* the nulled `user` on Kubernetes — so the two records stay
+    consistent with each other, at the price of one key on the one record no
+    contract pins. Nothing in 1.0 renders `LinkStats`; the divergence is latent
+    until a shape is pinned for it, and pinning one is when to decide between
+    keeping this and splitting the type. Pinned by `TestLinkStatsJSONShape` in
+    `kathara/stats_test.go`.
+54. **`kathara`'s *test* binary imports `internal/util`, which PACKAGE_GRAPH.md
+    §1.2's "complete" edge list does not give it.** `TestLabRefMessagesMatchUtil`
+    (`kathara/params_test.go`) puts `LabRef.RequireSingle`/`AtMostOne` side by
+    side with `util.CheckRequiredSingleNotNoneVar`/`CheckSingleNotNoneVar` over
+    all eight shapes of the lab-identifier triple, because the frozen §1.2 row
+    denies this package the edge and so the counting and the two message texts
+    are written twice — and a drift between the copies would be a wrong sentence
+    in a user's terminal. The production edge list is unchanged: `kathara.a`
+    links `kerrors`, `model`, `settings` and `event` and nothing else, and no
+    cycle is possible in either direction since `internal/util` imports only
+    `kerrors`. **Action for the contract owner:** say whether §1.2 governs test
+    files; if it does, the comparison moves to a `cmd`-side test that owns both
+    edges.
+
+## From `backend/docker/` (port divergences and reproduced Python bugs)
+
+The Docker backend is where the frozen naming and label schema lives
+(PORT_SPEC §0.4), so almost everything in it is reproduced rather than
+decided. What follows is the residue: the places where the Go SDK, the deferral
+boundary, or a Python nondeterminism the register rules on made a choice
+unavoidable. Reproduced Python bugs that needed no decision — the dead
+`lab_hash` conditional in `get_container_name`, the `(':' or '@')` tag test, the
+`['shared_mount']` literal list, the unanchored `eth{n}` sysctl match and its
+`IFNAME0` corruption, the lexicographic `kathara.iface` sort — are carried in
+code comments and pinned by tests, not listed here.
+
+55. **The endpoint-sysctls DriverOpt is emitted in canonical sorted order.**
+    `_create_driver_opt` joins a Python `set` (`DockerMachine.py:470`), so the
+    value of `com.docker.network.endpoint.sysctls` differs between two runs of
+    the same command and is visible in `docker inspect`; ORDERING.tsv row 40
+    flags it as a known nondeterministic site and the accepted ruling on OQ-8
+    picks a canonical order. The port sorts, and keeps the set's other property:
+    a device sysctl that renders to exactly a baseline entry collapses into it
+    rather than appearing twice. Pinned by
+    `TestCreateDriverOptSortsCanonically` and `TestCreateDriverOptDedupes`.
+    `_get_iface_sysctls` returns a sorted slice for the same reason
+    (ORDERING.tsv row 39).
+56. **The image check/pull order is the scenario's, not a hash order.**
+    `deploy_machines` builds `set(map(get_image, machines))` and
+    `check_from_list` iterates it (`DockerMachine.py:150`, `DockerImage.py:123`),
+    so the order of the pull progress bars and the update prompts is
+    hash-randomised per run. ORDERING.tsv rows 29 and 46 both say "!! collect
+    into slice, dedupe preserving first occurrence"; the port does exactly that
+    and `CheckFromList` takes an ordered slice.
+57. **Stats streams re-query on every step and never accumulate.** Python's two
+    stats generators are infinite, yield the SAME dict object each round, and on
+    an empty result `yield dict()` and then FALL THROUGH — no `continue` — so
+    the following step returns stale accumulated entries without re-querying
+    (docker-backend.md gotcha 19). All three behaviours are artefacts of the
+    accumulate-and-resample machinery PORT_SPEC §0.3 defers: with inventory-only
+    stats there is nothing to accumulate. Each `Next` here re-queries and
+    returns what is running now. The two observable properties that survive are
+    preserved: an empty result is an empty batch and NOT the end of the stream
+    (NILABILITY.tsv:64), and the stream never ends on its own.
+58. **`DockerLinkStats`'s shared-mode KeyError is not reproduced.**
+    `DockerLinkStats.__init__` indexes `attrs['Labels']['lab_hash']` and
+    `['user']` directly (`stats/DockerLinkStats.py:27,30`), and `NetworkLabels`
+    deliberately omits both in the `LABS` and `USERS` sharing modes — so
+    constructing one for a shared collision domain raises `KeyError`
+    (SYNTHESIS §1.2). The port reads the labels defensively and answers "".
+    Reproducing the crash would fail an API call for a configuration this same
+    backend produced two functions earlier, on a path 1.0 does not render: no
+    CLI command reads `get_links_stats`, and JSON_CLI_CONTRACT.md pins no shape
+    for it. Pinned by `TestLinkStatsSharedModeLabelsAreBenign`.
+59. **`image.tags[0]` is made total.** `DockerMachineStats.__init__`
+    (`stats/DockerMachineStats.py:42`) and `_delete_machine`'s shutdown warning
+    (`DockerMachine.py:1112`) both index the first tag of an image that may have
+    none, which is an `IndexError` (docker-backend.md gotcha 21). The port falls
+    back to the image reference from the inspect. A device listing and a log
+    line must not be able to fail on one untagged image, and PORT_SPEC §10
+    forbids the panic the direct index would be. Pinned by
+    `TestMachineStatsUntaggedImage`.
+60. **`chardet` decoding is dropped at both of its sites.** `_exec_run` decodes
+    an exec's stdout with `chardet.detect` before scanning it for the OCI
+    runtime pattern (`DockerMachine.py:884-885`), and `connect` decodes the
+    startup log the same way before writing it out (`:713-714`). The port
+    matches the regexp against the bytes and writes the log bytes through
+    unchanged. The pattern is pure ASCII and every encoding chardet can detect
+    agrees with UTF-8 over the ASCII range for these bytes, so only a wide
+    encoding (UTF-16) — which no OCI runtime emits — could differ; the log dump
+    is a debug artefact no contract pins. It also keeps a charset-detection
+    dependency out of the module.
+61. **An unmapped HTTP status is indistinguishable from a 500.** Python sniffs
+    `e.response.status_code == 500` at four sites. The Go SDK encodes the status
+    as an `errdefs` sentinel and its own error wrapper makes the unmapped-status
+    payload unreachable to `errors.As`, so `errhttp.ToHTTP` answers 500 for a
+    502 or a 510 — and for an error that never came from the daemon. Every sniff
+    pairs the status with a substring test on the daemon's message, which is
+    what keeps the reachable cases right; the one Python behaviour this could
+    have changed, `test_connect_interface_plugin_api_error`'s 510, is preserved
+    because that error's explanation carries no plugin phrase either. Measured
+    and pinned by `TestStatusCodeRoundTrips` and
+    `TestPluginSniffCannotSeeAnUnmappedStatus`.
+62. **`plugin.upgrade()` is ported as nothing, because it does nothing.**
+    `check_and_download_plugin` calls it on every launch (`DockerPlugin.py:47`)
+    and OQ-16 asks whether the sequence can be trimmed. It cannot be trimmed
+    because there is nothing there: docker-py's `Plugin.upgrade` is a GENERATOR
+    FUNCTION, so calling it and discarding the result constructs a generator and
+    runs nothing — no privileges query, no pull, no `reload`, and not even the
+    `DockerError('Plugin must be disabled before upgrading.')` its first line
+    would raise for the enabled plugin that is the normal case.
+    Oracle-verified against docker-py 7.2.0:
+    `inspect.isgeneratorfunction(Plugin.upgrade)` is True. Issuing a real
+    `PluginUpgrade` would therefore be the behaviour change, not omitting one.
+63. **`pack_data`'s archive is deterministic and its member order is declared.**
+    Python stages the tree on a real filesystem and tars it on close, so every
+    member carries `time.time()` and the gzip header carries the random
+    temp-file basename — two of its own runs already differ, and OQ-15(c) leaves
+    the walk order deliberately unspecified. The port emits a fixed epoch, no
+    gzip name or mtime, and the order `hostlab/`, `hostlab/{name}/`, the
+    device's files sorted, then the four scenario files in their fixed order.
+    Extraction is what the goldens compare (SYNTHESIS §1.4) and no two members
+    can collide, so the order is unobservable past the untar. It is the same
+    choice `util.PackFilesForTar` already makes.
+64. **`retrieve_files` extracts without sanitising members, deliberately.**
+    `tarfile.extractall(path=dst)` with no `filter=` is a fully-trusted
+    extraction, so an archive holding `../` components writes outside `dst`.
+    docker-backend.md gotcha 28 rules that the port must not silently add
+    safety that changes behaviour, so it does not: `filepath.Join` cleans the
+    member name but does not clamp it, and `Join(dst, "../x")` lands beside
+    `dst` exactly as `os.path.join` does. The archive comes from the Docker
+    daemon relaying a path the caller chose, so the exposure needs a container
+    that is already hostile. PROPOSED-DIVERGENCES.md carries the hardening
+    request. The one member shape that does NOT match is an absolute name; see
+    69.
+65. **`_mount_volumes` is restored rather than deleted.** `deploy_machines`
+    writes the option before the fan-out and `del`s it after
+    (`DockerMachine.py:154,188`); `model.Lab` has no removal method and this
+    stage may not add one. The port writes back the value it computed —
+    `policy in ("Prompt", "Always")` — which is exactly what
+    `Machine.get_volumes` derives when the option is ABSENT, so every reader
+    sees the same answer. What it preserves that leaving the interactive
+    prompt's reply in place would not is that a declined prompt does not persist
+    into the next deploy of the same `Lab`. The leak on the error path is
+    Python's too: the `del` is not in a `finally`.
+66. **One `TTYSession` implementation, not the `tty_unix.go`/`tty_windows.go`
+    pair PACKAGE_GRAPH.md §4 lists.** The Python split existed because the
+    sessions reached into docker-py privates for a Unix fd (`handler._response`,
+    `os.read`) or a Windows named pipe (`handler._handle.handle`,
+    `win32file.ReadFile`). The Go SDK returns a `types.HijackedResponse` holding
+    a `net.Conn` on both platforms — it uses go-winio for the npipe itself — so
+    there is one implementation and no platform code to split.
+    **Action for the contract owner:** errata the §4 row, or say the file must
+    be split anyway.
+67. **`Machine.pack_data` is implemented inside `backend/docker`.**
+    PACKAGE_GRAPH.md §1.1 row 5 and §2.2 put it in `model/pack.go`, which does
+    not exist — a gap PROPOSED-DIVERGENCES.md already tracks, and one this stage
+    may not close, since `model` needs two widenings of `internal/util` (a
+    bytes-level `convert_win_2_linux` and a `WriteTar` that emits directory
+    members) that are outside its edit scope. `backend/docker/pack.go` carries a
+    copy so the backend is not a stub. When the symbol lands, that file becomes
+    a call. The same constraint put a twenty-line posix `shutil.which` in
+    `iptables_linux.go`, because `internal/util`'s `pyWhich` is unexported.
+68. **`mem_limit` above 2^63 saturates instead of being posted whole.**
+    docker-py's `parse_bytes` is `int(float(digits_part) * units[suffix])`
+    (`docker/utils/utils.py:433-441`), so the digits go through a binary64
+    before they are scaled and everything above 2^53 is ROUNDED —
+    `mem=9007199254740993b` posts …992, not …993. `parseMemory` reproduces that
+    rounding exactly (oracle-verified vectors in
+    `TestParseMemoryRoundsThroughFloat64`), and diverges only past int64:
+    Python's result is an arbitrary-precision int, so it posts a `Memory` the
+    daemon cannot decode into its `int64` field and answers 400 to, while the
+    port saturates to `math.MaxInt64`, which the daemon ACCEPTS — Python errors
+    where the port deploys. `mem=9223372036854775807b` is the smallest input
+    that differs, because `float()` rounds it up to 2^63. Above ~1.8e308
+    `float()` is `inf` and Python's `int(inf)` is an OverflowError; the port
+    saturates there too rather than growing an error return on a signature no
+    reachable scenario needs. `GetMem` preserves arbitrary digits
+    (`model/machine.go`), so the inputs exist; no network scenario writes one.
+69. **An ABSOLUTE tar member is rooted under `dst` rather than honoured.**
+    Python's `extractall` builds each target with `os.path.join(path,
+    tarinfo.name)`, and `os.path.join("/dst", "/abs/x")` DISCARDS `dst` and
+    writes to `/abs/x`; `filepath.Join` roots it at `/dst/abs/x` instead. Every
+    other fully-trusted behaviour is reproduced, including the `../` escape (64)
+    and the mode/mtime/ownership restoration, so this is the single member shape
+    that differs. It is unreachable from `retrieve_files`: the archive is built
+    by the Docker daemon from a container path and `get_archive` emits only
+    relative, basename-rooted names. Reproducing it would widen a hole
+    PROPOSED-DIVERGENCES.md already asks to close, which is why the clamp
+    stands and is recorded here instead.
+
+## From `backend/kubernetes/` (port divergences and reproduced Python bugs)
+
+70. **Empty lists, zero-valued fields and canonicalised quantities differ in the
+    submitted object.** The Python Kubernetes client serializes an object by
+    dropping only the attributes that are `None`, so it posts
+    `"volumeMounts": []`, `"volumes": []`, `"imagePullSecrets": []` and
+    `"readOnly": false`; client-go's structs carry `omitempty` and drop all four,
+    and its `metav1` types add `"creationTimestamp": null` and `"status": {}`
+    that Python has no field for. `resource.Quantity` additionally
+    re-serializes canonically, so the `"2000m"` CPU limit Python posts is `"2"`
+    here — which is what the API server stores whichever client posted it, since
+    it canonicalises on the way in. None of the five differences is readable at
+    the API server, and the Layer C goldens are the Python request bodies
+    verbatim: `assertGolden` decodes each one INTO THE SAME GO TYPE and
+    re-encodes, so both sides go through one serializer, and `assertRoundTrip`
+    fails the test if any key of the raw oracle output does not survive that
+    decode. **Action for the contract owner:** none needed unless a golden is
+    ever meant to be a byte-for-byte HTTP body rather than an object.
+71. **`get_env_var_value_from_pod` does not mutate the pod.** Python's
+    implementation is `container_definition = containers.pop()`
+    (`KubernetesMachine.py:777`), which REMOVES the container from the pod object
+    it was handed, so a second call on the same pod answers `None` and the device
+    silently falls back to `Setting.device_shell` (k8s-backend.md G7). It is also
+    why `get_lab_from_api` has to read `pod.spec.containers[0]` BEFORE calling it
+    (`KubernetesManager.py:706-707`). Reproducing it would mean handing out API
+    objects that decay as they are read, and the observable consequence is
+    reachable from no 1.0 path: the two callers (`connect`, `_delete_machine`)
+    each fetch their own pod and read it once. `EnvVarValueFromPod` reads the
+    LAST container, as `pop()` does, and leaves the pod alone.
+    `TestEnvVarValueFromPod` pins both reads.
+72. **The startup watcher is always joined; the 180 s watchdog cancels the
+    operation instead of the process.** Python starts `_wait_machines_startup` on
+    a non-daemon thread and `join()`s it after the deploy fan-out — but the join
+    is SKIPPED when the fan-out raises, so the thread leaks and is kept alive
+    until its `threading.Timer(180)` fires and `os.kill(os.getpid(), SIGINT)`s the
+    whole process (k8s-backend.md G4/G5). Two halves, two answers. The leak is not
+    reproduced: a leaked goroutine holds a watch connection open for the life of
+    the process and has no observable behaviour to preserve, so `DeployMachines`
+    cancels and joins the watcher on every path. The SIGINT is the OQ-10 ruling
+    (PACKAGE_GRAPH.md §2.8): the `logging.error` text is preserved verbatim,
+    `kubectl -n {hash} get pods` included, and the call then answers
+    `context.DeadlineExceeded` — which the CLI renders exactly as it renders a
+    Ctrl-C, exit 0 with the interrupt warning (JSON_CLI_CONTRACT.md §6.2), which
+    is what the SIGINT produced. The watchdog is scoped to the one operation, so
+    a second `lstart` in the same process is unaffected where Python's signal
+    would have hit whatever was running.
+73. **A pod without a `name` label is skipped by both watchers instead of killing
+    them.** `_wait_machines_startup` and `_wait_machines_shutdown` index
+    `event['object'].metadata.labels['name']` on an UNFILTERED watch over the
+    namespace (`KubernetesMachine.py:248,627`), so a foreign pod raises `KeyError`,
+    kills the watcher thread, and costs the deploy its `machines_deploy_ended`
+    event — silently, because `threading.excepthook` writes to stderr and `join()`
+    returns normally. A goroutine may not crash (PORT_SPEC §10), and the namespace
+    belongs to one scenario, so nothing this backend creates is affected.
+    The skip is the WATCHERS' only. The same index on the caller's own goroutine
+    is reproduced as a crash, because there PORT_SPEC §10 does not apply and
+    swallowing it would invent behaviour: `undeploy`'s wait-set comprehension
+    (`KubernetesMachine.py:590`) returns the `KeyError`, since a `""` in the wait
+    set is a name no event can satisfy and would turn Python's crash into a stall
+    until the watchdog of 87 (`TestUndeployUnlabelledPodIsAKeyError`).
+    Three READ-ONLY accessors do keep answering `""` and are covered by this
+    entry rather than by a crash, because each is reached from a listing that
+    PORT_SPEC §10 forbids failing on one foreign object: `NetworkLinkName`
+    (`network['metadata']['labels']['name']`, `KubernetesManager.py:330` — an
+    unlabelled NAD is silently left out of `selected_links` instead of raising),
+    `linkStatsFor`'s use of the same accessor, and `reconstructDevice`'s
+    `pod.metadata.labels["name"]` (`KubernetesManager.py:704`), which names the
+    reconstructed device `""`. All three need a foreign object labelled
+    `app=kathara`; entry 76 is the same reasoning for a NAD whose config will not
+    parse.
+74. **The pod watch is opened before the fan-out rather than inside the watcher
+    goroutine, and a watch that will not open fails the operation.** Python starts
+    the thread first and the thread opens the watch, which is a race it loses
+    whenever a pod reaches Ready before `w.stream` is established. ORDERING.tsv
+    row O17 states the requirement the code only approximates ("watch must be
+    established before deletions to not miss DELETED events"), so the `Watch` call
+    is made on the caller's goroutine and only the event loop runs concurrently.
+    `machines_deploy_started` is still dispatched from the watcher goroutine, as
+    CONCURRENCY.tsv row `KubernetesMachine.py:184` records.
+    Moving the call moves its ERRORS too. In Python the `ApiException` from
+    `w.stream` is raised inside the wait thread, where `threading.excepthook`
+    prints it and `join()` returns normally (CONCURRENCY.tsv rows
+    `KubernetesMachine.py:184,599`: "errors-swallowed … LOST"), so `lstart` and
+    `lclean` carry on with no watcher and report success; here the same failure is
+    returned before anything is deployed or deleted, carrying the `KubernetesAPI`
+    code of entry 88. Fail-fast rather than silent-continue is the deliberate
+    half of this divergence: a watch that cannot be opened means the operation
+    cannot report what it is contracted to report.
+75. **The VNI check-and-reserve is one critical section.**
+    `_get_unique_network_id` is a membership loop followed by an assignment on a
+    `multiprocessing.Manager` proxy dict (`KubernetesLink.py:319`); each proxy
+    operation is atomic and the PAIR is not, so two workers probing to the same
+    free VNI can both take it and put two collision domains on one VXLAN wire.
+    CONCURRENCY.tsv row `KubernetesLink.py:319` rules the port fixes it — "make
+    check+reserve one critical section under a sync.Mutex (fixes latent bug; safe
+    deviation, note in port docs)" — which is this note. `TestVNIAllocatorIsRaceFree`
+    pins it. The `multiprocessing.Manager` child process becomes the mutex
+    (row `KubernetesLink.py:75`).
+    The ids are also RESERVED BEFORE the fan-out, one per collision domain in
+    scenario order, and each worker is handed the id it must create with.
+    ORDERING.tsv row `KubernetesLink.py:77` requires it: Python calls
+    `_get_unique_network_id` from the pool thread (`KubernetesLink.py:99`), so when
+    two names probe to the same id — a sha256 collision modulo
+    `MAX_K8S_LINK_NUMBER`, or a collision with a VNI the cluster already carries —
+    WHICH collision domain keeps the base id and which takes the offset depends on
+    thread arrival, and the register marks that non-deterministic and rules
+    "reserve IDs sequentially in link order BEFORE parallel create; then create in
+    parallel". Only the creates race now, and the assignment is a pure function of
+    the scenario and the cluster's existing VNIs.
+    `TestDeployLinksReservesIDsInScenarioOrder` pins it on the measured colliding
+    pair `cd57`/`cd6099` (both hash to 1392701 under the `user123` seed), in both
+    orders.
+76. **A NetworkAttachmentDefinition whose `spec.config` will not parse is skipped
+    rather than fatal.** `_get_existing_network_ids` does
+    `json.loads(network['spec']['config'])` unguarded over every Kathará NAD in
+    the CLUSTER (`KubernetesLink.py:348-350`), so one foreign object in a namespace
+    someone else labelled `app=kathara` raises out of the listing and takes the
+    whole `lstart` with it. The only consequence of skipping it is that its VNI is
+    not reserved, and PORT_SPEC §10 forbids a listing that can fail on one object.
+    The same reasoning covers `KubernetesLinkStats`, whose VNI is left nil.
+77. **`copy_files` waits for the upload to finish.** Python opens a STREAMING exec,
+    writes the archive to stdin and takes a single `next()`; `_exec_stream` breaks
+    out of its loop BEFORE yielding once the buffer empties, so the generator falls
+    through to `response.close()` and the websocket is closed without waiting for
+    `tar` (k8s-backend.md G19). Python gets away with it because its write is
+    synchronous; the Go transport owns the stdin reader and closing early would
+    truncate an upload. The exec runs to completion here, and its output and exit
+    status are still ignored — as Python ignores them.
+78. **`KubernetesExecStream.exit_code` translates an OCI runtime failure into
+    `MachineBinaryError`.** Python's streaming handle has NO `try/except ValueError`
+    (`exec_stream/KubernetesExecStream.py:22-28`), so a non-integer exec status
+    propagates as a bare `ValueError` and is never translated — while the
+    non-streaming `_exec_all` DOES translate it (`KubernetesMachine.py:913-918`).
+    The asymmetry decides whether `kathara exec --format jsonl` reports
+    `MachineBinary` or an untyped crash for the same missing binary, and
+    JSON_CLI_CONTRACT.md §4 pins the former for `exec`. Both paths go through
+    `execExitCode` here.
+79. **`docker_config_json` is base64-decoded before it is put in the Secret, and an
+    undecodable value produces no Secret and no error.** Python's `data` dict holds
+    strings the client serializes verbatim, and the setting is already the base64 of
+    a `config.json` (`KubernetesSecret.py:34`); client-go's `Secret.Data` is
+    `map[string][]byte` and its codec base64s on the way out, so handing it the
+    setting string would double-encode. The value is therefore decoded here and
+    re-encoded there, which is the identity for every input the API server accepts
+    (`TestSecretDataRoundTrip`, `TestSecretGolden`). An input that is not valid
+    base64 cannot round-trip and does not have to: Python sends it, the API server
+    answers 400, and `_create_secret`'s `except ApiException` swallows it — so the
+    decode failure takes the same exit, no Secret and no error, which is the
+    observable behaviour (`TestSecretUndecodableConfigIsSilent`).
+80. **`KubernetesConfigMap.delete_for_machine` cannot report a transport failure.**
+    Python catches `ApiException` and lets anything else — a dial failure, a TLS
+    error — propagate out of `_delete_machine` and fail one worker of the undeploy
+    fan-out (`KubernetesConfigMap.py:48-53`). The Go signature has nowhere to put
+    it: the method is called between the shutdown exec and the Deployment delete,
+    and threading an error out of it would change which of the two failures the
+    user sees. Both failures are swallowed here; the Deployment delete that follows
+    fails on the same transport anyway, so the operation still reports one.
+81. **`Setting.open_terminals = False` is not written.** `deploy_machines` mutates
+    the process-wide settings singleton (`KubernetesMachine.py:174`, k8s-backend.md
+    G20) so that the `machine_deployed` subscriber does not try to open a terminal
+    on a device whose payload is a NAME rather than a `Machine` — which would
+    `AttributeError` inside `HandleMachineTerminal.run`. PORT_SPEC §0.2 #10 makes
+    the settings an injected value rather than a singleton, so there is nothing
+    process-wide to mutate, and the payload variance is expressed in the types
+    instead: `event.MachineDeployed` carries both `Machine` and `Name` and a
+    subscriber tells the two apart. Megalos still never opens a terminal, because
+    `ConnectTTY` is the only terminal path and the CLI drives it explicitly.
+82. **`Machine.pack_data` is implemented inside `backend/kubernetes` as well.**
+    The same gap DIVERGENCES.md 67 records for the Docker backend:
+    PACKAGE_GRAPH.md §2.2 assigns the symbol to a `model/pack.go` that does not
+    exist, and PACKAGE_GRAPH.md §1.2 gives the two backends no edge to each other
+    — that separation is what makes the `nok8s` build possible at all — so the
+    copy is duplicated rather than shared. `backend/kubernetes/pack_test.go` pins
+    the same cases `backend/docker/pack_test.go` pins. When `model.PackData`
+    lands, both files become a call. PROPOSED-DIVERGENCES.md already carries the
+    request; the second copy makes it more urgent, not less.
+83. **`shlex.split` is copied a second time, and `shlex.join` is new.** Same
+    constraint as 82: `backend/docker/shlex.go` cannot be imported from here.
+    `ShlexJoin` has no Docker counterpart — the Docker backend reads the missing
+    binary out of the OCI regexp's capture groups, while `OCI_RUNTIME_RE` on this
+    backend is the bare literal `OCI runtime exec failed` and
+    `MachineBinaryError.binary` is `shlex.join(command)`, the whole command quoted
+    (`KubernetesMachine.py:917`). Both halves are pinned against CPython vectors in
+    `testdata/shlex.json`.
+84. **The exec transport prefers WebSocket with a SPDY fallback.** Python's
+    `stream()` upgrades to a WebSocket; client-go's default is SPDY. The port keeps
+    Python's preference by making the WebSocket executor primary and falling back on
+    an upgrade failure, which is what `kubectl` does and what an API server too old
+    to negotiate the v5 protocol needs. Not observable in the exec's answers.
+85. **`grace_period_seconds` is sent once, in the body.** `_undeploy_link` passes it
+    BOTH as a `V1DeleteOptions` body and as a query parameter
+    (`KubernetesLink.py:190-191`, k8s-backend.md G21); client-go carries it in the
+    body only. The API server reads the body, so the request is the same modulo a
+    redundant parameter.
+86. **The container-port name is fifteen random hex characters, and can still be
+    rejected.** `str(uuid.uuid4()).replace('-', '')[0:15]`
+    (`KubernetesMachine.py:419`) produces fifteen characters from `[0-9a-f]`, and a
+    Kubernetes container-port name must be an IANA_SVC_NAME — at most fifteen
+    characters, lower-case alphanumeric and `-`, and at least one NON-DIGIT. Roughly
+    one name in 1200 comes out all digits and the API server rejects the pod.
+    `randomPortName` reproduces the alphabet and therefore the odds; fixing it would
+    change the name of every port on every device, which PORT_SPEC §0.4 freezes.
+    The generator is a field so a golden can pin it.
+87. **The shutdown wait has a 180 s watchdog, where Python's `join()` can hang
+    forever.** `undeploy` starts `_wait_machines_shutdown` on a thread and
+    `wait_thread.join()`s it after the delete fan-out
+    (`KubernetesMachine.py:599-609`), so `lclean` blocks until every watched
+    device has produced a DELETED event — which is also what makes
+    `machine_undeployed` and `machines_undeploy_ended` observable. The join is
+    reproduced. What is added is the timer: unlike `_wait_machines_startup` this
+    path has NO `threading.Timer`, so a DELETED event that never arrives — a
+    device selected for undeploy that was not running, a watch the API server
+    dropped — hangs the caller forever. CONCURRENCY.tsv row
+    `KubernetesMachine.py:599` rules the port "add a sane timeout (deviation from
+    Python's infinite hang, document it)"; it is `MAX_TIME_ERROR`, the same 180 s
+    idle interval the startup watchdog uses, reset on every pod event. When it
+    fires the wait simply ends: there is no Python message to preserve and no
+    Python error to report, so `undeploy` answers whatever the deletions answered
+    and only `machines_undeploy_ended` is missing — the progress bar stays open,
+    exactly as it does when Python's own termination test never fires.
+    On a fan-out failure Python skips the join entirely and leaks the thread; the
+    watcher is stopped and joined instead, for the reason entry 72 gives about the
+    deploy path. `TestUndeployDispatchesEventsAndWaits`, `TestUndeployWatchdog`
+    and `TestUndeployLeavesNoWatcherBehind` pin the three halves.
+88. **Every escaping Kubernetes API error carries the `KubernetesAPI` code, not
+    only the three `raise e` sites.** ERROR_CODES.md §1.3 assigns code
+    `KubernetesAPI` and human label `ApiException` to "a Kubernetes API error not
+    matched by any translation rule", naming `KubernetesMachine.py:370,837` and
+    `KubernetesManager.py:145` in parentheses. Those three are where Python
+    *re-raises* one; they are not where a user *sees* one. `kathara.py:104` prints
+    `({type(e).__name__}) {e}` for every uncaught exception, so an `ApiException`
+    from a call nobody wrapped in a `try` — `list_namespaced_pod` behind `linfo`
+    or `exec`, `delete_namespaced_deployment` inside the undeploy fan-out,
+    `create_namespaced_custom_object` behind `kathara.deploy_link`,
+    `list_namespace`, `delete_namespace` in `wipe`, `VersionApi().get_code()`, the
+    two `w.stream` opens — prints the identical `(ApiException) (404) Reason: Not
+    Found…` line. Go cannot recover that at the CLI: `isolation_test.go` forbids
+    any `k8s.io/…` import outside this package, so an untranslated client-go error
+    reaching the boundary would fall into the `InternalError` fallback of §1.4 and
+    lose the label. `translateAPI` therefore applies the passthrough at every call
+    whose error Python lets escape uncaught. It is a no-op on anything that is not
+    an `ApiException` (a dial failure, a cancelled context — which Python's
+    `except ApiException` would not catch either), it keeps the cause reachable so
+    `isConflict`/`isForbidden` and the outer `except` blocks of `create` and
+    `deploy_lab` still fire, and it is idempotent. The calls Python SWALLOWS
+    (`KubernetesConfigMap.py:52`, `KubernetesLink.py:193`,
+    `KubernetesMachine.py:687`, `KubernetesNamespace.py:37,52`,
+    `KubernetesSecret.py:65`) are untouched. **Action for the contract owner:**
+    ERROR_CODES.md §1.3's parenthesised site list reads as exhaustive and is not;
+    `backend/docker` does not yet apply the sibling `DockerAPI` code at all, and
+    the two backends should be brought into line before the CLI freezes error
+    rendering.
+89. **A `mem` unit Kubernetes has no suffix for is refused one API call earlier.**
+    `Machine.get_mem` accepts the units b/k/m/g (`model/Machine.py:499`), so
+    `mem=100k` and `mem=5b` are legal in `lab.conf` and arrive at
+    `_build_definition` as `100k`/`5b`. Python uppercases (`memory.upper()`,
+    `KubernetesMachine.py:437`) and SUBMITS `100K`/`5B`; the quantity grammar has
+    a lower-case `k` and no `B` at all, so the API server rejects the Deployment
+    and `create`'s `except ApiException` re-raises it as the `(ApiException)` line
+    of entry 88. client-go parses the quantity locally, so `resource.ParseQuantity`
+    fails while the object is still being built. The user-visible code is the same
+    — the parse failure is wrapped in `kerrors.NewKubernetesAPI` — and the message
+    text is client-go's ("unable to parse quantity's suffix") rather than the API
+    server's. What differs in a request trace is one call: the ConfigMap is created
+    on both paths, and Python additionally issues the `create_namespaced_deployment`
+    that fails. `TestBuildDefinitionRejectsUnsupportedMemoryUnit` pins both the
+    refusal and the neighbouring `m`/`g` that still deploy. Entry 70 covers only
+    the canonicalisation of quantities that DO parse. The `cpus` limit cannot reach
+    this: it is always `"%dm"`.
+
+## From `cmd/kathara` and `internal/cliout` (port divergences and reproduced Python bugs)
+
+90. **`rich` is reimplemented rather than replaced by `lipgloss`.**
+    `PACKAGE_GRAPH.md` §3's dependency table names
+    `github.com/charmbracelet/lipgloss` v1.1.0 for `internal/cliout`'s
+    "tables/panels/progress". It is not used. The `human` renderer is under a
+    byte-parity obligation (`PORT_SPEC` §9 Layer A captures Python's stdout and
+    diffs it), and lipgloss wraps text with `muesli/reflow`, whose fold points
+    differ from `rich/_wrap.py:divide_line`'s on the very first golden that
+    exercises them: `07-static-routing`'s `LAB_AUTHOR` folds after
+    `F. Ricci, ` and `Text.rstrip_end` crops exactly the one space that
+    overflowed the fold width, leaving a row that ends in a comma. reflow
+    strips the whole trailing run. `internal/cliout/text.go` is therefore a
+    line-cited port of `_wrap.py` + `Text.wrap` + `Lines.justify`, pinned by
+    `TestLabMetadataPanelMatchesGoldens` and five sibling tests against the
+    recorded goldens. No third-party rendering dependency is added.
+    **Action for the contract owner:** drop the lipgloss row from
+    `PACKAGE_GRAPH.md` §3, or say which goldens may be re-recorded.
+
+91. **A log record is emitted unfolded, with a nine-space gutter on the
+    continuation rows.** `RichHandler` renders a record as an eight-column
+    level name, a space, and the message word-folded into the remaining width,
+    with the continuations indented nine columns and every row padded to the
+    console width. `NORMALIZATION.md` §6.3 undoes exactly that fold before a
+    golden is stored, because the fold column depends on host paths inside the
+    message. `Console.Log` therefore emits one physical row per *logical* line
+    and never folds — the normalized form is identical, and it cannot drift
+    with the console width. What is NOT dropped is the gutter: the harness
+    recognises a continuation row by the exact `^ {9}\S` prefix, so a message
+    that carries an embedded newline (`LabParser`'s syntax error interpolates
+    the raw line, terminator included — `test/goldens/err-malformed-labconf`)
+    is emitted as `CRITICAL ` + first row, then nine spaces + the rest.
+    Verified against the recording end to end.
+
+92. **Progress bars are not rendered to a non-terminal, and always carry a bar
+    glyph when they are.** `rich.live.Live` suppresses every intermediate
+    refresh on a file or a dumb terminal and prints the final state once at
+    stop, which is what put `[Deploying devices] ━━━ 3/3` into the pre-rule
+    recordings; `NORMALIZATION.md` §6.6 now drops any line containing
+    `━ ╸ ╹ ╺ ╻` or a braille spinner frame. `cliout.ProgressBar` reproduces the
+    suppression and guarantees at least one `━` in every line it does emit, so
+    a bar can never survive normalization and diff against a golden that has
+    none. The intermediate frames on a real terminal are redrawn with `\r`
+    rather than through a `Live` region; the observable difference is that a
+    resize mid-deploy does not reflow the bar.
+
+93. **`kathara list --watch` redraws in place instead of taking over the
+    screen.** Python opens a `rich.live.Live(screen=True)` alternate-screen
+    session and loops (`ListCommand.py:78-85`). The port clears and reprints.
+    No golden covers watch mode (it never terminates), an alternate screen
+    destroys the scrollback the user was reading, and `screen=True` on a pipe
+    emits control sequences into a file. The refresh period (1 s), the break
+    condition (the stats stream ending) and the exit code (0, Ctrl-C exempt
+    from the warning) are unchanged.
+
+94. **`kathara check` prints `Go version is:` where Python prints
+    `Python version is:`.** `JSON_CLI_CONTRACT.md` §3.7 names the JSON key
+    `runtime_version` and asks human mode for "the analogous Go line"; the
+    label is `Go version is:` followed by three tabs, which lands the value in
+    the same column 32 as the other four rows.
+
+95. **`osVersion` outside Linux is `GOOS-GOARCH`, not `platform.platform()`.**
+    `CheckCommand.linux_platform_info` is `uname` and is reproduced exactly;
+    the macOS and Windows arms call `platform.platform()`, which interpolates
+    an OS release string (`macOS-14.5-arm64-arm-64bit`,
+    `Windows-10-10.0.19045-SP0`) that Go reads only through a syscall neither
+    `runtime` nor `x/sys` exposes portably. The value is a diagnostic line, is
+    not compared by any golden, and is the `os_version` key of E7.
+
+96. **argparse's prefix matching is not reproduced.** Python accepts `--dir`
+    for `--directory` (oracle-probed), and `CLI_SURFACE.md` §0.6 explicitly
+    leaves the choice to the port and records that no golden exercises it. The
+    port requires full names: with abbreviation, every flag added in a later
+    release can break a script that was unambiguous before it. Short flags,
+    clusters, `--flag=value` and `-dvalue` all behave as argparse does.
+
+97. **`kathara settings` is a numbered prompt loop, not a curses menu.**
+    `PORT_SPEC` §0.2 #1 deletes the vendored `consolemenu` and §3.2 item 3 asks
+    for a bubbletea form over the same keys. The form is Phase 6; what ships is
+    a dependency-free prompt loop over `settings.Settings.Keys`/`SetString`, so
+    §3.2 item 4 ("validation lives in `settings/` and runs on both paths")
+    holds today. It also degrades honestly: with no terminal it answers
+    `InvocationError` naming `kathara config`, where the curses menu would have
+    failed inside ncurses. Python's `-h`-is-ignored quirk (`CLI_SURFACE.md`
+    M-5) is reproduced by `commandSpec.NoParser`, which skips the whole
+    parse-and-validate block for this one command: argv is never read, so `-h`
+    prints nothing, `--bogus` is not an unknown flag, and §12's "no argparse
+    exit-2 path exists" holds. `TestSettingsNeverParsesArgv` pins it.
+
+98. **Python's `EOFError` at a confirmation prompt keeps its class name.**
+    `rich.prompt` calls CPython's `input()`, which raises `EOFError` on a
+    closed stdin; nothing catches it, so `kathara wipe` under the Layer A
+    harness prints `CRITICAL (EOFError) EOF when reading a line` and exits 1.
+    `ERROR_CODES.md` §1.2 buckets `EOFError` into `InternalError`, which would
+    have made the human label read `InternalError`. `cliout` therefore consults
+    an optional `HumanLabel() string` on the error before falling back to the
+    registry, which is also what keeps `model.PyRuntimeError`'s
+    `TypeError`/`AttributeError`/`KeyError`/`CreateFailed` labels — the last of
+    which `test/goldens/err-nonexistent-dir` asserts. The JSON `code` is
+    unaffected and stays `InternalError`.
+
+99. **`exec` decodes with one U+FFFD per *maximal subpart*, which is what
+    CPython does — the earlier "one per byte" reading of this entry was
+    wrong.** `JSON_CLI_CONTRACT.md` §3.6 replaces Python's crashing per-chunk
+    `chardet.detect` with "UTF-8 with invalid sequences replaced by U+FFFD",
+    and the parity target for *how many* is `bytes.decode("utf-8", "replace")`.
+    Oracle-measured on CPython 3.13: `b'\xe2\x82'` → one replacement,
+    `b'\xe2\x82A'` → `'\ufffdA'`, `b'\xf0\x9f\x98'` → one, while
+    `b'\xff\xff'` → two and `b'\xed\xa0\x80'` → three. That is the Unicode
+    maximal-subpart rule, not one-per-byte and not the one-per-run
+    `strings.ToValidUTF8` implements, so `cmd/kathara/exec.go` spells the
+    decoder out (`utf8Step`) and `TestUTF8DecoderReplacesMaximalSubparts` pins
+    it against sixteen oracle rows, each also fed one byte at a time. The
+    decoder still holds back a trailing sequence that is a well-formed
+    *prefix*, so a rune split across two chunks is one character and an
+    unfinished one at end of stream is one replacement.
+
+100. **`connect` forwards SIGWINCH on Unix; Python never resized at all.**
+     `TerminalRunner` sizes the session once at attach. A shell that is never
+     told the window grew wraps its prompt at the old width, which is one of
+     the failures `PORT_SPEC` §3.3 is about. `resize_unix.go` watches SIGWINCH
+     and calls `TTYSession.Resize`; `resize_windows.go` is a no-op, because the
+     console API reports a resize through `ReadConsoleInput`, which cannot be
+     read while the same handle is being drained as a byte stream — that needs
+     the ConPTY input layer of the Phase 6 multiplexer.
+
+101. **The terminal `flush` uses the escape sequence on Windows too.**
+     `HandleMachineTerminal.flush` writes `\033[2J\033[0;0H` on Unix and shells
+     out to `cls` through `os.system` on Windows. The escape sequence works on
+     Windows 10 and later through virtual-terminal processing; spawning a
+     command interpreter to clear a screen is not reproduced. The port also
+     skips the clear entirely when stdout is not a terminal, where Python would
+     have written the raw bytes into the redirected file.
+
+102. **argparse's prefix matching aside, the sub-command help and every exit-2
+     usage block are argparse's byte for byte — but they are rendered by a
+     ported `HelpFormatter`, not by `pflag.FlagUsages`.** `CLI_SURFACE.md`'s
+     conventions call "usage + error to stderr, exit 2" part of the observable
+     contract, and pflag's own renderer disagrees with argparse on every axis:
+     it sorts alphabetically, prints Go type names (`-d, --directory string`),
+     appends `(default [])`, splits a two-spelling action into two rows, has no
+     `positional arguments:` section, and — for the `nargs='*'` options — leaks
+     `bindList`'s `NoOptDefVal` sentinel, two NUL bytes included, into the help
+     text. `cmd/kathara/usage.go` therefore ports `HelpFormatter._format_usage`,
+     `_get_actions_usage_parts`, `_format_action`, `_format_action_invocation`,
+     `_format_args` and `_fill_text`, plus `textwrap`'s greedy wrap.
+     `TestArgparseHelpFormatterMatchesOracle` diffs the result against
+     `testdata/argparse_help/*.txt`, which are `parser.format_help()` run on the
+     real Python command objects at COLUMNS=80, for all thirteen parsers — they
+     match exactly. Two residual differences remain and are deliberate:
+     (a) the port's own flags (`--format`, `--lab-hash`, `--lab-name`,
+     `--from-archive`, `--name`) appear in the real commands' help, which is why
+     the fidelity test drives replica parsers instead; (b) the *error message*
+     for an unknown or malformed flag is pflag's (`unknown flag: --bogus`,
+     `flag needs an argument: --directory`) where argparse says
+     `unrecognized arguments: --bogus`, because that message comes out of the
+     parser and not the formatter. Every message the port raises itself —
+     `the following arguments are required: …`, `one of the arguments --add
+     --rm is required`, `argument -a/--all: not allowed with argument
+     -s/--settings`, `unrecognized arguments: a b` — is argparse's, including
+     the order the four checks fire in.
+
+103. **The layout the help is rendered at is fixed at 80 columns.** argparse
+     asks `shutil.get_terminal_size()` and folds to `columns - 2`, so a wide
+     terminal gets a wide help block. `parser.usage()` renders at 80, which is
+     what `shutil` reports for a pipe and therefore what every non-terminal
+     invocation — the goldens included — already saw. `parser.usageAt` takes
+     the width, so wiring the console's is a one-line change if a human decides
+     the reflow is wanted.
+
+104. **SIGTERM is no longer folded into the Ctrl-C contract.** An earlier build
+     passed `syscall.SIGTERM` to `signal.NotifyContext` alongside
+     `os.Interrupt`, which gave a terminated process the warning, the
+     `{"interrupted":true}` envelope and exit 0. `src/kathara.py` installs no
+     SIGTERM handler at all — the default disposition kills the process, exit
+     143, no output — and `JSON_CLI_CONTRACT.md` §6.2 pins the contract to
+     SIGINT. `cmd/kathara/main.go` now watches `os.Interrupt` only. The
+     interrupt is also read off `ctx.Err()` rather than off a flag set by a
+     goroutine racing `finish`.
+
+105. **`linfo` declares `--format`.** `JSON_CLI_CONTRACT.md` §1.1's `linfo` row
+     reads "FeatureNotAvailable stub in 1.0 (§5.6): errors in every mode" with
+     `—` in the json and jsonl columns, which can be read either as "the flag
+     is a usage error, like `connect`/`settings`" or as "the flag is accepted
+     and every value errors". The port takes the second reading, because §5.6
+     registers `linfo` as a `feature` token of the JSON **error envelope**, and
+     that envelope only exists in the machine formats: under the first reading
+     the registration could never be reached by any invocation. So
+     `kathara linfo --format json` answers
+     `{"error":{"code":"FeatureNotAvailable","message":…,"feature":"linfo"}}`
+     and exits 1, while `--format jsonl` stays a usage error (linfo does not
+     stream). `TestLinfoErrorsInEveryMode` pins all three.
+     **Action for the contract owner:** confirm the reading, or say the flag
+     should be rejected and the §5.6 token is documentation-only.

@@ -132,3 +132,232 @@ Nothing is currently broken by the gap: `pack_data`'s only consumers are the two
 `convert_win_2_linux` and directory members in `WriteTar`), or move the symbol to whichever
 package ends up owning the tar layer and errata the `PACKAGE_GRAPH.md` rows. It must not ship as
 a silent omission: a backend written against the register will expect the symbol to exist.
+
+## Two `PACKAGE_GRAPH.md` §2.7 signature sketches the `kathara` package could not take literally
+**Implemented** (`kathara/execstream.go`, `kathara/registry.go`). The §2.7 mapping table sketches
+two signatures inside prose cells, and both had to change shape — neither is a behaviour change,
+both are additive, and both want an errata rather than a reversal.
+
+`IExecStream.py`'s cell says `ExitCode() int`. The value is `exec_inspect(...)["ExitCode"]`, a
+live API round-trip that fails for reasons unrelated to the command's status, and Python lets
+that raise; a bare `int` would have to swallow it or panic, and PORT_SPEC §10 forbids the second
+on a Python-reachable path. Shipped as `ExitCode(ctx) (int, error)` (DIVERGENCES.md 50).
+
+`ManagerFactory.py`'s cell says `Register(name, factory)`. A two-argument form cannot answer
+`Kathara.get_available_managers_name()` without constructing every backend, and constructing the
+Docker one opens a daemon connection — which is exactly what Python's version avoids by
+resolving the *class* and never instantiating (analysis/manager-foundation.md §7 gotcha 10).
+Shipped as `Register(Backend{Name, FormattedName, New})`, so the display name is declared
+alongside the constructor and `Registry.Available()` reads it without building anything. Pinned
+by `TestRegistryListingDoesNotConstruct`.
+
+**Action for the contract owner:** errata the two `PACKAGE_GRAPH.md` §2.7 cells, or say which
+of the two properties (no swallowed inspect failure; no daemon connection to list backends)
+should be given up instead.
+
+## `model.Lab` has no way to remove a general option, which `deploy_machines` needs
+**Worked around in the tree, needs a human to schedule the method or bless the workaround.**
+`DockerMachine.deploy_machines` adds `lab.general_options['_mount_volumes']` before the deploy
+fan-out and `del`s it afterwards (`DockerMachine.py:154,188`); `model.Lab` exposes `AddOption`
+and `GeneralOption` but no removal, and `generalOptions` is unexported.
+
+`backend/docker` writes the computed value back instead (DIVERGENCES.md 65). That is
+behaviourally identical for every reader — `Machine.get_volumes` derives exactly
+`policy in ("Prompt", "Always")` when the option is absent — and it does preserve the property
+that matters, which is that a declined volume prompt does not persist into the next deploy of the
+same `Lab`. What it does not preserve is the *key set*: `Lab.GeneralOptions()` lists one extra
+entry after a deploy. Nothing in 1.0 renders general options, so the residue is latent.
+
+**Action for the contract owner:** add `Lab.RemoveOption(name) bool` (the `model` package is out
+of this stage's edit scope), or record that the write-back is the sanctioned shape and that
+`GeneralOptions()` may carry `_mount_volumes` after a deploy. `backend/kubernetes` will meet the
+same line (`KubernetesMachine.py` does the same juggling) and should not invent a second answer.
+
+## `internal/util` needs a bytes-level `convert_win_2_linux` and an exported `which`
+**Duplicated in the tree, needs a human to widen the utility package.** Two `internal/util`
+functions exist only in the shape Python happened to need, and `backend/docker` needs the other
+shape of each:
+
+- `ConvertWin2Linux` takes a host *path*, because Python's `WriteTarFS` stages every file on a
+  real filesystem before archiving it. A `vfs.FS` device folder can be in memory, so `pack_data`
+  needs the transformation over `[]byte`. `backend/docker/pack.go` carries a 25-line copy
+  (`convertWin2Linux`), validated against the oracle over eight vectors in `TestConvertWin2Linux`.
+- `pyWhich` — the `shutil.which` port — is unexported, and the D-6 `get_iptables_version`
+  carve-out needs it. `backend/docker/iptables_linux.go` carries a posix-only copy
+  (`lookIptables`). `os/exec.LookPath` is not a substitute: it `Clean`s a relative PATH entry and
+  answers differently for an unset PATH, which is the case a daemon-launched process hits.
+
+Both copies are small and both are tested, but two implementations of a byte-for-byte parity
+function is exactly the drift PORT_SPEC §10 warns about, and `backend/kubernetes` will want the
+first one too (`KubernetesConfigMap` base64s the same archive).
+
+**Action for the contract owner:** export `util.Which` and add a `util.ConvertWin2LinuxBytes(name
+string, content []byte) []byte`, then delete the two copies; or record that per-package copies are
+acceptable and pin them against each other with a shared vector file.
+
+## `retrieve_files` extracts tar members without sanitisation
+**Faithful in the tree, needs a human to decide whether to harden.** `DockerMachine.retrieve_files`
+calls `tarfile.extractall(path=dst)` with no `filter=`, i.e. the fully-trusted extraction, so an
+archive carrying `../` components writes outside `dst`. docker-backend.md gotcha
+28 rules that the port reproduces it and records a proposal rather than silently hardening, which
+is what `backend/docker/pack.go`'s `extractTar` does — for `../`, for the exact mode/mtime restore
+and for the root-only chown. The one shape it does NOT reproduce is an ABSOLUTE member name, which
+`os.path.join` honours and `filepath.Join` roots under `dst`; that is DIVERGENCES.md 69, taken
+because Docker's `get_archive` cannot emit one and reproducing it would widen the very hole this
+section asks to close.
+
+The exposure needs a container that is already hostile, and the path is chosen by the user running
+`kathara`. But the fix is three lines (reject a member whose cleaned path escapes `dst`), it
+cannot break a legitimate `docker cp`-shaped archive, and "we reproduced the traversal" is a poor
+sentence to have to write later.
+
+**Action for the contract owner:** approve hardening `extractTar` (and record it as a sanctioned
+divergence), or confirm the faithful behaviour ships as-is.
+
+## Two `PACKAGE_GRAPH.md` rows the Docker backend could not take literally
+**Implemented, both want an errata rather than a reversal.**
+
+§4's platform table lists `backend/docker/tty_unix.go` / `tty_windows.go`. The split existed in
+Python because the two session classes reached into docker-py privates for a Unix fd or a Windows
+named pipe; the Go SDK hands back a `types.HijackedResponse` holding a `net.Conn` on both
+platforms (it uses go-winio for the npipe itself), so there is one implementation, in `tty.go`,
+and no platform code to split. DIVERGENCES.md 66.
+
+§2.8 puts `Machine.pack_data` in `model/pack.go`, which does not exist; `backend/docker/pack.go`
+carries it (DIVERGENCES.md 67, and the `model.PackData` gap already recorded above).
+
+**Action for the contract owner:** errata the two rows, or say which of them must be honoured
+literally.
+
+## `backend/kubernetes` needed a second copy of `pack_data` and of `shlex.split`
+**Implemented as copies, wants a decision.** The section above already asks for
+`model.PackData` and for `util.ConvertWin2LinuxBytes`/`util.Which` on behalf of
+`backend/docker`. The Kubernetes backend has now made the same copies, because
+PACKAGE_GRAPH.md §1.2 gives the two backends no edge to each other — and that
+separation is not incidental, it is what lets a `nok8s` build drop `client-go`
+(PORT_SPEC §0.2 #8). So the choice is not "share between the backends"; it is
+"move the symbol down into `model`/`internal/util`, or accept two copies pinned
+against the same vectors".
+
+Duplicated: `Machine.pack_data` plus its `convert_win_2_linux` and `extractTar`
+tails (`backend/kubernetes/pack.go`, DIVERGENCES.md 82) and `shlex.split`
+(`backend/kubernetes/shlex.go`, DIVERGENCES.md 83). `shlex.join` is NEW — only
+the Kubernetes backend needs it, for `MachineBinaryError.binary` — and would
+belong next to `shlex.split` wherever that lands.
+
+**Action for the contract owner:** schedule `model.PackData` and a
+`util.ShlexSplit`/`util.ShlexJoin` pair, then delete the four copies; or record
+that per-package copies are acceptable and require the vector files to be shared
+(`backend/kubernetes/testdata/shlex.json` is the CPython-derived one).
+
+## The 180 s Kubernetes watchdog answers `context.DeadlineExceeded`
+**Implemented under the OQ-10 ruling, wants confirmation of the exit code.**
+PACKAGE_GRAPH.md §2.8 sanctions replacing `os.kill(os.getpid(), SIGINT)` with a
+context deadline and requires the `kubectl -n {hash} get pods` message to be
+preserved; both are done (DIVERGENCES.md 72). What the ruling does not say is
+what the CLI should then PRINT and EXIT with. The port answers
+`context.DeadlineExceeded` from `DeployMachines`, on the reading that Python's
+SIGINT produced exit 0 plus the interrupt warning (JSON_CLI_CONTRACT.md §6.2)
+and that a cancellation is the closest thing the port has to that. A reader who
+expects a timeout to be an ERROR — exit 1, code `Connection` or a new one —
+would be surprised, and `cmd/kathara` has not been written yet, so the decision
+is still free.
+
+**Action for the contract owner:** confirm that a startup timeout exits 0 with
+the interrupt warning, or name the error code it should carry instead.
+
+## `internal/cliout` needs an edge to `labfile`, which the frozen graph omits
+
+`PACKAGE_GRAPH.md` §1.2 gives `internal/cliout` the edges `kerrors`, `model`,
+`event`, `kathara`. It needs one more: `labfile`.
+
+`JSON_CLI_CONTRACT.md` §5.4 pins two structured fields on the `Syntax` and
+`Value` codes — `file` (string) and `line` (int) — "when the message carries
+them (`In {conf_name} - Line {n}` variants)". The only type that carries those
+two values is `labfile.ParseError`, whose `File` and `Line` are struct *fields*
+and not methods (`ERROR_CODES.md` §0.3 freezes that shape), so `errors.As` over
+the concrete type is the only way to read them. Without the edge, a malformed
+`lab.conf` produces `{"code":"Syntax","message":"In lab.conf - Line 2: …"}`
+with the two contract fields silently missing.
+
+The edge introduces no cycle: `labfile` depends on `kerrors`, `internal/util`,
+`model` and `vfs`, none of which reaches `internal/cliout`. It is one import
+and one `errors.As` arm (`internal/cliout/errors.go`, the `parse` case of
+`addErrorFields`), pinned by `TestErrorEnvelope`'s parse-failure row.
+
+The alternatives were worse: a package-level extractor registry that
+`cmd/kathara` fills would make the envelope's field set depend on init order,
+and moving the fields onto an interface would change a shape `ERROR_CODES.md`
+§0.3 froze.
+
+**Action for the contract owner:** add `labfile` to `internal/cliout`'s row in
+`PACKAGE_GRAPH.md` §1.2, or drop the `file`/`line` fields from
+`JSON_CLI_CONTRACT.md` §5.4.
+
+## `kathara linfo --format json` is a usage error, not a machine-readable stub
+
+`JSON_CLI_CONTRACT.md` §1.1's table row for `linfo` reads
+"FeatureNotAvailable stub in 1.0 (§5.6): errors in every mode" in the `human`
+column, with an em dash in the `json` and `jsonl` columns. Taken literally —
+which is how the port took it — `linfo` declares no `--format` at all, so
+`kathara linfo --format json` is an unknown-flag usage error with exit **2**,
+and the only way to see the deferral is the human line
+`CRITICAL (FeatureNotAvailable) The linfo command is not supported…`.
+
+That is defensible (the em dashes say the two modes do not exist for this
+command) but it means a scripted client that probes `linfo` cannot parse the
+refusal, and the phrase "errors in every mode" reads as though it could. The
+alternative is one line: give `linfo` a `--format {human,json}` and let it emit
+E13 with `"feature":"linfo"`. It is additive under §9.2 either way, so the
+choice can be made after 1.0 without a contract version bump — but not
+silently, because the exit code differs (2 today, 1 then).
+
+**Action for the contract owner:** confirm the literal reading, or say that
+`linfo` takes `--format` and errors through E13.
+
+## `kathara config` is exempt from the startup settings check
+
+`src/kathara.py:71` skips `Setting.check()` for any command whose name
+*contains* `"settings"`. `config` is new in the port (`PORT_SPEC` §3.2 item 2)
+and does not contain that substring, so a literal port would run the check
+before it — meaning `kathara config set manager_type docker` would fail with
+`SettingsError: Manager Type not allowed.` on exactly the file it is being
+asked to repair, with no way out but deleting the file by hand.
+
+`cmd/kathara/root.go` therefore skips the check for `config` as well as for the
+substring test. `JSON_CLI_CONTRACT.md` §6.2 already pins `config` as a fifth
+member of the Ctrl-C warning whitelist "since Python has no entry for it",
+which is the same reasoning applied to the neighbouring list; this note asks
+for the same treatment to be written down for the check.
+
+**Action for the contract owner:** confirm that `config` skips the startup
+settings check, or say that a broken `manager_type` must be repaired by editing
+the file.
+
+## `exec --wait` still polls stdin for the ENTER override in `json`/`jsonl`
+`JSON_CLI_CONTRACT.md` §1.5 pins the machine formats as "no keyboard override; the CLI simply
+waits for `/tmp/EOS`", and §1.3 as "stdin is never read for interaction". The wait loop that
+implements the override lives in the backend (`backend/docker/machine.go`, the
+`util.WaitUserInput()` call in the startup-wait loop) and is unconditional, so `kathara exec
+--wait --format json` still breaks out of the wait the moment stdin is readable — and a closed
+or redirected stdin, the normal case for a scripted client, is readable at EOF immediately
+(`internal/util/input_unix.go` says so in its own doc). The wait is therefore skipped rather
+than performed, silently.
+
+Closing it needs a no-override wait shape plumbed from `cmd/kathara` through `kathara.WaitPolicy`
+into the backend loop — three packages, none of them `cmd/kathara`, so the CLI fixer could not
+make the change. **Action for the contract owner:** either add the field (a
+`WaitPolicy.NoUserOverride` bool that the Docker and Kubernetes loops consult, set by `runExec`
+when `Format.Machine()`), or errata §1.5 to say the override is unconditional. Not implemented.
+
+## Terminal modes that this build cannot drive report `NotSupported`, not `FeatureNotAvailable`
+`cmd/kathara/terminal.go` used to raise `FeatureNotAvailable` with the feature tokens
+`terminal-multiplexer` and `terminal-external`. `ERROR_CODES.md` §5 closes that token set at
+`lab.ext`, `linfo`, `stats-sampling` and `webhooks`, with frozen messages, and §9.1 freezes the
+registry; `kerrors/errors.go` calls it "the closed set of 1.0" in its own doc. The two invented
+tokens are gone: selecting a terminal the build cannot drive now raises `kerrors.ErrNotSupported`
+("External terminal emulator `<name>` is not supported in this release. Set `terminal` to TMUX,
+or use --noterminals."), which is a live code in the frozen taxonomy with no closed message list.
+Reachable only in human mode today, since terminals are skipped under the machine formats.
+**Action for the contract owner:** if the deferred terminal modes are meant to be `feature`
+tokens, add them to §5 and the port will switch back.
