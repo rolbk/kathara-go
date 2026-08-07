@@ -1,0 +1,400 @@
+[
+ {
+  "in": "",
+  "out": [],
+  "err": ""
+ },
+ {
+  "in": "  ",
+  "out": [],
+  "err": ""
+ },
+ {
+  "in": "ls",
+  "out": [
+   "ls"
+  ],
+  "err": ""
+ },
+ {
+  "in": "ls -la",
+  "out": [
+   "ls",
+   "-la"
+  ],
+  "err": ""
+ },
+ {
+  "in": "  ls   -la  ",
+  "out": [
+   "ls",
+   "-la"
+  ],
+  "err": ""
+ },
+ {
+  "in": "echo 'a b'",
+  "out": [
+   "echo",
+   "a b"
+  ],
+  "err": ""
+ },
+ {
+  "in": "echo \"a b\"",
+  "out": [
+   "echo",
+   "a b"
+  ],
+  "err": ""
+ },
+ {
+  "in": "echo 'a\\b'",
+  "out": [
+   "echo",
+   "a\\b"
+  ],
+  "err": ""
+ },
+ {
+  "in": "echo \"a\\b\"",
+  "out": [
+   "echo",
+   "a\\b"
+  ],
+  "err": ""
+ },
+ {
+  "in": "echo \"a\\\"b\"",
+  "out": [
+   "echo",
+   "a\"b"
+  ],
+  "err": ""
+ },
+ {
+  "in": "echo \"a\\\\b\"",
+  "out": [
+   "echo",
+   "a\\b"
+  ],
+  "err": ""
+ },
+ {
+  "in": "echo a\\ b",
+  "out": [
+   "echo",
+   "a b"
+  ],
+  "err": ""
+ },
+ {
+  "in": "''",
+  "out": [
+   ""
+  ],
+  "err": ""
+ },
+ {
+  "in": "\"\"",
+  "out": [
+   ""
+  ],
+  "err": ""
+ },
+ {
+  "in": "a''b",
+  "out": [
+   "ab"
+  ],
+  "err": ""
+ },
+ {
+  "in": "a\"\"b",
+  "out": [
+   "ab"
+  ],
+  "err": ""
+ },
+ {
+  "in": "echo # not a comment",
+  "out": [
+   "echo",
+   "#",
+   "not",
+   "a",
+   "comment"
+  ],
+  "err": ""
+ },
+ {
+  "in": "/bin/bash",
+  "out": [
+   "/bin/bash"
+  ],
+  "err": ""
+ },
+ {
+  "in": "/bin/bash -c 'echo hi'",
+  "out": [
+   "/bin/bash",
+   "-c",
+   "echo hi"
+  ],
+  "err": ""
+ },
+ {
+  "in": "cat /tmp/EOS",
+  "out": [
+   "cat",
+   "/tmp/EOS"
+  ],
+  "err": ""
+ },
+ {
+  "in": "echo \"it's\"",
+  "out": [
+   "echo",
+   "it's"
+  ],
+  "err": ""
+ },
+ {
+  "in": "echo 'don\\'",
+  "out": [
+   "echo",
+   "don\\"
+  ],
+  "err": ""
+ },
+ {
+  "in": "a\tb\nc\rd",
+  "out": [
+   "a",
+   "b",
+   "c",
+   "d"
+  ],
+  "err": ""
+ },
+ {
+  "in": "\\a",
+  "out": [
+   "a"
+  ],
+  "err": ""
+ },
+ {
+  "in": "x\\",
+  "out": null,
+  "err": "No escaped character"
+ },
+ {
+  "in": "'unterminated",
+  "out": null,
+  "err": "No closing quotation"
+ },
+ {
+  "in": "\"unterminated",
+  "out": null,
+  "err": "No closing quotation"
+ },
+ {
+  "in": "sh -c \"cd /x && tar c .\"",
+  "out": [
+   "sh",
+   "-c",
+   "cd /x && tar c ."
+  ],
+  "err": ""
+ },
+ {
+  "in": "--flag=va lue",
+  "out": [
+   "--flag=va",
+   "lue"
+  ],
+  "err": ""
+ },
+ {
+  "in": "$VAR",
+  "out": [
+   "$VAR"
+  ],
+  "err": ""
+ },
+ {
+  "in": "'$VAR'",
+  "out": [
+   "$VAR"
+  ],
+  "err": ""
+ },
+ {
+  "in": "\"$VAR\"",
+  "out": [
+   "$VAR"
+  ],
+  "err": ""
+ },
+ {
+  "in": "a'b'c",
+  "out": [
+   "abc"
+  ],
+  "err": ""
+ },
+ {
+  "in": "a\"b\"c",
+  "out": [
+   "abc"
+  ],
+  "err": ""
+ },
+ {
+  "in": "\\'",
+  "out": [
+   "'"
+  ],
+  "err": ""
+ },
+ {
+  "in": "\\\"",
+  "out": [
+   "\""
+  ],
+  "err": ""
+ },
+ {
+  "in": "echo \"\\$x\"",
+  "out": [
+   "echo",
+   "\\$x"
+  ],
+  "err": ""
+ },
+ {
+  "in": "echo '\\n'",
+  "out": [
+   "echo",
+   "\\n"
+  ],
+  "err": ""
+ },
+ {
+  "in": "  \t ",
+  "out": [],
+  "err": ""
+ },
+ {
+  "in": "one",
+  "out": [
+   "one"
+  ],
+  "err": ""
+ },
+ {
+  "in": "'a''b'",
+  "out": [
+   "ab"
+  ],
+  "err": ""
+ },
+ {
+  "in": "x=1 y=\"2 3\"",
+  "out": [
+   "x=1",
+   "y=2 3"
+  ],
+  "err": ""
+ },
+ {
+  "in": "\"a\\",
+  "out": null,
+  "err": "No escaped character"
+ },
+ {
+  "in": "'a\\",
+  "out": null,
+  "err": "No closing quotation"
+ },
+ {
+  "in": "a\\\nb",
+  "out": [
+   "a\nb"
+  ],
+  "err": ""
+ },
+ {
+  "in": "\\\n",
+  "out": [
+   "\n"
+  ],
+  "err": ""
+ },
+ {
+  "in": "\"a\nb\"",
+  "out": [
+   "a\nb"
+  ],
+  "err": ""
+ },
+ {
+  "in": "''''",
+  "out": [
+   ""
+  ],
+  "err": ""
+ },
+ {
+  "in": "x\"y\\'z\"",
+  "out": [
+   "xy\\'z"
+  ],
+  "err": ""
+ },
+ {
+  "in": "\"\\a\\b\"",
+  "out": [
+   "\\a\\b"
+  ],
+  "err": ""
+ },
+ {
+  "in": "-",
+  "out": [
+   "-"
+  ],
+  "err": ""
+ },
+ {
+  "in": "a  ",
+  "out": [
+   "a"
+  ],
+  "err": ""
+ },
+ {
+  "in": "\"a\"b\"c\"",
+  "out": [
+   "abc"
+  ],
+  "err": ""
+ },
+ {
+  "in": "\u00a0x",
+  "out": [
+   "\u00a0x"
+  ],
+  "err": ""
+ },
+ {
+  "in": "python3 -c 'print(1)'",
+  "out": [
+   "python3",
+   "-c",
+   "print(1)"
+  ],
+  "err": ""
+ }
+]
