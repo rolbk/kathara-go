@@ -261,6 +261,23 @@ func runCommand(ctx context.Context, a *app, spec *commandSpec, args []string) i
 		}
 		return a.console.EmitError(err)
 	}
+
+	// The built-in multiplexer (PORT_SPEC §3.3 item 1) is one window for the
+	// whole scenario, so it cannot open from the per-device `machine_deployed`
+	// event the way an OS emulator does. It opens here instead: after the
+	// command body, after its envelope, and — the `suppressEmit` guard —
+	// after `lrestart`'s outer phase rather than in the middle of it.
+	//
+	// Every other terminal mode has already opened its windows during the
+	// deploy, which leaves this a no-op with an empty slice.
+	if !a.suppressEmit {
+		if err := a.runPendingTerminals(ctx); err != nil {
+			if ctx.Err() != nil {
+				return 1
+			}
+			return a.console.EmitError(err)
+		}
+	}
 	return code
 }
 

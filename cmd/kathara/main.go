@@ -13,6 +13,11 @@ import (
 	"os/signal"
 
 	"github.com/KatharaFramework/kathara-go/event"
+	// Imported for effect, and it has to be this package that does it: an
+	// `init()` in `main` runs *after* every imported package's, which is too
+	// late — see the package doc for what bubbletea does in its own init and
+	// what it costs the thirteen commands that are not a terminal UI.
+	_ "github.com/KatharaFramework/kathara-go/internal/charmguard"
 	"github.com/KatharaFramework/kathara-go/internal/cliout"
 	"github.com/KatharaFramework/kathara-go/kathara"
 	"github.com/KatharaFramework/kathara-go/kerrors"
@@ -77,6 +82,7 @@ func run(argv []string, stdin io.Reader, stdout, stderr io.Writer) int {
 			kathara.WithDispatcher(a.dispatcher))
 	}
 	a.terminalOpener = a.openTerminal
+	a.isTTY = a.isInteractiveTTY
 
 	// `register_cli_events()`, before dispatch, so that a backend constructed
 	// inside a command already has its subscribers.

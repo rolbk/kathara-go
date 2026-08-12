@@ -361,3 +361,202 @@ or use --noterminals."), which is a live code in the frozen taxonomy with no clo
 Reachable only in human mode today, since terminals are skipped under the machine formats.
 **Action for the contract owner:** if the deferred terminal modes are meant to be `feature`
 tokens, add them to §5 and the port will switch back.
+
+## Linking bubbletea makes every command query the terminal at startup (mitigated)
+`bubbletea@v1.3.10/tea_init.go` calls `lipgloss.HasDarkBackground()` from its package
+`init()`. That writes `ESC]11;? ESC\` plus `ESC[6n` to **os.Stdout** and blocks on os.Stdin
+until the terminal answers or `termenv.OSCTimeout` (5 s) expires. It is bubbletea's own
+documented v1 workaround and its comment says it is removed in v2. Because it is an `init()`
+it runs for every command in the binary, not only `kathara settings` — and `PORT_SPEC` §3.3
+puts a second bubbletea program (the multiplexer) in the same binary, so this arrives with the
+frozen design rather than with one command.
+
+Measured on this tree before the mitigation (`kathara -v`, pty harness):
+
+| stdout | cost |
+|---|---|
+| a pipe | 0.01 s, nothing written (termenv short-circuits on a non-tty) |
+| a terminal that answers | 0.01 s, 10 bytes written |
+| a pty with no emulator behind it (`script`, `expect`, pty CI, serial console) | **5.02 s**, 10 bytes written, keystrokes typed during the wait swallowed |
+| `TERM=dumb`/`screen*`/`tmux*` | 0.01 s, nothing written |
+
+The Layer A goldens are **not** affected — the harness captures through pipes, row 1 — which is
+why this did not show up as a golden failure.
+
+Mitigation in the tree: `internal/charmguard`, imported for effect by `cmd/kathara/main.go`,
+pins `lipgloss.SetHasDarkBackground(true)` so the query never runs. `true` is the value the
+query itself produces when it fails or times out (`termenv` converts the unanswered `NoColor{}`
+to black), and nothing in the port renders an adaptive colour — the settings form uses bold and
+faint only, which are background-independent. Re-measured after the change: 0.01–0.02 s and
+zero bytes on all four rows.
+
+Two things a human should sign off on:
+
+1. **It leans on package initialization order.** Go guarantees only that a package's imports
+   initialize before the package itself; the order between two packages that do not import each
+   other is unspecified. gc walks the importer's imports in sorted path order, and
+   `github.com/KatharaFramework/…/internal/charmguard` sorts before
+   `github.com/charmbracelet/bubbletea`, so the guard wins. An `init()` in `main` cannot do the
+   job — `main`'s own init runs *after* every import's. If a future toolchain reordered this the
+   guard would stop working and the five-second wait would return: a degradation, not a
+   breakage. The durable fix is bubbletea v2, and `PACKAGE_GRAPH.md` §5 pins v1 ("do not mix
+   v1/v2 Charm libs").
+2. **`internal/charmguard` is a package `PACKAGE_GRAPH.md` does not list.** It is nine lines and
+   one `init()`. It is deliberately *not* folded into `internal/cliout`, which the public
+   `kathara` package imports: a library consumer building their own bubbletea program must keep
+   their own background detection.
+
+**Action for the contract owner:** confirm the guard package and the ordering assumption, or
+decide that `term`'s multiplexer work (§3.3) should own the problem and move it there.
+
+## `config set docker_config_json` takes a path, not the stored value (closes DIVERGENCES item 34)
+`DIVERGENCES.md` item 34 left this "unruled": the key holds a base64 string, and nothing said
+whether a caller hands it the base64 or the path to encode. The settings screen never stored
+what the user typed — `KubernetesOptionsHandler.py:170-172` validates the path with
+`DockerConfigJsonValidator` and then runs
+
+    base64.b64encode(json.dumps(json.load(f)).encode()).decode()
+
+so the stored value is the base64 of CPython's *re-serialization* of the file, not of its bytes.
+`kathara config set docker_config_json <path>` and the settings form now both do exactly that,
+through `settings.EncodeDockerConfigJSON` — one conversion, both entry paths, per §3.2 item 4.
+The empty string still clears the key to `null`, which is the screen's "Reset value to Empty
+String" item.
+
+The re-serialization is reproduced rather than approximated (`settings/dockerconfig.go`):
+CPython's `", "`/`": "` separators, `ensure_ascii=True` escaping, `repr(float)`, int/float
+classification by literal shape, and dict semantics for a duplicate key (last value wins, first
+position kept). Ten cases captured from CPython 3 pin it.
+
+**Consequence:** there is no way to write a pre-encoded base64 through `config set`. Nothing in
+3.8.3 could either, and a caller holding the base64 already has the file it came from.
+**Action for the contract owner:** confirm the path reading, or say that `config set` is a raw
+schema-value writer and the encoding belongs only to the form.
+
+## `kathara config reset` takes an optional key
+`PORT_SPEC` §3.2 item 2 lists `reset`; `JSON_CLI_CONTRACT.md` §3.12 pins the envelope for
+`config reset` only. The implementation also accepts `config reset <key>`, which puts one key
+back to its default and leaves the rest of the file alone; it emits the same
+`{"settings":{…},"saved":true}` envelope, so a scripted client parses one shape either way.
+Without it, undoing one `config set` means knowing the default and typing it, and for
+`shared_cds` or `network_plugin` that is not something a user carries in their head.
+
+Two behaviours worth pinning down: the default is read off a fresh `Defaults()` whose
+`manager_type` is forced to the *current* one (the key set depends on it — `api_token` is not a
+key of a docker-typed schema; `manager_type` itself is exempt from the forcing, or it would be
+its own default and `config reset manager_type` would be a no-op reporting `saved: true`), and
+the write goes through `Settings.Set`, so a default this host cannot accept is refused exactly as
+`config set` would refuse it (`config reset terminal` fails on a machine with no xterm, same
+message as `config set terminal /usr/bin/xterm`).
+**Action for the contract owner:** confirm the sub-command and its envelope, or drop it.
+
+## What the bubbletea settings form does differently from the consolemenu screen
+The rebuild is sanctioned (§0.2 #1, §3.2 item 3) and the goldens do not look at this screen —
+`kathara settings` has no `--format` and is not recorded — so these are recorded for the record
+rather than proposed. Each one is a place where the new screen's *observable* behaviour differs
+from `cli/ui/setting/*.py`, enumerated so a reviewer can check the list rather than the diff.
+
+1. **The Docker Hub image list is gone; `image` is a plain text field.** The menu prefixed the
+   "Choose another image" prompt with every tag `DockerHubApi.get_tagged_images()` returned.
+   The webhooks are deferred (§0.3) and that call is a network round trip on the way to a
+   settings screen — the same one that hangs behind a university proxy. The prompt underneath it
+   is what remains. Restoring the list is a one-line change once webhooks return.
+2. **`image` is also unvalidated: `ImageValidator` is on neither entry path.** Python's "Choose
+   another image" prompt ran the answer through `ImageValidator` → `Setting.check_image` →
+   `Kathara.check_image`, which pulls the image's manifest from the registry and verifies its
+   architecture, re-prompting on a connection failure, an unknown image or a wrong architecture
+   (`CommonOptionsHandler.py:73-83`). The form and `kathara config set image` accept any string,
+   and the failure surfaces at deploy time instead. The reason is item 1's reason: validating
+   needs a backend connection, and `settings` sits below `kathara` in the package graph
+   (`PACKAGE_GRAPH.md`) precisely so that reading or writing a setting never opens one — a
+   `config set` that hangs behind a proxy defeats §3.2 item 2's "works over SSH". The check
+   itself *is* ported and lives with the rest of the validation, as §3.2 item 4 requires:
+   `settings.Settings.CheckImage` takes an injected `ImageChecker`, and `settings.IsImageRejection`
+   classifies the three rejection errors. Both have no caller today.
+   **Action for the contract owner:** confirm that `image` stays unvalidated, or say which entry
+   path should pay for a registry round trip.
+3. **Edits are batched and saved explicitly (`s`), not written after every change.** Python's
+   `update_setting_value` set the attribute, ran `check()`, called `save_to_disk()` and printed
+   "Saved successfully!" for each item, so an abandoned session left half its edits on disk.
+   The form keeps a working copy, `s` writes it, and quitting with unsaved edits asks
+   (`y` save and quit / `n` discard / `esc` keep editing). Ctrl-C never writes. The message on a
+   successful save is still `SAVED_STRING`.
+4. **The `terminal` row is on every platform, and it always offers a free-text answer.** Python
+   built no terminal item at all on Windows, and none of the `remote_url`/`cert_path` rows
+   either (`exec_by_platform(linux, lambda: None, osx)`), so a Windows user could not reach
+   those keys from the screen — while `kathara config set` reaches them everywhere. A screen
+   that hides a writable key is the bug. For the same reason the row's "Choose another value…"
+   escape is unconditional: `terminal_emulator_menu_osx` offered only `Terminal`, `iTerm` and
+   `TMUX` with no prompt, so a macOS user who had a fourth emulator had to leave the screen.
+   The suggestions themselves are still per-platform, and the answer still goes through
+   `Setting.check_terminal`, which is what refuses an emulator this host cannot launch.
+5. **There is no `last_checked` row**, matching the Python menu, which had no item for it. It is
+   update-check bookkeeping, not a setting. `kathara config set last_checked` still writes it;
+   that asymmetry between the file and the screen is Python's.
+6. **Two submenus that contained only prompts are flattened.** "Choose Kathara prefixes" became
+   its two rows (`net_prefix`, `device_prefix`), and the remote-Docker submenu became its two
+   (`remote_url`, `cert_path`). The one menu item that wrote two keys — "Reset remote Docker
+   connection to default", which cleared both — survives as an item on the `remote_url` row.
+7. **The rows are in the screen's order, not the file's.** The three handlers' `append_item`
+   order is reproduced, which for the docker addon puts `network_plugin` first on screen and
+   last on disk. `kathara config list` walks the file order, which is frozen (§0.4).
+8. **A prompt opens on the current value.** consolemenu offered no default except on
+   `docker_config_json`, so pressing Enter at a prompt failed the regex and re-prompted. Here it
+   is a no-op re-set. `docker_config_json` keeps its `DEFAULT_DOCKER_CONFIG_JSON_PATH` default.
+9. **The consolemenu `RegexValidator`s are still not ported**, as `settings/validate.go` already
+   records: `remote_url`, `api_server_url`, `api_token`, `cert_path` and `device_shell` take any
+   string from either entry path. The URL one is `re.match` with no `re.IGNORECASE` against
+   `[A-Z0-9]` character classes and rejects every lower-case domain a user could type. The form
+   inherits the omission because §3.2 item 4 requires it to: the two paths share one validator
+   set, and this one is not in it.
+10. **With no TTY the command refuses** with `InvocationError` and names
+    `kathara config get|set|list|reset`, instead of driving `curses` at a pipe.
+
+Every other menu label, submenu order and stored value is the Python one, including the places
+where the label is not the value it writes: the `Yes`/`No` rows over `true`/`false`, "Reset value
+to Empty String" over `null`, `shared_cds`'s three `SharedCollisionDomainsOption.to_string`
+sentences over `0`/`1`/`2`, and `image_pull_policy`'s "If Not Present" over `IfNotPresent`.
+
+## Making the built-in multiplexer the *stored* default collides with a recorded oracle
+`PORT_SPEC` §3.3 item 1 calls the built-in multiplexer "the default". The key that
+selects it is `terminal` (there is no `terminal_mode` key; §3.2 item 1 freezes the schema —
+see `term/mode.go`), so "the default" means `settings.Defaults().Terminal` should be
+`MULTIPLEXER` on all three platforms instead of Python's
+`exec_by_platform('/usr/bin/xterm', '', 'Terminal')`.
+
+It was implemented that way and then reverted, because that default is **oracle-pinned**:
+`settings/testdata/conf_roundtrip.json` records what CPython 3.8.3 does with a partial
+`kathara.conf`, defaults filled in, and `TestRoundTripAgainstOracle` compares the result byte
+for byte. A file that omits `terminal` round-trips through 3.8.3 as `"/usr/bin/xterm"`;
+flipping the Go default makes it `"MULTIPLEXER"` and the vector fails. Passing it would mean
+re-recording a Layer B artifact, which an implementer may not do on its own authority.
+
+Where that leaves 1.0 as it stands:
+
+| platform | stock `terminal` | mode |
+|---|---|---|
+| Windows | `""` | **multiplexer** (`ModeFor("")`) — §3.3's target platform gets the new default for free |
+| Linux | `/usr/bin/xterm` | external adapter (ported, works) |
+| macOS | `Terminal` | external adapter (ported, works) |
+
+Unix users opt in with `kathara config set terminal MULTIPLEXER`. Existing installs are
+unaffected either way, since their file already carries a value.
+
+**Action for the contract owner:** either confirm that the stored default stays Python's and
+the multiplexer is opt-in on Unix for 1.0, or approve the one-line change in
+`settings/settings.go` plus a re-record of the `only_last_checked` vector in
+`settings/testdata/conf_roundtrip.json` (that vector is the only one affected; the file's other
+cases all carry an explicit `terminal`). Recorded in DIVERGENCES.md item 107 as it stands.
+
+## `shlex.split` exists twice
+`term/external.go` carries a second implementation of CPython's `shlex.split`, needed for the
+one `gnome-terminal --` branch of the ported Linux adapter. The first is
+`backend/docker/shlex.go`, which `term` may not import (PACKAGE_GRAPH.md §2: `term` does not
+depend on a backend). Both spell CPython's two ValueError messages and both carry
+`kerrors.ErrValue`; the `term` copy is the smaller subset — it does not need the rune-level
+whitespace handling the `exec` path does — and is table-tested against the same shapes.
+
+The obvious home is `internal/util`, which both may import, but moving it means editing a
+`backend/docker` file that this change does not own. **Action for the contract owner:** approve
+hoisting `ShlexSplit` to `internal/util` as a mechanical post-merge move, or accept the two
+copies and the drift risk.

@@ -1118,15 +1118,20 @@ code comments and pinned by tests, not listed here.
     release can break a script that was unambiguous before it. Short flags,
     clusters, `--flag=value` and `-dvalue` all behave as argparse does.
 
-97. **`kathara settings` is a numbered prompt loop, not a curses menu.**
+97. **`kathara settings` is a bubbletea form, not a curses menu.**
     `PORT_SPEC` §0.2 #1 deletes the vendored `consolemenu` and §3.2 item 3 asks
-    for a bubbletea form over the same keys. The form is Phase 6; what ships is
-    a dependency-free prompt loop over `settings.Settings.Keys`/`SetString`, so
-    §3.2 item 4 ("validation lives in `settings/` and runs on both paths")
-    holds today. It also degrades honestly: with no terminal it answers
-    `InvocationError` naming `kathara config`, where the curses menu would have
-    failed inside ncurses. Python's `-h`-is-ignored quirk (`CLI_SURFACE.md`
-    M-5) is reproduced by `commandSpec.NoParser`, which skips the whole
+    for a bubbletea form over the same keys; `cmd/kathara/settings_tui.go` is
+    it. Every key the three Python handlers built an item for has a row
+    (`TestSettingsFormCoversEveryMenuKey`), and every row writes through
+    `settings.Settings.SetString`, so §3.2 item 4 ("validation lives in
+    `settings/` and runs on both paths") holds by construction. The places
+    where the form's *observable* behaviour differs from `cli/ui/setting/*.py`
+    are enumerated one by one under "What the bubbletea settings form does
+    differently from the consolemenu screen" in `PROPOSED-DIVERGENCES.md`. It
+    also degrades honestly: with no terminal it answers `InvocationError`
+    naming `kathara config`, where the curses menu would have failed inside
+    ncurses. Python's `-h`-is-ignored quirk (`CLI_SURFACE.md` M-5) is
+    reproduced by `commandSpec.NoParser`, which skips the whole
     parse-and-validate block for this one command: argv is never read, so `-h`
     prints nothing, `--bogus` is not an unknown flag, and §12's "no argparse
     exit-2 path exists" holds. `TestSettingsNeverParsesArgv` pins it.
@@ -1292,3 +1297,182 @@ code comments and pinned by tests, not listed here.
 
 11. **`connect_tty` via the subprocess client prints CLI chrome** ("Waiting startup commands execution. Press [ENTER] to override...") that 3.8.3's pure API path never printed — inherent to the §7 architecture (client shells out to `kathara connect`). Cosmetic.
 12. **Accidental root-logger installation not replicated.** 3.8.3's `decorators.py:13` calls root `logging.debug(...)` during `Kathara.get_instance()`, implicitly firing `logging.basicConfig()`; user scripts' later `logger.info` narration thereby reaches stderr. The Go-backed client has no such side effect, so tutorial narration is invisible unless the user configures logging. Recorded per §10 (accidental side effect, not replicated by patch); tutorials still pass gate 2.
+
+## From the terminal rebuild, `term/` (sanctioned §0.2 #2 divergences, not Python bugs)
+
+Phase 6 §3.3 items 1 and 3. Item 2 (tmux) is entry 18 above. These are the
+divergences the rebuild *is*: PORT_SPEC §0.2 #2 sanctions them, so they belong
+here and not in `PROPOSED-DIVERGENCES.md`. Rows 113–119 are the table
+`docs/port/SPIKES/windows-terminal.md` §9 held for this moment (work item
+W6-10); they are the OQ-18/19/20 Windows quirks the rebuild fixes rather than
+reproduces.
+
+107. **A `MULTIPLEXER` value is reserved in the `terminal` setting.** Python
+     reserves exactly one non-program value in that key, `"TMUX"`
+     (`setting/Setting.py:288`), which `check_terminal` short-circuits on. The
+     rebuild reserves a second, `"MULTIPLEXER"`, selecting the built-in
+     multiplexer, and short-circuits the check on it for the same reason — there
+     is no file on disk to stat. The **empty** value, which is Python's own
+     Windows default, selects it too. Schema, key order, file path and every
+     other value's meaning are unchanged (`term/mode.go`, `settings/validate.go`;
+     `settings.TerminalMultiplexer` and `term.TerminalMultiplexer` pinned equal
+     by `TestTerminalTokensMatchTerm`). **User-visible on Windows:** the stock
+     configuration now opens the multiplexer where 3.8.3 spawned a PowerShell
+     console per device. On Unix the stock default is still `/usr/bin/xterm` /
+     `Terminal` and nothing changes until the user opts in — see
+     PROPOSED-DIVERGENCES.md for the ruling that would flip that too.
+
+108. **`num_terms > 1` opens one tab, not N windows.** `HandleMachineTerminal.run`
+     calls `open_machine_terminal` `get_num_terms()` times and Python opens that
+     many emulator windows onto one device. Under the multiplexer the device is
+     enqueued once (`app.enqueueMuxDevice` dedupes by name) and gets one tab.
+     This is the collapse the tmux backend already had in 3.8.3, where the
+     second `add_window` finds the window the first one made
+     (`docs/port/SPIKES/tmux.md` §6). The external adapters keep Python's
+     behaviour exactly: N invocations, N windows. Pinned by
+     `TestMuxDevicesAreDeduplicated`.
+
+109. **The multiplexer window opens after the command, not during the deploy.**
+     Python opens each device's window from the `machine_deployed` event, so
+     windows appear one at a time as the scenario comes up. One window for the
+     whole scenario cannot: the multiplexer opens once, from `runCommand`, after
+     the command body has emitted its result. Ordering against the deploy's own
+     output is therefore different under `MULTIPLEXER` — the panel, the progress
+     bars and the `--list` table are all complete before the window appears.
+     tmux and the external adapters keep Python's per-device timing.
+
+110. **`kathara connect` renders through the multiplexer when that mode is
+     selected.** §3.3 item 4 marks `connect` "unchanged behaviour" and item 1
+     asks for "attach via kathara connect"; both hold, because the transport is
+     the same `ConnectTTY` call either way and only the renderer differs. The
+     raw byte pump is still what runs for `TMUX`, for every external emulator,
+     and whenever stdin or stdout is not a terminal — which is every scripted
+     and golden-harness invocation. **User-visible:** under `MULTIPLEXER`,
+     `connect` gains scrollback, copy and a detach key, and the remote shell's
+     exit status is still not propagated (exit 0, CLI_SURFACE.md §9).
+
+     Everything else about the command is held identical to the raw path, and
+     deliberately so: the attach runs **before** the multiplexer starts, so a
+     device that is not running still exits 1 with the error on the console and
+     no window ever opens; `startup_waited == 2` still exits 0 silently; and the
+     window closes when the shell does, because the multiplexer quits once its
+     only session has ended cleanly (`term.Run`). The one residue is a session
+     that ends with a *transport* error mid-attach: the raw path exits 1 with
+     it, the multiplexer renders it in the pane, keeps the window up so it can
+     be read, and exits 0 when the user detaches. Erroring out from under a
+     full-screen program the user is still looking at is the worse of the two,
+     and `connect`'s exit code is unobservable to the scripted callers, which
+     take the raw path in any case.
+
+111. **Pane rendering is a bounded terminal emulation, not a passthrough.**
+     Python delegated rendering to xterm / Terminal.app / conhost. `term/screen.go`
+     is what replaces them, and its limits are stated in its own file header:
+     no terminal replies (DSR, DA), combining marks dropped, no reflow on
+     resize, no character-set designation. A device program that blocks on a
+     cursor-position report will not get one. This is a rendering-fidelity limit
+     of the rebuild, not a behaviour change against Python, which had no
+     renderer of its own.
+
+112. **The startup log reaches a pane as CRLF.** `connect_tty`'s `-l` block is
+     written with bare newlines to a cooked stdout in Python. A pane is a raw
+     screen, where LF indexes without returning, so the CLI converts the block
+     before replaying it as the pane's first bytes (`term.PrefixSession`,
+     `cmd/kathara`'s `crlf`). Same text, no staircase.
+
+113. **`WriteConsoleW`'s trailing NUL is gone (OQ-19).** 3.8.3's Windows console
+     adapter wrote `len(buffer)` including the terminating NUL, putting one
+     U+0000 in the stream per output chunk. The rebuild writes raw bytes.
+
+114. **An initial resize is emitted on every platform (OQ-18/19).** The Unix
+     adapter emitted the terminal size before any I/O; the Windows one never
+     did, so a remote TTY kept the wrong geometry until the user resized the
+     window. The multiplexer resizes every pane — foreground and background —
+     from the first `WindowSizeMsg`, and the connect runner emits the size
+     before the pumps start. Pinned by `TestMuxResizePropagatesToEveryPane` and
+     `TestMuxResizeUsesColumnsFirst`.
+
+115. **No U+FFFD at chunk boundaries (OQ-20).** Python decoded each 4096-byte
+     read as UTF-8 with `errors="replace"`, so a multi-byte rune split across
+     two reads became a replacement character. `Screen.Write` carries the
+     partial rune to the next write. Pinned by the "UTF-8 split across two
+     writes" row of `TestScreenPrintingAndControls`.
+
+116. **Function keys go out as modern xterm sequences.** Python translated
+     virtual keys through a hand-rolled `KEYCODES` table that sent F1–F4 as the
+     legacy `ESC[11~`…`ESC[14~`. The rebuild sends SS3 (`ESC OP`…`ESC OS`),
+     which is what `TERM=xterm` terminfo — the devices' own — describes. A
+     raw-mode reader inside a device could observe the difference; readline and
+     vim accept both. Pinned by `TestEncodeKey`.
+
+117. **A console that cannot be put in raw mode is an error, not a hang.**
+     `enter_raw`'s `GetConsoleMode` failure returned silently in Python, leaving
+     a session that read nothing forever. The multiplexer refuses a non-terminal
+     outright on both of its entry points — `connect` falls back to the raw pump
+     path (`connect.go`), and the deploy path skips the window with a debug line
+     rather than writing alternate-screen frames into a pipe
+     (`app.runPendingTerminals`, pinned by
+     `TestRunPendingTerminalsSkipsANonTerminal`). `kathara lstart | tee log`
+     under `MULTIPLEXER` therefore deploys and prints exactly as it always did,
+     which is what Python's separate OS windows gave it for free.
+
+118. **End of stream is `io.EOF`, uniformly.** Python's npipe path treated an
+     empty read as "no data yet" and signalled EOF by exception, the opposite of
+     its own Unix fd path. Both legs now end with `io.EOF`
+     (`term/pty_unix.go` normalizes Linux's `EIO`; the ConPTY leg ends on
+     `ERROR_BROKEN_PIPE`).
+
+119. **Raw-mode restore no longer depends on session close returning.** Python's
+     cleanup was single-threaded with the restore last, so a hung session close
+     left the user's shell raw. bubbletea restores the terminal on its own exit
+     path, `term.Run` closes every session in a deferred `shutdown`, and the
+     connect path's restore is a top-frame `defer`. PORT_SPEC §12 risk 6.
+
+     **Where the §12 risk-6 test stands.** The Unix leg is executed:
+     `TestConnectRestoresTheTerminalOnEveryExit` runs `attachTTY` on a real
+     pseudo-terminal and compares the termios the kernel holds before and after,
+     over all four ways out — session EOF, a stream error, a cancelled context
+     and a panic unwinding through the frame — with
+     `TestConnectRestoreIsNotVacuous` guarding the comparison itself. macOS runs
+     the same test in CI (the file builds for `linux || darwin`). **Windows has
+     no equivalent and is a documented manual-verification gap**: its console
+     modes are restored by bubbletea on the multiplexer leg and by
+     `golang.org/x/term` on the connect leg, neither of which this repository
+     exercises on a real console. See item 120.
+
+120. **The multiplexer uses backend transports on every platform; the ConPTY
+     layer has no production caller.** `docs/port/SPIKES/windows-terminal.md` §1
+     (work item W6-8) sketched a Windows pane as a local `kathara connect` child
+     under a ConPTY. The shipped design attaches every pane through the backend
+     `TTYSession` instead, on all three platforms: one code path rather than two,
+     the same transport `kathara connect` uses (item 110), and console-mode
+     handling left to bubbletea, which sets the Windows VT modes itself.
+     `term/conpty_windows.go` and `term.StartPtySession` stay as the tested seam
+     for a future embedded local-child pane — `StartPtySession` is what the
+     real-pty integration tests drive on Unix — but nothing in `cmd/kathara`
+     reaches ConPTY today.
+
+     Three Phase-6 work items fall out of that and are **not** done, recorded
+     here rather than silently dropped:
+
+     - **W6-9 (Windows CI mirror).** There is no `conpty_windows_test.go`, so
+       the ConPTY implementation is design-from-documentation, exactly as the
+       spike's §11 warned it would be until a Windows runner executed it. CI
+       does run `go test ./...` on `windows-latest`, so the multiplexer's model
+       tests, the key encoder and the screen are covered there; the
+       pseudoconsole itself is not.
+     - **W6-9's F-key check** against a real device shell (spike §9 row 4) is
+       likewise unexecuted; `TestEncodeKey` pins the byte sequences, not a
+       device's reaction to them.
+     - **W6-14 (Windows 10 1809 / build 17763 floor).** No version check is
+       enforced. With no production caller for `CreatePseudoConsole`, a check
+       would guard nothing a user can reach; it becomes required the moment a
+       pane hosts a local child on Windows.
+
+     One Windows-only behaviour difference in the external adapter belongs with
+     them: `subprocess.Popen(..., creationflags=CREATE_NEW_CONSOLE)` leaves the
+     child's standard handles to its new console, while `os/exec` always passes
+     handles and gives a child with nil `Stdin/Stdout/Stderr` the NUL device.
+     The Unix adapter now inherits this process's descriptors, which is what
+     Popen does there (`term/external_unix.go`); the Windows arm is left alone
+     because both alternatives — NUL handles or this console's handles — are
+     wrong in different ways and neither can be verified from this repository.

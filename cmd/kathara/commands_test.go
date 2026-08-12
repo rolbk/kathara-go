@@ -850,43 +850,6 @@ func TestFromArchiveNameOverridesLabName(t *testing.T) {
 	}
 }
 
-// TestConfigRoundTrip is PORT_SPEC §3.2 item 2 and JSON_CLI_CONTRACT.md §3.12.
-func TestConfigRoundTrip(t *testing.T) {
-	a := newTestApp(t)
-	spec := commandTable(a.app)["config"]
-
-	if code := runCommand(t.Context(), a.app, spec, []string{"--format", "json", "get", "image"}); code != 0 {
-		t.Fatalf("exit = %d\n%s", code, a.stderrString())
-	}
-	if !strings.Contains(a.stdoutString(), `{"key":"image","value":"kathara/base"}`) {
-		t.Errorf("stdout = %s", a.stdoutString())
-	}
-
-	a2 := newTestApp(t)
-	spec2 := commandTable(a2.app)["config"]
-	if code := runCommand(t.Context(), a2.app, spec2, []string{"--format", "json", "get", "nope"}); code != 1 {
-		t.Fatalf("exit = %d, want 1", code)
-	}
-	if !strings.Contains(a2.stdoutString(), `"code":"Settings"`) {
-		t.Errorf("stdout = %s", a2.stdoutString())
-	}
-}
-
-// TestSettingsWithoutATerminalRefuses is the honest degradation the curses menu
-// never had.
-func TestSettingsWithoutATerminalRefuses(t *testing.T) {
-	a := newTestApp(t)
-	a.console.Level = cliout.LevelDebug
-	spec := commandTable(a.app)["settings"]
-
-	if code := runCommand(t.Context(), a.app, spec, nil); code != 1 {
-		t.Fatalf("exit = %d, want 1", code)
-	}
-	if !strings.Contains(a.stdoutString(), "kathara config get|set|list|reset") {
-		t.Errorf("stdout = %q", a.stdoutString())
-	}
-}
-
 // TestManagerConstructionFailurePropagates covers the eager-construction
 // timing: a daemon that is not running fails the command, not the parse.
 func TestManagerConstructionFailurePropagates(t *testing.T) {

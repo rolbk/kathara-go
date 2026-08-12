@@ -455,6 +455,26 @@ executed**. Everything in §4.4–§4.5 is design-from-documentation until W6-9'
 | W6-13 | `term/external_windows.go`: `cmd /c start` adapter (faithful-port territory), quoting per `util.GetExecutablePath` convention | PACKAGE_GRAPH term row |
 | W6-14 | Enforce + document the Windows 10 1809 (17763) floor: version check with a clear error, release-notes line | §2.2 |
 
+### 11.1 Addendum after the Phase 6 build (2026-08-12)
+
+W6-8 shipped a different pane than this table assumed, and three items move with it. Recorded
+in full as DIVERGENCES.md item 120; in short:
+
+- **A pane is a backend `TTYSession` on every platform**, not a local `kathara connect` child
+  on a `Pty`. One transport instead of two, the same one `kathara connect` uses, and bubbletea
+  owns the console modes (it sets the Windows VT modes itself). `conpty_windows.go` and
+  `term.StartPtySession` remain as the tested local-child seam — the Unix integration tests
+  drive it — but nothing in `cmd/kathara` reaches ConPTY.
+- **W6-9 is therefore partly moot and partly outstanding.** The §12.6 restore test exists and
+  is executed on Unix and macOS (`cmd/kathara/connect_unix_test.go`, four exit paths, real
+  pty, termios compared before and after); Windows has no equivalent and no ConPTY test
+  mirror, so §12 risk 1 ("nothing Windows has executed") stands for `conpty_windows.go`.
+- **W6-14 is not implemented.** With no production caller for `CreatePseudoConsole` the floor
+  guards nothing reachable; it becomes required the moment a pane hosts a local child on
+  Windows.
+- W6-3, W6-7 and W6-12 are in the same position for the same reason: they are properties of
+  the local-child leg, which no shipped path uses.
+
 ---
 
 ## 12. Top design risks (carried into Phase 3 review)

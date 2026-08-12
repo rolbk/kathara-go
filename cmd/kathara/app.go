@@ -39,6 +39,12 @@ type app struct {
 	settings *settings.Settings
 	// dispatcher is the event bus the backends announce into.
 	dispatcher *event.Dispatcher
+	// settingsDir is the directory `kathara config` and the settings form save
+	// into, i.e. the `dir` argument of [settings.Settings.Save]. It is empty in
+	// production, which means [settings.DefaultPath] — `~/.config/kathara.conf`,
+	// the frozen location (§3.2 item 1). It is a field only so that a test can
+	// exercise the write path without touching the developer's own file.
+	settingsDir string
 	// cwd is `os.getcwd()`, the fallback lab path.
 	cwd string
 	// stdin is where prompts and `--from-archive -` read from.
@@ -84,6 +90,21 @@ type app struct {
 	// terminalOpener is the `HandleMachineTerminal.run` half that spawns a
 	// window. It is a field for the same reason newManager is.
 	terminalOpener func(ctx context.Context, machine *model.Machine) error
+
+	// isTTY reports whether this process's console is interactive both ways,
+	// which is the precondition for anything bubbletea draws: the built-in
+	// multiplexer takes over stdin and stdout, and neither a pipe nor a
+	// redirect can give it back. It is a field so that a test can drive those
+	// paths without a pseudo-terminal; production is [app.isInteractiveTTY].
+	isTTY func() bool
+
+	// muxDevices are the devices the built-in multiplexer will show
+	// (PORT_SPEC §3.3 item 1). Python opens one OS window per device as each
+	// one deploys; the multiplexer is one window for the whole scenario, so
+	// the per-device event enqueues here and [app.runPendingTerminals] opens
+	// the window once, after the command has emitted its result. Empty for
+	// every other terminal mode and for `--noterminals`.
+	muxDevices []*model.Machine
 
 	// opCtx is the operation context, stored because the event bus that calls
 	// [app.openMachineTerminals] is `EventDispatcher`-shaped and carries none:

@@ -37,18 +37,26 @@ func newTestApp(t *testing.T) *testApp {
 	console.Width = 80
 
 	a := &app{
-		console:    console,
-		prompter:   &cliout.Prompter{Console: console, In: nil},
-		settings:   settings.Defaults(),
-		dispatcher: event.New(),
-		cwd:        t.TempDir(),
-		stdin:      io.LimitReader(bytes.NewReader(nil), 0),
+		console:  console,
+		prompter: &cliout.Prompter{Console: console, In: nil},
+		settings: settings.Defaults(),
+		// Never the empty string, which is `~/.config/kathara.conf`: a test that
+		// exercises `kathara config set` writes a real file, and it must not be
+		// the developer's own.
+		settingsDir: t.TempDir(),
+		dispatcher:  event.New(),
+		cwd:         t.TempDir(),
+		stdin:       io.LimitReader(bytes.NewReader(nil), 0),
 	}
 	a.checkSettings = func() error { return nil }
 	a.newManager = func(context.Context) (kathara.Manager, error) {
 		return nil, errUnexpectedManager
 	}
 	a.terminalOpener = func(context.Context, *model.Machine) error { return nil }
+	// A test process has no terminal, and the production check would say so
+	// anyway ([app.stdin] is not an *os.File here). Tests that exercise a
+	// bubbletea path set it to true explicitly.
+	a.isTTY = func() bool { return false }
 
 	return &testApp{app: a, stdout: stdout, stderr: stderr}
 }
