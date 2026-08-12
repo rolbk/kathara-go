@@ -164,7 +164,13 @@ func newAPIClient(s *settings.Settings) (*client.Client, error) {
 	}
 
 	if s.RemoteURL == nil {
-		opts = append(opts, client.FromEnv)
+		// `WithHost` runs `sockets.ConfigureTransport`, which installs the
+		// unix-socket (or npipe) dialer on the pool-sized transport above.
+		// `FromEnv` alone is a no-op when DOCKER_HOST is unset and would leave
+		// the transport dialing TCP to the socket path. Explicit default first;
+		// FromEnv still overrides it when DOCKER_HOST is set (docker-py
+		// `from_env` parity).
+		opts = append(opts, client.WithHost(client.DefaultDockerHost), client.FromEnv)
 	} else {
 		opts = append(opts, client.WithHost(*s.RemoteURL))
 		if s.CertPath != nil {
