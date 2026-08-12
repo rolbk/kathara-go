@@ -1288,3 +1288,7 @@ code comments and pinned by tests, not listed here.
      `tools/goldenharness/NORMALIZATION.md` section 10; the ORDERING.tsv row
      that previously listed `cap_add` as order-asserted (section 5.1) is
      withdrawn there for the same reason.
+## From Layer D gate runs (2026-08-12)
+
+11. **`connect_tty` via the subprocess client prints CLI chrome** ("Waiting startup commands execution. Press [ENTER] to override...") that 3.8.3's pure API path never printed — inherent to the §7 architecture (client shells out to `kathara connect`). Cosmetic.
+12. **Accidental root-logger installation not replicated.** 3.8.3's `decorators.py:13` calls root `logging.debug(...)` during `Kathara.get_instance()`, implicitly firing `logging.basicConfig()`; user scripts' later `logger.info` narration thereby reaches stderr. The Go-backed client has no such side effect, so tutorial narration is invisible unless the user configures logging. Recorded per §10 (accidental side effect, not replicated by patch); tutorials still pass gate 2.
