@@ -40,10 +40,18 @@ func (h *slogHandler) Enabled(_ context.Context, level slog.Level) bool {
 // Handle renders the record.
 //
 // Structured attributes have no Python analogue — `logging.warning` takes an
-// already-interpolated string — so they are appended as ` key=value`, which
-// keeps them visible without inventing a message template. Where a ported
-// package needed byte parity it interpolated the message itself
-// (`labfile/labconf.go:163` is the one the `syn-env` golden asserts).
+// already-interpolated string — so they are appended as ` key=value`. That
+// rendering is a divergence wherever the message has a `logging` original: the
+// oracle writes "To expose ports of device `pc1` on the host, …" where an
+// attribute would produce "To expose ports of a device on the host, …
+// device=pc1", which is what the `syn-port-udp` golden caught.
+//
+// So EVERY ported call site interpolates its own message and passes no
+// attributes; `TestPortedLogCallsCarryNoAttributes` and
+// `TestPortedLogMessagesMatchPythonFormatStrings` hold both halves of that
+// rule. What is left for the `key=value` path is the handful of Go-only
+// diagnostics with no `logging` original — the backends' event-dispatch
+// failures — plus anything a future caller adds outside the ported packages.
 func (h *slogHandler) Handle(_ context.Context, r slog.Record) error {
 	var b strings.Builder
 	b.WriteString(r.Message)

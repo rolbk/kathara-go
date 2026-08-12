@@ -108,7 +108,8 @@ func (p *pluginService) isBridge() bool {
 // launch and fail on every enabled plugin. The line is preserved as this
 // comment, which is where its whole observable effect lives.
 func (p *pluginService) CheckAndDownload(ctx context.Context) error {
-	slog.Debug("Checking plugin...", "plugin", p.currentName)
+	// `"Checking plugin `%s`..." % self.current_name` (`DockerPlugin.py:43`).
+	slog.Debug("Checking plugin `" + p.currentName + "`...")
 
 	plugin, _, err := p.manager.api.PluginInspectWithRaw(ctx, p.currentName)
 	switch {
@@ -118,7 +119,9 @@ func (p *pluginService) CheckAndDownload(ctx context.Context) error {
 		if p.manager.settings.RemoteURL != nil {
 			return kerrors.ErrPluginNotFound
 		}
-		slog.Info("Installing Kathara Network Plugin...", "plugin", p.currentName)
+		// `f"Installing Kathara Network Plugin ({self.current_name})..."`
+		// (`DockerPlugin.py:50`) — parentheses, no backticks.
+		slog.Info("Installing Kathara Network Plugin (" + p.currentName + ")...")
 		if plugin, err = p.install(ctx); err != nil {
 			return err
 		}
@@ -136,7 +139,8 @@ func (p *pluginService) CheckAndDownload(ctx context.Context) error {
 
 	switch {
 	case p.isVDE() && !plugin.Enabled:
-		slog.Debug("Enabling plugin...", "plugin", p.currentName)
+		// `"Enabling plugin `%s`..." % self.current_name` (`DockerPlugin.py:58`).
+		slog.Debug("Enabling plugin `" + p.currentName + "`...")
 		return p.manager.api.PluginEnable(ctx, p.currentName, types.PluginEnableOptions{Timeout: 0})
 
 	case p.isBridge():
@@ -149,7 +153,8 @@ func (p *pluginService) CheckAndDownload(ctx context.Context) error {
 			if err := p.configureXtablesMount(ctx, mount); err != nil {
 				return err
 			}
-			slog.Debug("Enabling plugin...", "plugin", p.currentName)
+			// `DockerPlugin.py:64`, same string.
+			slog.Debug("Enabling plugin `" + p.currentName + "`...")
 			return p.manager.api.PluginEnable(ctx, p.currentName, types.PluginEnableOptions{Timeout: 0})
 		}
 
@@ -179,7 +184,8 @@ func (p *pluginService) CheckAndDownload(ctx context.Context) error {
 		if err := p.configureXtablesMount(ctx, mount); err != nil {
 			return err
 		}
-		slog.Debug("Enabling plugin...", "plugin", p.currentName)
+		// `DockerPlugin.py:75`, same string.
+		slog.Debug("Enabling plugin `" + p.currentName + "`...")
 		return p.manager.api.PluginEnable(ctx, p.currentName, types.PluginEnableOptions{Timeout: 0})
 	}
 
@@ -267,7 +273,9 @@ func lastMountSource(mounts []types.PluginMount, key string) (*string, bool) {
 // before posting it (`APIClient.configure_plugin`), which is exactly the
 // `[]string` the Go SDK's `PluginSet` takes.
 func (p *pluginService) configureXtablesMount(ctx context.Context, mount string) error {
-	slog.Debug("Configuring xtables.lock source...", "source", mount)
+	// `"Configuring xtables.lock source to `%s`..." % xtables_lock_mount`
+	// (`DockerPlugin.py:179`).
+	slog.Debug("Configuring xtables.lock source to `" + mount + "`...")
 	return p.manager.api.PluginSet(ctx, p.currentName, []string{xtablesConfigurationKey + ".source=" + mount})
 }
 

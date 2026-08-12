@@ -31,6 +31,7 @@ import (
 	"github.com/docker/docker/api/types/container"
 
 	"github.com/KatharaFramework/kathara-go/event"
+	"github.com/KatharaFramework/kathara-go/internal/util"
 	"github.com/KatharaFramework/kathara-go/kathara"
 	"github.com/KatharaFramework/kathara-go/kerrors"
 )
@@ -97,7 +98,10 @@ func (s *machineService) Connect(
 	if err != nil {
 		return nil, err
 	}
-	slog.Debug("Connecting to device.", "device", machineName, "shell", shell)
+	// `"Connect to device `%s` with shell: %s" % (machine_name, shell)`
+	// (`DockerMachine.py:677`). `shell` is the POST-`shlex.split` list, so it
+	// interpolates as the list's repr and not as the configured string.
+	slog.Debug("Connect to device `" + machineName + "` with shell: " + util.PythonStrListRepr(shell))
 
 	startupWaited := startupWaitInterrupted
 	if opts.Wait.Enabled {

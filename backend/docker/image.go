@@ -48,7 +48,10 @@ func (s *imageService) Pull(ctx context.Context, imageName string) error {
 	if err := event.Dispatch(s.manager.dispatcher, event.DockerPullStarted{}); err != nil {
 		return err
 	}
-	slog.Info("Pulling image... This may take a while.", "image", imageName)
+	// `"Pulling image `%s`... This may take a while." % image_name`
+	// (`DockerImage.py:59`). Interpolated, not an slog attribute: the message
+	// IS the user-visible line and has to match byte for byte.
+	slog.Info("Pulling image `" + imageName + "`... This may take a while.")
 
 	body, err := s.manager.api.ImagePull(ctx, imageName, image.PullOptions{})
 	if err != nil {
@@ -124,10 +127,13 @@ func (l pullProgressLine) toEvent() event.PullProgress {
 // SplitN(2) here keeps the first `@` as the separator, which is the same result
 // for every reachable input.
 func (s *imageService) CheckForUpdates(ctx context.Context, imageName string) error {
-	slog.Debug("Checking image updates...", "image", imageName)
+	// `f"Checking updates for {image_name}..."` (`DockerImage.py:74`).
+	slog.Debug("Checking updates for " + imageName + "...")
 
 	if strings.Contains(imageName, "@") {
-		slog.Debug("No need to check image digest.", "image", imageName)
+		// `f"No need to check image digest of {image_name}."`
+		// (`DockerImage.py:77`).
+		slog.Debug("No need to check image digest of " + imageName + ".")
 		return nil
 	}
 
@@ -136,7 +142,8 @@ func (s *imageService) CheckForUpdates(ctx context.Context, imageName string) er
 		return err
 	}
 	if len(local.RepoDigests) == 0 {
-		slog.Debug("Image is built locally.", "image", imageName)
+		// `f"Image {image_name} is built locally."` (`DockerImage.py:84`).
+		slog.Debug("Image " + imageName + " is built locally.")
 		return nil
 	}
 
@@ -271,7 +278,9 @@ func (s *imageService) checkAndPull(ctx context.Context, imageName string, pull 
 				if !isDaemonAPIError(updErr) {
 					return updErr
 				}
-				slog.Debug("Cannot check updates, skipping...", "image", imageName)
+				// `logging.debug("Cannot check updates, skipping...")`
+				// (`DockerImage.py:150`) names no image, so neither does this.
+				slog.Debug("Cannot check updates, skipping...")
 			}
 		}
 		return nil

@@ -11,6 +11,7 @@ import (
 	"context"
 	"errors"
 	"log/slog"
+	"strconv"
 	"time"
 
 	"github.com/docker/docker/api/types/container"
@@ -230,7 +231,8 @@ func filterMachines(machines []*model.Machine, selected, excluded kathara.NameSe
 // [kerrors.ErrPrivilege] for a privileged device without root, a
 // [kerrors.ErrPermission] for an unmountable volume, and the daemon's own.
 func (s *machineService) Create(ctx context.Context, machine *model.Machine) error {
-	slog.Debug("Creating device...", "device", machine.Name)
+	// `"Creating device `%s`..." % machine.name` (`DockerMachine.py:219`).
+	slog.Debug("Creating device `" + machine.Name + "`...")
 
 	user, err := util.GetCurrentUserName()
 	if err != nil {
@@ -270,8 +272,12 @@ func (s *machineService) Create(ctx context.Context, machine *model.Machine) err
 	}
 
 	if bindings != nil && !machine.IsBridged() {
-		slog.Warn("To expose ports of a device on the host, you have to specify the `bridged` option on that device.",
-			"device", machine.Name)
+		// `"To expose ports of device `%s` on the host, you have to specify the
+		// `bridged` option on that device." % machine.name`
+		// (`DockerMachine.py:246-249`), a single line once the two source
+		// fragments are concatenated.
+		slog.Warn("To expose ports of device `" + machine.Name + "` on the host, " +
+			"you have to specify the `bridged` option on that device.")
 	}
 
 	if execCommand, ok := machine.Lab.GlobalMachineMetadata("exec"); ok {
@@ -568,7 +574,9 @@ func (s *machineService) volumeBinds(machine *model.Machine) (binds, mountPoints
 	volumes, err := machine.GetVolumes()
 	if err != nil {
 		if errors.Is(err, kerrors.ErrMountDenied) {
-			slog.Warn("Volumes of device will not be mounted.", "device", machine.Name)
+			// `f"Volumes of device `{machine.name}` will not be mounted."`
+			// (`DockerMachine.py:325`).
+			slog.Warn("Volumes of device `" + machine.Name + "` will not be mounted.")
 			return binds, mountPoints, nil
 		}
 		return nil, nil, err
@@ -609,7 +617,8 @@ func (s *machineService) volumeBinds(machine *model.Machine) (binds, mountPoints
 // the same [model.Machine] wraps the echoes again (docker-backend.md gotcha
 // 14).
 func (s *machineService) Start(ctx context.Context, machine *model.Machine) error {
-	slog.Debug("Starting device...", "device", machine.Name)
+	// `"Starting device `%s`..." % machine.name` (`DockerMachine.py:509`).
+	slog.Debug("Starting device `" + machine.Name + "`...")
 
 	machineContainer, ok := containerOf(machine.APIObject)
 	if !ok {
@@ -643,8 +652,12 @@ func (s *machineService) Start(ctx context.Context, machine *model.Machine) erro
 			// start, which only the API can do.
 			return newPyAttributeError("link")
 		}
-		slog.Debug("Connecting device to collision domain...",
-			"device", machine.Name, "collision_domain", iface.Link.Name, "interface", iface.Number)
+		// `f"Connecting device `{machine.name}` to collision domain
+		// `{machine_iface.link.name}` on interface {iface_num}..."`
+		// (`DockerMachine.py:526-529`). `iface_num` is the dict KEY, i.e. the
+		// slot number, and it interpolates bare — no backticks.
+		slog.Debug("Connecting device `" + machine.Name + "` to collision domain `" +
+			iface.Link.Name + "` on interface " + strconv.Itoa(iface.Number) + "...")
 		if err := s.ConnectInterface(ctx, machine, iface); err != nil {
 			return err
 		}
@@ -665,7 +678,9 @@ func (s *machineService) Start(ctx context.Context, machine *model.Machine) erro
 	}
 
 	startupCommandsString := renderStartupCommands(machine.Name, machine.Meta.ExecCommands)
-	slog.Debug("Executing startup command.", "device", machine.Name, "command", startupCommandsString)
+	// `f"Executing startup command on `{machine.name}`: {startup_commands_string}"`
+	// (`DockerMachine.py:551`).
+	slog.Debug("Executing startup command on `" + machine.Name + "`: " + startupCommandsString)
 
 	// The shell comes from the container's own `shell` LABEL, not from the
 	// model — `create` wrote it there and `start` reads it back
@@ -685,9 +700,14 @@ func (s *machineService) Start(ctx context.Context, machine *model.Machine) erro
 		// A device whose shell is missing gets no startup commands and no
 		// terminal, and the deploy continues (`:562-569`).
 		machine.Meta.NumTerms = model.Int(0)
-		slog.Warn("Shell not found in image of device. Startup commands will not be executed "+
-			"and terminal will not open. Please specify a valid shell for this device.",
-			"shell", binaryErr.Binary, "image", machine.GetImage(), "device", machine.Name)
+		// `f"Shell `{e.binary}` not found in image `{machine.get_image()}` of
+		// device `{machine.name}`. Startup commands will not be executed and
+		// terminal will not open. Please specify a valid shell for this
+		// device."` (`DockerMachine.py:565-568`).
+		slog.Warn("Shell `" + binaryErr.Binary + "` not found in " +
+			"image `" + machine.GetImage() + "` of device `" + machine.Name + "`. " +
+			"Startup commands will not be executed and terminal will not open. " +
+			"Please specify a valid shell for this device.")
 	}
 
 	if err := reloadContainer(ctx, s.manager.api, machineContainer); err != nil {
@@ -850,7 +870,9 @@ func (s *machineService) undeployMachine(ctx context.Context, c *Container) erro
 func (s *machineService) deleteMachine(ctx context.Context, c *Container) error {
 	name := c.Label(labelName)
 	shutdownCommandsString := renderShutdownCommands(name)
-	slog.Debug("Executing shutdown commands.", "device", name, "command", shutdownCommandsString)
+	// `f"Executing shutdown commands on `{container.labels['name']}`:
+	// {shutdown_commands_string}"` (`DockerMachine.py:1099`).
+	slog.Debug("Executing shutdown commands on `" + name + "`: " + shutdownCommandsString)
 
 	if c.Status() == "running" {
 		_, err := s.execRun(ctx, c, execRunOptions{
@@ -867,8 +889,13 @@ func (s *machineService) deleteMachine(ctx context.Context, c *Container) error 
 			// on an untagged image. The image reference from the inspect is
 			// used when there is no tag, because a log line must not be able
 			// to fail a teardown (PORT_SPEC §10).
-			slog.Warn("Shell not found in image of device. Shutdown commands will not be executed.",
-				"shell", binaryErr.Binary, "image", s.manager.imageLabel(ctx, c), "device", name)
+			// `f"Shell `{e.binary}` not found in image
+			// `{container.image.tags[0]}` of device `{container.labels['name']}`.
+			// Shutdown commands will not be executed."`
+			// (`DockerMachine.py:1111-1113`).
+			slog.Warn("Shell `" + binaryErr.Binary + "` not found in " +
+				"image `" + s.manager.imageLabel(ctx, c) + "` of device `" + name + "`. " +
+				"Shutdown commands will not be executed.")
 		}
 	}
 
@@ -1055,6 +1082,19 @@ func execExitCode(inspect container.ExecInspect) *int {
 	return &code
 }
 
+// commandRepr renders a [kathara.Command] the way `%s` renders the
+// `Union[str, List]` parameter it ports: a `str` interpolates as itself, a
+// `List[str]` as the list's repr. Only the debug line at
+// `DockerMachine.py:777` needs it — every other reader of a Command wants the
+// words, which is what the split produces.
+func commandRepr(command kathara.Command) string {
+	if line, ok := command.Line(); ok {
+		return line
+	}
+	argv, _ := command.Argv()
+	return util.PythonStrListRepr(argv)
+}
+
 // Exec is `DockerMachine.exec` (`DockerMachine.py:750`).
 //
 // wait is applied BEFORE the command runs, and a wait that ends in an API error
@@ -1074,7 +1114,11 @@ func (s *machineService) Exec(
 	wait kathara.WaitPolicy,
 	stream bool,
 ) (*execRunResult, error) {
-	slog.Debug("Executing command on device.", "device", machineName)
+	// `"Executing command `%s` to device with name: %s" % (command,
+	// machine_name)` (`DockerMachine.py:777`). The interpolation happens
+	// BEFORE `shlex.split` at `:803`, so a `str` command renders bare and a
+	// `List[str]` one renders as the list's repr.
+	slog.Debug("Executing command `" + commandRepr(command) + "` to device with name: " + machineName)
 
 	containers, err := s.getByFilters(ctx, labHash, machineName, user)
 	if err != nil {
@@ -1156,7 +1200,10 @@ const (
 //     `exec --wait` and `connect` with the binary error, not with "not
 //     running".
 func (s *machineService) waitStartupExecution(ctx context.Context, c *Container, nRetries *int, retryInterval time.Duration) (int, error) {
-	slog.Debug("Waiting startup commands execution...", "device", c.Label(labelName))
+	// `f"Waiting startup commands execution for device
+	// {container.labels['name']}..."` (`DockerMachine.py:910`) — no backticks
+	// around the device name at this site.
+	slog.Debug("Waiting startup commands execution for device " + c.Label(labelName) + "...")
 
 	if nRetries != nil && *nRetries < 0 {
 		positive := -*nRetries

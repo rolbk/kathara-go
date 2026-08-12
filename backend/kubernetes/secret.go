@@ -147,7 +147,9 @@ func (s *secretService) waitCreation(ctx context.Context, labHash, name string) 
 			if !ok {
 				continue
 			}
-			slog.Debug("Secret event.", "type", string(event.Type), "secret", secret.Name)
+			// `f"Event: {event['type']} - Secret: {event['object'].metadata.name}"`
+			// (`KubernetesSecret.py:81`).
+			slog.Debug("Event: " + string(event.Type) + " - Secret: " + secret.Name)
 			if event.Type == watch.Added {
 				return nil
 			}

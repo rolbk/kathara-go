@@ -242,6 +242,22 @@ func PythonRepr(s string) string {
 	return b.String()
 }
 
+// PythonStrListRepr is `str(['a', 'b'])` for a list of strings: the elements'
+// [PythonRepr], comma-space separated, in square brackets. An empty slice —
+// and a nil one — renders `[]`, as `str([])` does.
+//
+// This is what a `%s` or an f-string placeholder produces when the value is a
+// `List[str]`, which is how the two backends' `exec` and `connect` debug lines
+// render their already-`shlex.split` command and shell
+// (`DockerMachine.py:677,777`, `KubernetesMachine.py:727,817`).
+func PythonStrListRepr(items []string) string {
+	parts := make([]string, 0, len(items))
+	for _, item := range items {
+		parts = append(parts, PythonRepr(item))
+	}
+	return "[" + strings.Join(parts, ", ") + "]"
+}
+
 // writeHexEscape emits prefix followed by width lower-case hex digits of r.
 func writeHexEscape(b *strings.Builder, prefix string, r rune, width int) {
 	b.WriteString(prefix)

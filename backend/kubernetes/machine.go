@@ -381,7 +381,9 @@ func (s *machineService) waitMachinesStartup(ctx context.Context, cancelOp conte
 			}
 
 			if len(watched) == 0 || watched.Has(machineName) {
-				slog.Debug("Pod event.", "type", string(ev.Type), "pod", pod.Name, "device", machineName)
+				// `f"Event: {event['type']} - Pod: {event['object'].metadata.name}
+				// (Device {machine_name})"` (`KubernetesMachine.py:251`).
+				slog.Debug("Event: " + string(ev.Type) + " - Pod: " + pod.Name + " (Device " + machineName + ")")
 
 				if len(pod.Status.ContainerStatuses) > 0 {
 					status := pod.Status.ContainerStatuses[0]
@@ -390,20 +392,24 @@ func (s *machineService) waitMachinesStartup(ctx context.Context, cancelOp conte
 					switch {
 					case status.Ready:
 						ready++
-						slog.Debug("Device ready.", "device", machineName)
+						// `f"Device `{machine_name}` ready."`
+						// (`KubernetesMachine.py:258`).
+						slog.Debug("Device `" + machineName + "` ready.")
 						if err := event.Dispatch(s.dispatcher, event.MachineDeployed{Name: machineName}); err != nil {
 							slog.Debug("Failed to dispatch machine_deployed.", "error", err)
 						}
 					case restarts >= maxRestartCount:
-						slog.Warn("Stopping to wait device `"+machineName+"` since it restarted more than "+
-							strconv.Itoa(maxRestartCount)+" times. "+
-							"For a detailed log use the following command:\n\t"+
-							"kubectl -n "+lab.Hash+" describe pod "+pod.Name,
-							"device", machineName)
+						// `KubernetesMachine.py:263-267`, which names the device
+						// inside the sentence and carries no trailing fields.
+						slog.Warn("Stopping to wait device `" + machineName + "` since it restarted more than " +
+							strconv.Itoa(maxRestartCount) + " times. " +
+							"For a detailed log use the following command:\n\t" +
+							"kubectl -n " + lab.Hash + " describe pod " + pod.Name)
 						failed++
 					case restarts > 0 && status.State.Waiting != nil && status.State.Waiting.Reason == "CrashLoopBackOff":
-						slog.Warn("Device `"+machineName+"` has been restarted "+strconv.Itoa(restarts)+" times.",
-							"device", machineName)
+						// `f"Device `{machine_name}` has been restarted
+						// {restart_count} times."` (`KubernetesMachine.py:273`).
+						slog.Warn("Device `" + machineName + "` has been restarted " + strconv.Itoa(restarts) + " times.")
 					}
 				}
 			}
@@ -444,7 +450,8 @@ func (s *machineService) waitMachinesStartup(ctx context.Context, cancelOp conte
 // [kerrors.ErrKubernetesAPI] for every other API failure, plus the model's own
 // option errors and the volume [kerrors.ErrPermission].
 func (s *machineService) Create(ctx context.Context, machine *model.Machine) error {
-	slog.Debug("Creating device...", "device", machine.Name)
+	// `"Creating device `%s`..." % machine.name` (`KubernetesMachine.py:309`).
+	slog.Debug("Creating device `" + machine.Name + "`...")
 
 	_, hasGlobalPrivileged := machine.Lab.GlobalMachineMetadata("privileged")
 	if hasGlobalPrivileged || machine.IsPrivileged() {
@@ -1081,7 +1088,9 @@ func (s *machineService) waitMachinesShutdown(ctx context.Context, watcher watch
 			}
 
 			if watched.Has(machineName) {
-				slog.Debug("Pod event.", "type", string(ev.Type), "pod", pod.Name, "device", machineName)
+				// `f"Event: {event['type']} - Pod: {event['object'].metadata.name}
+				// (Device {machine_name})"` (`KubernetesMachine.py:630`).
+				slog.Debug("Event: " + string(ev.Type) + " - Pod: " + pod.Name + " (Device " + machineName + ")")
 				if ev.Type == watch.Deleted {
 					if err := event.Dispatch(s.dispatcher, event.MachineUndeployed{Name: machineName}); err != nil {
 						slog.Debug("Failed to dispatch machine_undeployed.", "error", err)
@@ -1205,7 +1214,10 @@ func (s *machineService) Connect(ctx context.Context, labHash, machineName strin
 		return nil, err
 	}
 
-	slog.Debug("Connect to device.", "device", machineName, "shell", shell)
+	// `"Connect to device `%s` with shell: %s" % (machine_name, shell)`
+	// (`KubernetesMachine.py:727`), where `shell` is the POST-`shlex.split`
+	// list and so interpolates as the list's repr.
+	slog.Debug("Connect to device `" + machineName + "` with shell: " + util.PythonStrListRepr(shell))
 
 	if opts.Logs && s.settings.PrintStartupLog {
 		if err := s.printStartupLog(ctx, labHash, machineName, opts.LogWriter); err != nil {
@@ -1304,9 +1316,19 @@ func (s *machineService) resolveExecPod(ctx context.Context, labHash, machineNam
 	return pods[len(pods)-1], nil
 }
 
+// execCommandLogLine is the debug line both `exec` arms share:
+// `"Executing command `%s` to device with name: %s" % (command, machine_name)`
+// (`KubernetesMachine.py:817`). It is logged AFTER the `shlex.split` at
+// `:816`, so `command` is always a list and interpolates as the list's repr —
+// unlike the Docker backend's line, which sees the raw parameter.
+func execCommandLogLine(command []string, machineName string) string {
+	return "Executing command `" + util.PythonStrListRepr(command) +
+		"` to device with name: " + machineName
+}
+
 // exec is `exec(..., is_stream=False)` → `_exec_all`.
 func (s *machineService) exec(ctx context.Context, labHash, machineName string, command []string, opts execOptions) (execResult, error) {
-	slog.Debug("Executing command.", "device", machineName, "command", command)
+	slog.Debug(execCommandLogLine(command, machineName))
 
 	pod, err := s.resolveExecPod(ctx, labHash, machineName)
 	if err != nil {
@@ -1325,7 +1347,7 @@ func (s *machineService) exec(ctx context.Context, labHash, machineName string, 
 
 // execStream is `exec(..., is_stream=True)` → `KubernetesExecStream`.
 func (s *machineService) execStream(ctx context.Context, labHash, machineName string, command []string, opts execOptions) (kathara.ExecStream, error) {
-	slog.Debug("Executing command.", "device", machineName, "command", command)
+	slog.Debug(execCommandLogLine(command, machineName))
 
 	pod, err := s.resolveExecPod(ctx, labHash, machineName)
 	if err != nil {

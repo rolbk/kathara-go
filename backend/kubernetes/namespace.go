@@ -186,7 +186,9 @@ func (s *namespaceService) waitCreation(ctx context.Context, labHash string) err
 			if !ok {
 				continue
 			}
-			slog.Debug("Namespace event.", "type", string(event.Type), "namespace", namespace.Name)
+			// `f"Event: {event['type']} - Namespace: {event['object'].metadata.name}"`
+			// (`KubernetesNamespace.py:97`).
+			slog.Debug("Event: " + string(event.Type) + " - Namespace: " + namespace.Name)
 			if namespace.Status.Phase == corev1.NamespaceActive {
 				return nil
 			}
@@ -235,7 +237,9 @@ func (s *namespaceService) waitDeletion(ctx context.Context, selector string) er
 			if !ok {
 				continue
 			}
-			slog.Debug("Namespace event.", "type", string(event.Type), "namespace", namespace.Name)
+			// `f"Event: {event['type']} - Namespace: {event['object'].metadata.name}"`
+			// (`KubernetesNamespace.py:117`).
+			slog.Debug("Event: " + string(event.Type) + " - Namespace: " + namespace.Name)
 			if event.Type == watch.Deleted {
 				deleted++
 			}

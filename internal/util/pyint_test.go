@@ -326,3 +326,32 @@ func TestStrToBoolQuotesTheFoldedValue(t *testing.T) {
 		t.Errorf("error = %q", err)
 	}
 }
+
+// TestPythonStrListRepr pins `str(list)` for the two backends' `connect` and
+// `exec` debug lines, whose `%s` operand is a `shlex.split` result and so
+// renders as a Python list and not as the words joined
+// (`DockerMachine.py:677,777`, `KubernetesMachine.py:727,817`).
+//
+// Oracle: `python3 -c "print(['/bin/bash'])"` → `['/bin/bash']`.
+func TestPythonStrListRepr(t *testing.T) {
+	tests := []struct {
+		name  string
+		items []string
+		want  string
+	}{
+		{"nil", nil, "[]"},
+		{"empty", []string{}, "[]"},
+		{"one word", []string{"/bin/bash"}, "['/bin/bash']"},
+		{"two words", []string{"/bin/sh", "-l"}, "['/bin/sh', '-l']"},
+		{"embedded quote", []string{"it's"}, `["it's"]`},
+		{"embedded newline", []string{"a\nb"}, `['a\nb']`},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			if got := PythonStrListRepr(tc.items); got != tc.want {
+				t.Errorf("PythonStrListRepr(%q) = %q, want %q", tc.items, got, tc.want)
+			}
+		})
+	}
+}
