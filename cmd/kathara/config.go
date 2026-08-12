@@ -1,27 +1,29 @@
-// This file is PORT_SPEC §3.2 items 2 and 3: the scriptable `kathara config`
-// and the `kathara settings` screen that replaces the vendored curses menu.
+// This file is PORT_SPEC §3.2 item 2: the scriptable settings interface.
 //
-// Both go through `settings/`'s own validators, which is §3.2 item 4 — "so
-// `config set` and the TUI cannot disagree". Neither of them re-implements a
-// check.
+// It has no Python original — the 3.8.3 CLI could only edit settings through
+// the curses menu, which is why the menu's bugs were unworkaroundable. Every
+// value it writes goes through `settings/`'s own validators, which is §3.2
+// item 4 ("so `config set` and the TUI cannot disagree"); nothing here
+// re-implements a check, and the two entry points share even the conversion
+// from a command-line word to a schema value ([settings.Settings.SetString]).
+//
+// JSON_CLI_CONTRACT.md §3.12 pins the four envelope shapes.
 
 package main
 
 import (
-	"bufio"
 	"context"
 	"fmt"
 	"strconv"
-	"strings"
 
 	"github.com/KatharaFramework/kathara-go/internal/cliout"
-	"github.com/KatharaFramework/kathara-go/kerrors"
 	"github.com/KatharaFramework/kathara-go/settings"
 )
 
-// newConfigCmd is the non-interactive settings interface (PORT_SPEC §3.2 item
-// 2). It has no Python original; JSON_CLI_CONTRACT.md §3.12 pins its four
-// envelope shapes.
+// newConfigCmd builds the command. The four operations are one `nargs='*'`
+// positional rather than four cobra sub-commands, because the top-level
+// dispatcher (root.go) parses exactly one word and hands the rest to a single
+// parser: a nested cobra command tree would need a second dispatcher.
 func newConfigCmd(a *app) *commandSpec {
 	cmd := newParser("config")
 	cmd.Short = "Read and write Kathara settings"
@@ -32,79 +34,171 @@ func newConfigCmd(a *app) *commandSpec {
 	return &commandSpec{
 		Name: "config",
 		Cmd:  cmd,
-		Run: func(ctx context.Context, a *app, positional, _ []string) (int, error) {
-			return runConfig2(a, positional)
+		Run: func(_ context.Context, a *app, positional, _ []string) (int, error) {
+			return runConfigCmd(a, positional)
 		},
 	}
 }
 
-func runConfig2(a *app, positional []string) (int, error) {
+func runConfigCmd(a *app, positional []string) (int, error) {
 	if len(positional) == 0 {
 		return 2, errUsage("the following arguments are required: get|set|list|reset")
 	}
+
 	switch positional[0] {
 	case "get":
 		if len(positional) != 2 {
 			return 2, errUsage("config get takes exactly one KEY")
 		}
-		value, err := a.settings.Get(positional[1])
-		if err != nil {
-			return 1, err
-		}
-		a.console.Print(fmt.Sprintf("%s = %s", positional[1], formatSettingValue(value)))
-		a.console.Emit(cliout.SettingsGetResult{Key: positional[1], Value: value})
-		return 0, nil
+		return configGet(a, positional[1])
 
 	case "set":
 		if len(positional) != 3 {
 			return 2, errUsage("config set takes exactly one KEY and one VALUE")
 		}
-		key, raw := positional[1], positional[2]
-		if err := a.settings.SetString(key, raw); err != nil {
+		return configSet(a, positional[1], positional[2])
+
+	case "list":
+		if len(positional) != 1 {
+			return 2, errUsage("config list takes no arguments")
+		}
+		return configList(a)
+
+	case "reset":
+		switch len(positional) {
+		case 1:
+			return configResetAll(a)
+		case 2:
+			return configResetKey(a, positional[1])
+		}
+		return 2, errUsage("config reset takes at most one KEY")
+	}
+
+	return 2, errUsage("unknown config subcommand `%s`", positional[0])
+}
+
+func configGet(a *app, key string) (int, error) {
+	value, err := a.settings.Get(key)
+	if err != nil {
+		return 1, err
+	}
+	a.console.Print(fmt.Sprintf("%s = %s", key, formatSettingValue(value)))
+	a.console.Emit(cliout.SettingsGetResult{Key: key, Value: value})
+	return 0, nil
+}
+
+// configSet is the write path.
+//
+// `docker_config_json` is the one key whose command-line word is not its value:
+// the settings screen asked for a *path* and stored the base64 of that file's
+// re-serialized JSON, so this does the same (see
+// [settings.EncodeDockerConfigJSON]). The empty string still means `null`,
+// which is the screen's "Reset value to Empty String" item.
+func configSet(a *app, key, raw string) (int, error) {
+	value := raw
+	if key == dockerConfigJSONKey && raw != "" {
+		encoded, err := settings.EncodeDockerConfigJSON(raw)
+		if err != nil {
 			return 1, err
 		}
-		if err := a.settings.Save(""); err != nil {
-			return 1, err
-		}
+		value = encoded
+	}
+
+	if err := a.settings.SetString(key, value); err != nil {
+		return 1, err
+	}
+	if err := a.settings.Save(a.settingsDir); err != nil {
+		return 1, err
+	}
+
+	stored, err := a.settings.Get(key)
+	if err != nil {
+		return 1, err
+	}
+	a.console.Print(fmt.Sprintf("%s = %s", key, formatSettingValue(stored)))
+	a.console.Emit(cliout.SettingsSetResult{Key: key, Value: stored, Saved: true})
+	return 0, nil
+}
+
+func configList(a *app) (int, error) {
+	keys, err := a.settings.Keys()
+	if err != nil {
+		return 1, err
+	}
+	for _, key := range keys {
 		value, err := a.settings.Get(key)
 		if err != nil {
 			return 1, err
 		}
 		a.console.Print(fmt.Sprintf("%s = %s", key, formatSettingValue(value)))
-		a.console.Emit(cliout.SettingsSetResult{Key: key, Value: value, Saved: true})
-		return 0, nil
-
-	case "list":
-		keys, err := a.settings.Keys()
-		if err != nil {
-			return 1, err
-		}
-		for _, key := range keys {
-			value, err := a.settings.Get(key)
-			if err != nil {
-				return 1, err
-			}
-			a.console.Print(fmt.Sprintf("%s = %s", key, formatSettingValue(value)))
-		}
-		a.console.Emit(cliout.SettingsListResult{Settings: a.settings})
-		return 0, nil
-
-	case "reset":
-		fresh := settings.Defaults()
-		if err := fresh.Save(""); err != nil {
-			return 1, err
-		}
-		*a.settings = *fresh
-		a.console.Print("Settings reset to their defaults.")
-		a.console.Emit(cliout.SettingsResetResult{Settings: a.settings, Saved: true})
-		return 0, nil
 	}
-	return 2, errUsage("unknown config subcommand `%s`", positional[0])
+	a.console.Emit(cliout.SettingsListResult{Settings: a.settings})
+	return 0, nil
 }
 
-// formatSettingValue renders one schema value for the human listing. A nullable
-// key holding `null` prints as Python's `None`, which is what the settings
-// screen showed.
+// configResetAll is `reset` with no key: the whole file goes back to
+// `Setting.__init__`, including the `last_checked` stamp, which [settings.Defaults]
+// backdates by a week so the next `check()` does its update bookkeeping.
+func configResetAll(a *app) (int, error) {
+	fresh := settings.Defaults()
+	if err := fresh.Save(a.settingsDir); err != nil {
+		return 1, err
+	}
+	*a.settings = *fresh
+	a.console.Print("Settings reset to their defaults.")
+	a.console.Emit(cliout.SettingsResetResult{Settings: a.settings, Saved: true})
+	return 0, nil
+}
+
+// configResetKey is `reset <key>`: one key back to its default, the rest of the
+// file untouched.
+//
+// The default is read off a fresh [settings.Defaults] whose `manager_type` has
+// been forced to the *current* one, because which addon keys exist at all
+// depends on it — `api_token` is not a key of a docker-typed schema. The field
+// is assigned directly rather than through Set so that a file already holding
+// an unusable `manager_type` can still have its other keys reset.
+//
+// `manager_type` itself is the one key that must not be forced: doing so would
+// read the current manager back as its own "default", making `config reset
+// manager_type` a no-op that still reported `saved: true`. That key reads the
+// real default (`docker`) and goes through Set like any other, so the switch
+// also resets the newly selected addon.
+//
+// The write goes through [settings.Settings.Set], so a default that this host
+// cannot accept is refused exactly as `config set` would refuse it: on a
+// machine with no xterm, `config reset terminal` reports the same
+// `SettingsError` as `config set terminal /usr/bin/xterm`.
+func configResetKey(a *app, key string) (int, error) {
+	fresh := settings.Defaults()
+	if key != "manager_type" {
+		fresh.ManagerType = a.settings.ManagerType
+	}
+
+	value, err := fresh.Get(key)
+	if err != nil {
+		return 1, err
+	}
+	if err := a.settings.Set(key, value); err != nil {
+		return 1, err
+	}
+	if err := a.settings.Save(a.settingsDir); err != nil {
+		return 1, err
+	}
+
+	a.console.Print(fmt.Sprintf("%s = %s", key, formatSettingValue(value)))
+	a.console.Emit(cliout.SettingsResetResult{Settings: a.settings, Saved: true})
+	return 0, nil
+}
+
+// dockerConfigJSONKey is the one key `config set` reads as a path.
+const dockerConfigJSONKey = "docker_config_json"
+
+// formatSettingValue renders one schema value for the human listing, in
+// Python's own spellings: a nullable key holding `null` prints as `None`, and a
+// bool as `True`/`False`, which is what `print(setting)` would have shown.
+// The settings form renders the same values the *menu* spelled them
+// (`Yes`/`No`, the `shared_cds` sentence); see displaySettingValue.
 func formatSettingValue(v any) string {
 	switch value := v.(type) {
 	case nil:
@@ -123,92 +217,4 @@ func formatSettingValue(v any) string {
 	default:
 		return fmt.Sprint(value)
 	}
-}
-
-// newSettingsCmd is `cli/command/SettingsCommand.py`, rebuilt.
-//
-// The Python command "defines no parser and never parses argv": `kathara
-// settings -h` silently ignores the `-h` and opens the menu, and there is no
-// argparse exit-2 path at all (CLI_SURFACE.md M-5, §12). That is reproduced by
-// [commandSpec.NoParser], which skips the whole parse-and-validate block: the
-// help flag is never consulted because argv is never read.
-//
-// What replaces the 1,295-line vendored curses menu (PORT_SPEC §0.2 #1) is a
-// numbered prompt loop over the same keys, running the same `settings`
-// validators as `kathara config set`. A full-screen bubbletea form is the
-// §3.2-item-3 target and is Phase 6 work; what is here is dependency-free, works
-// over SSH, and — unlike the curses menu — degrades honestly when there is no
-// terminal.
-func newSettingsCmd(a *app) *commandSpec {
-	cmd := newParser("settings")
-	return &commandSpec{
-		Name:     "settings",
-		Cmd:      cmd,
-		NoParser: true,
-		Run: func(_ context.Context, a *app, _, _ []string) (int, error) {
-			return runSettings(a)
-		},
-	}
-}
-
-func runSettings(a *app) (int, error) {
-	if !a.console.TTY {
-		return 1, kerrors.New(kerrors.ErrInvocation,
-			"`kathara settings` needs a terminal. Use `kathara config get|set|list|reset` instead.")
-	}
-
-	reader := bufio.NewReader(a.stdin)
-	for {
-		keys, err := a.settings.Keys()
-		if err != nil {
-			return 1, err
-		}
-		a.console.PrintPanel("Kathara Settings", cliout.PanelOptions{Justify: cliout.JustifyCenter})
-		for i, key := range keys {
-			value, err := a.settings.Get(key)
-			if err != nil {
-				return 1, err
-			}
-			a.console.Print(fmt.Sprintf("%2d) %-22s %s", i+1, key, formatSettingValue(value)))
-		}
-		a.console.Print("")
-		a.console.Print("Enter a number to change a setting, or `q` to save and quit.")
-
-		choice, err := readPrompt(a, reader, "> ")
-		if err != nil {
-			return 1, err
-		}
-		if choice == "q" || choice == "" {
-			if err := a.settings.Save(""); err != nil {
-				return 1, err
-			}
-			return 0, nil
-		}
-		index, convErr := strconv.Atoi(choice)
-		if convErr != nil || index < 1 || index > len(keys) {
-			a.console.Print("Please enter one of the numbers above, or `q`.")
-			continue
-		}
-
-		key := keys[index-1]
-		value, err := readPrompt(a, reader, fmt.Sprintf("%s = ", key))
-		if err != nil {
-			return 1, err
-		}
-		if err := a.settings.SetString(key, value); err != nil {
-			// A rejected value re-prompts instead of aborting, which is what
-			// the curses menu's validators did.
-			a.console.Print(err.Error())
-		}
-	}
-}
-
-// readPrompt writes a prompt with no newline and reads one line.
-func readPrompt(a *app, reader *bufio.Reader, prompt string) (string, error) {
-	a.console.WriteOut([]byte(prompt))
-	line, err := reader.ReadString('\n')
-	if line == "" && err != nil {
-		return "", cliout.ErrPromptEOF
-	}
-	return strings.TrimSpace(line), nil
 }

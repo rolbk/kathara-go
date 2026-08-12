@@ -91,6 +91,24 @@ func validateTerminalValue(s *Settings, value any) error {
 	return s.CheckTerminal(v)
 }
 
+// Reserved values of the `terminal` key. They name a terminal *integration*
+// rather than a program, so [Settings.CheckTerminal] short-circuits on both
+// instead of looking for an executable.
+//
+// The tokens are also spelled in `term` ([term.ModeFor] is what maps them to
+// an integration); they cannot be shared from there because PACKAGE_GRAPH.md §5
+// holds this package to the standard library. TestTerminalTokensMatchTerm in
+// `cmd/kathara` — the one package that imports both — pins them equal.
+const (
+	// TerminalTMUX selects the tmux backend. Python already reserved this
+	// value in this key (Setting.py:288).
+	TerminalTMUX = "TMUX"
+
+	// TerminalMultiplexer selects the built-in multiplexer, and is the default
+	// (PORT_SPEC §3.3 item 1).
+	TerminalMultiplexer = "MULTIPLEXER"
+)
+
 // CheckTerminal is `Setting.check_terminal` (Setting.py:275): the configured
 // terminal emulator must be something this platform can actually launch.
 //
@@ -101,6 +119,12 @@ func validateTerminalValue(s *Settings, value any) error {
 // short-circuits the check (Setting.py:288). Python returns True for it and
 // True at the end, which is the bool `TerminalValidator` hands back; the
 // information content is "did not raise", so the Go answer is a nil error.
+//
+// "MULTIPLEXER" is the second such value and the only addition the §0.2 #2
+// rebuild makes to this key: the built-in multiplexer is code in this binary,
+// so there is nothing on disk to check for. Without the short-circuit the
+// default configuration would fail its own startup validation on Linux, where
+// the check is `os.path.isfile`.
 //
 // The check itself is per-platform and asymmetric on purpose (Setting.py:293):
 // Linux tests for an executable file, macOS resolves an application by name
@@ -113,7 +137,7 @@ func (s *Settings) CheckTerminal(terminal string) error {
 		terminal = s.Terminal
 	}
 
-	if terminal == "TMUX" {
+	if terminal == TerminalTMUX || terminal == TerminalMultiplexer {
 		return nil
 	}
 
@@ -156,6 +180,13 @@ func (s *Settings) CheckImage(ctx context.Context, checker ImageChecker, image s
 //
 // It exists because a bool return would have thrown the reason away, and the
 // reason is what the caller shows.
+//
+// Neither this nor [Settings.CheckImage] has a caller today: `image` is
+// accepted unvalidated by both entry paths, because the check is a registry
+// round trip and neither `kathara config set` nor the settings form opens a
+// backend. The pair is here so that §3.2 item 4 still holds the day one of
+// them does — the check would then be shared, not duplicated.
+// PROPOSED-DIVERGENCES.md records the drop.
 func IsImageRejection(err error) bool {
 	return errors.Is(err, kerrors.ErrConnection) ||
 		errors.Is(err, kerrors.ErrDockerImageNotFound) ||

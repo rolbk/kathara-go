@@ -180,6 +180,18 @@ func defaultSettings() *Settings {
 		// `exec_by_platform(lambda: '/usr/bin/xterm', lambda: '', lambda: 'Terminal')`
 		// (Setting.py:25). The macOS value is an application name, not a
 		// path, which is why check_terminal branches per platform too.
+		//
+		// This stays Python's value even though PORT_SPEC §3.3 item 1 calls the
+		// built-in multiplexer "the default", because this key's default is a
+		// **recorded oracle**: `testdata/conf_roundtrip.json` pins what a
+		// partial `kathara.conf` round-trips to through CPython, defaults
+		// included, and TestRoundTripAgainstOracle compares it byte for byte.
+		// Changing it here would falsify that vector rather than pass it. The
+		// Windows default is the empty string, which `term.ModeFor` already
+		// reads as the multiplexer, so the platform §3.3 was written for gets
+		// the new default for free; Unix opts in with
+		// `kathara config set terminal MULTIPLEXER`.
+		// PROPOSED-DIVERGENCES.md asks for the ruling that would flip it.
 		Terminal:          util.ExecByPlatform(func() string { return "/usr/bin/xterm" }, func() string { return "" }, func() string { return "Terminal" }),
 		OpenTerminals:     true,
 		DeviceShell:       "/bin/bash",

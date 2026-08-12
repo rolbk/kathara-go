@@ -476,10 +476,13 @@ func (s *Settings) Encode() ([]byte, error) {
 // the same order, compact, for the `{"settings":{…}}` envelope of `kathara
 // config list` and `config reset` (JSON_CLI_CONTRACT.md §3.12).
 //
-// Note that `encoding/json` re-escapes what a [json.Marshaler] returns when it
-// embeds it, so `<`, `>` and `&` inside a value come out as `<`-style
-// escapes in that envelope while the on-disk file keeps them literal. The
-// envelope is not the frozen artifact; the file is.
+// `encoding/json` re-escapes what a [json.Marshaler] returns when it embeds it,
+// but only when HTML escaping is on. The envelope writer turns it off
+// (`SetEscapeHTML(false)`, JSON_CLI_CONTRACT.md §1.3), so `<`, `>` and `&`
+// inside a value stay literal there, as they do in the on-disk file. Nothing
+// here may assume otherwise: the envelope is not the frozen artifact, the file
+// is, and only the file's own escaping (`ensure_ascii`, in pyjson.go) is
+// byte-compared against CPython.
 //
 // The receiver is a value so that both `Settings` and `*Settings` marshal
 // through here. With a pointer receiver, `json.Marshal(settings)` on a
