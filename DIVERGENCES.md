@@ -705,6 +705,18 @@ code comments and pinned by tests, not listed here.
     Extraction is what the goldens compare (SYNTHESIS §1.4) and no two members
     can collide, so the order is unobservable past the untar. It is the same
     choice `util.PackFilesForTar` already makes.
+    One byte-level detail is NOT the same choice: `backend/docker/pack.go` and
+    `backend/kubernetes/pack.go` end the stream at `tar.Writer.Close`'s two zero
+    blocks, so their archives are **unpadded**, while `internal/util/tar.go`
+    pads out to CPython `tarfile`'s `RECORDSIZE` (20 × 512) the way
+    `TarFile.close()` does. Nothing observes the difference: both packers hand
+    the bytes straight to a `put_archive`, and every untar — the daemon's, the
+    kubelet's, GNU tar's, Python's own — stops at the zero blocks and never
+    reads the padding. `util.PackFilesForTar` pads because its archive LENGTH is
+    pinned to CPython's by `TestWriteTarRecordPadding` (10240 bytes for an empty
+    input, not 1024); these two are only ever compared after extraction.
+    Unifying them on the padded form is a post-1.0 cleanup, tracked in
+    PROPOSED-DIVERGENCES.md.
 64. **`retrieve_files` extracts without sanitising members, deliberately.**
     `tarfile.extractall(path=dst)` with no `filter=` is a fully-trusted
     extraction, so an archive holding `../` components writes outside `dst`.

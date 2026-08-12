@@ -2,8 +2,13 @@ package main
 
 import (
 	"context"
+	"errors"
+	"os"
 	"strings"
+	"sync/atomic"
+	"syscall"
 	"testing"
+	"time"
 
 	"github.com/KatharaFramework/kathara-go/kathara"
 	"github.com/KatharaFramework/kathara-go/kerrors"
@@ -26,6 +31,94 @@ func (m *connectManager) ConnectTTY(
 		return nil, m.err
 	}
 	return m.session, nil
+}
+
+// blockingSession is the shell that never says anything and never exits — the
+// session a redirected `connect` would park on forever.
+type blockingSession struct {
+	reads  atomic.Int64
+	closed atomic.Bool
+	block  chan struct{}
+}
+
+func (s *blockingSession) Read(p []byte) (int, error) {
+	s.reads.Add(1)
+	<-s.block
+	return 0, os.ErrClosed
+}
+
+func (s *blockingSession) Write(p []byte) (int, error) { return len(p), nil }
+func (s *blockingSession) Resize(_, _ uint16) error    { return nil }
+func (s *blockingSession) Close() error                { s.closed.Store(true); return nil }
+
+// TestConnectFailsFastWhenStdinIsNotATerminal is the parity property of
+// [errStdinNotATerminal].
+//
+// Python's `TerminalRunner.start` dies in `enter_raw` — oracle-measured
+// `CRITICAL (error) (25, 'Inappropriate ioctl for device')`, exit 1 — the
+// instant stdin is not a terminal. Before this check the port did the opposite
+// of failing: the stdin pump hit EOF at once and the output pump waited on a
+// shell that would never exit, so `kathara connect pc1 < /dev/null` HUNG.
+//
+// A pipe stands in for `/dev/null`: both are `*os.File`s that `IsTerminal`
+// rejects, so the test also proves the check is a terminal test and not an
+// is-it-a-file test.
+func TestConnectFailsFastWhenStdinIsNotATerminal(t *testing.T) {
+	r, w, err := os.Pipe()
+	if err != nil {
+		t.Fatalf("os.Pipe: %v", err)
+	}
+	t.Cleanup(func() { _ = r.Close(); _ = w.Close() })
+
+	session := &blockingSession{block: make(chan struct{})}
+	t.Cleanup(func() { close(session.block) })
+
+	a := newTestApp(t)
+	a.stdin = r
+	withManager(a, &connectManager{session: session})
+
+	type result struct {
+		code int
+		err  error
+	}
+	done := make(chan result, 1)
+	go func() {
+		// `-v` addresses `kathara_vlab` by name, which keeps the test off the
+		// scenario parser; the attach path under test is the same one.
+		code, err := runConnect(t.Context(), a.app, &connectFlags{vmachine: true}, []string{"pc1"})
+		done <- result{code, err}
+	}()
+
+	var got result
+	select {
+	case got = <-done:
+	case <-time.After(20 * time.Second):
+		t.Fatal("`connect` with a non-terminal stdin never returned")
+	}
+
+	if got.code != 1 {
+		t.Errorf("exit = %d, want 1", got.code)
+	}
+	if !errors.Is(got.err, errStdinNotATerminal) {
+		t.Errorf("error = %v, want %v", got.err, errStdinNotATerminal)
+	}
+	// The errno Python reported, reachable the Go way.
+	if !errors.Is(got.err, syscall.ENOTTY) {
+		t.Errorf("error = %v, want it to wrap ENOTTY", got.err)
+	}
+	// ERROR_CODES.md §1.2's `OSError` row: terminal-internal sites bucket to
+	// `InternalError`, whose human line §1.4 pins to `CRITICAL (InternalError)`.
+	if code := kerrors.Code(got.err); code != kerrors.CodeInternalError {
+		t.Errorf("code = %q, want %q", code, kerrors.CodeInternalError)
+	}
+	// Fail-fast means the pump never started: not one byte was read off the
+	// session, and it was handed back.
+	if n := session.reads.Load(); n != 0 {
+		t.Errorf("the session was read %d times, want 0", n)
+	}
+	if !session.closed.Load() {
+		t.Error("the session was not closed")
+	}
 }
 
 // TestConnectMuxAttachesBeforeItDrawsAnything is PORT_SPEC §3.3 item 4's

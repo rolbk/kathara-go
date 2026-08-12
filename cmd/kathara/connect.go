@@ -11,7 +11,9 @@
 // It is not the only renderer any more. When the `terminal` setting selects
 // the built-in multiplexer, `connect` opens a one-tab multiplexer instead —
 // §3.3 item 1's "attach via kathara connect" — and the raw pump below stays
-// for every other mode and for any non-terminal stdin/stdout.
+// for every other mode and for a terminal stdin with a redirected stdout. A
+// stdin that is not a terminal at all reaches neither: it is the failure
+// [errStdinNotATerminal] describes, which Python raises too.
 //
 // `connect` is human-only (JSON_CLI_CONTRACT.md §1.1): it declares no
 // `--format`, so any use of the flag is an unknown-flag usage error, exit 2.
@@ -22,8 +24,10 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"fmt"
 	"io"
 	"os"
+	"syscall"
 
 	"github.com/KatharaFramework/kathara-go/kathara"
 	"github.com/KatharaFramework/kathara-go/term"
@@ -95,9 +99,10 @@ func runConnect(ctx context.Context, a *app, f *connectFlags, positional []strin
 	// The built-in multiplexer is `connect`'s renderer too when it is the
 	// selected mode (PORT_SPEC §3.3 item 1: "attach via kathara connect").
 	// One device is one tab, and the user gets the scrollback, copy and detach
-	// bindings a bare byte pump cannot offer. Every other mode — and any
-	// non-terminal stdin or stdout — keeps the raw attach below, which is what
-	// §3.3 item 4 marks "unchanged behaviour".
+	// bindings a bare byte pump cannot offer. Every other mode — and a terminal
+	// stdin whose stdout is redirected — keeps the raw attach below, which is
+	// what §3.3 item 4 marks "unchanged behaviour"; a non-terminal stdin fails
+	// there exactly as Python's does ([errStdinNotATerminal]).
 	if term.ModeFor(a.settings.Terminal) == term.ModeMultiplexer && a.interactive() {
 		return runConnectMux(ctx, mgr, machineName, ref, opts)
 	}
@@ -199,19 +204,55 @@ func (a *app) isInteractiveTTY() bool {
 	return ok && xterm.IsTerminal(int(stdout.Fd()))
 }
 
+// errStdinNotATerminal is `UnixConsoleAdapter.enter_raw` failing on a stdin
+// that is not a terminal, carried into the port's taxonomy.
+//
+// `TerminalRunner.start` calls `console.enter_raw()` before it pumps a single
+// byte, and `enter_raw` is `termios.tcgetattr(sys.stdin.fileno())`
+// (`UnixConsoleAdapter.py:53`), which raises the moment stdin is a pipe, a file
+// or `/dev/null`. Nothing catches it, so `src/kathara.py`'s catch-all prints
+// the line and exits 1. Oracle-measured against 3.8.3 on a deployed lab:
+//
+//	$ kathara connect pc1 -d . < /dev/null
+//	CRITICAL (error) (25, 'Inappropriate ioctl for device')   # exit 1
+//
+// The port has to fail there too, and not because of the message: without the
+// check, `attachTTY`'s stdin pump reaches EOF immediately while the output pump
+// waits on a shell that will never exit, so the command HANGS rather than
+// returning. Fail-fast is the parity property; the wording is the detail.
+//
+// The taxonomy places it. ERROR_CODES.md §1.2's `OSError` row ends
+// "terminal-internal sites → `InternalError`", and §1.4 pins that code's human
+// line to `CRITICAL (InternalError) {go error text}` as an accepted divergence
+// taken *precisely* because these paths printed raw Python class names and were
+// latent bugs — here the class name is the literal `error`, which is
+// `termios.error` and tells a user nothing. So the label is `InternalError` and
+// the message is the port's to choose; it is Python's errno, wrapped rather
+// than spelled, so the reader sees the same failure (`syscall.ENOTTY`'s text is
+// CPython's `Inappropriate ioctl for device` down-cased, and errno 25 is ENOTTY
+// on Linux and macOS alike) and `errors.Is(err, syscall.ENOTTY)` holds.
+var errStdinNotATerminal = fmt.Errorf("stdin is not a terminal: %w", syscall.ENOTTY)
+
 // attachTTY runs the terminal loop: put the local console in raw mode, pump
 // bytes both ways, and forward window-size changes.
 func attachTTY(ctx context.Context, session kathara.TTYSession, a *app) error {
 	stdin, stdinIsFile := a.stdin.(*os.File)
 	stdout, stdoutIsFile := a.console.Out.(*os.File)
 
-	if stdinIsFile && xterm.IsTerminal(int(stdin.Fd())) {
-		state, err := xterm.MakeRaw(int(stdin.Fd()))
-		if err != nil {
-			return err
-		}
-		defer func() { _ = xterm.Restore(int(stdin.Fd()), state) }()
+	// Python's first act, and its first chance to fail: see
+	// [errStdinNotATerminal]. It is deliberately *before* everything else, so
+	// that a redirected `kathara connect` returns instead of parking on a
+	// session neither side will ever end. Only stdin decides — Python's
+	// `enter_raw` touches nothing else, and a terminal stdin with a redirected
+	// stdout still attaches, minus the resize forwarding below.
+	if !stdinIsFile || !xterm.IsTerminal(int(stdin.Fd())) {
+		return errStdinNotATerminal
 	}
+	state, err := xterm.MakeRaw(int(stdin.Fd()))
+	if err != nil {
+		return err
+	}
+	defer func() { _ = xterm.Restore(int(stdin.Fd()), state) }()
 
 	if stdoutIsFile && xterm.IsTerminal(int(stdout.Fd())) {
 		if cols, rows, err := xterm.GetSize(int(stdout.Fd())); err == nil {

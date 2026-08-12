@@ -8,6 +8,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 
@@ -547,6 +548,102 @@ func TestListEmptyRendersTheNoDevicesPanel(t *testing.T) {
 		t.Errorf("stdout:\n%s", out)
 	}
 }
+
+// TestMachinesTableHeaderFollowsEachBackendsToDict is `create_lab_table`'s
+// column derivation (`cli/ui/utils.py:77-83`) on both backends.
+//
+// Python builds the header from the FIRST record's own `to_dict()` keys minus
+// `FORBIDDEN_TABLE_COLUMNS == ["container_name"]` (`:25,79`). The subtraction is
+// by key, and only Docker's dict has that key, so the two tables differ by more
+// than the one column the filter names:
+//
+//   - `KubernetesMachineStats.to_dict()` keeps `pod_name`, because the filter
+//     lists `container_name` and this dict does not have one;
+//   - it has no `user` at all — the class never records a deploying user;
+//   - its `image` precedes its `status`, where Docker's order is the reverse.
+//
+// JSON mode is deliberately NOT symmetric with this: its key is the canonical
+// `container_name` on both backends (JSON_CLI_CONTRACT.md §3.0.2), which
+// `TestListMachineObjectIsTheContractShape` and the `cliout` envelope tests pin.
+func TestMachinesTableHeaderFollowsEachBackendsToDict(t *testing.T) {
+	for _, tc := range []struct {
+		name  string
+		stats *kathara.MachineStats
+		want  []string
+	}{
+		{
+			name: "docker",
+			stats: &kathara.MachineStats{
+				NetworkScenarioID: "9pe3y6IDMwx4PfOPu5mbNg",
+				Name:              "pc1",
+				ContainerName:     "kathara_user_pc1_9pe3y6IDMwx4PfOPu5mbNg",
+				User:              ptr("user"),
+				Status:            ptr("running"),
+				Image:             "kathara/base",
+			},
+			want: []string{"NETWORK SCENARIO ID", "NAME", "USER", "STATUS", "IMAGE"},
+		},
+		{
+			name: "kubernetes",
+			stats: &kathara.MachineStats{
+				NetworkScenarioID: "9pe3y6idmwx4pfopu5mbng",
+				Name:              "pc1",
+				ContainerName:     "pc1-6b7d9f8c4d-hq2xz",
+				User:              nil,
+				Status:            ptr("Running"),
+				Image:             "kathara/base",
+				AssignedNode:      kathara.SomeString("node-1"),
+			},
+			want: []string{"NETWORK SCENARIO ID", "NAME", "POD NAME", "IMAGE", "STATUS", "ASSIGNED NODE"},
+		},
+		{
+			// A Pending pod's `assigned_node` is null, not missing: the column
+			// is still there and `str(None)` fills the cell.
+			name: "kubernetes, pod not scheduled yet",
+			stats: &kathara.MachineStats{
+				NetworkScenarioID: "9pe3y6idmwx4pfopu5mbng",
+				Name:              "pc1",
+				ContainerName:     "pc1-6b7d9f8c4d-hq2xz",
+				Status:            ptr("Pending"),
+				Image:             "N/A",
+				AssignedNode:      kathara.NullString(),
+			},
+			want: []string{"NETWORK SCENARIO ID", "NAME", "POD NAME", "IMAGE", "STATUS", "ASSIGNED NODE"},
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			lines := renderMachinesTable(
+				[]kathara.MachineStatsEntry{{ID: tc.stats.ContainerName, Stats: tc.stats}}, 120)
+
+			got := tableHeaderCells(t, lines)
+			if !slices.Equal(got, tc.want) {
+				t.Errorf("header = %q, want %q\n%s", got, tc.want, strings.Join(lines, "\n"))
+			}
+		})
+	}
+}
+
+// tableHeaderCells reads the header row off a rendered table: the first line
+// that carries a column separator after the box's top rule, split back into
+// cells.
+func tableHeaderCells(t *testing.T, lines []string) []string {
+	t.Helper()
+	for _, line := range lines {
+		if !strings.Contains(line, "│") {
+			continue
+		}
+		cells := strings.Split(strings.Trim(line, "│"), "│")
+		for i, cell := range cells {
+			cells[i] = strings.TrimSpace(cell)
+		}
+		return cells
+	}
+	t.Fatalf("no header row in:\n%s", strings.Join(lines, "\n"))
+	return nil
+}
+
+// ptr is `&x` for a literal.
+func ptr[T any](v T) *T { return &v }
 
 // TestExecExitCodeIsTheRemoteCommands is JSON_CLI_CONTRACT.md A4, and the one
 // place a Kathara command exits non-zero on success.

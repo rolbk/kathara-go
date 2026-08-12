@@ -97,23 +97,36 @@ func bindList(p *parser, value *stringList, name, shorthand, metavar, usage stri
 }
 
 // renderMachinesTable is `cli/ui/utils.create_lab_table`: the columns are the
-// keys of `IMachineStats.to_dict()` minus `container_name`, upper-cased with
-// underscores turned into spaces, and the rows are `str()` of every value.
+// keys of the backend's own `to_dict()` **minus `FORBIDDEN_TABLE_COLUMNS`**
+// (`cli/ui/utils.py:25,79` — the list holds exactly `container_name`),
+// upper-cased with underscores turned into spaces, and the rows are `str()` of
+// every value.
+//
+// The two backends therefore disagree about more than one column, because the
+// filter is by key and only one of the two dicts has that key. Human mode
+// follows each dict; JSON mode does not, and must not — its `container_name` is
+// canonical across both backends (JSON_CLI_CONTRACT.md §3.0.2).
+//
+//   - Docker (`DockerMachineStats.to_dict()`): `network_scenario_id`, `name`,
+//     `container_name`, `user`, `status`, `image` — the filter drops
+//     `container_name`, leaving four plus the id.
+//   - Kubernetes (`KubernetesMachineStats.to_dict()`): `network_scenario_id`,
+//     `name`, `pod_name`, `image`, `status`, `assigned_node`. There is no
+//     `container_name` key, so the filter drops NOTHING: `POD NAME` is a
+//     column, there is no `USER` column at all (the class has no such field),
+//     and `IMAGE` precedes `STATUS`. CLI_SURFACE.md §13 describes only the
+//     Docker shape; see the erratum row in RULINGS.md.
 //
 // The resource-sampling keys (`pids`, `cpu_usage`, `mem_usage`, `mem_percent`,
-// `net_usage`, `interfaces`) are absent because PORT_SPEC §0.3 defers them; the
-// six inventory keys are not. `assigned_node` is the Kubernetes-only additive
-// key and appears only when the backend filled it.
+// `net_usage`, `interfaces`) are absent from both because PORT_SPEC §0.3 defers
+// them; the inventory keys are not.
 func renderMachinesTable(entries []kathara.MachineStatsEntry, width int) []string {
 	timestamp := cliout.Timestamp(nowFunc())
 	if len(entries) == 0 {
 		return cliout.EmptyBlock(timestamp, "No Devices Found", width)
 	}
 
-	columns := []string{"network_scenario_id", "name", "user", "status", "image"}
-	if entries[0].Stats != nil && entries[0].Stats.AssignedNode.Present() {
-		columns = append(columns, "assigned_node")
-	}
+	columns := machineTableColumns(entries[0].Stats)
 	headers := make([]string, 0, len(columns))
 	for _, key := range columns {
 		headers = append(headers, cliout.ColumnHeader(key))
@@ -135,6 +148,27 @@ func renderMachinesTable(entries []kathara.MachineStatsEntry, width int) []strin
 	return table.Render(width)
 }
 
+// machineTableColumns picks which `to_dict()` the header row is quoting.
+//
+// `assigned_node` is the discriminator because it is the one key whose very
+// presence is backend-specific: `DockerMachineStats.to_dict()` has no such key
+// and the Docker backend leaves [kathara.OptionalString] at its absent zero
+// value, while `KubernetesMachineStats.to_dict()` always has it — as a string
+// once the pod is scheduled and as null while it is Pending, which is why the
+// test is `Present`, not `Value`. Python needs no such test: it reads the keys
+// off whichever object the manager handed it.
+//
+// Python takes the header row from the FIRST record too (`if not table.columns`
+// inside the loop, `cli/ui/utils.py:81`), so a stream is described by its head
+// in both. A nil head — which an implementation never produces inside a slice
+// ([kathara.MachineStatsEntry]) — reads as Docker.
+func machineTableColumns(head *kathara.MachineStats) []string {
+	if head != nil && head.AssignedNode.Present() {
+		return []string{"network_scenario_id", "name", "pod_name", "image", "status", "assigned_node"}
+	}
+	return []string{"network_scenario_id", "name", "user", "status", "image"}
+}
+
 // statsRow renders one inventory record. A nil `user` or `status` prints as
 // Python's `str(None)`, i.e. "None": the table stringifies every value with
 // `str()` (`cli/ui/utils.py:85`) and does not special-case the two `Optional`
@@ -147,7 +181,9 @@ func statsRow(s *kathara.MachineStats, columns []string) []string {
 			row = append(row, s.NetworkScenarioID)
 		case "name":
 			row = append(row, s.Name)
-		case "container_name":
+		case "pod_name":
+			// `KubernetesMachineStats.pod_name`, which is the same field the
+			// canonical JSON key `container_name` carries (§3.0.2).
 			row = append(row, s.ContainerName)
 		case "user":
 			row = append(row, pyStr(s.User))

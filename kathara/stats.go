@@ -119,6 +119,13 @@ type MachineStats struct {
 	// object — the container name on Docker, the *pod* name on Kubernetes,
 	// whose Python `to_dict()` calls the key `pod_name`. The canonical key
 	// wins (JSON_CLI_CONTRACT.md §3.0.2).
+	//
+	// Only here. The HUMAN table is a transcript of Python's renderer, which
+	// filters each backend's own dict by key, so it prints the field under
+	// `POD NAME` on Kubernetes and does not print it at all on Docker (see
+	// `machineTableColumns` in `cmd/kathara`, and the CLI_SURFACE §13 erratum
+	// in docs/port/RULINGS.md). The asymmetry between the two modes is
+	// deliberate.
 	ContainerName string `json:"container_name"`
 
 	// User is `user`: the host user that deployed the device, from the `user`

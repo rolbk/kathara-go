@@ -560,3 +560,20 @@ The obvious home is `internal/util`, which both may import, but moving it means 
 `backend/docker` file that this change does not own. **Action for the contract owner:** approve
 hoisting `ShlexSplit` to `internal/util` as a mechanical post-merge move, or accept the two
 copies and the drift risk.
+
+## Tar padding is spelled twice, one of them short
+`internal/util/tar.go` pads its archive out to CPython `tarfile`'s `RECORDSIZE`
+(20 × 512) because `TarFile.close()` does and because `TestWriteTarRecordPadding` pins its
+archive length to CPython's. `backend/docker/pack.go` and `backend/kubernetes/pack.go` do not: they
+stop at `tar.Writer.Close`'s two zero blocks, so `pack_data`'s archive is a short tail
+shorter than Python's.
+
+Nothing observes it. Both packers hand the bytes to a `put_archive` and every reader —
+the Docker daemon, the kubelet, GNU tar, Python's own `tarfile` — stops at the zero
+blocks. The goldens compare the extraction, not the stream (SYNTHESIS §1.4). Recorded in
+DIVERGENCES.md item 63.
+
+**Action for the contract owner:** approve hoisting `padToRecord` into a shared helper and
+calling it from the two `pack.go` files post-1.0, or accept the two shapes. Either way no
+observable behaviour changes; the only argument for unifying is that a future byte-level
+comparison of `pack_data`'s output would otherwise fail for a reason nobody remembers.
