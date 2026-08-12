@@ -201,3 +201,71 @@ func TestLinesUnwrapsBeforeTokenizing(t *testing.T) {
 		t.Fatalf("Lines() = %q, want %q", got, want)
 	}
 }
+
+// TestNormalizeCapabilities pins the harness's capability canonicalization to
+// the Go Docker SDK's own client-side rewrite
+// (docker@v28.5.2/client/container_create.go:139 normalizeCapabilities, :159
+// normalizeCap): upper-case, "CAP_" prefix unless already present or the value
+// is the "ALL" magic value, de-duplicate, sort.
+func TestNormalizeCapabilities(t *testing.T) {
+	cases := []struct {
+		name string
+		in   []string
+		want []string
+	}{{
+		name: "kathara MACHINE_CAPABILITIES as docker-py stores them",
+		// DockerMachine.py's literal, in its source order: this is exactly what
+		// `docker inspect` echoes on the Python side.
+		in:   []string{"NET_ADMIN", "NET_RAW", "NET_BROADCAST", "NET_BIND_SERVICE", "SYS_ADMIN"},
+		want: []string{"CAP_NET_ADMIN", "CAP_NET_BIND_SERVICE", "CAP_NET_BROADCAST", "CAP_NET_RAW", "CAP_SYS_ADMIN"},
+	}, {
+		name: "the same set as the Go SDK stores it is a fixed point",
+		in:   []string{"CAP_NET_ADMIN", "CAP_NET_BIND_SERVICE", "CAP_NET_BROADCAST", "CAP_NET_RAW", "CAP_SYS_ADMIN"},
+		want: []string{"CAP_NET_ADMIN", "CAP_NET_BIND_SERVICE", "CAP_NET_BROADCAST", "CAP_NET_RAW", "CAP_SYS_ADMIN"},
+	}, {
+		name: "ALL is the magic value and keeps no prefix",
+		in:   []string{"all"},
+		want: []string{"ALL"},
+	}, {
+		name: "ALL sorts before prefixed names, as the SDK sorts it",
+		in:   []string{"net_admin", "ALL"},
+		want: []string{"ALL", "CAP_NET_ADMIN"},
+	}, {
+		name: "mixed case and mixed spelling collapse to one entry",
+		in:   []string{"net_admin", "NET_ADMIN", "cap_net_admin", "CAP_NET_ADMIN"},
+		want: []string{"CAP_NET_ADMIN"},
+	}, {
+		name: "empty list stays an empty list, not null",
+		in:   []string{},
+		want: []string{},
+	}}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			got := NormalizeCapabilities(tc.in)
+			if !reflect.DeepEqual(got, tc.want) {
+				t.Fatalf("NormalizeCapabilities(%q) = %q, want %q", tc.in, got, tc.want)
+			}
+			// Idempotent: re-recording a canonical snapshot must not move it.
+			if again := NormalizeCapabilities(got); !reflect.DeepEqual(again, tc.want) {
+				t.Fatalf("not idempotent: second pass = %q, want %q", again, tc.want)
+			}
+		})
+	}
+
+	// nil survives as nil: cap_drop is omitempty and an absent list must not
+	// become an empty array in the snapshot.
+	if got := NormalizeCapabilities(nil); got != nil {
+		t.Fatalf("NormalizeCapabilities(nil) = %q, want nil", got)
+	}
+
+	// The empty-list case must serialize as [] so syn-privileged's recorded
+	// `"cap_add": []` (Kathara passes cap_add=None under privileged) is stable.
+	b, err := json.Marshal(NormalizeCapabilities([]string{}))
+	if err != nil {
+		t.Fatalf("marshal: %v", err)
+	}
+	if string(b) != "[]" {
+		t.Fatalf("empty capability list marshals as %s, want []", b)
+	}
+}

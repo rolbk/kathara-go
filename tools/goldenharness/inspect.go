@@ -37,19 +37,24 @@ func buildContainerRecords(raw []rawContainer, linkByNetwork map[string]string, 
 			User:          c.Config.User,
 			Labels:        map[string]string{},
 			ShellLabel:    c.Config.Labels["shell"],
-			CapAdd:        append([]string{}, c.HostConfig.CapAdd...),
-			CapDrop:       append([]string{}, c.HostConfig.CapDrop...),
-			Privileged:    c.HostConfig.Privileged,
-			Memory:        c.HostConfig.Memory,
-			NanoCPUs:      c.HostConfig.NanoCpus,
-			Env:           append([]string{}, c.Config.Env...),
-			Entrypoint:    append([]string{}, c.Config.Entrypoint...),
-			Cmd:           append([]string{}, c.Config.Cmd...),
-			NetworkMode:   n.Text(c.HostConfig.NetworkMode),
-			State:         c.State.Status,
-			Running:       c.State.Running,
-			PortBindings:  map[string][]PortBindingRecord{},
-			ExposedPorts:  map[string][]PortBindingRecord{},
+			// Canonicalized: the Go SDK rewrites both lists client-side and
+			// docker-py does not, so the stored representation differs between
+			// the two implementations while the kernel semantics agree. The
+			// harness asserts the set, in canonical form, on both sides
+			// (NORMALIZATION.md section 10).
+			CapAdd:       NormalizeCapabilities(append([]string{}, c.HostConfig.CapAdd...)),
+			CapDrop:      NormalizeCapabilities(append([]string{}, c.HostConfig.CapDrop...)),
+			Privileged:   c.HostConfig.Privileged,
+			Memory:       c.HostConfig.Memory,
+			NanoCPUs:     c.HostConfig.NanoCpus,
+			Env:          append([]string{}, c.Config.Env...),
+			Entrypoint:   append([]string{}, c.Config.Entrypoint...),
+			Cmd:          append([]string{}, c.Config.Cmd...),
+			NetworkMode:  n.Text(c.HostConfig.NetworkMode),
+			State:        c.State.Status,
+			Running:      c.State.Running,
+			PortBindings: map[string][]PortBindingRecord{},
+			ExposedPorts: map[string][]PortBindingRecord{},
 		}
 
 		for k, v := range c.Config.Labels {

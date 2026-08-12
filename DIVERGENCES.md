@@ -1236,3 +1236,55 @@ code comments and pinned by tests, not listed here.
      stream). `TestLinfoErrorsInEveryMode` pins all three.
      **Action for the contract owner:** confirm the reading, or say the flag
      should be rejected and the §5.6 token is documentation-only.
+
+## From the golden harness (SDK-forced divergence, not a Python bug)
+
+106. **`CapAdd`/`CapDrop` reach the daemon in a different *spelling* and order
+     than docker-py sends, and the difference is not reachable from port code.**
+     The Go Docker SDK rewrites both lists client-side, unconditionally, inside
+     `ContainerCreate`:
+
+     ```go
+     // github.com/docker/docker@v28.5.2/client/container_create.go:72
+     hostConfig.CapAdd = normalizeCapabilities(hostConfig.CapAdd)
+     hostConfig.CapDrop = normalizeCapabilities(hostConfig.CapDrop)
+     ```
+
+     `normalizeCapabilities` (`:139`) de-duplicates and `sort.Strings`-es;
+     `normalizeCap` (`:159`) upper-cases and prepends `CAP_` unless the value
+     already carries the prefix or is the magic constant
+     `allCapabilities = "ALL"` (`:132`). There is no API-version gate and no
+     opt-out short of forking the client or hand-rolling the `/containers/create`
+     POST. docker-py does no such rewrite: it puts `MACHINE_CAPABILITIES` on the
+     wire exactly as `DockerMachine.py` spells it — bare names, literal source
+     order. The daemon stores whichever form it received, so `docker inspect`
+     reports:
+
+     | | `HostConfig.CapAdd` |
+     |---|---|
+     | Python (docker-py) | `["NET_ADMIN","NET_RAW","NET_BROADCAST","NET_BIND_SERVICE","SYS_ADMIN"]` |
+     | Go (docker SDK) | `["CAP_NET_ADMIN","CAP_NET_BIND_SERVICE","CAP_NET_BROADCAST","CAP_NET_RAW","CAP_SYS_ADMIN"]` |
+
+     **Semantics are identical.** The daemon resolves `NET_ADMIN` and
+     `CAP_NET_ADMIN` to the same kernel capability and the bounding set is a
+     set, not a sequence, so the resulting container's `CapBnd`/`CapEff` masks
+     are bit-for-bit equal under either spelling. Nothing observable inside the
+     container, and nothing about what a device may do, changes. What differs is
+     only the daemon's echo of the request it was handed.
+
+     **Ruling: canonicalize in the golden harness.** `NormalizeCapabilities`
+     (`tools/goldenharness/normalize.go`, mirroring the SDK function including
+     the `ALL` special case) is applied to both lists on both sides of the
+     comparison, so the golden asserts the capability **set** in canonical form.
+     The 47 stored goldens were migrated mechanically to that form — a pure
+     transform of the recorded arrays, not a re-recording — and re-verified
+     against the Python oracle at 47/47. Membership and cardinality stay
+     asserted: a missing `NET_ADMIN`, a stray `SYS_PTRACE`, or a non-empty
+     `cap_add` on the `privileged` path (Kathara passes `cap_add=None` there)
+     still fails. Only letter-case, the `CAP_` prefix and list order are
+     conceded. Rationale: a byte-exact assertion here would be an assertion
+     about the client library, not about the port, and could only be satisfied
+     by bypassing the SDK — real cost, zero semantic gain. Recorded in
+     `tools/goldenharness/NORMALIZATION.md` section 10; the ORDERING.tsv row
+     that previously listed `cap_add` as order-asserted (section 5.1) is
+     withdrawn there for the same reason.

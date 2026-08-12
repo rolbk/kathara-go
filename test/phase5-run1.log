@@ -1,0 +1,120 @@
+[1/47] 01-simple-configuration
+      01-simple-configuration in 2.447s (ok)
+[2/47] 02-add-one-router
+      02-add-one-router in 4.578s (ok)
+[3/47] 03-exam-chair-02
+      03-exam-chair-02 in 5.75s (ok)
+[4/47] 04-exam-cloth-cap
+      04-exam-cloth-cap in 8.952s (ok)
+[5/47] 05-two-computers
+      05-two-computers in 4.724s (ok)
+[6/47] 06-basic-ipv6
+      06-basic-ipv6 in 7.266s (ok)
+[7/47] 07-static-routing
+      07-static-routing in 4.683s (ok)
+[8/47] 08-arp
+      08-arp in 5.698s (ok)
+[9/47] 09-subnetting-4-lan
+      09-subnetting-4-lan in 6.447s (ok)
+[10/47] 10-one-bridge
+      10-one-bridge settling for 5s
+      10-one-bridge in 10.677s (ok)
+[11/47] 11-capture-packets
+      11-capture-packets in 4.901s (ok)
+[12/47] 12-traffic-control-fixed-delay
+      12-traffic-control-fixed-delay in 3.814s (ok)
+[13/47] 13-web-server
+      13-web-server in 4.08s (ok)
+[14/47] 14-dns-load-balancer-with-rip
+      14-dns-load-balancer-with-rip in 11.416s (ok)
+[15/47] 15-frr-bgp-announcement
+      15-frr-bgp-announcement in 3.124s (ok)
+[16/47] 16-frr-introduction
+      16-frr-introduction in 3.709s (ok)
+[17/47] 17-frr-ospf-singlearea
+      17-frr-ospf-singlearea in 5.394s (ok)
+[18/47] 18-quagga-bgp-announcement
+      18-quagga-bgp-announcement in 3.065s (ok)
+[19/47] 19-quagga-introduction
+      19-quagga-introduction in 3.853s (ok)
+[20/47] 20-vxlan-base
+      20-vxlan-base in 5.559s (ok)
+[21/47] 21-data-center-bgp
+      21-data-center-bgp in 18.315s (ok)
+[22/47] 22-p4-reflector
+      22-p4-reflector in 3.998s (ok)
+[23/47] 23-pox-controller
+      23-pox-controller in 6.761s (ok)
+[24/47] 24-pox-arp-handler
+      24-pox-arp-handler in 6.922s (ok)
+[25/47] syn-mem
+      syn-mem in 2.532s (ok)
+[26/47] syn-cpus
+      syn-cpus in 2.521s (ok)
+[27/47] syn-exec
+      syn-exec in 2.806s (ok)
+[28/47] syn-env
+      syn-env in 2.644s (ok)
+[29/47] syn-ulimit
+      syn-ulimit in 2.7s (ok)
+[30/47] syn-shell
+      syn-shell in 2.594s (ok)
+[31/47] syn-num-terms
+      syn-num-terms in 2.532s (ok)
+[32/47] syn-port-udp
+      syn-port-udp in 2.523s (ok)
+[33/47] syn-privileged
+      syn-privileged in 2.206s (ok)
+[34/47] syn-volume
+      syn-volume in 2.693s (ok)
+[35/47] syn-lab-meta
+      syn-lab-meta in 3.453s (ok)
+[36/47] syn-shared-startup
+      syn-shared-startup in 3.715s (ok)
+[37/47] syn-lab-dep
+      syn-lab-dep in 4.782s (ok)
+[38/47] syn-lab-dep-cycle
+      syn-lab-dep-cycle in 128ms (ok)
+[39/47] syn-shutdown
+      syn-shutdown in 2.562s (ok)
+[40/47] syn-test-folder
+      syn-test-folder in 2.686s (ok)
+[41/47] syn-unknown-opt
+      syn-unknown-opt in 2.48s (ok)
+[42/47] err-lab-ext
+      err-lab-ext in 131ms (ok)
+[43/47] err-nonexistent-dir
+      err-nonexistent-dir in 117ms (ok)
+[44/47] err-malformed-labconf
+      err-malformed-labconf in 114ms (ok)
+[45/47] err-empty-labconf
+      err-empty-labconf in 127ms (ok)
+[46/47] err-reserved-name
+      err-reserved-name in 119ms (ok)
+[47/47] err-nonsequential-iface
+      err-nonsequential-iface in 130ms (ok)
+MISMATCH syn-port-udp (1 file(s))
+  ~ commands.json
+      @@ line 16 @@
+      -       "WARNING  To expose ports of device `pc1` on the host, you have to specify the `bridged` option on that device."
+      +       "WARNING  To expose ports of a device on the host, you have to specify the `bridged` option on that device. device=pc1"
+MISMATCH err-lab-ext (1 file(s))
+  ~ commands.json
+      @@ line 12 @@
+      -     "exit_code": 0,
+      -     "stdout": [
+      -       "┌──────────────────────────────────────────────────────────────────────────────┐",
+      -       "│                          Checking Network Scenario                           │",
+      -       "└──────────────────────────────────────────────────────────────────────────────┘",
+      -       "✓ lab.conf file is correct.",
+      -       "✓ lab.ext file is correct."
+      +     "exit_code": 1,
+      +     "stdout": [
+      +       "┌──────────────────────────────────────────────────────────────────────────────┐",
+      +       "│                          Checking Network Scenario                           │",
+      +       "└──────────────────────────────────────────────────────────────────────────────┘",
+      +       "CRITICAL (FeatureNotAvailable) lab.ext external links are not supported in this release. Use Kathará 3.8.x."
+
+verified 47 scenario(s): 1 mismatch(es), 1 reference drift(s), 0 error(s)
+reference-status scenarios that drifted (not failures): err-lab-ext
+goldenharness: mismatched: syn-port-udp

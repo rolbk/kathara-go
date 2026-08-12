@@ -32,7 +32,7 @@ Sources referenced below:
 | `TERM=dumb`, `NO_COLOR=1`. | Removes the TTY-dependent colour path entirely instead of relying on ANSI stripping to undo it. ANSI stripping still runs, as belt and braces, for a binary under test that colours unconditionally. |
 | `LC_ALL=C.UTF-8`, `LANG=C.UTF-8`. | Locale changes collation and number/message formatting. |
 | `PYTHONHASHSEED` is **not** set. | Deliberate. Setting it would hide the very set-iteration nondeterminism that rules 5.2 and 5.3 exist to normalize, and the Go build has no equivalent knob. Recordings must survive a randomly seeded oracle. |
-| `HOME` is overridden to a harness-owned directory containing a pinned `.config/kathara.conf` (the stock 3.8.3 defaults, `image_update_policy` forced to `Never`, `last_checked` pinned far in the future). | Three sources at once. (1) The operator's real `kathara.conf` is mutable state: an edited `debug_level` or `image` would silently change every recording. (2) `Setting.check()` phones GitHub for a release check when `last_checked` is a week old, prints a three-line banner when a newer release exists, and rewrites the settings file — time-, network- and release-state-dependent. (3) `image_update_policy "Prompt"` makes every `lstart` fetch each image's registry digest; an upstream push turns the run into a confirmation prompt on stdout. `Never` suppresses the prompt and the pull, so recordings are independent of registry state. The binary under test still resolves `~` itself, so the Go build is subject to the same pinning. |
+| `HOME` is overridden to a harness-owned directory containing a pinned `.config/kathara.conf` (the stock 3.8.3 defaults, `image_update_policy` forced to `Never`, `last_checked` pinned far in the future). | Three sources at once. (1) The operator's real `kathara.conf` is mutable state: an edited `debug_level` or `image` would silently change every recording. (2) `Setting.check()` phones GitHub for a release check when `last_checked` is a week old, prints a three-line banner when a newer release exists, and rewrites the settings file — time-, network- and release-state-dependent. (3) `image_update_policy "Prompt"` makes every `lstart` fetch each image's registry digest; an upstream push turns the run into a confirmation prompt on stdout. `Never` suppresses the prompt and the pull, so recordings are independent of registry state. The binary under test still resolves `~` itself, so the Go build is subject to the same pinning. **Caveat, found 2026-08-12: on Linux this pinning does not reach the settings file at all.** `utils.get_current_user_home()` (`utils.py:212`) picks the `passwd_home` arm on Linux and returns `pw_dir` from the passwd database — `$HOME` is not consulted — and `Setting.DEFAULT_SETTINGS_PATH` (`Setting.py:36`) is computed from it. `internal/util/home_linux.go` ports that faithfully, so **both** implementations read the invoking account's real `~/.config/kathara.conf` and ignore the harness copy. The pinned file still matters on macOS/Windows (`expanduser('~')`, which honours `$HOME`), and the `HOME` override still governs `/hosthome`-adjacent paths and anything else that reads the environment. Until the harness can point Kathara's settings path directly, **the operator's real `~/.config/kathara.conf` is part of the harness contract on Linux** and must carry `image_update_policy: "Never"` and a far-future `last_checked`. This was not academic: an upstream push of `lscr.io/linuxserver/wireshark` turned the three labs that use it (`05-two-computers`, `06-basic-ipv6`, `11-capture-packets`) into an EOF-on-confirmation-prompt failure under the real file's stock `"Prompt"`. |
 | stdin is an empty reader, never inherited. | A confirmation prompt (image update, volume mount) must see EOF and take its default path instead of blocking until the scenario timeout. |
 | Working directory is the repository root; the lab is always passed with `-d <abs path>`. | `Machine.add_meta("volume", ...)` calls `os.path.abspath` against the process cwd, and `lstart` falls back to cwd when `-d` is absent. Pinning both makes the recording independent of where the harness was invoked. |
 
@@ -127,7 +127,7 @@ of the contract and a reordering by the Go port is a real defect:
 | Recorded field | ORDERING.tsv row |
 |---|---|
 | `containers[].env` | `Machine.py:200` — `meta['envs']` dict insertion feeds the Docker `Env` list. |
-| `containers[].cap_add` | `DockerMachine.py:347` region — a fixed `MACHINE_CAPABILITIES` list literal. |
+| ~~`containers[].cap_add`~~ | `DockerMachine.py:347` region — a fixed `MACHINE_CAPABILITIES` list literal. **Withdrawn**: the Go Docker SDK reorders the list client-side, so its stored order is not observable from Kathara code on both sides. Now canonicalized (set assertion) — section 10. |
 | `containers[].cmd`, `containers[].entrypoint` | image/`args` metadata, source order. |
 | `commands[].stdout` / `stderr` line order | Whatever plain lines survive rule 6 keep their order (panels, log records, `✓` check lines). Note this does **not** assert deploy submission order: the per-device deploy lines live inside the progress bar rows that rule 6.6 drops, and completion order under the deploy pool is nondeterministic anyway (`DockerMachine.py:178`). Submission order is asserted only where a scenario makes it observable as a side effect — `syn-lab-dep`'s `shared/boot-order.txt`. |
 | `probes[].startup_logs` line order | `DockerMachine.py:546` — `"; ".join(STARTUP_COMMANDS)` plus the `exec_commands` interleave; `/var/log/startup.log` is the observable of that order. |
@@ -320,3 +320,58 @@ Not normalization, but part of what makes a recording reproducible.
 | `containers[].labels`, minus tokenized values. | `name`, `lab_hash`, `user`, `app`, `shell`, `bridged_iface` are the contract the manager uses to find its own objects. |
 | `networks[].external`. | `lab.ext` is deferred, and `DockerLink.py:145` requires the label to be the empty string in 1.0. Recording it pins that. |
 | `port_bindings` and `exposed_ports`. | Daemon-normalized maps; key order is handled by canonical JSON. |
+
+## 10. Container capabilities (`cap_add` / `cap_drop`)
+
+Both lists are recorded in **canonical form**: each entry upper-cased and given
+a `CAP_` prefix unless it already has one or is the `ALL` magic value, then
+de-duplicated and sorted (`NormalizeCapabilities`, `normalize.go`). The
+assertion this leaves is the *set* of capabilities, not their spelling or their
+order.
+
+**Why.** The Go Docker SDK rewrites both lists in the client, before the
+request leaves the process:
+
+```go
+// github.com/docker/docker@v28.5.2/client/container_create.go:72
+hostConfig.CapAdd = normalizeCapabilities(hostConfig.CapAdd)
+hostConfig.CapDrop = normalizeCapabilities(hostConfig.CapDrop)
+```
+
+`normalizeCapabilities` (`:139`) de-duplicates and `sort.Strings`-es;
+`normalizeCap` (`:159`) upper-cases and prefixes, special-casing the constant
+`allCapabilities = "ALL"` (`:132`). The rewrite is unconditional — no API
+version gate, no opt-out, and the SDK exposes no hook to suppress it.
+
+`docker-py` does no such thing: it puts `MACHINE_CAPABILITIES` on the wire
+exactly as the Python literal spells it — bare names, source order. The daemon
+stores whichever form it was sent and `docker inspect` echoes that form back.
+So the same Kathara lab yields:
+
+| | `HostConfig.CapAdd` as `docker inspect` reports it |
+|---|---|
+| Python (docker-py) | `["NET_ADMIN","NET_RAW","NET_BROADCAST","NET_BIND_SERVICE","SYS_ADMIN"]` |
+| Go (docker SDK) | `["CAP_NET_ADMIN","CAP_NET_BIND_SERVICE","CAP_NET_BROADCAST","CAP_NET_RAW","CAP_SYS_ADMIN"]` |
+
+The resulting container is identical. The daemon resolves both spellings to the
+same kernel capability and the bounding set is order-independent, so nothing an
+operator can observe *inside* the container differs; only the daemon's echo of
+what it was told differs.
+
+**Ruling.** Canonicalize in the harness rather than chase byte-equality. A
+byte-exact golden here would assert a property of the client library, not of
+the port, and could only be satisfied by forking or bypassing the SDK — a real
+cost for zero semantic gain. The divergence is recorded in `DIVERGENCES.md`.
+
+**What is still asserted.** Membership and cardinality: a missing
+`NET_ADMIN`, a stray `SYS_PTRACE`, an empty list where five capabilities were
+due, or the `privileged` path's empty `cap_add` (Kathara passes `cap_add=None`
+when `privileged` is set — `syn-privileged`) all still fail the golden. Only
+letter-case, the `CAP_` prefix and list order are conceded. Note that the
+canonical form is a fixed point, so re-recording a migrated snapshot does not
+move it, and the `cap_drop` field stays `omitempty` — an absent list normalizes
+to `null`, never to `[]`.
+
+The 47 stored goldens were migrated mechanically to canonical form (a pure
+transform of the recorded arrays, no re-recording) and re-verified against the
+Python oracle at 47/47.

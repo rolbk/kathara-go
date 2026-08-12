@@ -495,6 +495,58 @@ func SplitSortCSV(s string) []string {
 	return out
 }
 
+// allCapabilities is Docker's magic value for "every capability". Mirrors the
+// unexported constant at docker@v28.5.2/client/container_create.go:132.
+const allCapabilities = "ALL"
+
+// NormalizeCapabilities canonicalizes a CapAdd/CapDrop list the way the Go
+// Docker SDK does client-side, and additionally de-duplicates and sorts it.
+//
+// The Go SDK rewrites both lists unconditionally before POSTing
+// /containers/create (docker@v28.5.2/client/container_create.go:72-73 calling
+// normalizeCapabilities at :139 and normalizeCap at :159): upper-case, prefix
+// with "CAP_" unless the value is the "ALL" magic value, de-duplicate, sort.
+// docker-py performs no such rewrite: it sends whatever Kathara's
+// MACHINE_CAPABILITIES literal contains — bare, unsorted names — and the daemon
+// stores each list verbatim as sent. The kernel bounding set that results is
+// identical either way (the daemon resolves both spellings to the same
+// capability), but `docker inspect` echoes the stored representation, so a
+// byte-exact golden would fail on a difference no Kathara code can control.
+//
+// The harness therefore asserts the capability *set* in canonical form on both
+// sides. See NORMALIZATION.md section 10 and DIVERGENCES.md.
+func NormalizeCapabilities(caps []string) []string {
+	if caps == nil {
+		return nil
+	}
+	out := make([]string, 0, len(caps))
+	seen := make(map[string]struct{}, len(caps))
+	for _, c := range caps {
+		c = normalizeCap(c)
+		if _, dup := seen[c]; dup {
+			continue
+		}
+		seen[c] = struct{}{}
+		out = append(out, c)
+	}
+	sort.Strings(out)
+	return out
+}
+
+// normalizeCap upper-cases a capability and adds the "CAP_" prefix unless it is
+// already present or the value is the "ALL" magic value. Mirrors
+// docker@v28.5.2/client/container_create.go:159.
+func normalizeCap(c string) string {
+	c = strings.ToUpper(strings.TrimSpace(c))
+	if c == allCapabilities {
+		return c
+	}
+	if !strings.HasPrefix(c, "CAP_") {
+		c = "CAP_" + c
+	}
+	return c
+}
+
 // IsAnonymousVolumeName reports whether a Docker mount name is a daemon
 // generated anonymous-volume id.
 func IsAnonymousVolumeName(s string) bool { return reHex64.MatchString(s) }

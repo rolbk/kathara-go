@@ -15,11 +15,11 @@
     },
     "shell_label": "/bin/bash",
     "cap_add": [
-      "NET_ADMIN",
-      "NET_RAW",
-      "NET_BROADCAST",
-      "NET_BIND_SERVICE",
-      "SYS_ADMIN"
+      "CAP_NET_ADMIN",
+      "CAP_NET_BIND_SERVICE",
+      "CAP_NET_BROADCAST",
+      "CAP_NET_RAW",
+      "CAP_SYS_ADMIN"
     ],
     "privileged": false,
     "sysctls": [
@@ -103,11 +103,11 @@
     },
     "shell_label": "/bin/bash",
     "cap_add": [
-      "NET_ADMIN",
-      "NET_RAW",
-      "NET_BROADCAST",
-      "NET_BIND_SERVICE",
-      "SYS_ADMIN"
+      "CAP_NET_ADMIN",
+      "CAP_NET_BIND_SERVICE",
+      "CAP_NET_BROADCAST",
+      "CAP_NET_RAW",
+      "CAP_SYS_ADMIN"
     ],
     "privileged": false,
     "sysctls": [
