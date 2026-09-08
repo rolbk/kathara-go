@@ -60,12 +60,12 @@ func (o *osDir) convert(op, cleaned string, dirOp bool, err error) error {
 		return &fs.PathError{Op: op, Path: cleaned, Err: target}
 	}
 	switch {
-	case errors.Is(err, syscall.ENOTDIR):
+	case isNotDirErr(err):
 		if dirOp {
 			return wrap(ErrDirectoryExpected)
 		}
 		return wrap(fs.ErrNotExist)
-	case errors.Is(err, syscall.ENOTEMPTY):
+	case isNotEmptyErr(err):
 		return wrap(ErrDirectoryNotEmpty)
 	case errors.Is(err, syscall.EISDIR):
 		return wrap(ErrFileExpected)

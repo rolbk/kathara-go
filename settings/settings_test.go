@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"testing"
 
 	"github.com/KatharaFramework/kathara-go/kerrors"
@@ -135,8 +136,12 @@ func TestRealConfIsUnchanged(t *testing.T) {
 	if err != nil {
 		t.Fatalf("read back: %v", err)
 	}
-	if string(got) != string(want) {
-		t.Errorf("round trip changed the file\n got: %q\nwant: %q", got, want)
+	// Save writes text-mode line endings — Python's `open(..., "w")` parity —
+	// so a Linux-recorded fixture round-trips to CRLF on Windows there too.
+	// Content equality is the assertion; the newline flavour is the platform's.
+	gotN := strings.ReplaceAll(string(got), "\r\n", "\n")
+	if gotN != string(want) {
+		t.Errorf("round trip changed the file\n got: %q\nwant: %q", gotN, want)
 	}
 }
 

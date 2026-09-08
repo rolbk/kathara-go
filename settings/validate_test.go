@@ -201,8 +201,10 @@ func TestValidateDockerConfigJSON(t *testing.T) {
 	}
 
 	// The tilde is expanded, which is what makes DefaultDockerConfigJSONPath
-	// a usable answer.
+	// a usable answer. ntpath.expanduser reads USERPROFILE, posixpath HOME —
+	// set both so the assertion holds on every platform.
 	t.Setenv("HOME", dir)
+	t.Setenv("USERPROFILE", dir)
 	if err := ValidateDockerConfigJSON("~/config.json"); err != nil {
 		t.Errorf("~ was not expanded: %v", err)
 	}
