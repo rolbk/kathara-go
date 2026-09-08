@@ -1,0 +1,63 @@
+{
+  "flow": "checkcmd",
+  "impl": "py",
+  "run": 2,
+  "steps": [
+    {
+      "name": "01-check",
+      "argv": [
+        "\u003cKATHARA\u003e",
+        "check"
+      ],
+      "dir": "",
+      "exit": 0,
+      "stdout": [
+        "┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐",
+        "│                                                                                             System Check                                                                                             │",
+        "└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘",
+        "Current Manager is:             Docker (Kathara)",
+        "Manager version is:             29.7.1",
+        "Python version is:              3.13.5 (main, Jul 15 2026, \u003cDUR\u003e) [GCC 14.2.0]",
+        "Kathara version is:             3.8.3",
+        "Operating System version is:    Linux-6.12.88+deb13-cloud-amd64-x86_64",
+        "[Deploying devices]    1/1",
+        "[Deleting devices]    1/1",
+        "✓ Container run successfully."
+      ],
+      "stderr": [],
+      "docker": {
+        "containers": null,
+        "networks": null,
+        "dangling_volumes": 0
+      }
+    },
+    {
+      "name": "02-check-again",
+      "argv": [
+        "\u003cKATHARA\u003e",
+        "check"
+      ],
+      "dir": "",
+      "exit": 0,
+      "stdout": [
+        "┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐",
+        "│                                                                                             System Check                                                                                             │",
+        "└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘",
+        "Current Manager is:             Docker (Kathara)",
+        "Manager version is:             29.7.1",
+        "Python version is:              3.13.5 (main, Jul 15 2026, \u003cDUR\u003e) [GCC 14.2.0]",
+        "Kathara version is:             3.8.3",
+        "Operating System version is:    Linux-6.12.88+deb13-cloud-amd64-x86_64",
+        "[Deploying devices]    1/1",
+        "[Deleting devices]    1/1",
+        "✓ Container run successfully."
+      ],
+      "stderr": [],
+      "docker": {
+        "containers": null,
+        "networks": null,
+        "dangling_volumes": 0
+      }
+    }
+  ]
+}
