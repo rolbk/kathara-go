@@ -4,8 +4,10 @@ import (
 	"context"
 	"errors"
 	"os"
+	"os/user"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"testing"
 
 	"github.com/KatharaFramework/kathara-go/kerrors"
@@ -222,11 +224,36 @@ func TestExpandUserAgainstOracle(t *testing.T) {
 	rows := loadJSONFixture[[]row](t, "expanduser.json")
 
 	for _, r := range rows {
+		want := r.Out
+		// `~user` rows resolve through the passwd database, exactly as
+		// posixpath does — but the fixture was recorded on Linux, where
+		// root's home is /root; on macOS it is /var/root. Re-derive the
+		// platform's own answer instead of skipping the row.
+		if name, rest, ok := namedUserRow(r.In); ok {
+			u, err := user.Lookup(name)
+			if err != nil {
+				t.Skipf("user %q not in this platform's passwd db", name)
+			}
+			want = u.HomeDir + rest
+		}
 		t.Setenv("HOME", r.HomeSet)
-		if got := expandUser(r.In); got != r.Out {
-			t.Errorf("expandUser(%q) with HOME=%q = %q, want %q", r.In, r.HomeSet, got, r.Out)
+		if got := expandUser(r.In); got != want {
+			t.Errorf("expandUser(%q) with HOME=%q = %q, want %q", r.In, r.HomeSet, got, want)
 		}
 	}
+}
+
+// namedUserRow reports whether in is a `~user[/rest]` form, returning the user
+// and the untouched remainder.
+func namedUserRow(in string) (name, rest string, ok bool) {
+	if !strings.HasPrefix(in, "~") || in == "~" || strings.HasPrefix(in, "~/") {
+		return "", "", false
+	}
+	name = in[1:]
+	if i := strings.IndexByte(name, '/'); i >= 0 {
+		name, rest = name[:i], name[i:]
+	}
+	return name, rest, true
 }
 
 // TestExpandUserPrefersHOME pins the detail that makes `~` mean root's home

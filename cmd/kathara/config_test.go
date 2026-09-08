@@ -4,6 +4,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -165,11 +166,12 @@ func TestConfigGetEveryKey(t *testing.T) {
 // inside `settings`, which is the point.
 func TestConfigValidationFailures(t *testing.T) {
 	cases := []struct {
-		name       string
-		key, arg   string
-		wantMsg    string
-		wantCode   string
-		kubernetes bool
+		name          string
+		key, arg      string
+		wantMsg       string
+		wantCode      string
+		kubernetes    bool
+		skipOnWindows bool
 	}{
 		{name: "unknown key", key: "nope", arg: "x",
 			wantMsg: "Setting `nope` not found.", wantCode: kerrors.CodeSettings},
@@ -181,8 +183,10 @@ func TestConfigValidationFailures(t *testing.T) {
 			wantMsg: "Manager Type not allowed.", wantCode: kerrors.CodeSettings},
 		{name: "manager_type is case sensitive", key: "manager_type", arg: "Docker",
 			wantMsg: "Manager Type not allowed.", wantCode: kerrors.CodeSettings},
+		// On Windows this case is skipped in the loop below: Python's arm is
+		// `lambda: True` (Setting.py:293), so the value is accepted there.
 		{name: "terminal", key: "terminal", arg: "/nonexistent/emulator",
-			wantCode: kerrors.CodeSettings},
+			wantCode: kerrors.CodeSettings, skipOnWindows: true},
 		{name: "net_prefix", key: "net_prefix", arg: "Kathara1",
 			wantMsg: "Networks Prefix must only contain lowercase letters and underscore.", wantCode: kerrors.CodeSettings},
 		{name: "device_prefix", key: "device_prefix", arg: "dev-1",
@@ -217,6 +221,9 @@ func TestConfigValidationFailures(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
+			if tc.skipOnWindows && runtime.GOOS == "windows" {
+				t.Skip("this validation is a no-op on Windows in Python")
+			}
 			a := newTestApp(t)
 			if tc.kubernetes {
 				a = kubernetesApp(t)
@@ -568,6 +575,9 @@ func TestConfigRejectsJSONL(t *testing.T) {
 // the *loader* accepts — the encoder and the decoder are the same schema table,
 // and a key written in the wrong place would break every later run.
 func TestConfigSetSavesTheWholeFile(t *testing.T) {
+	// settings.Save writes text-mode line endings (CRLF on Windows), the
+	// deliberate parity with Python's `open(..., "w")` — normalise before the
+	// byte comparison below so the LF-shaped expectation holds everywhere.
 	a := newTestApp(t)
 	if code, out := runConfigJSON(t, a, "set", "image", "kathara/frr"); code != 0 {
 		t.Fatalf("exit = %d: %s", code, out)
@@ -581,8 +591,9 @@ func TestConfigSetSavesTheWholeFile(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if string(data) != string(encoded) {
-		t.Errorf("file =\n%s\nwant\n%s", data, encoded)
+	got := strings.ReplaceAll(string(data), "\r\n", "\n")
+	if got != string(encoded) {
+		t.Errorf("file =\n%s\nwant\n%s", got, encoded)
 	}
 }
 

@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -472,6 +473,11 @@ func TestSettingsFormValidateReject(t *testing.T) {
 // TestSettingsFormRejectedChoiceKeepsTheSubmenuOpen is the same rule on the
 // menu side, using the one menu answer whose validator can fail: `terminal`.
 func TestSettingsFormRejectedChoiceKeepsTheSubmenuOpen(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		// The rejection is driven by the terminal validator, whose Windows arm
+		// is `lambda: True` (Setting.py:293) — nothing can be rejected there.
+		t.Skip("check_terminal always passes on Windows (Setting.py:293)")
+	}
 	m, cfg, _ := newTestForm(t)
 	focus(t, m, "terminal")
 

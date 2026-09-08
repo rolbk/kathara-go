@@ -1,0 +1,3 @@
+# Byte-exact fixtures everywhere (goldens, vectors, oracle transcripts):
+# no EOL conversion on any checkout, or Windows runners corrupt comparisons.
+* -text

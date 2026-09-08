@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -64,6 +65,12 @@ func TestOpenTerminalDispatchesOnTheSetting(t *testing.T) {
 	})
 
 	t.Run("an emulator path takes the external adapter", func(t *testing.T) {
+		if runtime.GOOS == "darwin" {
+			// check_osx validates an APP NAME via appscript lookup
+			// (Setting.py:284-291); a filesystem path like /bin/true is
+			// rightly rejected there. Path-emulators are the unix arm.
+			t.Skip("path emulators are the check_unix arm; darwin validates app names")
+		}
 		a := newTestApp(t)
 		// A terminal that exists and is executable, so `CheckTerminal` passes
 		// and the adapter is actually reached; /bin/true then exits at once.
@@ -79,6 +86,11 @@ func TestOpenTerminalDispatchesOnTheSetting(t *testing.T) {
 	})
 
 	t.Run("a missing emulator gives Python's settings error", func(t *testing.T) {
+		if runtime.GOOS == "windows" {
+			// Python's Windows arm is `lambda: True` (Setting.py:293): every
+			// terminal value is accepted, so the rejection is unreachable.
+			t.Skip("check_terminal always passes on Windows (Setting.py:293)")
+		}
 		a := newTestApp(t)
 		a.settings.Terminal = "/nonexistent/xterm"
 		machine := newTestMachine(t, a, "pc1")
