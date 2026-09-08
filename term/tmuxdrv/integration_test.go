@@ -789,6 +789,12 @@ func startHelperProcess(t *testing.T, ctx context.Context, self string, env []st
 func startHelper(t *testing.T, cmd *exec.Cmd, env []string, spec string) *attachHelper {
 	t.Helper()
 
+	// tmux clients refuse to attach under a missing or `dumb` TERM ("open
+	// terminal failed: missing or unsuitable terminal"). CI runners export no
+	// usable TERM, so pin one for the helper; a real terminal's value wins.
+	if v := termValue(env); v == "" || v == "dumb" {
+		env = append(envWithout(env, "TERM"), "TERM=xterm-256color")
+	}
 	cmd.Env = append(env, attachHelperEnv+"="+spec)
 	if err := cmd.Start(); err != nil {
 		t.Fatalf("starting attach helper (%s): %v", spec, err)
@@ -853,4 +859,15 @@ func envWithout(env []string, key string) []string {
 		out = append(out, kv)
 	}
 	return out
+}
+
+// termValue returns the last TERM entry in env, or "".
+func termValue(env []string) string {
+	v := ""
+	for _, e := range env {
+		if s, ok := strings.CutPrefix(e, "TERM="); ok {
+			v = s
+		}
+	}
+	return v
 }

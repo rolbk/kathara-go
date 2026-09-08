@@ -99,14 +99,15 @@ jobs:
           - name: linux-arm64
             os: ubuntu-24.04-arm
           - name: darwin-amd64
-            # macos-13 is the last Intel macOS image GitHub hosts.  If it is
-            # retired, darwin/amd64 keeps its release build (goreleaser
-            # cross-compiles it) but loses native test coverage; the fallback is
-            # a `GOARCH=amd64 go build` cross-check plus Rosetta on macos-latest,
-            # NOT dropping the row — `backend/docker/image.go` has an
-            # amd64-under-Rosetta acceptance path that only Intel/Rosetta macOS
-            # exercises (PACKAGE_GRAPH.md §4).
-            os: macos-13
+            # macos-13 was retired by GitHub (jobs queued forever on first real
+            # run, 2026-09-08); macos-15-intel is the Intel continuation image.
+            # If that is retired too, darwin/amd64 keeps its release build
+            # (goreleaser cross-compiles it) but loses native test coverage; the
+            # fallback is a `GOARCH=amd64 go build` cross-check plus Rosetta on
+            # macos-latest, NOT dropping the row — `backend/docker/image.go` has
+            # an amd64-under-Rosetta acceptance path that only Intel/Rosetta
+            # macOS exercises (PACKAGE_GRAPH.md §4).
+            os: macos-15-intel
           - name: darwin-arm64
             os: macos-latest
           - name: windows-amd64

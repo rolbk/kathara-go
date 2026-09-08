@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"os"
+	goruntime "runtime"
 	"slices"
 	"strings"
 	"sync"
@@ -162,6 +163,13 @@ func TestCreateGoldens(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+			// The volume cases embed t.TempDir() host paths in the expected
+			// API objects; on Windows those carry drive letters and
+			// backslashes the linux-shaped expectations cannot match.
+			// Windows runtime behaviour is out of 1.0 scope (done-criteria).
+			if goruntime.GOOS == "windows" && strings.Contains(test.name, "volume") {
+				t.Skip("volume expectations are linux-path-shaped; Windows runtime untested in 1.0")
+			}
 			s := testSettings()
 			if test.settings != nil {
 				test.settings(s)
@@ -281,6 +289,11 @@ func TestCreateConflictIsMachineAlreadyExists(t *testing.T) {
 // `test_create_volume_no_w_permission`: a `rw` volume whose host directory the
 // user cannot write is a PermissionError and NOTHING is submitted.
 func TestCreateVolumeMissingPermission(t *testing.T) {
+	if goruntime.GOOS == "windows" {
+		// The refusal is provoked by stripping unix permission bits, which
+		// Chmod cannot express on Windows; Windows runtime is out of 1.0 scope.
+		t.Skip("unix-permission premise; Windows runtime untested in 1.0")
+	}
 	if os.Geteuid() == 0 {
 		t.Skip("root bypasses the permission check, so the refusal is unreachable")
 	}

@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"runtime"
 	"slices"
 	"testing"
 	"time"
@@ -384,6 +385,11 @@ func TestExtractTar(t *testing.T) {
 // The directory pass runs LAST and in reverse name order, so a nested member
 // cannot leave its parent at the safe 0o700 `makedir` created it with.
 func TestExtractTarRestoresModesAndTimes(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		// Asserts unix mode bits round-tripping through extraction; NTFS has
+		// no such bits. Windows runtime is out of 1.0 scope (done-criteria).
+		t.Skip("unix-mode premise; Windows runtime untested in 1.0")
+	}
 	mtime := time.Unix(1_600_000_000, 0)
 
 	var buf bytes.Buffer

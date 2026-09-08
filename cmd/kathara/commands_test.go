@@ -1333,6 +1333,13 @@ func TestInterruptSwallowsTheCommandError(t *testing.T) {
 // wipe itself does, so `machines` has to as well — otherwise a root all-users
 // wipe reports only the caller's own devices.
 func TestWipeAllSnapshotsAllUsers(t *testing.T) {
+	// `wipe -a` refuses below root before it reaches the manager — that check
+	// is itself ported behaviour (`WipeCommand.py`), so a non-root run cannot
+	// exercise the all-users snapshot. CI runners are non-root; the root VM
+	// this suite was written on runs it.
+	if os.Geteuid() != 0 {
+		t.Skip("wipe -a requires root; skipping on non-root runner")
+	}
 	fake := &statsCallRecorder{}
 	a := newTestApp(t)
 	withManager(a, fake)
