@@ -7,6 +7,7 @@ import (
 	"math"
 	"math/big"
 	"os"
+	"runtime"
 	"strconv"
 	"strings"
 	"testing"
@@ -247,6 +248,13 @@ func TestAddMetaAgainstOracle(t *testing.T) {
 
 	for i, tc := range doc.AddMeta {
 		t.Run(strconv.Itoa(i)+"_"+tc.Meta, func(t *testing.T) {
+			// Volume rows carry host paths the oracle abspath'd on Linux;
+			// on Windows both CPython and this port resolve them through
+			// ntpath.abspath ("/h" -> "C:\h"), so the recorded outcomes
+			// cannot apply. Windows runtime is out of 1.0 scope.
+			if runtime.GOOS == "windows" && tc.Meta == "volume" {
+				t.Skip("oracle volume rows are Linux-abspath-shaped")
+			}
 			lab := NewLab("test_lab", DefaultDefaults())
 			machine, err := lab.NewMachine("pc1", nil)
 			if err != nil {
