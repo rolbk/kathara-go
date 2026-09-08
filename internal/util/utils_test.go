@@ -929,8 +929,16 @@ func TestLiveIdentity(t *testing.T) {
 // host: the name is slug(login + "-" + hash(node)), with the hostname hashed
 // and the login not.
 func TestGetCurrentUserNameComposesTheChain(t *testing.T) {
-	info, err := GetCurrentUserInfo()
-	if err != nil {
+	login := ""
+	if info, err := GetCurrentUserInfo(); err == nil {
+		login = info.Name
+	} else if errors.Is(err, ErrNoPasswdDatabase) {
+		// The Windows arm has no passwd database (Python's `lambda: None`);
+		// the login comes from getpass's env chain instead. Pin the chain by
+		// planting its first variable and asserting the composition uses it.
+		t.Setenv("LOGNAME", "chainuser")
+		login = "chainuser"
+	} else {
 		t.Fatalf("GetCurrentUserInfo: %v", err)
 	}
 
@@ -939,7 +947,7 @@ func TestGetCurrentUserNameComposesTheChain(t *testing.T) {
 		t.Fatalf("GetCurrentUserName: %v", err)
 	}
 
-	want := Slug(info.Name + "-" + GenerateURLSafeHash(nodeName()))
+	want := Slug(login + "-" + GenerateURLSafeHash(nodeName()))
 	if got != want {
 		t.Errorf("GetCurrentUserName() = %q, want %q", got, want)
 	}

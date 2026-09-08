@@ -6,6 +6,7 @@ import (
 	"math"
 	"os"
 	"path/filepath"
+	"runtime"
 	"slices"
 	"strings"
 	"testing"
@@ -168,6 +169,13 @@ func TestParseLabFileLevelErrors(t *testing.T) {
 	})
 
 	t.Run("unopenable keeps the cause reachable", func(t *testing.T) {
+		if runtime.GOOS == "windows" {
+			// Opening a directory as a file errors differently on Windows
+			// (Python raises PermissionError there, not IsADirectoryError);
+			// the expectation is the Linux-oracle shape. Windows runtime is
+			// out of 1.0 scope.
+			t.Skip("directory-open error shape is the Linux oracle's")
+		}
 		dir := t.TempDir()
 		if err := os.Mkdir(filepath.Join(dir, DefaultConfName), 0o755); err != nil {
 			t.Fatalf("creating the directory: %v", err)
@@ -551,6 +559,9 @@ func TestFolderParserGlobsTheScenarioPath(t *testing.T) {
 	})
 
 	t.Run("a star harvests every sibling", func(t *testing.T) {
+		if runtime.GOOS == "windows" {
+			t.Skip("NTFS cannot hold a directory literally named `lab*`")
+		}
 		// The scenario directory has to exist under its literal name or the
 		// `Lab` constructor fails first — `open_fs("osfs://…")` does no globbing
 		// and reports ``root path '…' does not exist``, which is what both
@@ -611,6 +622,13 @@ func TestMachineFoldersExpandsEveryComponent(t *testing.T) {
 // rests on, at the places CPython and RE2 disagree about a class. Every
 // expectation is `fnmatch.filter`'s, measured on the corpus interpreter.
 func TestGlobPatternMatching(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		// The expectations replay CPython's POSIX fnmatch; on Windows both
+		// CPython and this port normcase through ntpath (lowercase,
+		// separator flip), so the POSIX-shaped table cannot apply.
+		// TODO(windows-runtime): record a Windows oracle table post-1.0.
+		t.Skip("expectations are the POSIX fnmatch oracle's")
+	}
 	names := []string{"a", "b", "z", "ab", "]", "[", "-", "^", "!", `\`, "a-b", "lab1", "lab[1]"}
 
 	tests := []struct {

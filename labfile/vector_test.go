@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"runtime"
 	"slices"
 	"strconv"
 	"strings"
@@ -87,6 +88,12 @@ func TestVectors(t *testing.T) {
 		}
 
 		t.Run(filepath.ToSlash(id), func(t *testing.T) {
+			// This vector's expected OSError is the Linux shape of opening a
+			// directory as a file; Windows errors differently in CPython too.
+			// Windows runtime is out of 1.0 scope.
+			if runtime.GOOS == "windows" && strings.HasSuffix(id, "conf_name_is_directory") {
+				t.Skip("directory-open error shape is the Linux oracle's")
+			}
 			var spec vectorSpec
 			readJSON(t, filepath.Join(dir, "vector.json"), &spec)
 
