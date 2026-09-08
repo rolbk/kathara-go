@@ -1,0 +1,1510 @@
+{
+  "flow": "lstart-flags",
+  "impl": "go",
+  "run": 1,
+  "steps": [
+    {
+      "name": "01-lstart-select-pc1",
+      "argv": [
+        "\u003cKATHARA\u003e",
+        "lstart",
+        "--noterminals",
+        "pc1"
+      ],
+      "dir": "lab",
+      "exit": 0,
+      "stdout": [
+        "┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐",
+        "│                                                                                      Starting Network Scenario                                                                                       │",
+        "└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘",
+        "┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐",
+        "│ Name: cmdparity                                                                                                                                                                                      │",
+        "│ Description: Command-flow parity fixture                                                                                                                                                             │",
+        "└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘",
+        "[Deploying collision domains]    2/2",
+        "[Deploying devices]    1/1"
+      ],
+      "stderr": [],
+      "docker": {
+        "containers": [
+          {
+            "name": "kathara_\u003cUSER\u003e_pc1_\u003cLABHASH\u003e",
+            "status": "running",
+            "image": "kathara/base",
+            "hostname": "pc1",
+            "labels": {
+              "app": "kathara",
+              "lab_hash": "\u003cLABHASH\u003e",
+              "name": "pc1",
+              "org.opencontainers.image.authors": "Kathara Team \u003ccontact@kathara.org\u003e",
+              "shell": "/bin/bash",
+              "user": "\u003cUSER\u003e"
+            },
+            "env": [
+              "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+              "LANG=C.UTF-8",
+              "LC_ALL=C.UTF-8",
+              "DEBIAN_FRONTEND=noninteractive"
+            ],
+            "cmd": [
+              "bash"
+            ],
+            "network_mode": "kathara_\u003cUSER\u003e_A_\u003cLABHASH\u003e",
+            "privileged": false,
+            "cap_add": [
+              "NET_ADMIN",
+              "NET_BIND_SERVICE",
+              "NET_BROADCAST",
+              "NET_RAW",
+              "SYS_ADMIN"
+            ],
+            "sysctls": {
+              "net.ipv4.conf.all.rp_filter": "0",
+              "net.ipv4.conf.default.rp_filter": "0",
+              "net.ipv4.conf.lo.rp_filter": "0",
+              "net.ipv4.icmp_ratelimit": "0",
+              "net.ipv4.ip_forward": "1",
+              "net.ipv6.conf.all.disable_ipv6": "1",
+              "net.ipv6.conf.all.forwarding": "0",
+              "net.ipv6.conf.default.disable_ipv6": "1",
+              "net.ipv6.conf.default.forwarding": "0"
+            },
+            "mounts": [
+              "bind  \u003cLABDIR\u003e/shared -\u003e /shared rw=true",
+              "volume \u003cVOL\u003e /var/lib/docker/volumes/\u003cCID\u003e/_data -\u003e /hosthome rw=true"
+            ],
+            "networks": {
+              "kathara_\u003cUSER\u003e_A_\u003cLABHASH\u003e": {
+                "driver_opts": {
+                  "com.docker.network.endpoint.sysctls": "net.ipv4.conf.IFNAME.rp_filter=0,net.ipv6.conf.IFNAME.disable_ipv6=1",
+                  "kathara.iface": "0",
+                  "kathara.link": "A"
+                }
+              },
+              "kathara_\u003cUSER\u003e_B_\u003cLABHASH\u003e": {
+                "driver_opts": {
+                  "com.docker.network.endpoint.sysctls": "net.ipv4.conf.IFNAME.rp_filter=0,net.ipv6.conf.IFNAME.disable_ipv6=1",
+                  "kathara.iface": "1",
+                  "kathara.link": "B"
+                }
+              }
+            }
+          }
+        ],
+        "networks": [
+          {
+            "name": "kathara_\u003cUSER\u003e_A_\u003cLABHASH\u003e",
+            "driver": "kathara/katharanp_vde:amd64",
+            "scope": "local",
+            "internal": false,
+            "attachable": false,
+            "labels": {
+              "app": "kathara",
+              "external": "",
+              "lab_hash": "\u003cLABHASH\u003e",
+              "name": "A",
+              "user": "\u003cUSER\u003e"
+            },
+            "attached": [
+              "kathara_\u003cUSER\u003e_pc1_\u003cLABHASH\u003e"
+            ]
+          },
+          {
+            "name": "kathara_\u003cUSER\u003e_B_\u003cLABHASH\u003e",
+            "driver": "kathara/katharanp_vde:amd64",
+            "scope": "local",
+            "internal": false,
+            "attachable": false,
+            "labels": {
+              "app": "kathara",
+              "external": "",
+              "lab_hash": "\u003cLABHASH\u003e",
+              "name": "B",
+              "user": "\u003cUSER\u003e"
+            },
+            "attached": [
+              "kathara_\u003cUSER\u003e_pc1_\u003cLABHASH\u003e"
+            ]
+          }
+        ],
+        "dangling_volumes": 0
+      }
+    },
+    {
+      "name": "02-list",
+      "argv": [
+        "\u003cKATHARA\u003e",
+        "list"
+      ],
+      "dir": "lab",
+      "exit": 0,
+      "stdout": [
+        "TIMESTAMP: \u003cTS\u003e",
+        "┌─┬─┬─┬─┬─┐",
+        "ROW NETWORK SCENARIO ID | NAME | USER | STATUS | IMAGE",
+        "╞─╪─╪─╪─╪─╡",
+        "ROW \u003cLABHASH\u003e | pc1 | \u003cUSER\u003e | running | kathara/base:latest",
+        "└─┴─┴─┴─┴─┘"
+      ],
+      "stderr": [],
+      "docker": {
+        "containers": [
+          {
+            "name": "kathara_\u003cUSER\u003e_pc1_\u003cLABHASH\u003e",
+            "status": "running",
+            "image": "kathara/base",
+            "hostname": "pc1",
+            "labels": {
+              "app": "kathara",
+              "lab_hash": "\u003cLABHASH\u003e",
+              "name": "pc1",
+              "org.opencontainers.image.authors": "Kathara Team \u003ccontact@kathara.org\u003e",
+              "shell": "/bin/bash",
+              "user": "\u003cUSER\u003e"
+            },
+            "env": [
+              "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+              "LANG=C.UTF-8",
+              "LC_ALL=C.UTF-8",
+              "DEBIAN_FRONTEND=noninteractive"
+            ],
+            "cmd": [
+              "bash"
+            ],
+            "network_mode": "kathara_\u003cUSER\u003e_A_\u003cLABHASH\u003e",
+            "privileged": false,
+            "cap_add": [
+              "NET_ADMIN",
+              "NET_BIND_SERVICE",
+              "NET_BROADCAST",
+              "NET_RAW",
+              "SYS_ADMIN"
+            ],
+            "sysctls": {
+              "net.ipv4.conf.all.rp_filter": "0",
+              "net.ipv4.conf.default.rp_filter": "0",
+              "net.ipv4.conf.lo.rp_filter": "0",
+              "net.ipv4.icmp_ratelimit": "0",
+              "net.ipv4.ip_forward": "1",
+              "net.ipv6.conf.all.disable_ipv6": "1",
+              "net.ipv6.conf.all.forwarding": "0",
+              "net.ipv6.conf.default.disable_ipv6": "1",
+              "net.ipv6.conf.default.forwarding": "0"
+            },
+            "mounts": [
+              "bind  \u003cLABDIR\u003e/shared -\u003e /shared rw=true",
+              "volume \u003cVOL\u003e /var/lib/docker/volumes/\u003cCID\u003e/_data -\u003e /hosthome rw=true"
+            ],
+            "networks": {
+              "kathara_\u003cUSER\u003e_A_\u003cLABHASH\u003e": {
+                "driver_opts": {
+                  "com.docker.network.endpoint.sysctls": "net.ipv4.conf.IFNAME.rp_filter=0,net.ipv6.conf.IFNAME.disable_ipv6=1",
+                  "kathara.iface": "0",
+                  "kathara.link": "A"
+                }
+              },
+              "kathara_\u003cUSER\u003e_B_\u003cLABHASH\u003e": {
+                "driver_opts": {
+                  "com.docker.network.endpoint.sysctls": "net.ipv4.conf.IFNAME.rp_filter=0,net.ipv6.conf.IFNAME.disable_ipv6=1",
+                  "kathara.iface": "1",
+                  "kathara.link": "B"
+                }
+              }
+            }
+          }
+        ],
+        "networks": [
+          {
+            "name": "kathara_\u003cUSER\u003e_A_\u003cLABHASH\u003e",
+            "driver": "kathara/katharanp_vde:amd64",
+            "scope": "local",
+            "internal": false,
+            "attachable": false,
+            "labels": {
+              "app": "kathara",
+              "external": "",
+              "lab_hash": "\u003cLABHASH\u003e",
+              "name": "A",
+              "user": "\u003cUSER\u003e"
+            },
+            "attached": [
+              "kathara_\u003cUSER\u003e_pc1_\u003cLABHASH\u003e"
+            ]
+          },
+          {
+            "name": "kathara_\u003cUSER\u003e_B_\u003cLABHASH\u003e",
+            "driver": "kathara/katharanp_vde:amd64",
+            "scope": "local",
+            "internal": false,
+            "attachable": false,
+            "labels": {
+              "app": "kathara",
+              "external": "",
+              "lab_hash": "\u003cLABHASH\u003e",
+              "name": "B",
+              "user": "\u003cUSER\u003e"
+            },
+            "attached": [
+              "kathara_\u003cUSER\u003e_pc1_\u003cLABHASH\u003e"
+            ]
+          }
+        ],
+        "dangling_volumes": 0
+      }
+    },
+    {
+      "name": "03-lclean",
+      "argv": [
+        "\u003cKATHARA\u003e",
+        "lclean"
+      ],
+      "dir": "lab",
+      "exit": 0,
+      "stdout": [
+        "┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐",
+        "│                                                                                      Stopping Network Scenario                                                                                       │",
+        "└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘",
+        "[Deleting devices]    1/1",
+        "[Deleting collision domains]    2/2"
+      ],
+      "stderr": [],
+      "docker": {
+        "containers": null,
+        "networks": null,
+        "dangling_volumes": 0
+      }
+    },
+    {
+      "name": "04-lstart-exclude-pc2",
+      "argv": [
+        "\u003cKATHARA\u003e",
+        "lstart",
+        "--noterminals",
+        "--exclude",
+        "pc2"
+      ],
+      "dir": "lab",
+      "exit": 0,
+      "stdout": [
+        "┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐",
+        "│                                                                                      Starting Network Scenario                                                                                       │",
+        "└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘",
+        "┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐",
+        "│ Name: cmdparity                                                                                                                                                                                      │",
+        "│ Description: Command-flow parity fixture                                                                                                                                                             │",
+        "└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘",
+        "[Deploying collision domains]    2/2",
+        "[Deploying devices]    1/1"
+      ],
+      "stderr": [],
+      "docker": {
+        "containers": [
+          {
+            "name": "kathara_\u003cUSER\u003e_pc1_\u003cLABHASH\u003e",
+            "status": "running",
+            "image": "kathara/base",
+            "hostname": "pc1",
+            "labels": {
+              "app": "kathara",
+              "lab_hash": "\u003cLABHASH\u003e",
+              "name": "pc1",
+              "org.opencontainers.image.authors": "Kathara Team \u003ccontact@kathara.org\u003e",
+              "shell": "/bin/bash",
+              "user": "\u003cUSER\u003e"
+            },
+            "env": [
+              "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+              "LANG=C.UTF-8",
+              "LC_ALL=C.UTF-8",
+              "DEBIAN_FRONTEND=noninteractive"
+            ],
+            "cmd": [
+              "bash"
+            ],
+            "network_mode": "kathara_\u003cUSER\u003e_A_\u003cLABHASH\u003e",
+            "privileged": false,
+            "cap_add": [
+              "NET_ADMIN",
+              "NET_BIND_SERVICE",
+              "NET_BROADCAST",
+              "NET_RAW",
+              "SYS_ADMIN"
+            ],
+            "sysctls": {
+              "net.ipv4.conf.all.rp_filter": "0",
+              "net.ipv4.conf.default.rp_filter": "0",
+              "net.ipv4.conf.lo.rp_filter": "0",
+              "net.ipv4.icmp_ratelimit": "0",
+              "net.ipv4.ip_forward": "1",
+              "net.ipv6.conf.all.disable_ipv6": "1",
+              "net.ipv6.conf.all.forwarding": "0",
+              "net.ipv6.conf.default.disable_ipv6": "1",
+              "net.ipv6.conf.default.forwarding": "0"
+            },
+            "mounts": [
+              "bind  \u003cLABDIR\u003e/shared -\u003e /shared rw=true",
+              "volume \u003cVOL\u003e /var/lib/docker/volumes/\u003cCID\u003e/_data -\u003e /hosthome rw=true"
+            ],
+            "networks": {
+              "kathara_\u003cUSER\u003e_A_\u003cLABHASH\u003e": {
+                "driver_opts": {
+                  "com.docker.network.endpoint.sysctls": "net.ipv4.conf.IFNAME.rp_filter=0,net.ipv6.conf.IFNAME.disable_ipv6=1",
+                  "kathara.iface": "0",
+                  "kathara.link": "A"
+                }
+              },
+              "kathara_\u003cUSER\u003e_B_\u003cLABHASH\u003e": {
+                "driver_opts": {
+                  "com.docker.network.endpoint.sysctls": "net.ipv4.conf.IFNAME.rp_filter=0,net.ipv6.conf.IFNAME.disable_ipv6=1",
+                  "kathara.iface": "1",
+                  "kathara.link": "B"
+                }
+              }
+            }
+          }
+        ],
+        "networks": [
+          {
+            "name": "kathara_\u003cUSER\u003e_A_\u003cLABHASH\u003e",
+            "driver": "kathara/katharanp_vde:amd64",
+            "scope": "local",
+            "internal": false,
+            "attachable": false,
+            "labels": {
+              "app": "kathara",
+              "external": "",
+              "lab_hash": "\u003cLABHASH\u003e",
+              "name": "A",
+              "user": "\u003cUSER\u003e"
+            },
+            "attached": [
+              "kathara_\u003cUSER\u003e_pc1_\u003cLABHASH\u003e"
+            ]
+          },
+          {
+            "name": "kathara_\u003cUSER\u003e_B_\u003cLABHASH\u003e",
+            "driver": "kathara/katharanp_vde:amd64",
+            "scope": "local",
+            "internal": false,
+            "attachable": false,
+            "labels": {
+              "app": "kathara",
+              "external": "",
+              "lab_hash": "\u003cLABHASH\u003e",
+              "name": "B",
+              "user": "\u003cUSER\u003e"
+            },
+            "attached": [
+              "kathara_\u003cUSER\u003e_pc1_\u003cLABHASH\u003e"
+            ]
+          }
+        ],
+        "dangling_volumes": 0
+      }
+    },
+    {
+      "name": "05-lclean",
+      "argv": [
+        "\u003cKATHARA\u003e",
+        "lclean"
+      ],
+      "dir": "lab",
+      "exit": 0,
+      "stdout": [
+        "┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐",
+        "│                                                                                      Stopping Network Scenario                                                                                       │",
+        "└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘",
+        "[Deleting devices]    1/1",
+        "[Deleting collision domains]    2/2"
+      ],
+      "stderr": [],
+      "docker": {
+        "containers": null,
+        "networks": null,
+        "dangling_volumes": 0
+      }
+    },
+    {
+      "name": "06-lstart-select-unknown",
+      "argv": [
+        "\u003cKATHARA\u003e",
+        "lstart",
+        "--noterminals",
+        "nosuch"
+      ],
+      "dir": "lab",
+      "exit": 1,
+      "stdout": [
+        "┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐",
+        "│                                                                                      Starting Network Scenario                                                                                       │",
+        "└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘",
+        "┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐",
+        "│ Name: cmdparity                                                                                                                                                                                      │",
+        "│ Description: Command-flow parity fixture                                                                                                                                                             │",
+        "└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘",
+        "CRITICAL (MachineNotFoundError) The following devices are not in the network scenario: {'nosuch'}."
+      ],
+      "stderr": [],
+      "docker": {
+        "containers": null,
+        "networks": null,
+        "dangling_volumes": 0
+      }
+    },
+    {
+      "name": "07-lstart-exclude-unknown",
+      "argv": [
+        "\u003cKATHARA\u003e",
+        "lstart",
+        "--noterminals",
+        "--exclude",
+        "nosuch"
+      ],
+      "dir": "lab",
+      "exit": 1,
+      "stdout": [
+        "┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐",
+        "│                                                                                      Starting Network Scenario                                                                                       │",
+        "└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘",
+        "┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐",
+        "│ Name: cmdparity                                                                                                                                                                                      │",
+        "│ Description: Command-flow parity fixture                                                                                                                                                             │",
+        "└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘",
+        "CRITICAL (MachineNotFoundError) The following devices are not in the network scenario: {'nosuch'}."
+      ],
+      "stderr": [],
+      "docker": {
+        "containers": null,
+        "networks": null,
+        "dangling_volumes": 0
+      }
+    },
+    {
+      "name": "08-lstart-pass-mem",
+      "argv": [
+        "\u003cKATHARA\u003e",
+        "lstart",
+        "--noterminals",
+        "-o",
+        "mem=64m"
+      ],
+      "dir": "lab",
+      "exit": 0,
+      "stdout": [
+        "┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐",
+        "│                                                                                      Starting Network Scenario                                                                                       │",
+        "└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘",
+        "┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐",
+        "│ Name: cmdparity                                                                                                                                                                                      │",
+        "│ Description: Command-flow parity fixture                                                                                                                                                             │",
+        "└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘",
+        "[Deploying collision domains]    2/2",
+        "[Deploying devices]    2/2"
+      ],
+      "stderr": [],
+      "docker": {
+        "containers": [
+          {
+            "name": "kathara_\u003cUSER\u003e_pc1_\u003cLABHASH\u003e",
+            "status": "running",
+            "image": "kathara/base",
+            "hostname": "pc1",
+            "labels": {
+              "app": "kathara",
+              "lab_hash": "\u003cLABHASH\u003e",
+              "name": "pc1",
+              "org.opencontainers.image.authors": "Kathara Team \u003ccontact@kathara.org\u003e",
+              "shell": "/bin/bash",
+              "user": "\u003cUSER\u003e"
+            },
+            "env": [
+              "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+              "LANG=C.UTF-8",
+              "LC_ALL=C.UTF-8",
+              "DEBIAN_FRONTEND=noninteractive"
+            ],
+            "cmd": [
+              "bash"
+            ],
+            "network_mode": "kathara_\u003cUSER\u003e_A_\u003cLABHASH\u003e",
+            "privileged": false,
+            "cap_add": [
+              "NET_ADMIN",
+              "NET_BIND_SERVICE",
+              "NET_BROADCAST",
+              "NET_RAW",
+              "SYS_ADMIN"
+            ],
+            "sysctls": {
+              "net.ipv4.conf.all.rp_filter": "0",
+              "net.ipv4.conf.default.rp_filter": "0",
+              "net.ipv4.conf.lo.rp_filter": "0",
+              "net.ipv4.icmp_ratelimit": "0",
+              "net.ipv4.ip_forward": "1",
+              "net.ipv6.conf.all.disable_ipv6": "1",
+              "net.ipv6.conf.all.forwarding": "0",
+              "net.ipv6.conf.default.disable_ipv6": "1",
+              "net.ipv6.conf.default.forwarding": "0"
+            },
+            "memory": 67108864,
+            "mounts": [
+              "bind  \u003cLABDIR\u003e/shared -\u003e /shared rw=true",
+              "volume \u003cVOL\u003e /var/lib/docker/volumes/\u003cCID\u003e/_data -\u003e /hosthome rw=true"
+            ],
+            "networks": {
+              "kathara_\u003cUSER\u003e_A_\u003cLABHASH\u003e": {
+                "driver_opts": {
+                  "com.docker.network.endpoint.sysctls": "net.ipv4.conf.IFNAME.rp_filter=0,net.ipv6.conf.IFNAME.disable_ipv6=1",
+                  "kathara.iface": "0",
+                  "kathara.link": "A"
+                }
+              },
+              "kathara_\u003cUSER\u003e_B_\u003cLABHASH\u003e": {
+                "driver_opts": {
+                  "com.docker.network.endpoint.sysctls": "net.ipv4.conf.IFNAME.rp_filter=0,net.ipv6.conf.IFNAME.disable_ipv6=1",
+                  "kathara.iface": "1",
+                  "kathara.link": "B"
+                }
+              }
+            }
+          },
+          {
+            "name": "kathara_\u003cUSER\u003e_pc2_\u003cLABHASH\u003e",
+            "status": "running",
+            "image": "kathara/base",
+            "hostname": "pc2",
+            "labels": {
+              "app": "kathara",
+              "lab_hash": "\u003cLABHASH\u003e",
+              "name": "pc2",
+              "org.opencontainers.image.authors": "Kathara Team \u003ccontact@kathara.org\u003e",
+              "shell": "/bin/bash",
+              "user": "\u003cUSER\u003e"
+            },
+            "env": [
+              "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+              "LANG=C.UTF-8",
+              "LC_ALL=C.UTF-8",
+              "DEBIAN_FRONTEND=noninteractive"
+            ],
+            "cmd": [
+              "bash"
+            ],
+            "network_mode": "kathara_\u003cUSER\u003e_A_\u003cLABHASH\u003e",
+            "privileged": false,
+            "cap_add": [
+              "NET_ADMIN",
+              "NET_BIND_SERVICE",
+              "NET_BROADCAST",
+              "NET_RAW",
+              "SYS_ADMIN"
+            ],
+            "sysctls": {
+              "net.ipv4.conf.all.rp_filter": "0",
+              "net.ipv4.conf.default.rp_filter": "0",
+              "net.ipv4.conf.lo.rp_filter": "0",
+              "net.ipv4.icmp_ratelimit": "0",
+              "net.ipv4.ip_forward": "1",
+              "net.ipv6.conf.all.disable_ipv6": "1",
+              "net.ipv6.conf.all.forwarding": "0",
+              "net.ipv6.conf.default.disable_ipv6": "1",
+              "net.ipv6.conf.default.forwarding": "0"
+            },
+            "memory": 67108864,
+            "mounts": [
+              "bind  \u003cLABDIR\u003e/shared -\u003e /shared rw=true",
+              "volume \u003cVOL\u003e /var/lib/docker/volumes/\u003cCID\u003e/_data -\u003e /hosthome rw=true"
+            ],
+            "networks": {
+              "kathara_\u003cUSER\u003e_A_\u003cLABHASH\u003e": {
+                "driver_opts": {
+                  "com.docker.network.endpoint.sysctls": "net.ipv4.conf.IFNAME.rp_filter=0,net.ipv6.conf.IFNAME.disable_ipv6=1",
+                  "kathara.iface": "0",
+                  "kathara.link": "A"
+                }
+              }
+            }
+          }
+        ],
+        "networks": [
+          {
+            "name": "kathara_\u003cUSER\u003e_A_\u003cLABHASH\u003e",
+            "driver": "kathara/katharanp_vde:amd64",
+            "scope": "local",
+            "internal": false,
+            "attachable": false,
+            "labels": {
+              "app": "kathara",
+              "external": "",
+              "lab_hash": "\u003cLABHASH\u003e",
+              "name": "A",
+              "user": "\u003cUSER\u003e"
+            },
+            "attached": [
+              "kathara_\u003cUSER\u003e_pc1_\u003cLABHASH\u003e",
+              "kathara_\u003cUSER\u003e_pc2_\u003cLABHASH\u003e"
+            ]
+          },
+          {
+            "name": "kathara_\u003cUSER\u003e_B_\u003cLABHASH\u003e",
+            "driver": "kathara/katharanp_vde:amd64",
+            "scope": "local",
+            "internal": false,
+            "attachable": false,
+            "labels": {
+              "app": "kathara",
+              "external": "",
+              "lab_hash": "\u003cLABHASH\u003e",
+              "name": "B",
+              "user": "\u003cUSER\u003e"
+            },
+            "attached": [
+              "kathara_\u003cUSER\u003e_pc1_\u003cLABHASH\u003e"
+            ]
+          }
+        ],
+        "dangling_volumes": 0
+      }
+    },
+    {
+      "name": "09-lclean",
+      "argv": [
+        "\u003cKATHARA\u003e",
+        "lclean"
+      ],
+      "dir": "lab",
+      "exit": 0,
+      "stdout": [
+        "┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐",
+        "│                                                                                      Stopping Network Scenario                                                                                       │",
+        "└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘",
+        "[Deleting devices]    2/2",
+        "[Deleting collision domains]    2/2"
+      ],
+      "stderr": [],
+      "docker": {
+        "containers": null,
+        "networks": null,
+        "dangling_volumes": 0
+      }
+    },
+    {
+      "name": "10-lstart-hosthome",
+      "argv": [
+        "\u003cKATHARA\u003e",
+        "lstart",
+        "--noterminals",
+        "--hosthome"
+      ],
+      "dir": "lab",
+      "exit": 0,
+      "stdout": [
+        "┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐",
+        "│                                                                                      Starting Network Scenario                                                                                       │",
+        "└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘",
+        "┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐",
+        "│ Name: cmdparity                                                                                                                                                                                      │",
+        "│ Description: Command-flow parity fixture                                                                                                                                                             │",
+        "└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘",
+        "[Deploying collision domains]    2/2",
+        "[Deploying devices]    2/2"
+      ],
+      "stderr": [],
+      "docker": {
+        "containers": [
+          {
+            "name": "kathara_\u003cUSER\u003e_pc1_\u003cLABHASH\u003e",
+            "status": "running",
+            "image": "kathara/base",
+            "hostname": "pc1",
+            "labels": {
+              "app": "kathara",
+              "lab_hash": "\u003cLABHASH\u003e",
+              "name": "pc1",
+              "org.opencontainers.image.authors": "Kathara Team \u003ccontact@kathara.org\u003e",
+              "shell": "/bin/bash",
+              "user": "\u003cUSER\u003e"
+            },
+            "env": [
+              "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+              "LANG=C.UTF-8",
+              "LC_ALL=C.UTF-8",
+              "DEBIAN_FRONTEND=noninteractive"
+            ],
+            "cmd": [
+              "bash"
+            ],
+            "network_mode": "kathara_\u003cUSER\u003e_A_\u003cLABHASH\u003e",
+            "privileged": false,
+            "cap_add": [
+              "NET_ADMIN",
+              "NET_BIND_SERVICE",
+              "NET_BROADCAST",
+              "NET_RAW",
+              "SYS_ADMIN"
+            ],
+            "sysctls": {
+              "net.ipv4.conf.all.rp_filter": "0",
+              "net.ipv4.conf.default.rp_filter": "0",
+              "net.ipv4.conf.lo.rp_filter": "0",
+              "net.ipv4.icmp_ratelimit": "0",
+              "net.ipv4.ip_forward": "1",
+              "net.ipv6.conf.all.disable_ipv6": "1",
+              "net.ipv6.conf.all.forwarding": "0",
+              "net.ipv6.conf.default.disable_ipv6": "1",
+              "net.ipv6.conf.default.forwarding": "0"
+            },
+            "mounts": [
+              "bind  /root -\u003e /hosthome rw=true",
+              "bind  \u003cLABDIR\u003e/shared -\u003e /shared rw=true"
+            ],
+            "networks": {
+              "kathara_\u003cUSER\u003e_A_\u003cLABHASH\u003e": {
+                "driver_opts": {
+                  "com.docker.network.endpoint.sysctls": "net.ipv4.conf.IFNAME.rp_filter=0,net.ipv6.conf.IFNAME.disable_ipv6=1",
+                  "kathara.iface": "0",
+                  "kathara.link": "A"
+                }
+              },
+              "kathara_\u003cUSER\u003e_B_\u003cLABHASH\u003e": {
+                "driver_opts": {
+                  "com.docker.network.endpoint.sysctls": "net.ipv4.conf.IFNAME.rp_filter=0,net.ipv6.conf.IFNAME.disable_ipv6=1",
+                  "kathara.iface": "1",
+                  "kathara.link": "B"
+                }
+              }
+            }
+          },
+          {
+            "name": "kathara_\u003cUSER\u003e_pc2_\u003cLABHASH\u003e",
+            "status": "running",
+            "image": "kathara/base",
+            "hostname": "pc2",
+            "labels": {
+              "app": "kathara",
+              "lab_hash": "\u003cLABHASH\u003e",
+              "name": "pc2",
+              "org.opencontainers.image.authors": "Kathara Team \u003ccontact@kathara.org\u003e",
+              "shell": "/bin/bash",
+              "user": "\u003cUSER\u003e"
+            },
+            "env": [
+              "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+              "LANG=C.UTF-8",
+              "LC_ALL=C.UTF-8",
+              "DEBIAN_FRONTEND=noninteractive"
+            ],
+            "cmd": [
+              "bash"
+            ],
+            "network_mode": "kathara_\u003cUSER\u003e_A_\u003cLABHASH\u003e",
+            "privileged": false,
+            "cap_add": [
+              "NET_ADMIN",
+              "NET_BIND_SERVICE",
+              "NET_BROADCAST",
+              "NET_RAW",
+              "SYS_ADMIN"
+            ],
+            "sysctls": {
+              "net.ipv4.conf.all.rp_filter": "0",
+              "net.ipv4.conf.default.rp_filter": "0",
+              "net.ipv4.conf.lo.rp_filter": "0",
+              "net.ipv4.icmp_ratelimit": "0",
+              "net.ipv4.ip_forward": "1",
+              "net.ipv6.conf.all.disable_ipv6": "1",
+              "net.ipv6.conf.all.forwarding": "0",
+              "net.ipv6.conf.default.disable_ipv6": "1",
+              "net.ipv6.conf.default.forwarding": "0"
+            },
+            "mounts": [
+              "bind  /root -\u003e /hosthome rw=true",
+              "bind  \u003cLABDIR\u003e/shared -\u003e /shared rw=true"
+            ],
+            "networks": {
+              "kathara_\u003cUSER\u003e_A_\u003cLABHASH\u003e": {
+                "driver_opts": {
+                  "com.docker.network.endpoint.sysctls": "net.ipv4.conf.IFNAME.rp_filter=0,net.ipv6.conf.IFNAME.disable_ipv6=1",
+                  "kathara.iface": "0",
+                  "kathara.link": "A"
+                }
+              }
+            }
+          }
+        ],
+        "networks": [
+          {
+            "name": "kathara_\u003cUSER\u003e_A_\u003cLABHASH\u003e",
+            "driver": "kathara/katharanp_vde:amd64",
+            "scope": "local",
+            "internal": false,
+            "attachable": false,
+            "labels": {
+              "app": "kathara",
+              "external": "",
+              "lab_hash": "\u003cLABHASH\u003e",
+              "name": "A",
+              "user": "\u003cUSER\u003e"
+            },
+            "attached": [
+              "kathara_\u003cUSER\u003e_pc1_\u003cLABHASH\u003e",
+              "kathara_\u003cUSER\u003e_pc2_\u003cLABHASH\u003e"
+            ]
+          },
+          {
+            "name": "kathara_\u003cUSER\u003e_B_\u003cLABHASH\u003e",
+            "driver": "kathara/katharanp_vde:amd64",
+            "scope": "local",
+            "internal": false,
+            "attachable": false,
+            "labels": {
+              "app": "kathara",
+              "external": "",
+              "lab_hash": "\u003cLABHASH\u003e",
+              "name": "B",
+              "user": "\u003cUSER\u003e"
+            },
+            "attached": [
+              "kathara_\u003cUSER\u003e_pc1_\u003cLABHASH\u003e"
+            ]
+          }
+        ],
+        "dangling_volumes": 0
+      }
+    },
+    {
+      "name": "11-lclean",
+      "argv": [
+        "\u003cKATHARA\u003e",
+        "lclean"
+      ],
+      "dir": "lab",
+      "exit": 0,
+      "stdout": [
+        "┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐",
+        "│                                                                                      Stopping Network Scenario                                                                                       │",
+        "└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘",
+        "[Deleting devices]    2/2",
+        "[Deleting collision domains]    2/2"
+      ],
+      "stderr": [],
+      "docker": {
+        "containers": null,
+        "networks": null,
+        "dangling_volumes": 0
+      }
+    },
+    {
+      "name": "12-lstart-no-shared",
+      "argv": [
+        "\u003cKATHARA\u003e",
+        "lstart",
+        "--noterminals",
+        "--no-shared"
+      ],
+      "dir": "lab",
+      "exit": 0,
+      "stdout": [
+        "┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐",
+        "│                                                                                      Starting Network Scenario                                                                                       │",
+        "└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘",
+        "┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐",
+        "│ Name: cmdparity                                                                                                                                                                                      │",
+        "│ Description: Command-flow parity fixture                                                                                                                                                             │",
+        "└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘",
+        "[Deploying collision domains]    2/2",
+        "[Deploying devices]    2/2"
+      ],
+      "stderr": [],
+      "docker": {
+        "containers": [
+          {
+            "name": "kathara_\u003cUSER\u003e_pc1_\u003cLABHASH\u003e",
+            "status": "running",
+            "image": "kathara/base",
+            "hostname": "pc1",
+            "labels": {
+              "app": "kathara",
+              "lab_hash": "\u003cLABHASH\u003e",
+              "name": "pc1",
+              "org.opencontainers.image.authors": "Kathara Team \u003ccontact@kathara.org\u003e",
+              "shell": "/bin/bash",
+              "user": "\u003cUSER\u003e"
+            },
+            "env": [
+              "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+              "LANG=C.UTF-8",
+              "LC_ALL=C.UTF-8",
+              "DEBIAN_FRONTEND=noninteractive"
+            ],
+            "cmd": [
+              "bash"
+            ],
+            "network_mode": "kathara_\u003cUSER\u003e_A_\u003cLABHASH\u003e",
+            "privileged": false,
+            "cap_add": [
+              "NET_ADMIN",
+              "NET_BIND_SERVICE",
+              "NET_BROADCAST",
+              "NET_RAW",
+              "SYS_ADMIN"
+            ],
+            "sysctls": {
+              "net.ipv4.conf.all.rp_filter": "0",
+              "net.ipv4.conf.default.rp_filter": "0",
+              "net.ipv4.conf.lo.rp_filter": "0",
+              "net.ipv4.icmp_ratelimit": "0",
+              "net.ipv4.ip_forward": "1",
+              "net.ipv6.conf.all.disable_ipv6": "1",
+              "net.ipv6.conf.all.forwarding": "0",
+              "net.ipv6.conf.default.disable_ipv6": "1",
+              "net.ipv6.conf.default.forwarding": "0"
+            },
+            "mounts": [
+              "volume \u003cVOL\u003e /var/lib/docker/volumes/\u003cCID\u003e/_data -\u003e /hosthome rw=true",
+              "volume \u003cVOL\u003e /var/lib/docker/volumes/\u003cCID\u003e/_data -\u003e /shared rw=true"
+            ],
+            "networks": {
+              "kathara_\u003cUSER\u003e_A_\u003cLABHASH\u003e": {
+                "driver_opts": {
+                  "com.docker.network.endpoint.sysctls": "net.ipv4.conf.IFNAME.rp_filter=0,net.ipv6.conf.IFNAME.disable_ipv6=1",
+                  "kathara.iface": "0",
+                  "kathara.link": "A"
+                }
+              },
+              "kathara_\u003cUSER\u003e_B_\u003cLABHASH\u003e": {
+                "driver_opts": {
+                  "com.docker.network.endpoint.sysctls": "net.ipv4.conf.IFNAME.rp_filter=0,net.ipv6.conf.IFNAME.disable_ipv6=1",
+                  "kathara.iface": "1",
+                  "kathara.link": "B"
+                }
+              }
+            }
+          },
+          {
+            "name": "kathara_\u003cUSER\u003e_pc2_\u003cLABHASH\u003e",
+            "status": "running",
+            "image": "kathara/base",
+            "hostname": "pc2",
+            "labels": {
+              "app": "kathara",
+              "lab_hash": "\u003cLABHASH\u003e",
+              "name": "pc2",
+              "org.opencontainers.image.authors": "Kathara Team \u003ccontact@kathara.org\u003e",
+              "shell": "/bin/bash",
+              "user": "\u003cUSER\u003e"
+            },
+            "env": [
+              "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+              "LANG=C.UTF-8",
+              "LC_ALL=C.UTF-8",
+              "DEBIAN_FRONTEND=noninteractive"
+            ],
+            "cmd": [
+              "bash"
+            ],
+            "network_mode": "kathara_\u003cUSER\u003e_A_\u003cLABHASH\u003e",
+            "privileged": false,
+            "cap_add": [
+              "NET_ADMIN",
+              "NET_BIND_SERVICE",
+              "NET_BROADCAST",
+              "NET_RAW",
+              "SYS_ADMIN"
+            ],
+            "sysctls": {
+              "net.ipv4.conf.all.rp_filter": "0",
+              "net.ipv4.conf.default.rp_filter": "0",
+              "net.ipv4.conf.lo.rp_filter": "0",
+              "net.ipv4.icmp_ratelimit": "0",
+              "net.ipv4.ip_forward": "1",
+              "net.ipv6.conf.all.disable_ipv6": "1",
+              "net.ipv6.conf.all.forwarding": "0",
+              "net.ipv6.conf.default.disable_ipv6": "1",
+              "net.ipv6.conf.default.forwarding": "0"
+            },
+            "mounts": [
+              "volume \u003cVOL\u003e /var/lib/docker/volumes/\u003cCID\u003e/_data -\u003e /hosthome rw=true",
+              "volume \u003cVOL\u003e /var/lib/docker/volumes/\u003cCID\u003e/_data -\u003e /shared rw=true"
+            ],
+            "networks": {
+              "kathara_\u003cUSER\u003e_A_\u003cLABHASH\u003e": {
+                "driver_opts": {
+                  "com.docker.network.endpoint.sysctls": "net.ipv4.conf.IFNAME.rp_filter=0,net.ipv6.conf.IFNAME.disable_ipv6=1",
+                  "kathara.iface": "0",
+                  "kathara.link": "A"
+                }
+              }
+            }
+          }
+        ],
+        "networks": [
+          {
+            "name": "kathara_\u003cUSER\u003e_A_\u003cLABHASH\u003e",
+            "driver": "kathara/katharanp_vde:amd64",
+            "scope": "local",
+            "internal": false,
+            "attachable": false,
+            "labels": {
+              "app": "kathara",
+              "external": "",
+              "lab_hash": "\u003cLABHASH\u003e",
+              "name": "A",
+              "user": "\u003cUSER\u003e"
+            },
+            "attached": [
+              "kathara_\u003cUSER\u003e_pc1_\u003cLABHASH\u003e",
+              "kathara_\u003cUSER\u003e_pc2_\u003cLABHASH\u003e"
+            ]
+          },
+          {
+            "name": "kathara_\u003cUSER\u003e_B_\u003cLABHASH\u003e",
+            "driver": "kathara/katharanp_vde:amd64",
+            "scope": "local",
+            "internal": false,
+            "attachable": false,
+            "labels": {
+              "app": "kathara",
+              "external": "",
+              "lab_hash": "\u003cLABHASH\u003e",
+              "name": "B",
+              "user": "\u003cUSER\u003e"
+            },
+            "attached": [
+              "kathara_\u003cUSER\u003e_pc1_\u003cLABHASH\u003e"
+            ]
+          }
+        ],
+        "dangling_volumes": 0
+      }
+    },
+    {
+      "name": "13-lclean",
+      "argv": [
+        "\u003cKATHARA\u003e",
+        "lclean"
+      ],
+      "dir": "lab",
+      "exit": 0,
+      "stdout": [
+        "┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐",
+        "│                                                                                      Stopping Network Scenario                                                                                       │",
+        "└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘",
+        "[Deleting devices]    2/2",
+        "[Deleting collision domains]    2/2"
+      ],
+      "stderr": [],
+      "docker": {
+        "containers": null,
+        "networks": null,
+        "dangling_volumes": 0
+      }
+    },
+    {
+      "name": "14-lstart-privileged",
+      "argv": [
+        "\u003cKATHARA\u003e",
+        "lstart",
+        "--noterminals",
+        "--privileged"
+      ],
+      "dir": "lab",
+      "exit": 0,
+      "stdout": [
+        "┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐",
+        "│                                                                                      Starting Network Scenario                                                                                       │",
+        "└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘",
+        "┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐",
+        "│ Name: cmdparity                                                                                                                                                                                      │",
+        "│ Description: Command-flow parity fixture                                                                                                                                                             │",
+        "└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘",
+        "[Deploying collision domains]    2/2",
+        "[Deploying devices]    2/2"
+      ],
+      "stderr": [],
+      "docker": {
+        "containers": [
+          {
+            "name": "kathara_\u003cUSER\u003e_pc1_\u003cLABHASH\u003e",
+            "status": "running",
+            "image": "kathara/base",
+            "hostname": "pc1",
+            "labels": {
+              "app": "kathara",
+              "lab_hash": "\u003cLABHASH\u003e",
+              "name": "pc1",
+              "org.opencontainers.image.authors": "Kathara Team \u003ccontact@kathara.org\u003e",
+              "shell": "/bin/bash",
+              "user": "\u003cUSER\u003e"
+            },
+            "env": [
+              "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+              "LANG=C.UTF-8",
+              "LC_ALL=C.UTF-8",
+              "DEBIAN_FRONTEND=noninteractive"
+            ],
+            "cmd": [
+              "bash"
+            ],
+            "network_mode": "kathara_\u003cUSER\u003e_A_\u003cLABHASH\u003e",
+            "privileged": true,
+            "sysctls": {
+              "net.ipv4.conf.all.rp_filter": "0",
+              "net.ipv4.conf.default.rp_filter": "0",
+              "net.ipv4.conf.lo.rp_filter": "0",
+              "net.ipv4.icmp_ratelimit": "0",
+              "net.ipv4.ip_forward": "1",
+              "net.ipv6.conf.all.disable_ipv6": "1",
+              "net.ipv6.conf.all.forwarding": "0",
+              "net.ipv6.conf.default.disable_ipv6": "1",
+              "net.ipv6.conf.default.forwarding": "0"
+            },
+            "mounts": [
+              "bind  \u003cLABDIR\u003e/shared -\u003e /shared rw=true",
+              "volume \u003cVOL\u003e /var/lib/docker/volumes/\u003cCID\u003e/_data -\u003e /hosthome rw=true"
+            ],
+            "networks": {
+              "kathara_\u003cUSER\u003e_A_\u003cLABHASH\u003e": {
+                "driver_opts": {
+                  "com.docker.network.endpoint.sysctls": "net.ipv4.conf.IFNAME.rp_filter=0,net.ipv6.conf.IFNAME.disable_ipv6=1",
+                  "kathara.iface": "0",
+                  "kathara.link": "A"
+                }
+              },
+              "kathara_\u003cUSER\u003e_B_\u003cLABHASH\u003e": {
+                "driver_opts": {
+                  "com.docker.network.endpoint.sysctls": "net.ipv4.conf.IFNAME.rp_filter=0,net.ipv6.conf.IFNAME.disable_ipv6=1",
+                  "kathara.iface": "1",
+                  "kathara.link": "B"
+                }
+              }
+            }
+          },
+          {
+            "name": "kathara_\u003cUSER\u003e_pc2_\u003cLABHASH\u003e",
+            "status": "running",
+            "image": "kathara/base",
+            "hostname": "pc2",
+            "labels": {
+              "app": "kathara",
+              "lab_hash": "\u003cLABHASH\u003e",
+              "name": "pc2",
+              "org.opencontainers.image.authors": "Kathara Team \u003ccontact@kathara.org\u003e",
+              "shell": "/bin/bash",
+              "user": "\u003cUSER\u003e"
+            },
+            "env": [
+              "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+              "LANG=C.UTF-8",
+              "LC_ALL=C.UTF-8",
+              "DEBIAN_FRONTEND=noninteractive"
+            ],
+            "cmd": [
+              "bash"
+            ],
+            "network_mode": "kathara_\u003cUSER\u003e_A_\u003cLABHASH\u003e",
+            "privileged": true,
+            "sysctls": {
+              "net.ipv4.conf.all.rp_filter": "0",
+              "net.ipv4.conf.default.rp_filter": "0",
+              "net.ipv4.conf.lo.rp_filter": "0",
+              "net.ipv4.icmp_ratelimit": "0",
+              "net.ipv4.ip_forward": "1",
+              "net.ipv6.conf.all.disable_ipv6": "1",
+              "net.ipv6.conf.all.forwarding": "0",
+              "net.ipv6.conf.default.disable_ipv6": "1",
+              "net.ipv6.conf.default.forwarding": "0"
+            },
+            "mounts": [
+              "bind  \u003cLABDIR\u003e/shared -\u003e /shared rw=true",
+              "volume \u003cVOL\u003e /var/lib/docker/volumes/\u003cCID\u003e/_data -\u003e /hosthome rw=true"
+            ],
+            "networks": {
+              "kathara_\u003cUSER\u003e_A_\u003cLABHASH\u003e": {
+                "driver_opts": {
+                  "com.docker.network.endpoint.sysctls": "net.ipv4.conf.IFNAME.rp_filter=0,net.ipv6.conf.IFNAME.disable_ipv6=1",
+                  "kathara.iface": "0",
+                  "kathara.link": "A"
+                }
+              }
+            }
+          }
+        ],
+        "networks": [
+          {
+            "name": "kathara_\u003cUSER\u003e_A_\u003cLABHASH\u003e",
+            "driver": "kathara/katharanp_vde:amd64",
+            "scope": "local",
+            "internal": false,
+            "attachable": false,
+            "labels": {
+              "app": "kathara",
+              "external": "",
+              "lab_hash": "\u003cLABHASH\u003e",
+              "name": "A",
+              "user": "\u003cUSER\u003e"
+            },
+            "attached": [
+              "kathara_\u003cUSER\u003e_pc1_\u003cLABHASH\u003e",
+              "kathara_\u003cUSER\u003e_pc2_\u003cLABHASH\u003e"
+            ]
+          },
+          {
+            "name": "kathara_\u003cUSER\u003e_B_\u003cLABHASH\u003e",
+            "driver": "kathara/katharanp_vde:amd64",
+            "scope": "local",
+            "internal": false,
+            "attachable": false,
+            "labels": {
+              "app": "kathara",
+              "external": "",
+              "lab_hash": "\u003cLABHASH\u003e",
+              "name": "B",
+              "user": "\u003cUSER\u003e"
+            },
+            "attached": [
+              "kathara_\u003cUSER\u003e_pc1_\u003cLABHASH\u003e"
+            ]
+          }
+        ],
+        "dangling_volumes": 0
+      }
+    },
+    {
+      "name": "15-lclean",
+      "argv": [
+        "\u003cKATHARA\u003e",
+        "lclean"
+      ],
+      "dir": "lab",
+      "exit": 0,
+      "stdout": [
+        "┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐",
+        "│                                                                                      Stopping Network Scenario                                                                                       │",
+        "└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘",
+        "[Deleting devices]    2/2",
+        "[Deleting collision domains]    2/2"
+      ],
+      "stderr": [],
+      "docker": {
+        "containers": null,
+        "networks": null,
+        "dangling_volumes": 0
+      }
+    },
+    {
+      "name": "16-lstart-list",
+      "argv": [
+        "\u003cKATHARA\u003e",
+        "lstart",
+        "--noterminals",
+        "-l"
+      ],
+      "dir": "lab",
+      "exit": 0,
+      "stdout": [
+        "┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐",
+        "│                                                                                      Starting Network Scenario                                                                                       │",
+        "└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘",
+        "┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐",
+        "│ Name: cmdparity                                                                                                                                                                                      │",
+        "│ Description: Command-flow parity fixture                                                                                                                                                             │",
+        "└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘",
+        "[Deploying collision domains]    2/2",
+        "[Deploying devices]    2/2",
+        "TIMESTAMP: \u003cTS\u003e",
+        "┌─┬─┬─┬─┬─┐",
+        "ROW NETWORK SCENARIO ID | NAME | USER | STATUS | IMAGE",
+        "╞─╪─╪─╪─╪─╡",
+        "ROW \u003cLABHASH\u003e | pc1 | \u003cUSER\u003e | running | kathara/base:latest",
+        "├─┼─┼─┼─┼─┤",
+        "ROW \u003cLABHASH\u003e | pc2 | \u003cUSER\u003e | running | kathara/base:latest",
+        "└─┴─┴─┴─┴─┘"
+      ],
+      "stderr": [],
+      "docker": {
+        "containers": [
+          {
+            "name": "kathara_\u003cUSER\u003e_pc1_\u003cLABHASH\u003e",
+            "status": "running",
+            "image": "kathara/base",
+            "hostname": "pc1",
+            "labels": {
+              "app": "kathara",
+              "lab_hash": "\u003cLABHASH\u003e",
+              "name": "pc1",
+              "org.opencontainers.image.authors": "Kathara Team \u003ccontact@kathara.org\u003e",
+              "shell": "/bin/bash",
+              "user": "\u003cUSER\u003e"
+            },
+            "env": [
+              "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+              "LANG=C.UTF-8",
+              "LC_ALL=C.UTF-8",
+              "DEBIAN_FRONTEND=noninteractive"
+            ],
+            "cmd": [
+              "bash"
+            ],
+            "network_mode": "kathara_\u003cUSER\u003e_A_\u003cLABHASH\u003e",
+            "privileged": false,
+            "cap_add": [
+              "NET_ADMIN",
+              "NET_BIND_SERVICE",
+              "NET_BROADCAST",
+              "NET_RAW",
+              "SYS_ADMIN"
+            ],
+            "sysctls": {
+              "net.ipv4.conf.all.rp_filter": "0",
+              "net.ipv4.conf.default.rp_filter": "0",
+              "net.ipv4.conf.lo.rp_filter": "0",
+              "net.ipv4.icmp_ratelimit": "0",
+              "net.ipv4.ip_forward": "1",
+              "net.ipv6.conf.all.disable_ipv6": "1",
+              "net.ipv6.conf.all.forwarding": "0",
+              "net.ipv6.conf.default.disable_ipv6": "1",
+              "net.ipv6.conf.default.forwarding": "0"
+            },
+            "mounts": [
+              "bind  \u003cLABDIR\u003e/shared -\u003e /shared rw=true",
+              "volume \u003cVOL\u003e /var/lib/docker/volumes/\u003cCID\u003e/_data -\u003e /hosthome rw=true"
+            ],
+            "networks": {
+              "kathara_\u003cUSER\u003e_A_\u003cLABHASH\u003e": {
+                "driver_opts": {
+                  "com.docker.network.endpoint.sysctls": "net.ipv4.conf.IFNAME.rp_filter=0,net.ipv6.conf.IFNAME.disable_ipv6=1",
+                  "kathara.iface": "0",
+                  "kathara.link": "A"
+                }
+              },
+              "kathara_\u003cUSER\u003e_B_\u003cLABHASH\u003e": {
+                "driver_opts": {
+                  "com.docker.network.endpoint.sysctls": "net.ipv4.conf.IFNAME.rp_filter=0,net.ipv6.conf.IFNAME.disable_ipv6=1",
+                  "kathara.iface": "1",
+                  "kathara.link": "B"
+                }
+              }
+            }
+          },
+          {
+            "name": "kathara_\u003cUSER\u003e_pc2_\u003cLABHASH\u003e",
+            "status": "running",
+            "image": "kathara/base",
+            "hostname": "pc2",
+            "labels": {
+              "app": "kathara",
+              "lab_hash": "\u003cLABHASH\u003e",
+              "name": "pc2",
+              "org.opencontainers.image.authors": "Kathara Team \u003ccontact@kathara.org\u003e",
+              "shell": "/bin/bash",
+              "user": "\u003cUSER\u003e"
+            },
+            "env": [
+              "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+              "LANG=C.UTF-8",
+              "LC_ALL=C.UTF-8",
+              "DEBIAN_FRONTEND=noninteractive"
+            ],
+            "cmd": [
+              "bash"
+            ],
+            "network_mode": "kathara_\u003cUSER\u003e_A_\u003cLABHASH\u003e",
+            "privileged": false,
+            "cap_add": [
+              "NET_ADMIN",
+              "NET_BIND_SERVICE",
+              "NET_BROADCAST",
+              "NET_RAW",
+              "SYS_ADMIN"
+            ],
+            "sysctls": {
+              "net.ipv4.conf.all.rp_filter": "0",
+              "net.ipv4.conf.default.rp_filter": "0",
+              "net.ipv4.conf.lo.rp_filter": "0",
+              "net.ipv4.icmp_ratelimit": "0",
+              "net.ipv4.ip_forward": "1",
+              "net.ipv6.conf.all.disable_ipv6": "1",
+              "net.ipv6.conf.all.forwarding": "0",
+              "net.ipv6.conf.default.disable_ipv6": "1",
+              "net.ipv6.conf.default.forwarding": "0"
+            },
+            "mounts": [
+              "bind  \u003cLABDIR\u003e/shared -\u003e /shared rw=true",
+              "volume \u003cVOL\u003e /var/lib/docker/volumes/\u003cCID\u003e/_data -\u003e /hosthome rw=true"
+            ],
+            "networks": {
+              "kathara_\u003cUSER\u003e_A_\u003cLABHASH\u003e": {
+                "driver_opts": {
+                  "com.docker.network.endpoint.sysctls": "net.ipv4.conf.IFNAME.rp_filter=0,net.ipv6.conf.IFNAME.disable_ipv6=1",
+                  "kathara.iface": "0",
+                  "kathara.link": "A"
+                }
+              }
+            }
+          }
+        ],
+        "networks": [
+          {
+            "name": "kathara_\u003cUSER\u003e_A_\u003cLABHASH\u003e",
+            "driver": "kathara/katharanp_vde:amd64",
+            "scope": "local",
+            "internal": false,
+            "attachable": false,
+            "labels": {
+              "app": "kathara",
+              "external": "",
+              "lab_hash": "\u003cLABHASH\u003e",
+              "name": "A",
+              "user": "\u003cUSER\u003e"
+            },
+            "attached": [
+              "kathara_\u003cUSER\u003e_pc1_\u003cLABHASH\u003e",
+              "kathara_\u003cUSER\u003e_pc2_\u003cLABHASH\u003e"
+            ]
+          },
+          {
+            "name": "kathara_\u003cUSER\u003e_B_\u003cLABHASH\u003e",
+            "driver": "kathara/katharanp_vde:amd64",
+            "scope": "local",
+            "internal": false,
+            "attachable": false,
+            "labels": {
+              "app": "kathara",
+              "external": "",
+              "lab_hash": "\u003cLABHASH\u003e",
+              "name": "B",
+              "user": "\u003cUSER\u003e"
+            },
+            "attached": [
+              "kathara_\u003cUSER\u003e_pc1_\u003cLABHASH\u003e"
+            ]
+          }
+        ],
+        "dangling_volumes": 0
+      }
+    },
+    {
+      "name": "17-lclean",
+      "argv": [
+        "\u003cKATHARA\u003e",
+        "lclean"
+      ],
+      "dir": "lab",
+      "exit": 0,
+      "stdout": [
+        "┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐",
+        "│                                                                                      Stopping Network Scenario                                                                                       │",
+        "└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘",
+        "[Deleting devices]    2/2",
+        "[Deleting collision domains]    2/2"
+      ],
+      "stderr": [],
+      "docker": {
+        "containers": null,
+        "networks": null,
+        "dangling_volumes": 0
+      }
+    }
+  ]
+}
