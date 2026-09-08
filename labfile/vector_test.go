@@ -88,11 +88,23 @@ func TestVectors(t *testing.T) {
 		}
 
 		t.Run(filepath.ToSlash(id), func(t *testing.T) {
-			// This vector's expected OSError is the Linux shape of opening a
-			// directory as a file; Windows errors differently in CPython too.
-			// Windows runtime is out of 1.0 scope.
-			if runtime.GOOS == "windows" && strings.HasSuffix(id, "conf_name_is_directory") {
-				t.Skip("directory-open error shape is the Linux oracle's")
+			// Linux-oracle-shaped vectors that cannot apply on Windows, where
+			// CPython itself behaves differently: directory-open error shapes
+			// differ, and volume host paths pass through ntpath.abspath
+			// ("/h" -> "C:\h") in both implementations. Windows runtime is
+			// out of 1.0 scope; a Windows oracle recording is queued post-1.0.
+			if runtime.GOOS == "windows" {
+				for _, linuxShaped := range []string{
+					"conf_name_is_directory",
+					"lab_dep_is_directory",
+					"meta_all_options",
+					"volume_empty_segments",
+					"duplicate_typed_meta_warnings",
+				} {
+					if strings.HasSuffix(id, linuxShaped) {
+						t.Skip("Linux-oracle-shaped (directory-open or abspath'd volume paths)")
+					}
+				}
 			}
 			var spec vectorSpec
 			readJSON(t, filepath.Join(dir, "vector.json"), &spec)

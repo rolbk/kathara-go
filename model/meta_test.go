@@ -3,6 +3,7 @@ package model
 import (
 	"errors"
 	"path/filepath"
+	"runtime"
 	"testing"
 
 	"github.com/KatharaFramework/kathara-go/kerrors"
@@ -304,6 +305,13 @@ func TestAddMetaUlimit(t *testing.T) {
 // is os.path.abspath of the host path, so the test pins it against a known
 // working directory.
 func TestAddMetaVolume(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		// Volume host paths go through the platform abspath, exactly as
+		// Python's os.path.abspath does — on Windows "/h" becomes "C:\h" in
+		// both implementations, so the POSIX-shaped expectations cannot
+		// apply. Windows runtime is out of 1.0 scope.
+		t.Skip("expectations are POSIX-abspath-shaped")
+	}
 	dir := t.TempDir()
 	t.Chdir(dir)
 
