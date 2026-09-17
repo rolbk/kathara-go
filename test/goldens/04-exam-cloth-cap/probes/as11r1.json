@@ -1,11 +1,11 @@
 {
   "device": "as11r1",
   "ip_br_link": [
-    "eth0 UP <MAC> <BROADCAST,MULTICAST,UP,LOWER_UP>",
-    "eth1 UP <MAC> <BROADCAST,MULTICAST,UP,LOWER_UP>",
-    "eth2 UP <MAC> <BROADCAST,MULTICAST,UP,LOWER_UP>",
-    "eth3 UP <MAC> <BROADCAST,MULTICAST,UP,LOWER_UP>",
-    "eth4 UP <MAC> <BROADCAST,MULTICAST,UP,LOWER_UP>",
+    "eth0 UP <MAC4> <BROADCAST,MULTICAST,UP,LOWER_UP>",
+    "eth1 UP <MAC5> <BROADCAST,MULTICAST,UP,LOWER_UP>",
+    "eth2 UP <MAC6> <BROADCAST,MULTICAST,UP,LOWER_UP>",
+    "eth3 UP <MAC7> <BROADCAST,MULTICAST,UP,LOWER_UP>",
+    "eth4 UP <MAC8> <BROADCAST,MULTICAST,UP,LOWER_UP>",
     "lo UNKNOWN 00:00:00:00:00:00 <LOOPBACK,UP,LOWER_UP>"
   ],
   "ip_addr": [
@@ -15,11 +15,13 @@
           "family": "inet",
           "label": "eth0",
           "local": "11.14.0.11",
+          "preferred_life_time": 4294967295,
           "prefixlen": 24,
-          "scope": "global"
+          "scope": "global",
+          "valid_life_time": 4294967295
         }
       ],
-      "address": "<MAC>",
+      "address": "<MAC4>",
       "broadcast": "ff:ff:ff:ff:ff:ff",
       "flags": [
         "BROADCAST",
@@ -41,11 +43,13 @@
           "family": "inet",
           "label": "eth1",
           "local": "11.13.0.11",
+          "preferred_life_time": 4294967295,
           "prefixlen": 24,
-          "scope": "global"
+          "scope": "global",
+          "valid_life_time": 4294967295
         }
       ],
-      "address": "<MAC>",
+      "address": "<MAC5>",
       "broadcast": "ff:ff:ff:ff:ff:ff",
       "flags": [
         "BROADCAST",
@@ -67,11 +71,13 @@
           "family": "inet",
           "label": "eth2",
           "local": "11.12.0.11",
+          "preferred_life_time": 4294967295,
           "prefixlen": 24,
-          "scope": "global"
+          "scope": "global",
+          "valid_life_time": 4294967295
         }
       ],
-      "address": "<MAC>",
+      "address": "<MAC6>",
       "broadcast": "ff:ff:ff:ff:ff:ff",
       "flags": [
         "BROADCAST",
@@ -93,11 +99,13 @@
           "family": "inet",
           "label": "eth3",
           "local": "11.20.0.11",
+          "preferred_life_time": 4294967295,
           "prefixlen": 24,
-          "scope": "global"
+          "scope": "global",
+          "valid_life_time": 4294967295
         }
       ],
-      "address": "<MAC>",
+      "address": "<MAC7>",
       "broadcast": "ff:ff:ff:ff:ff:ff",
       "flags": [
         "BROADCAST",
@@ -119,11 +127,13 @@
           "family": "inet",
           "label": "eth4",
           "local": "10.11.0.11",
+          "preferred_life_time": 4294967295,
           "prefixlen": 24,
-          "scope": "global"
+          "scope": "global",
+          "valid_life_time": 4294967295
         }
       ],
-      "address": "<MAC>",
+      "address": "<MAC8>",
       "broadcast": "ff:ff:ff:ff:ff:ff",
       "flags": [
         "BROADCAST",
@@ -145,8 +155,10 @@
           "family": "inet",
           "label": "lo",
           "local": "127.0.0.1",
+          "preferred_life_time": 4294967295,
           "prefixlen": 8,
-          "scope": "host"
+          "scope": "host",
+          "valid_life_time": 4294967295
         }
       ],
       "address": "00:00:00:00:00:00",
@@ -182,34 +194,55 @@
     "/hostlab": [
       {
         "kind": "d",
-        "path": "./as11r1"
+        "path": "./as11r1",
+        "mode": "755",
+        "uid": "0",
+        "gid": "0"
       },
       {
         "kind": "f",
         "path": "./as11r1.startup",
+        "mode": "744",
+        "uid": "0",
+        "gid": "0",
         "sha256": "034558d35630ec38afc27f67bd2c9f9c88cb68b63711de80e6502178a6dd59e6"
       },
       {
         "kind": "d",
-        "path": "./as11r1/etc"
+        "path": "./as11r1/etc",
+        "mode": "755",
+        "uid": "0",
+        "gid": "0"
       },
       {
         "kind": "d",
-        "path": "./as11r1/etc/frr"
+        "path": "./as11r1/etc/frr",
+        "mode": "755",
+        "uid": "0",
+        "gid": "0"
       },
       {
         "kind": "f",
         "path": "./as11r1/etc/frr/daemons",
+        "mode": "644",
+        "uid": "0",
+        "gid": "0",
         "sha256": "64430061aa8e52a2c3471784c1134b0da1f55d601e4533c62dc29721adf71a56"
       },
       {
         "kind": "f",
         "path": "./as11r1/etc/frr/frr.conf",
+        "mode": "644",
+        "uid": "0",
+        "gid": "0",
         "sha256": "aab23e940f505505cb3452975f97655c6444e48da46e4b007d9ec0699321f462"
       },
       {
         "kind": "f",
         "path": "./as11r1/etc/frr/vtysh.conf",
+        "mode": "644",
+        "uid": "0",
+        "gid": "0",
         "sha256": "f77d51716f0fa51571c2df1b58a7163eae5d18145fa384ba51daf03261d56243"
       }
     ],

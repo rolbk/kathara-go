@@ -1,8 +1,8 @@
 {
   "device": "r1",
   "ip_br_link": [
-    "eth0 UP <MAC> <BROADCAST,MULTICAST,UP,LOWER_UP>",
-    "eth1 UP <MAC> <BROADCAST,MULTICAST,UP,LOWER_UP>",
+    "eth0 UP <MAC1> <BROADCAST,MULTICAST,UP,LOWER_UP>",
+    "eth1 UP <MAC2> <BROADCAST,MULTICAST,UP,LOWER_UP>",
     "lo UNKNOWN 00:00:00:00:00:00 <LOOPBACK,UP,LOWER_UP>"
   ],
   "ip_addr": [
@@ -12,11 +12,13 @@
           "family": "inet",
           "label": "eth0",
           "local": "100.0.0.1",
+          "preferred_life_time": 4294967295,
           "prefixlen": 24,
-          "scope": "global"
+          "scope": "global",
+          "valid_life_time": 4294967295
         }
       ],
-      "address": "<MAC>",
+      "address": "<MAC1>",
       "broadcast": "ff:ff:ff:ff:ff:ff",
       "flags": [
         "BROADCAST",
@@ -38,11 +40,13 @@
           "family": "inet",
           "label": "eth1",
           "local": "150.0.0.1",
+          "preferred_life_time": 4294967295,
           "prefixlen": 30,
-          "scope": "global"
+          "scope": "global",
+          "valid_life_time": 4294967295
         }
       ],
-      "address": "<MAC>",
+      "address": "<MAC2>",
       "broadcast": "ff:ff:ff:ff:ff:ff",
       "flags": [
         "BROADCAST",
@@ -64,8 +68,10 @@
           "family": "inet",
           "label": "lo",
           "local": "127.0.0.1",
+          "preferred_life_time": 4294967295,
           "prefixlen": 8,
-          "scope": "host"
+          "scope": "host",
+          "valid_life_time": 4294967295
         }
       ],
       "address": "00:00:00:00:00:00",
@@ -94,29 +100,47 @@
     "/hostlab": [
       {
         "kind": "d",
-        "path": "./r1"
+        "path": "./r1",
+        "mode": "755",
+        "uid": "0",
+        "gid": "0"
       },
       {
         "kind": "f",
         "path": "./r1.startup",
+        "mode": "744",
+        "uid": "0",
+        "gid": "0",
         "sha256": "e6a04f1dbb1052f72ce9b14cf1dc7169a4d1bbf76a8a0106d97d604d16b27793"
       },
       {
         "kind": "d",
-        "path": "./r1/etc"
+        "path": "./r1/etc",
+        "mode": "755",
+        "uid": "0",
+        "gid": "0"
       },
       {
         "kind": "d",
-        "path": "./r1/etc/frr"
+        "path": "./r1/etc/frr",
+        "mode": "755",
+        "uid": "0",
+        "gid": "0"
       },
       {
         "kind": "f",
         "path": "./r1/etc/frr/daemons",
+        "mode": "644",
+        "uid": "0",
+        "gid": "0",
         "sha256": "0127455c7f503fbbe1459f821a4cf5914f1541a1831f6a9244ec5645a4f8240a"
       },
       {
         "kind": "f",
         "path": "./r1/etc/frr/frr.conf",
+        "mode": "644",
+        "uid": "0",
+        "gid": "0",
         "sha256": "4bf0135dd8fc719717966ea6ff8e60aa1391d967bd565bad806923d77cb9df09"
       }
     ],

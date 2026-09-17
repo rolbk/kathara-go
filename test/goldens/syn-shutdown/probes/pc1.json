@@ -1,7 +1,7 @@
 {
   "device": "pc1",
   "ip_br_link": [
-    "eth0 UP <MAC> <BROADCAST,MULTICAST,UP,LOWER_UP>",
+    "eth0 UP <MAC1> <BROADCAST,MULTICAST,UP,LOWER_UP>",
     "lo UNKNOWN 00:00:00:00:00:00 <LOOPBACK,UP,LOWER_UP>"
   ],
   "ip_addr": [
@@ -11,11 +11,13 @@
           "family": "inet",
           "label": "eth0",
           "local": "10.0.0.1",
+          "preferred_life_time": 4294967295,
           "prefixlen": 24,
-          "scope": "global"
+          "scope": "global",
+          "valid_life_time": 4294967295
         }
       ],
-      "address": "<MAC>",
+      "address": "<MAC1>",
       "broadcast": "ff:ff:ff:ff:ff:ff",
       "flags": [
         "BROADCAST",
@@ -37,8 +39,10 @@
           "family": "inet",
           "label": "lo",
           "local": "127.0.0.1",
+          "preferred_life_time": 4294967295,
           "prefixlen": 8,
-          "scope": "host"
+          "scope": "host",
+          "valid_life_time": 4294967295
         }
       ],
       "address": "00:00:00:00:00:00",
@@ -70,21 +74,33 @@
     "/hostlab": [
       {
         "kind": "d",
-        "path": "./pc1"
+        "path": "./pc1",
+        "mode": "755",
+        "uid": "0",
+        "gid": "0"
       },
       {
         "kind": "f",
         "path": "./pc1.shutdown",
+        "mode": "644",
+        "uid": "0",
+        "gid": "0",
         "sha256": "e3525dacb08d688b48af57f246e9bdcd3cad3e98887e0236d07d59fd8d7fe072"
       },
       {
         "kind": "f",
         "path": "./pc1.startup",
+        "mode": "744",
+        "uid": "0",
+        "gid": "0",
         "sha256": "8a489f7ffc3785dce5795ca571d266c56c37f44b7d837b40e66c0a85d6545f70"
       },
       {
         "kind": "f",
         "path": "./shared.shutdown",
+        "mode": "644",
+        "uid": "0",
+        "gid": "0",
         "sha256": "14cb23e9ee6675d7bd6029d497dcb86597bc2104085a5d9fb3dc0f24ee944934"
       }
     ],
@@ -92,6 +108,9 @@
       {
         "kind": "f",
         "path": "./lifecycle.txt",
+        "mode": "644",
+        "uid": "0",
+        "gid": "0",
         "sha256": "eff64b343dcb2b1dc113648e7089b9ce9f8a7f6c7808a03a2cffb4ad7302f606"
       }
     ]

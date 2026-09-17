@@ -1,5 +1,5 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "name": "13-web-server",
   "kind": "deploy",
   "status": "golden",

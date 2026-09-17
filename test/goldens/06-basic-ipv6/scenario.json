@@ -1,5 +1,5 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "name": "06-basic-ipv6",
   "kind": "deploy",
   "status": "golden",

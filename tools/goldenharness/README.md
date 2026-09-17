@@ -5,25 +5,43 @@ import Kathara. It drives whatever binary `KATHARA_CMD` names over the
 scenarios in `scenarios.yaml` and snapshots the observable state of each run as
 a tree of canonical JSON under `test/goldens/<scenario>/`.
 
+The harness is its **own Go module** (`PACKAGE_GRAPH.md` §1.1 — oracle
+independence), so `go run ./tools/goldenharness` from the repository root does
+not resolve it. Build it once and run the binary **from the repository root**,
+which is what the manifest, `test/goldens` and `KATHARA_CMD=./bin/kathara` are
+all relative to — the same two steps CI takes (`.github/workflows/golden.yml`):
+
+```sh
+(cd tools/goldenharness && go build -trimpath -o ../../bin/goldenharness .)
+```
+
+No prebuilt harness is checked in, deliberately: a stale or cross-compiled one
+either refuses to run on the recording host or re-records against rules that
+predate the goldens (`.gitignore`). Build it from source every time.
+
 Record from the Python 3.8.3 oracle, replay against the Go build:
 
 ```sh
 # record every scenario from the oracle (the default KATHARA_CMD)
-go run ./tools/goldenharness record -v
+./bin/goldenharness record -v
 
 # replay the same scenarios against the Go build and fail on any difference
-KATHARA_CMD=./bin/kathara go run ./tools/goldenharness verify -v
+KATHARA_CMD=./bin/kathara ./bin/goldenharness verify -v
 
 # one scenario, or a glob
-go run ./tools/goldenharness record -scenario 01-simple-configuration
-go run ./tools/goldenharness verify -scenario 'syn-*'
+./bin/goldenharness record -scenario 01-simple-configuration
+./bin/goldenharness verify -scenario 'syn-*'
 
 # compare two snapshot trees that already exist
-go run ./tools/goldenharness diff test/goldens /tmp/other-recording
+./bin/goldenharness diff test/goldens /tmp/other-recording
 
 # what the manifest resolves to, and whether every lab directory is present
-go run ./tools/goldenharness list
+./bin/goldenharness list
 ```
+
+To run it from inside `tools/goldenharness` instead, `go run . <cmd> -repo ../..`
+works — `-repo` is what the default "nearest ancestor with a go.mod" would
+otherwise resolve to the harness module itself.
 
 | Environment | Default | Meaning |
 |---|---|---|
@@ -45,15 +63,17 @@ test/goldens/<scenario>/
                     (lab hash, user slug, container and network naming)
   commands.json     exit code and normalized stdout/stderr of lstart and lclean
   containers.json   docker inspect subset per device: labels, hostname, image,
-                    user, caps, privileged, sysctls, ulimits, memory, NanoCPUs,
-                    mounts, env, cmd/entrypoint, port bindings, and one entry
-                    per network endpoint with its kathara.iface / kathara.link
-                    wiring assertions and split-and-sorted endpoint sysctls
+                    user, caps, privileged, tty, open_stdin, sysctls, ulimits
+                    (insertion order), memory, NanoCPUs, binds, mounts, env,
+                    cmd/entrypoint, port bindings, and one entry per network
+                    endpoint with its kathara.iface / kathara.link wiring
+                    assertions and split-and-sorted endpoint sysctls
   networks.json     docker network inspect subset: name, driver, labels,
-                    external flag, IPAM driver
+                    external flag, enable_ipv6, IPAM driver and config, options
   probes/<dev>.json in-container probes: ip -br link, ip -j addr, ip route,
                     /etc/hosts, hostname, the /hostlab and /shared file trees
-                    with a sha256 per file, and any per-scenario file probes
+                    with mode/uid/gid and a sha256 per file, and any
+                    per-scenario file probes
   teardown.json     post-lclean state; the container and network lists must be
                     empty, plus any host-side files the scenario declares
 ```
@@ -89,6 +109,28 @@ scenario or changing a probe.
 3. Add an entry to `scenarios.yaml` with a `note` saying what it covers. If the
    lab's startup leaves a kernel state machine converging (an in-device bridge
    coming up, for instance), set `settle_seconds` and say so in the note —
-   `lstart` returns before the startup commands have even run.
-4. `go run ./tools/goldenharness record -scenario <name>`, read the snapshot,
+   `lstart` returns before the startup commands have even run. If it creates an
+   interface whose MAC the *kernel* copies from another one — a Linux bridge
+   over ports whose own MACs the lab does not pin — list it under
+   `volatile_macs` as `<device>:<ifname>`, or the recording will flake on which
+   port the bridge happened to copy (NORMALIZATION.md section 3).
+4. `./bin/goldenharness record -scenario <name>`, read the snapshot,
    then run `verify` at least twice to prove the recording is stable.
+
+## Proving a recording is deterministic
+
+Any change to a normalization rule — and any schema bump — has to be followed
+by the record-twice byte-diff, against the **Python oracle**, before the Go
+build is ever pointed at the result:
+
+```sh
+./bin/goldenharness record -v                       # pass A -> test/goldens
+./bin/goldenharness verify -v -keep -out /tmp/passB # pass B -> scratch
+diff -r test/goldens /tmp/passB                     # must be empty
+```
+
+A field that differs between the two passes is nondeterministic *in the oracle*
+and must be given a rule in `NORMALIZATION.md` (with its source named) or
+dropped from the recorded subset — never worked around on the Go side. Only
+once the two passes are byte-identical does `KATHARA_CMD=<go binary> verify`
+mean anything: until then a Go diff cannot be told apart from oracle jitter.

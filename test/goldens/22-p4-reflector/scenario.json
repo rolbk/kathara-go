@@ -1,5 +1,5 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "name": "22-p4-reflector",
   "kind": "deploy",
   "status": "golden",

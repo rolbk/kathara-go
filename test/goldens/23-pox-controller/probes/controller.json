@@ -1,7 +1,7 @@
 {
   "device": "controller",
   "ip_br_link": [
-    "eth0 UP <MAC> <BROADCAST,MULTICAST,UP,LOWER_UP>",
+    "eth0 UP <MAC1> <BROADCAST,MULTICAST,UP,LOWER_UP>",
     "lo UNKNOWN 00:00:00:00:00:00 <LOOPBACK,UP,LOWER_UP>"
   ],
   "ip_addr": [
@@ -11,11 +11,13 @@
           "family": "inet",
           "label": "eth0",
           "local": "20.0.1.4",
+          "preferred_life_time": 4294967295,
           "prefixlen": 24,
-          "scope": "global"
+          "scope": "global",
+          "valid_life_time": 4294967295
         }
       ],
-      "address": "<MAC>",
+      "address": "<MAC1>",
       "broadcast": "ff:ff:ff:ff:ff:ff",
       "flags": [
         "BROADCAST",
@@ -37,8 +39,10 @@
           "family": "inet",
           "label": "lo",
           "local": "127.0.0.1",
+          "preferred_life_time": 4294967295,
           "prefixlen": 8,
-          "scope": "host"
+          "scope": "host",
+          "valid_life_time": 4294967295
         }
       ],
       "address": "00:00:00:00:00:00",
@@ -70,11 +74,17 @@
     "/hostlab": [
       {
         "kind": "d",
-        "path": "./controller"
+        "path": "./controller",
+        "mode": "755",
+        "uid": "0",
+        "gid": "0"
       },
       {
         "kind": "f",
         "path": "./controller.startup",
+        "mode": "744",
+        "uid": "0",
+        "gid": "0",
         "sha256": "43785b39ac721bbfdd7b69733e4b0eb8ccfcf613d0198d6fb97c0d5f53ff0624"
       }
     ],

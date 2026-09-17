@@ -1,7 +1,7 @@
 {
   "device": "h1",
   "ip_br_link": [
-    "eth0 UP <MAC> <BROADCAST,MULTICAST,UP,LOWER_UP>",
+    "eth0 UP <MAC1> <BROADCAST,MULTICAST,UP,LOWER_UP>",
     "lo UNKNOWN 00:00:00:00:00:00 <LOOPBACK,UP,LOWER_UP>"
   ],
   "ip_addr": [
@@ -11,11 +11,13 @@
           "family": "inet",
           "label": "eth0",
           "local": "10.0.0.1",
+          "preferred_life_time": 4294967295,
           "prefixlen": 24,
-          "scope": "global"
+          "scope": "global",
+          "valid_life_time": 4294967295
         }
       ],
-      "address": "<MAC>",
+      "address": "<MAC1>",
       "broadcast": "ff:ff:ff:ff:ff:ff",
       "flags": [
         "BROADCAST",
@@ -37,8 +39,10 @@
           "family": "inet",
           "label": "lo",
           "local": "127.0.0.1",
+          "preferred_life_time": 4294967295,
           "prefixlen": 8,
-          "scope": "host"
+          "scope": "host",
+          "valid_life_time": 4294967295
         }
       ],
       "address": "00:00:00:00:00:00",
@@ -67,25 +71,40 @@
     "/hostlab": [
       {
         "kind": "d",
-        "path": "./h1"
+        "path": "./h1",
+        "mode": "755",
+        "uid": "0",
+        "gid": "0"
       },
       {
         "kind": "f",
         "path": "./h1.startup",
+        "mode": "744",
+        "uid": "0",
+        "gid": "0",
         "sha256": "4451b1af1da63c95048ff1486d22511bad061bc088f8faf6dc338230c2f29785"
       },
       {
         "kind": "d",
-        "path": "./h1/etc"
+        "path": "./h1/etc",
+        "mode": "755",
+        "uid": "0",
+        "gid": "0"
       },
       {
         "kind": "f",
         "path": "./h1/etc/resolv.conf",
+        "mode": "644",
+        "uid": "0",
+        "gid": "0",
         "sha256": "be102039b1dc4747490c6994ca8dc17d12d32219561f8ba23e8c0b865ac223ed"
       },
       {
         "kind": "f",
         "path": "./h1/send_receive.py",
+        "mode": "644",
+        "uid": "0",
+        "gid": "0",
         "sha256": "8644d7ddc23dca4144afdbc1200144d926da6d716b3d29a29bffe9c24ab98525"
       }
     ],

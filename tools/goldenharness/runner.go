@@ -404,6 +404,7 @@ func (r *Runner) Record(parent context.Context, sc Scenario) (snap *Snapshot, er
 		DeviceFiles:       sc.DeviceFiles,
 		HostFiles:         sc.HostFiles,
 		HostDirs:          sc.HostDirs,
+		VolatileMACs:      sc.VolatileMACs,
 		LabHashSource:     hashSource,
 		LabHashDerivedOK:  snap.Scenario.LabHashDerivedOK,
 		UserSlugDerivedOK: snap.Scenario.UserSlugDerivedOK,

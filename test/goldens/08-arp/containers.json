@@ -22,6 +22,8 @@
       "CAP_SYS_ADMIN"
     ],
     "privileged": false,
+    "tty": true,
+    "open_stdin": true,
     "sysctls": [
       "net.ipv4.conf.all.rp_filter=0",
       "net.ipv4.conf.default.rp_filter=0",
@@ -46,6 +48,9 @@
       "bash"
     ],
     "network_mode": "kathara_<USER>_A_<LABHASH>",
+    "binds": [
+      "<LABDIR>/shared:/shared:rw"
+    ],
     "mounts": [
       {
         "type": "volume",
@@ -110,6 +115,8 @@
       "CAP_SYS_ADMIN"
     ],
     "privileged": false,
+    "tty": true,
+    "open_stdin": true,
     "sysctls": [
       "net.ipv4.conf.all.rp_filter=0",
       "net.ipv4.conf.default.rp_filter=0",
@@ -134,6 +141,9 @@
       "bash"
     ],
     "network_mode": "kathara_<USER>_C_<LABHASH>",
+    "binds": [
+      "<LABDIR>/shared:/shared:rw"
+    ],
     "mounts": [
       {
         "type": "volume",
@@ -198,6 +208,8 @@
       "CAP_SYS_ADMIN"
     ],
     "privileged": false,
+    "tty": true,
+    "open_stdin": true,
     "sysctls": [
       "net.ipv4.conf.all.rp_filter=0",
       "net.ipv4.conf.default.rp_filter=0",
@@ -222,6 +234,9 @@
       "bash"
     ],
     "network_mode": "kathara_<USER>_C_<LABHASH>",
+    "binds": [
+      "<LABDIR>/shared:/shared:rw"
+    ],
     "mounts": [
       {
         "type": "volume",
@@ -286,6 +301,8 @@
       "CAP_SYS_ADMIN"
     ],
     "privileged": false,
+    "tty": true,
+    "open_stdin": true,
     "sysctls": [
       "net.ipv4.conf.all.rp_filter=0",
       "net.ipv4.conf.default.rp_filter=0",
@@ -310,6 +327,9 @@
       "bash"
     ],
     "network_mode": "kathara_<USER>_A_<LABHASH>",
+    "binds": [
+      "<LABDIR>/shared:/shared:rw"
+    ],
     "mounts": [
       {
         "type": "volume",
@@ -389,6 +409,8 @@
       "CAP_SYS_ADMIN"
     ],
     "privileged": false,
+    "tty": true,
+    "open_stdin": true,
     "sysctls": [
       "net.ipv4.conf.all.rp_filter=0",
       "net.ipv4.conf.default.rp_filter=0",
@@ -413,6 +435,9 @@
       "bash"
     ],
     "network_mode": "kathara_<USER>_C_<LABHASH>",
+    "binds": [
+      "<LABDIR>/shared:/shared:rw"
+    ],
     "mounts": [
       {
         "type": "volume",

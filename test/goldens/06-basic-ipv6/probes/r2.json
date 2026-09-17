@@ -11,9 +11,11 @@
         {
           "family": "inet6",
           "local": "fe80::200:ff:fe00:c1",
+          "preferred_life_time": 4294967295,
           "prefixlen": 64,
           "protocol": "kernel_ll",
-          "scope": "link"
+          "scope": "link",
+          "valid_life_time": 4294967295
         }
       ],
       "address": "00:00:00:00:00:c1",
@@ -37,15 +39,19 @@
         {
           "family": "inet6",
           "local": "fe80::2",
+          "preferred_life_time": 4294967295,
           "prefixlen": 64,
-          "scope": "link"
+          "scope": "link",
+          "valid_life_time": 4294967295
         },
         {
           "family": "inet6",
           "local": "fe80::200:ff:fe00:b2",
+          "preferred_life_time": 4294967295,
           "prefixlen": 64,
           "protocol": "kernel_ll",
-          "scope": "link"
+          "scope": "link",
+          "valid_life_time": 4294967295
         }
       ],
       "address": "00:00:00:00:00:b2",
@@ -70,15 +76,19 @@
           "family": "inet",
           "label": "lo",
           "local": "127.0.0.1",
+          "preferred_life_time": 4294967295,
           "prefixlen": 8,
-          "scope": "host"
+          "scope": "host",
+          "valid_life_time": 4294967295
         },
         {
           "family": "inet6",
           "local": "::1",
+          "preferred_life_time": 4294967295,
           "prefixlen": 128,
           "protocol": "kernel_lo",
-          "scope": "host"
+          "scope": "host",
+          "valid_life_time": 4294967295
         }
       ],
       "address": "00:00:00:00:00:00",
@@ -107,20 +117,32 @@
     "/hostlab": [
       {
         "kind": "d",
-        "path": "./r2"
+        "path": "./r2",
+        "mode": "755",
+        "uid": "0",
+        "gid": "0"
       },
       {
         "kind": "f",
         "path": "./r2.startup",
+        "mode": "744",
+        "uid": "0",
+        "gid": "0",
         "sha256": "ef1c3f0a84e84d4f5b753150d62d0760c1265c2afc8d0cb0d106fb690919ec05"
       },
       {
         "kind": "d",
-        "path": "./r2/etc"
+        "path": "./r2/etc",
+        "mode": "755",
+        "uid": "0",
+        "gid": "0"
       },
       {
         "kind": "f",
         "path": "./r2/etc/radvd.conf",
+        "mode": "644",
+        "uid": "0",
+        "gid": "0",
         "sha256": "63ec90cc7d4dbddf0f332fb428bee2b6c33fa8e96f66ae2b9a46ca2b219946d2"
       }
     ],

@@ -15,8 +15,10 @@
           "family": "inet",
           "label": "eth0",
           "local": "10.0.13.2",
+          "preferred_life_time": 4294967295,
           "prefixlen": 30,
-          "scope": "global"
+          "scope": "global",
+          "valid_life_time": 4294967295
         }
       ],
       "address": "00:00:00:00:00:b1",
@@ -41,8 +43,10 @@
           "family": "inet",
           "label": "eth1",
           "local": "100.50.25.76",
+          "preferred_life_time": 4294967295,
           "prefixlen": 26,
-          "scope": "global"
+          "scope": "global",
+          "valid_life_time": 4294967295
         }
       ],
       "address": "00:00:00:00:00:a1",
@@ -67,8 +71,10 @@
           "family": "inet",
           "label": "eth2",
           "local": "100.50.25.206",
+          "preferred_life_time": 4294967295,
           "prefixlen": 26,
-          "scope": "global"
+          "scope": "global",
+          "valid_life_time": 4294967295
         }
       ],
       "address": "00:00:00:00:00:a2",
@@ -93,8 +99,10 @@
           "family": "inet",
           "label": "eth3",
           "local": "100.50.25.11",
+          "preferred_life_time": 4294967295,
           "prefixlen": 26,
-          "scope": "global"
+          "scope": "global",
+          "valid_life_time": 4294967295
         }
       ],
       "address": "00:00:00:00:00:a3",
@@ -119,8 +127,10 @@
           "family": "inet",
           "label": "eth4",
           "local": "100.50.25.145",
+          "preferred_life_time": 4294967295,
           "prefixlen": 26,
-          "scope": "global"
+          "scope": "global",
+          "valid_life_time": 4294967295
         }
       ],
       "address": "00:00:00:00:00:a4",
@@ -145,8 +155,10 @@
           "family": "inet",
           "label": "lo",
           "local": "127.0.0.1",
+          "preferred_life_time": 4294967295,
           "prefixlen": 8,
-          "scope": "host"
+          "scope": "host",
+          "valid_life_time": 4294967295
         }
       ],
       "address": "00:00:00:00:00:00",
@@ -182,11 +194,17 @@
     "/hostlab": [
       {
         "kind": "d",
-        "path": "./router1"
+        "path": "./router1",
+        "mode": "755",
+        "uid": "0",
+        "gid": "0"
       },
       {
         "kind": "f",
         "path": "./router1.startup",
+        "mode": "744",
+        "uid": "0",
+        "gid": "0",
         "sha256": "c10e02f224f0c8f4f69d5817bb1e225f3cbc1b2c16c3d3ba5c6333ce3ebfc3b2"
       }
     ],

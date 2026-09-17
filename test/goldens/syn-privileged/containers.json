@@ -16,6 +16,8 @@
     "shell_label": "/bin/bash",
     "cap_add": [],
     "privileged": true,
+    "tty": true,
+    "open_stdin": true,
     "sysctls": [
       "net.ipv4.conf.all.rp_filter=0",
       "net.ipv4.conf.default.rp_filter=0",
@@ -40,6 +42,9 @@
       "bash"
     ],
     "network_mode": "kathara_<USER>_A_<LABHASH>",
+    "binds": [
+      "<LABDIR>/shared:/shared:rw"
+    ],
     "mounts": [
       {
         "type": "volume",

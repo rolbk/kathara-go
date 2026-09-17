@@ -22,6 +22,8 @@
       "CAP_SYS_ADMIN"
     ],
     "privileged": false,
+    "tty": true,
+    "open_stdin": true,
     "sysctls": [
       "net.ipv4.conf.all.rp_filter=0",
       "net.ipv4.conf.default.rp_filter=0",
@@ -48,6 +50,9 @@
       "bash"
     ],
     "network_mode": "kathara_<USER>_A_<LABHASH>",
+    "binds": [
+      "<LABDIR>/shared:/shared:rw"
+    ],
     "mounts": [
       {
         "type": "volume",
@@ -161,6 +166,8 @@
       "CAP_SYS_ADMIN"
     ],
     "privileged": false,
+    "tty": true,
+    "open_stdin": true,
     "sysctls": [
       "net.ipv4.conf.all.rp_filter=0",
       "net.ipv4.conf.default.rp_filter=0",
@@ -187,6 +194,9 @@
       "bash"
     ],
     "network_mode": "kathara_<USER>_D_<LABHASH>",
+    "binds": [
+      "<LABDIR>/shared:/shared:rw"
+    ],
     "mounts": [
       {
         "type": "volume",
@@ -300,6 +310,8 @@
       "CAP_SYS_ADMIN"
     ],
     "privileged": false,
+    "tty": true,
+    "open_stdin": true,
     "sysctls": [
       "net.ipv4.conf.all.rp_filter=0",
       "net.ipv4.conf.default.rp_filter=0",
@@ -326,6 +338,9 @@
       "bash"
     ],
     "network_mode": "kathara_<USER>_K_<LABHASH>",
+    "binds": [
+      "<LABDIR>/shared:/shared:rw"
+    ],
     "mounts": [
       {
         "type": "volume",
@@ -439,6 +454,8 @@
       "CAP_SYS_ADMIN"
     ],
     "privileged": false,
+    "tty": true,
+    "open_stdin": true,
     "sysctls": [
       "net.ipv4.conf.all.rp_filter=0",
       "net.ipv4.conf.default.rp_filter=0",
@@ -465,6 +482,9 @@
       "bash"
     ],
     "network_mode": "kathara_<USER>_N_<LABHASH>",
+    "binds": [
+      "<LABDIR>/shared:/shared:rw"
+    ],
     "mounts": [
       {
         "type": "volume",
@@ -578,6 +598,8 @@
       "CAP_SYS_ADMIN"
     ],
     "privileged": false,
+    "tty": true,
+    "open_stdin": true,
     "sysctls": [
       "net.ipv4.conf.all.rp_filter=0",
       "net.ipv4.conf.default.rp_filter=0",
@@ -602,6 +624,9 @@
       "bash"
     ],
     "network_mode": "kathara_<USER>_C_<LABHASH>",
+    "binds": [
+      "<LABDIR>/shared:/shared:rw"
+    ],
     "mounts": [
       {
         "type": "volume",
@@ -666,6 +691,8 @@
       "CAP_SYS_ADMIN"
     ],
     "privileged": false,
+    "tty": true,
+    "open_stdin": true,
     "sysctls": [
       "net.ipv4.conf.all.rp_filter=0",
       "net.ipv4.conf.default.rp_filter=0",
@@ -690,6 +717,9 @@
       "bash"
     ],
     "network_mode": "kathara_<USER>_U_<LABHASH>",
+    "binds": [
+      "<LABDIR>/shared:/shared:rw"
+    ],
     "mounts": [
       {
         "type": "volume",
@@ -754,6 +784,8 @@
       "CAP_SYS_ADMIN"
     ],
     "privileged": false,
+    "tty": true,
+    "open_stdin": true,
     "sysctls": [
       "net.ipv4.conf.all.rp_filter=0",
       "net.ipv4.conf.default.rp_filter=0",
@@ -778,6 +810,9 @@
       "bash"
     ],
     "network_mode": "kathara_<USER>_V_<LABHASH>",
+    "binds": [
+      "<LABDIR>/shared:/shared:rw"
+    ],
     "mounts": [
       {
         "type": "volume",
@@ -842,6 +877,8 @@
       "CAP_SYS_ADMIN"
     ],
     "privileged": false,
+    "tty": true,
+    "open_stdin": true,
     "sysctls": [
       "net.ipv4.conf.all.rp_filter=0",
       "net.ipv4.conf.default.rp_filter=0",
@@ -866,6 +903,9 @@
       "bash"
     ],
     "network_mode": "kathara_<USER>_Z_<LABHASH>",
+    "binds": [
+      "<LABDIR>/shared:/shared:rw"
+    ],
     "mounts": [
       {
         "type": "volume",
@@ -930,6 +970,8 @@
       "CAP_SYS_ADMIN"
     ],
     "privileged": false,
+    "tty": true,
+    "open_stdin": true,
     "sysctls": [
       "net.ipv4.conf.all.rp_filter=0",
       "net.ipv4.conf.default.rp_filter=0",
@@ -954,6 +996,9 @@
       "bash"
     ],
     "network_mode": "kathara_<USER>_M_<LABHASH>",
+    "binds": [
+      "<LABDIR>/shared:/shared:rw"
+    ],
     "mounts": [
       {
         "type": "volume",
@@ -1018,6 +1063,8 @@
       "CAP_SYS_ADMIN"
     ],
     "privileged": false,
+    "tty": true,
+    "open_stdin": true,
     "sysctls": [
       "net.ipv4.conf.all.rp_filter=0",
       "net.ipv4.conf.default.rp_filter=0",
@@ -1042,6 +1089,9 @@
       "bash"
     ],
     "network_mode": "kathara_<USER>_F_<LABHASH>",
+    "binds": [
+      "<LABDIR>/shared:/shared:rw"
+    ],
     "mounts": [
       {
         "type": "volume",
@@ -1106,6 +1156,8 @@
       "CAP_SYS_ADMIN"
     ],
     "privileged": false,
+    "tty": true,
+    "open_stdin": true,
     "sysctls": [
       "net.ipv4.conf.all.rp_filter=0",
       "net.ipv4.conf.default.rp_filter=0",
@@ -1130,6 +1182,9 @@
       "bash"
     ],
     "network_mode": "kathara_<USER>_P_<LABHASH>",
+    "binds": [
+      "<LABDIR>/shared:/shared:rw"
+    ],
     "mounts": [
       {
         "type": "volume",
@@ -1194,6 +1249,8 @@
       "CAP_SYS_ADMIN"
     ],
     "privileged": false,
+    "tty": true,
+    "open_stdin": true,
     "sysctls": [
       "net.ipv4.conf.all.rp_filter=0",
       "net.ipv4.conf.default.rp_filter=0",
@@ -1218,6 +1275,9 @@
       "bash"
     ],
     "network_mode": "kathara_<USER>_W_<LABHASH>",
+    "binds": [
+      "<LABDIR>/shared:/shared:rw"
+    ],
     "mounts": [
       {
         "type": "volume",
@@ -1282,6 +1342,8 @@
       "CAP_SYS_ADMIN"
     ],
     "privileged": false,
+    "tty": true,
+    "open_stdin": true,
     "sysctls": [
       "net.ipv4.conf.all.rp_filter=0",
       "net.ipv4.conf.default.rp_filter=0",
@@ -1308,6 +1370,9 @@
       "bash"
     ],
     "network_mode": "kathara_<USER>_A_<LABHASH>",
+    "binds": [
+      "<LABDIR>/shared:/shared:rw"
+    ],
     "mounts": [
       {
         "type": "volume",
@@ -1421,6 +1486,8 @@
       "CAP_SYS_ADMIN"
     ],
     "privileged": false,
+    "tty": true,
+    "open_stdin": true,
     "sysctls": [
       "net.ipv4.conf.all.rp_filter=0",
       "net.ipv4.conf.default.rp_filter=0",
@@ -1447,6 +1514,9 @@
       "bash"
     ],
     "network_mode": "kathara_<USER>_B_<LABHASH>",
+    "binds": [
+      "<LABDIR>/shared:/shared:rw"
+    ],
     "mounts": [
       {
         "type": "volume",
@@ -1560,6 +1630,8 @@
       "CAP_SYS_ADMIN"
     ],
     "privileged": false,
+    "tty": true,
+    "open_stdin": true,
     "sysctls": [
       "net.ipv4.conf.all.rp_filter=0",
       "net.ipv4.conf.default.rp_filter=0",
@@ -1586,6 +1658,9 @@
       "bash"
     ],
     "network_mode": "kathara_<USER>_K_<LABHASH>",
+    "binds": [
+      "<LABDIR>/shared:/shared:rw"
+    ],
     "mounts": [
       {
         "type": "volume",
@@ -1699,6 +1774,8 @@
       "CAP_SYS_ADMIN"
     ],
     "privileged": false,
+    "tty": true,
+    "open_stdin": true,
     "sysctls": [
       "net.ipv4.conf.all.rp_filter=0",
       "net.ipv4.conf.default.rp_filter=0",
@@ -1725,6 +1802,9 @@
       "bash"
     ],
     "network_mode": "kathara_<USER>_L_<LABHASH>",
+    "binds": [
+      "<LABDIR>/shared:/shared:rw"
+    ],
     "mounts": [
       {
         "type": "volume",
@@ -1838,6 +1918,8 @@
       "CAP_SYS_ADMIN"
     ],
     "privileged": false,
+    "tty": true,
+    "open_stdin": true,
     "sysctls": [
       "net.ipv4.conf.all.rp_filter=0",
       "net.ipv4.conf.default.rp_filter=0",
@@ -1864,6 +1946,9 @@
       "bash"
     ],
     "network_mode": "kathara_<USER>_G_<LABHASH>",
+    "binds": [
+      "<LABDIR>/shared:/shared:rw"
+    ],
     "mounts": [
       {
         "type": "volume",
@@ -1977,6 +2062,8 @@
       "CAP_SYS_ADMIN"
     ],
     "privileged": false,
+    "tty": true,
+    "open_stdin": true,
     "sysctls": [
       "net.ipv4.conf.all.rp_filter=0",
       "net.ipv4.conf.default.rp_filter=0",
@@ -2003,6 +2090,9 @@
       "bash"
     ],
     "network_mode": "kathara_<USER>_H_<LABHASH>",
+    "binds": [
+      "<LABDIR>/shared:/shared:rw"
+    ],
     "mounts": [
       {
         "type": "volume",

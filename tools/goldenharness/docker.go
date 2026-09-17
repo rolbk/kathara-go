@@ -117,6 +117,8 @@ type rawContainer struct {
 		Entrypoint []string          `json:"Entrypoint"`
 		Image      string            `json:"Image"`
 		Labels     map[string]string `json:"Labels"`
+		Tty        bool              `json:"Tty"`
+		OpenStdin  bool              `json:"OpenStdin"`
 	} `json:"Config"`
 	HostConfig struct {
 		NetworkMode  string                   `json:"NetworkMode"`
@@ -127,7 +129,12 @@ type rawContainer struct {
 		Sysctls      map[string]string        `json:"Sysctls"`
 		Memory       int64                    `json:"Memory"`
 		NanoCpus     int64                    `json:"NanoCpus"`
-		Ulimits      []struct {
+		// Binds is the request Kathara made, echoed back verbatim: the
+		// `HostConfig.Binds` list, in the order `DockerMachine.py:300-325`
+		// built it. The `Mounts` array below is the daemon's own rebuilt view
+		// of the same thing and is sorted; this one is not.
+		Binds   []string `json:"Binds"`
+		Ulimits []struct {
 			Name string `json:"Name"`
 			Soft int64  `json:"Soft"`
 			Hard int64  `json:"Hard"`
@@ -168,9 +175,12 @@ type rawNetwork struct {
 	Driver     string            `json:"Driver"`
 	Internal   bool              `json:"Internal"`
 	Attachable bool              `json:"Attachable"`
+	EnableIPv6 bool              `json:"EnableIPv6"`
+	Options    map[string]string `json:"Options"`
 	Labels     map[string]string `json:"Labels"`
 	IPAM       struct {
-		Driver string `json:"Driver"`
+		Driver string           `json:"Driver"`
+		Config []map[string]any `json:"Config"`
 	} `json:"IPAM"`
 }
 

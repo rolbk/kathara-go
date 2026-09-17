@@ -1,7 +1,7 @@
 {
   "device": "nstest",
   "ip_br_link": [
-    "eth0 UP <MAC> <BROADCAST,MULTICAST,UP,LOWER_UP>",
+    "eth0 UP <MAC4> <BROADCAST,MULTICAST,UP,LOWER_UP>",
     "lo UNKNOWN 00:00:00:00:00:00 <LOOPBACK,UP,LOWER_UP>"
   ],
   "ip_addr": [
@@ -11,11 +11,13 @@
           "family": "inet",
           "label": "eth0",
           "local": "20.0.0.3",
+          "preferred_life_time": 4294967295,
           "prefixlen": 24,
-          "scope": "global"
+          "scope": "global",
+          "valid_life_time": 4294967295
         }
       ],
-      "address": "<MAC>",
+      "address": "<MAC4>",
       "broadcast": "ff:ff:ff:ff:ff:ff",
       "flags": [
         "BROADCAST",
@@ -37,8 +39,10 @@
           "family": "inet",
           "label": "lo",
           "local": "127.0.0.1",
+          "preferred_life_time": 4294967295,
           "prefixlen": 8,
-          "scope": "host"
+          "scope": "host",
+          "valid_life_time": 4294967295
         }
       ],
       "address": "00:00:00:00:00:00",
@@ -67,39 +71,63 @@
     "/hostlab": [
       {
         "kind": "d",
-        "path": "./nstest"
+        "path": "./nstest",
+        "mode": "755",
+        "uid": "0",
+        "gid": "0"
       },
       {
         "kind": "f",
         "path": "./nstest.startup",
+        "mode": "744",
+        "uid": "0",
+        "gid": "0",
         "sha256": "1164c80cfb9b7cfb583f8b346e7b6c7eedeaa4e3c54973812f82c22714872ebb"
       },
       {
         "kind": "d",
-        "path": "./nstest/etc"
+        "path": "./nstest/etc",
+        "mode": "755",
+        "uid": "0",
+        "gid": "0"
       },
       {
         "kind": "d",
-        "path": "./nstest/etc/bind"
+        "path": "./nstest/etc/bind",
+        "mode": "755",
+        "uid": "0",
+        "gid": "0"
       },
       {
         "kind": "f",
         "path": "./nstest/etc/bind/db.root",
+        "mode": "644",
+        "uid": "0",
+        "gid": "0",
         "sha256": "b2803a94edb50e9eab8b46efc62f388bdaadff786672d5e43029484cf1617623"
       },
       {
         "kind": "f",
         "path": "./nstest/etc/bind/db.test",
+        "mode": "644",
+        "uid": "0",
+        "gid": "0",
         "sha256": "b4c0d36ffcfec36cf6483a8c5eb8cf532e130afa66f8f18645a1c7bcd0b2705b"
       },
       {
         "kind": "f",
         "path": "./nstest/etc/bind/named.conf",
+        "mode": "644",
+        "uid": "0",
+        "gid": "0",
         "sha256": "8af86a9892f61cf9de2f958e2809a29116db57d7e1881ab05df76f814acf8d36"
       },
       {
         "kind": "f",
         "path": "./nstest/etc/bind/named.conf.options",
+        "mode": "644",
+        "uid": "0",
+        "gid": "0",
         "sha256": "56034d2701321b7cac28b6e6cf4dc4ce96da2d125ed29f68a5c40d265f3ab2a6"
       }
     ],

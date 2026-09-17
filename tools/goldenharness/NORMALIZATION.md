@@ -52,7 +52,7 @@ tokenized through its components rather than as a whole.
 | `<ANONVOL>`, `<ANONVOL_PATH>` | The `Name` and `Source` of a mount whose type is `volume` and whose name is a 64-hex id. | The `kathara/base` image declares `VOLUME /hosthome`, so every device gets a fresh anonymous volume with a random id. Recorded structurally (by mount type and name shape) rather than by a blanket hex-pattern rewrite, because a blanket rewrite would also destroy the sha256 digests in the file-tree probe. |
 | `<KATHARA>` | The binary under test, in every recorded `argv`. | The whole point of `KATHARA_CMD` is that the same goldens replay against the Python oracle and the Go build. Recording `/root/kathara/pyvenv/bin/python -m kathara` in `commands.json` would guarantee a diff on the first Go run. |
 | `<IFINDEX>` | The number in the `@if<n>` peer suffix that `ip link` renders for a veth whose peer sits in another network namespace, e.g. `24-pox-arp-handler`'s `controller` recording `eth1@if451`. **`ip -br link` output only.** | The peer's ifindex is a host-global counter over every interface ever created on the box, so two recordings on the same host differ (451 vs 492 was the observed pair). `ip -j addr`'s equivalent `link_index` key is dropped outright by rule 7; this is the same fact in `ip link`'s text rendering. The `@if` marker itself is **kept**: that a `bridged` device's second interface is one end of a cross-namespace veth — as opposed to a `katharanp_vde` interface, which has no peer suffix — is a real assertion. Scoped to the one probe that can produce the suffix so it can never touch a lab-configured string. |
-| `<DOCKERIP>`, `<DOCKERIP6>` | The `IPAddress` and `GlobalIPv6Address` that `docker inspect` reports for an endpoint on a **non-Kathara** network, registered as literals before any text is rendered. Additionally, in `/etc/hosts` only, any address in `172.16.0.0/12` or `192.168.0.0/16`. | A `bridged` device is also attached to the default `bridge` network and receives an address from Docker's allocation pool. The address depends on daemon-wide allocation order across every container that ever ran, not on the lab: `05-two-computers`'s `wireshark` records `... scope link src 172.17.0.2` in `ip route`, and a host that already had a container on the bridge would record `.3`. Tokenizing the *observed* address rather than the whole private-address space is what keeps lab-configured addresses — including the labs that legitimately use `172.16.0.0/12` — byte-exact in `ip addr` and `ip route`. The gateway and subnet (`172.17.0.1`, `172.17.0.0/16`) are daemon configuration, not run state, and are deliberately left exact. The blanket `/etc/hosts` rule is kept as belt and braces. |
+| `<DOCKERIP>`, `<DOCKERIP6>` | The `IPAddress` and `GlobalIPv6Address` that `docker inspect` reports for an endpoint on a **non-Kathara** network, registered as literals before any text is rendered. | A `bridged` device is also attached to the default `bridge` network and receives an address from Docker's allocation pool. The address depends on daemon-wide allocation order across every container that ever ran, not on the lab: `05-two-computers`'s `wireshark` records `... scope link src 172.17.0.2` in `ip route`, and a host that already had a container on the bridge would record `.3`. Tokenizing the *observed* address rather than the whole private-address space is what keeps lab-configured addresses — including the labs that legitimately use `172.16.0.0/12` — byte-exact in `ip addr` and `ip route`. The gateway and subnet (`172.17.0.1`, `172.17.0.0/16`) are daemon configuration, not run state, and are deliberately left exact. **An earlier revision also rewrote every `172.16.0.0/12` and `192.168.0.0/16` address in `/etc/hosts`, "as belt and braces". Removed.** The literal registration above already covers the only daemon-allocated address that can reach that file, and it runs before any text is rendered, so the blanket rule had nothing left to catch: it fired **zero times across all 47 goldens**. What it could still do is destroy a real assertion — Docker writes container addresses into `/etc/hosts`, and a lab addressed out of `192.168.0.0/16` (the corpus has several) would have had its own addresses silently tokenized there while staying exact two files away in `ip addr`. A normalization that never removes nondeterminism and can only delete assertions is not belt and braces; it is a hole. |
 
 ## 3. MAC addresses
 
@@ -63,13 +63,70 @@ instruction is **inverted** for the default path:
    lab pinned explicitly, i.e. the values of the `kathara.mac_addr` driver opt
    observed in `docker inspect`. That opt is only set when `lab.conf` uses the
    `machine[N]="cd/mac"` syntax.
-2. Every MAC-shaped token in every recorded string is replaced with `<MAC>`
-   **unless** it is in that set, or is one of the two constants
-   `00:00:00:00:00:00` (loopback) and `ff:ff:ff:ff:ff:ff` (broadcast), which
-   carry no identity. A MAC-shaped match directly adjacent to a `:` is the
-   interior of a longer colon-hex run — an IPv6 address such as
+2. Every MAC-shaped token in every recorded string is replaced with a **keyed**
+   token — `<MAC1>` for the first distinct address the scenario scrubs,
+   `<MAC2>` for the second, and so on, with every later occurrence of the same
+   address reusing its own token — **unless** it is in that set, or is one of
+   the two constants `00:00:00:00:00:00` (loopback) and `ff:ff:ff:ff:ff:ff`
+   (broadcast), which carry no identity. A MAC-shaped match directly adjacent
+   to a `:` is the interior of a longer colon-hex run — an IPv6 address such as
    `2001:db8:aa:bb:cc:dd:ee:ff`, never a MAC — and is left byte-exact: a lab
    that configures such an address must stay a real assertion.
+
+   The keying is the point. The *value* of an unpinned MAC is random per deploy
+   and cannot be a golden, but three facts about it are not random and were
+   being deleted by a single blanket `<MAC>`: which interface carries which
+   address (**identity** — the same value in `ip -br link` and in `ip -j addr`'s
+   `address`), whether two interfaces share an address (**distinctness** — a
+   port that gave `eth0` and `eth1` the same MAC read identically to one that
+   did not), and how many distinct addresses a device has (**presence**).
+   `21-data-center-bgp`'s `leaf_1_0_1` records four; under the old rule all four
+   were the same three characters.
+
+   Ordinals are assigned in observation order, and the harness makes that order
+   deterministic by construction: `docker inspect` is decoded before any probe
+   runs and its containers are re-sorted by device name (the daemon answers in
+   creation order, i.e. deploy-pool completion order) with each container's
+   endpoints taken in network-name order; devices are then probed in sorted
+   name order; and within a device the `ip -br link` probe — a full dump of the
+   namespace, in ifindex order — runs before every other probe that can carry a
+   MAC, so it is the probe that assigns every ordinal. Note the dump order is
+   *not* simply "the order Kathara created the interfaces": an interface the
+   network plugin hands the container keeps a high in-namespace index
+   (`20-vxlan-base`'s `eth0` records 8057) while a device the `.startup` script
+   creates takes the next low free one (`vtep100` records 2), so the startup's
+   interfaces are numbered first. What matters is only that the order is the
+   same in two runs, and the record-twice byte-diff (README.md, "Proving a
+   recording is deterministic") is what checks that rather than asserting it.
+
+   Residual, accepted: `<LINKLOCAL6>` (point 4) is still a blanket token, so
+   the identity relation between an unpinned MAC and the EUI-64 address derived
+   from it stays unasserted for the interfaces whose MAC is not pinned.
+
+   **`<MACDERIVED>`, the one interface class the keying cannot cover.** Some
+   interfaces do not get a MAC assigned at all — the kernel copies one. A Linux
+   bridge is the case in the corpus: `br_stp_recalculate_bridge_id` sets the
+   bridge's address to the numerically **smallest** MAC among its enslaved
+   ports, recomputed on every enslave. When the ports' own MACs are random per
+   deploy, which port the bridge ends up copying is a coin flip, and the keyed
+   tokens are precisely what makes that visible. `20-vxlan-base`'s
+   `vtep1`/`vtep2` enslave `vtep100` (a kernel-random vxlan address) and `eth0`
+   (a plugin-random one); three consecutive deploys **of the Python oracle**
+   recorded `br100` copying `eth0`, then `vtep100`, then `eth0`. It is not a
+   property of the implementation under test at all.
+
+   A scenario therefore lists such interfaces as `<device>:<ifname>` under
+   `volatile_macs` in the manifest, and their address records as
+   `<MACDERIVED>` in both `ip -br link` and `ip -j addr`. Presence stays
+   asserted — a bridge that came up with no address still fails — while the
+   identity relation nobody controls is waived, and the waiver is written into
+   `scenario.json` so a golden says where it applies. The substitution happens
+   *before* the keyed scrub, so the masked value never claims an ordinal and
+   the surrounding interfaces keep the same tokens however the copy landed.
+   `10-one-bridge`'s `mainbridge` is deliberately **not** listed: its four
+   ports carry MACs the lab pins with the `cd/mac` syntax, so the smallest of
+   them is fixed and `mainbridge == eth0`'s `00:00:00:00:00:b1` is a real
+   assertion.
 3. `containers.json` records `mac_address` **only** for endpoints that carry
    `kathara.mac_addr`, together with an assertion that the effective MAC equals
    the requested one.
@@ -127,16 +184,19 @@ of the contract and a reordering by the Go port is a real defect:
 | Recorded field | ORDERING.tsv row |
 |---|---|
 | `containers[].env` | `Machine.py:200` — `meta['envs']` dict insertion feeds the Docker `Env` list. |
+| `containers[].ulimits` | `Machine.py:236` (`meta['ulimits'][key]=…`, dict insertion) and `DockerMachine.py:229` (`[Ulimit(...) for k, v in machine.get_ulimits().items()]`). Both rows read *deterministic_in_python: yes (insertion)*, and both name `HostConfig.Ulimits` list order in `docker inspect` as golden-visible. **This was sorted by name until schema 2**, on the claim that "the daemon rebuilds the array"; the daemon does not — it echoes `HostConfig` as posted, which is why the ordering audit calls the order golden-visible in the first place. `syn-ulimit` declares `nofile` then `nproc`, whose insertion order happens to equal sorted order, so the stored goldens do not move; the assertion the sort deleted — that a port iterates the ulimit map in lab.conf order rather than in Go map order — is now live. |
 | ~~`containers[].cap_add`~~ | `DockerMachine.py:347` region — a fixed `MACHINE_CAPABILITIES` list literal. **Withdrawn**: the Go Docker SDK reorders the list client-side, so its stored order is not observable from Kathara code on both sides. Now canonicalized (set assertion) — section 10. |
 | `containers[].cmd`, `containers[].entrypoint` | image/`args` metadata, source order. |
-| `commands[].stdout` / `stderr` line order | Whatever plain lines survive rule 6 keep their order (panels, log records, `✓` check lines). Note this does **not** assert deploy submission order: the per-device deploy lines live inside the progress bar rows that rule 6.6 drops, and completion order under the deploy pool is nondeterministic anyway (`DockerMachine.py:178`). Submission order is asserted only where a scenario makes it observable as a side effect — `syn-lab-dep`'s `shared/boot-order.txt`. |
+| `containers[].binds` | `ORDERING.tsv` row 36 / `DockerMachine.py:300-325` — `volumes` is an ordered dict, so `HostConfig.Binds` comes out shared → hosthome → the device's own `volume` options, and the list order is golden-visible. Recorded verbatim (host side tokenized), never sorted, and a `null` from a device with no volumes at all is kept as `null` rather than flattened to `[]`. |
+| `networks[].ipam_config` | The daemon's own array; the `null` IPAM driver synthesizes exactly one `0.0.0.0/0` row and its position is not something either implementation chooses. |
+| `commands[].stdout` / `stderr` line order | Whatever plain lines survive rule 6 keep their order (panels, log records, `✓` check lines, and the completed progress rows). Note this does **not** assert deploy submission order: the bar names no device, only `done/total`, and completion order under the deploy pool is nondeterministic anyway (`DockerMachine.py:178`). What the bar rows do assert is the count, and that collision domains are deployed before devices and torn down after them. Submission order is asserted only where a scenario makes it observable as a side effect — `syn-lab-dep`'s `shared/boot-order.txt`. |
 | `probes[].startup_logs` line order | `DockerMachine.py:546` — `"; ".join(STARTUP_COMMANDS)` plus the `exec_commands` interleave; `/var/log/startup.log` is the observable of that order. |
 
 ### 5.2 Structures sorted because Python's order is genuinely random
 
 | Recorded field | Normalization | ORDERING.tsv row |
 |---|---|---|
-| `containers[].endpoints[].endpoint_sysctls` | The `com.docker.network.endpoint.sysctls` driver-opt string is split on `,` and sorted. | `DockerMachine.py:470` (`!!`): built by `",".join(sysctl_opts)` over a Python **set** of strings, whose iteration order is hash-randomized per process. `DockerMachine.py:441` (`!!`) feeds it from another set. This is the single normalization `ORDERING.tsv` explicitly instructs Layer A to perform. |
+| `containers[].endpoints[].endpoint_sysctls` | The `com.docker.network.endpoint.sysctls` driver-opt string is split on `,` and sorted. Nothing else: elements are **not** trimmed and empty ones are **not** dropped. | `DockerMachine.py:470` (`!!`): built by `",".join(sysctl_opts)` over a Python **set** of strings, whose iteration order is hash-randomized per process. `DockerMachine.py:441` (`!!`) feeds it from another set. This is the single normalization `ORDERING.tsv` explicitly instructs Layer A to perform — the *order* is the nondeterminism, and split+sort is the whole sanctioned repair. The trim-and-drop-empties that used to run alongside it had no nondeterminism source at all: `",".join` over a set of `k=v` strings can only yield an empty element from an empty set member or a stray separator, and leading whitespace can only come from a malformed sysctl name. Both are defects in what Kathara put on the wire, and silently repairing them meant a port that emitted `a=1,,b=2` recorded the same bytes as one that did not. |
 
 ### 5.3 Structures sorted because the *observation* has no defined order
 
@@ -148,13 +208,12 @@ order in the first place.
 | `containers[]` | device name | `docker inspect` returns containers in the order the ids were passed, which comes from `docker ps -aq` (creation order, descending). Creation order is thread-completion order under Kathara's deploy pool — inherently nondeterministic (`DockerMachine.py:178`) and equally so in Go. Deploy *submission* order is asserted through `commands[].stdout`, not through this array. |
 | `networks[]` | collision-domain name | Same, via `DockerLink.py:66`. |
 | `containers[].sysctls` | `"k=v"` string | The daemon returns `HostConfig.Sysctls` as a JSON object; object key order is not meaningful. Kathara's own merge precedence (`DockerMachine.py:295`) is a semantic, not an ordering, property and survives sorting. |
-| `containers[].ulimits` | ulimit name | Recorded from a JSON array the daemon rebuilds; the Python insertion order (`Machine.py:236`) is asserted by *membership and values*, which sorting preserves. |
-| `containers[].mounts` | destination, then source | `HostConfig.Binds` order (`DockerMachine.py:305`) is asserted by the set of mounts and their modes; the `Mounts` array the daemon reports is a rebuilt view, not the input list. |
+| `containers[].mounts` | destination, then source | The `Mounts` array the daemon reports is a rebuilt view, not the input list, and it has no documented order. The input list is not lost: `containers[].binds` records `HostConfig.Binds` — the request as Kathara posted it — verbatim, and section 5.1's ordering rule applies to it. |
 | `containers[].endpoints[]` | `kathara.iface`, then network name | `NetworkSettings.Networks` is a JSON object. Sorting by the interface number recovers the ordering that actually matters (`Machine.py:67`, `DockerMachine.py:525`) instead of relying on map order. |
 | `probes[].ip_br_link` | whole line | Kernel dump order follows `ifindex`, which is host-global and depends on every interface ever created on the box. |
-| `probes[].ip_addr` | `ifname`; `addr_info` entries by canonical JSON | Same reason; `addr_info` is additionally sorted because SLAAC addresses can appear asynchronously. Other nested arrays, notably `flags`, keep kernel order — that order is deterministic and worth asserting. |
+| `probes[].ip_addr` | `ifname` **only** | Interface order in the dump follows `ifindex`, which is host-global. Nothing *inside* an interface object is reordered any more. `addr_info` used to be sorted by canonical JSON "because SLAAC addresses can appear asynchronously", and that stopped being a reason the moment rule 7 began dropping every `kernel_ra` entry whole: dropping preserves the relative order of the entries that survive, so the asynchrony the rule named could no longer reach the recording. What survives is the lab's own static addresses and the kernel's link-local, added in a fixed order — link-local at carrier-up, statics by the `.startup` script — so their order is an assertion about what the port configured, not an artifact of the observation. Two pieces of evidence back the removal. The sort is a **no-op on all 47 recordings** (every stored `addr_info` array is already in canonical-JSON order; checked directly), so nothing churned and no golden depends on it either way. And it was reachable: canonical JSON orders a static `2001::…` before the `fe80::…` link-local the kernel lists it *after*, so the first lab in the corpus to configure a static global IPv6 address — none does today, `06-basic-ipv6`'s globals are all RA-learned and dropped — would have had that assertion silently reordered away. `flags` and every other nested array kept kernel order all along. |
 | `probes[].ip_route` | whole line | Kernel route dump order is not specified. Only enabled for scenarios whose routing table is fully static (see the manifest); labs running FRR/Quagga converge nondeterministically and record static facets only. |
-| `probes[].fs_trees[]` | path | `find` output is `readdir` order. It is already sorted inside the container under `LC_ALL=C` and re-sorted here. Matches `ORDERING.tsv` `Machine.py:392`: "walk in sorted order; extracted tree identical; do NOT golden-compare raw tar bytes" — which is exactly why the file tree is recorded as paths plus sha256 of contents rather than as tar bytes. |
+| `probes[].fs_trees[]` | path | `find` output is `readdir` order. It is already sorted inside the container under `LC_ALL=C` and re-sorted here. Matches `ORDERING.tsv` `Machine.py:392`: "walk in sorted order; extracted tree identical; do NOT golden-compare raw tar bytes" — which is exactly why the file tree is recorded as paths plus sha256 of contents rather than as tar bytes. Each entry also carries `stat`'s `%a`, `%u` and `%g`: `pack_data` builds its tar from the host tree and the bind mounts carry the host's ownership through, so a port that rewrote a mode, dropped an exec bit or chowned the tree while shipping byte-identical content was previously invisible. `stat` is run without `-L`, so a symlink reports its own mode; an image with no usable `stat` yields an empty triple rather than failing the walk. |
 | `teardown.kathara_networks` | name | Must be empty; sorted so a failure diff is stable. |
 
 ## 6. Text stream normalization
@@ -190,26 +249,49 @@ Applied in this order to every captured stdout/stderr:
    content never embeds host paths, so their 80-column layout stays byte-exact.
 4. **Literal token substitution** (section 2), longest source first.
 5. **MAC and link-local scrubbing** (section 3).
-6. **Progress-bar lines dropped.** Any line containing one of the `rich` bar
-   glyphs `━ ╸ ╹ ╺ ╻` (U+2501, U+2578–U+257B) is removed. These lines are
-   `[Deploying devices] ━━━━━ 3/3`: the bar width is a function of console
-   width and of how many redraws the run happened to emit. The panel borders
-   use a different block (U+2500, U+2502 and corners) and are **kept**, so the
-   lab metadata panel remains a byte-exact assertion. Deploy counts are not
-   lost: `containers.json` and `networks.json` record what was actually
-   created.
-   The same rule drops any line containing a glyph from the braille block
-   (U+2800–U+28FF), which is `rich`'s **spinner** column. Which spinner frame
-   is on screen is a function of elapsed time, so it differs between two runs
-   of the same scenario. The spinner survives the bar rule only when the
-   progress display is torn down before a bar is ever drawn, i.e. on a fast
-   failure: `syn-volume`'s pre-fix recording ended with
-   `[Deploying devices] ⠋ … 0/1`.
+6. **Unfinished progress renders dropped; the completed one kept.** A line
+   containing a glyph from the braille block (U+2800–U+28FF) — `rich`'s
+   **spinner** column — is removed. Which spinner frame is on screen is a
+   function of elapsed time, so it differs between two runs of the same
+   scenario.
+
+   That is the whole rule, and it is narrower than it used to be. Every line
+   carrying a `rich` bar glyph (`━ ╸ ╹ ╺ ╻`, U+2501 and U+2578–U+257B) was
+   dropped as well, justified as "the bar width is a function of console width
+   and of how many redraws the run happened to emit". The second half is false
+   for every recording this harness makes. `rich.live.Live.refresh` takes the
+   `not self._started and not self.transient` arm on a non-terminal — it
+   suppresses every intermediate refresh and prints the render exactly **once**,
+   at `stop()` — so a recording contains one row per progress bar, not a redraw
+   history. And `HandleProgressBar` builds its `Progress` out of
+   `TextColumn(description)`, `SpinnerColumn`, `BarColumn(bar_width=None)` and
+   `MofNCompleteColumn` with `expand=True`: no elapsed-time column, no
+   remaining-time column, nothing else clock-derived. At the pinned
+   `COLUMNS=80` the row is a pure function of the description, the counts and
+   the console width, and `syn-lab-dep` records it byte-for-byte as
+
+   ```
+   [Deploying collision domains]   ━━…━━ 1/1
+   [Deploying devices]   ━━…━━ 3/3
+   ```
+
+   which is a real assertion — that the deploy ran to completion, over the right
+   number of items, in the right order relative to the collision domains — and
+   dropping it deleted one. `SpinnerColumn` renders its finished text (a blank)
+   once `completed >= total`, so the braille rule above is exactly the "this
+   render caught the bar mid-flight" test: `syn-volume`'s pre-fix recording
+   ended with `[Deploying devices] ⠋ … 0/1` and is still dropped, and so is any
+   partial bar, whose unfilled half `rich` and the port spell differently.
+   Panel borders use a different block (U+2500, U+2502 and corners) and were
+   never affected.
 7. **Image-pull progress dropped.** Lines matching `^[0-9a-f]{12}: ` (per-layer
    progress) and the `Downloading` / `Extracting` / `Pull complete` /
    `Verifying Checksum` / `Waiting` / `Already exists` / `Digest:` / `Status:`
-   families. These depend on layer count, network speed and what the local
-   image cache already had. The `Pulling image \`X\`...` log line is
+   families, plus `HandleDockerImagePull`'s own bar rows, which start
+   `[Downloading <layer id>]` or `[Download Complete <layer id>]`. These depend
+   on layer count, network speed and what the local image cache already had —
+   and the last two only need naming here because rule 6 no longer drops
+   everything with a bar glyph in it. The `Pulling image \`X\`...` log line is
    deliberately **kept**: it means the image was missing, which is a real
    signal about the run and not progress noise.
 8. **Trailing whitespace trimmed per line; trailing blank lines removed.**
@@ -218,10 +300,20 @@ Applied in this order to every captured stdout/stderr:
 
 ## 7. `ip -j addr` field filtering
 
-Dropped keys, all host-global or time-derived:
+Dropped keys, all host-global or namespace-scoped:
 `ifindex`, `link_index`, `link_netnsid`, `altnames` / `alt_names`,
-`valid_life_time`, `preferred_life_time`, `parentbus`, `parentdev`,
-`tentative`, `optimistic`, `dadfailed`.
+`parentbus`, `parentdev`, `tentative`, `optimistic`, `dadfailed`.
+
+`valid_life_time` and `preferred_life_time` were dropped alongside them as
+"time-derived". That is only true of an address the kernel *learned*: every
+entry that survives the `kernel_ra` filter below is either configured by the
+lab's `.startup` or generated by the kernel at carrier-up, and both report the
+constant `4294967295` — iproute2's "forever". Checked directly on a `kathara/base`
+device (`ip -j addr` for `lo`'s `127.0.0.1` and `eth0`'s static `10.0.0.1`, both
+`4294967295`/`4294967295`) and across the re-recorded corpus. They are now
+**kept**, which turns a permanent address into an assertion that it is
+permanent: a port that handed the kernel a lease, or that let a lab address be
+installed as a temporary one, would show it here.
 
 The last three are the Duplicate Address Detection state machine. An address is
 `tentative` from assignment until DAD completes — one solicitation and a
@@ -255,8 +347,9 @@ pinned MACs (section 3.4).
 
 Everything else — `ifname`, `flags`, `mtu`, `qdisc`, `operstate`, `group`,
 `txqlen`, `link_type`, `broadcast`, and every remaining `addr_info` entry's
-`family`, `local`, `prefixlen`, `scope`, `protocol`, `label` — is kept and
-compared exactly.
+`family`, `local`, `prefixlen`, `scope`, `protocol`, `label`,
+`valid_life_time`, `preferred_life_time` — is kept and compared exactly, in
+the kernel's own order (section 5.3).
 
 ## 8. Host-state hygiene
 
@@ -316,9 +409,13 @@ Not normalization, but part of what makes a recording reproducible.
 |---|---|
 | Exit codes. | The whole error taxonomy (`PORT_SPEC` §4.3) is observable here. |
 | The `rich` metadata panel and its box-drawing borders. | Deterministic once `COLUMNS` is pinned. A padding change in the Go port's `lipgloss` rendering is a real user-visible difference and should fail. |
-| sha256 of every file in `/hostlab` and `/shared`. | This is the assertion that `pack_data` shipped the right bytes. |
+| sha256, mode, uid and gid of every file in `/hostlab` and `/shared`. | The sha256 is the assertion that `pack_data` shipped the right bytes; the `stat` triple is the assertion that it shipped them with the right permissions and ownership. `01-simple-configuration` records `/hostlab/pc1.startup` at `744`, which is `pack_data`'s `0644` plus the `chmod u+x /hostlab/{machine_name}.startup` of `STARTUP_COMMANDS` — a fact spanning both halves of the deploy that nothing observed before schema 2. |
+| The completed progress rows. | Rule 6.6. `[Deploying collision domains]   ━…━ 1/1` and its three siblings are byte-exact at a pinned `COLUMNS`, and they are the only record that the deploy and the teardown ran over the right number of items in the right order. |
 | `containers[].labels`, minus tokenized values. | `name`, `lab_hash`, `user`, `app`, `shell`, `bridged_iface` are the contract the manager uses to find its own objects. |
+| `containers[].tty`, `containers[].open_stdin`. | `tty=True` and `stdin_open=True` are unconditional in `DockerMachine.create`'s kwargs and both are user-visible: without a TTY, `kathara connect` is unusable and every startup script's output loses its line discipline. Nothing recorded them before schema 2, which made a lost `tty=True` the most consequential untested create parameter in the whole request. |
+| `containers[].binds`. | The `HostConfig.Binds` list as posted, verbatim and in order (section 5.1). The daemon's rebuilt `Mounts` view was recorded all along, but it drops the request's order and reshapes the `host:guest:mode` triple, so a port that mounted `/shared` read-only or reordered the three binds was only partly observable. |
 | `networks[].external`. | `lab.ext` is deferred, and `DockerLink.py:145` requires the label to be the empty string in 1.0. Recording it pins that. |
+| `networks[].enable_ipv6`, `networks[].ipam_config`, `networks[].options`. | The rest of what `DockerLink.create`'s `networks.create(...)` decides. Python passes `ipam=IPAMConfig(driver='null')` and nothing else, so the daemon answers `EnableIPv6: false`, the single `0.0.0.0/0` row the null driver synthesizes, and an empty option map — a collision domain is a pure L2 segment with no address management. Recording only `ipam_driver`, as schema 1 did, let a port that enabled IPv6 on the network, handed the link a real subnet or passed a driver option produce a byte-identical golden. |
 | `port_bindings` and `exposed_ports`. | Daemon-normalized maps; key order is handled by canonical JSON. |
 
 ## 10. Container capabilities (`cap_add` / `cap_drop`)
@@ -375,3 +472,29 @@ to `null`, never to `[]`.
 The 47 stored goldens were migrated mechanically to canonical form (a pure
 transform of the recorded arrays, no re-recording) and re-verified against the
 Python oracle at 47/47.
+
+---
+
+## 11. Schema history
+
+`SchemaVersion` (`manifest.go`) is stamped into every `scenario.json`. A bump
+means the stored goldens were re-recorded, not migrated.
+
+**2 — the blind-spot pass.** Every rule above that says "used to" belongs to
+this bump. Recorded subset widened: `containers[].tty` / `open_stdin`,
+`containers[].binds`, `networks[].enable_ipv6` / `ipam_config` / `options`, and
+`mode`/`uid`/`gid` on every `fs_trees` entry. Normalizations withdrawn: the
+ulimit sort (5.1), the `addr_info` sort (5.3), the `valid_life_time` /
+`preferred_life_time` drop (7), the `/etc/hosts` RFC1918 rewrite (2), the
+trim-and-drop-empties half of `SplitSortCSV` (5.2), and the bar-glyph half of
+the progress rule (6.6). Normalization narrowed: the blanket `<MAC>` became
+keyed `<MAC1>`, `<MAC2>`, … tokens (3). Every one of these was a place where
+the harness was deleting an assertion it had no nondeterminism source for.
+All 47 scenarios were re-recorded from the Python 3.8.3 oracle, twice, and the
+two passes byte-diffed before the Go build was pointed at the result.
+
+One normalization was **added** rather than withdrawn, and only because the
+keying exposed the need for it: `volatile_macs` / `<MACDERIVED>` (3), for the
+one interface class whose MAC the kernel copies from another random one. Its
+source was measured on the oracle, not inferred — three consecutive Python
+deploys of `20-vxlan-base` disagreed with each other.

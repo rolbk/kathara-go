@@ -1,8 +1,8 @@
 {
   "device": "router2",
   "ip_br_link": [
-    "eth0 UP <MAC> <BROADCAST,MULTICAST,UP,LOWER_UP>",
-    "eth1 UP <MAC> <BROADCAST,MULTICAST,UP,LOWER_UP>",
+    "eth0 UP <MAC3> <BROADCAST,MULTICAST,UP,LOWER_UP>",
+    "eth1 UP <MAC4> <BROADCAST,MULTICAST,UP,LOWER_UP>",
     "lo UNKNOWN 00:00:00:00:00:00 <LOOPBACK,UP,LOWER_UP>"
   ],
   "ip_addr": [
@@ -12,11 +12,13 @@
           "family": "inet",
           "label": "eth0",
           "local": "193.10.11.2",
+          "preferred_life_time": 4294967295,
           "prefixlen": 24,
-          "scope": "global"
+          "scope": "global",
+          "valid_life_time": 4294967295
         }
       ],
-      "address": "<MAC>",
+      "address": "<MAC3>",
       "broadcast": "ff:ff:ff:ff:ff:ff",
       "flags": [
         "BROADCAST",
@@ -38,11 +40,13 @@
           "family": "inet",
           "label": "eth1",
           "local": "200.1.1.1",
+          "preferred_life_time": 4294967295,
           "prefixlen": 24,
-          "scope": "global"
+          "scope": "global",
+          "valid_life_time": 4294967295
         }
       ],
-      "address": "<MAC>",
+      "address": "<MAC4>",
       "broadcast": "ff:ff:ff:ff:ff:ff",
       "flags": [
         "BROADCAST",
@@ -64,8 +68,10 @@
           "family": "inet",
           "label": "lo",
           "local": "127.0.0.1",
+          "preferred_life_time": 4294967295,
           "prefixlen": 8,
-          "scope": "host"
+          "scope": "host",
+          "valid_life_time": 4294967295
         }
       ],
       "address": "00:00:00:00:00:00",
@@ -94,34 +100,55 @@
     "/hostlab": [
       {
         "kind": "d",
-        "path": "./router2"
+        "path": "./router2",
+        "mode": "755",
+        "uid": "0",
+        "gid": "0"
       },
       {
         "kind": "f",
         "path": "./router2.startup",
+        "mode": "744",
+        "uid": "0",
+        "gid": "0",
         "sha256": "18f45ad1dd251d0ce52e1b584edd967c6140873a650df591b056d9bebbfa984e"
       },
       {
         "kind": "d",
-        "path": "./router2/etc"
+        "path": "./router2/etc",
+        "mode": "755",
+        "uid": "0",
+        "gid": "0"
       },
       {
         "kind": "d",
-        "path": "./router2/etc/frr"
+        "path": "./router2/etc/frr",
+        "mode": "755",
+        "uid": "0",
+        "gid": "0"
       },
       {
         "kind": "f",
         "path": "./router2/etc/frr/daemons",
+        "mode": "644",
+        "uid": "0",
+        "gid": "0",
         "sha256": "039b6ad1c4152f30e805cb6b664c9f2745cbeee025f10541249c67a9b342f679"
       },
       {
         "kind": "f",
         "path": "./router2/etc/frr/frr.conf",
+        "mode": "644",
+        "uid": "0",
+        "gid": "0",
         "sha256": "6d9b3fb1103b330b14573db9a14373f434b5e185ef32f43e0f7035f710da68d4"
       },
       {
         "kind": "f",
         "path": "./router2/etc/frr/vtysh.conf",
+        "mode": "644",
+        "uid": "0",
+        "gid": "0",
         "sha256": "830986724b6730f0cbfe76dce341e9be4b3fcae73bd612fca3c09a8157515a1d"
       }
     ],

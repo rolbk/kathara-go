@@ -6,7 +6,14 @@
     "scope": "local",
     "internal": false,
     "attachable": false,
+    "enable_ipv6": false,
     "ipam_driver": "null",
+    "ipam_config": [
+      {
+        "Subnet": "0.0.0.0/0"
+      }
+    ],
+    "options": {},
     "labels": {
       "app": "kathara",
       "external": "",
@@ -24,7 +31,14 @@
     "scope": "local",
     "internal": false,
     "attachable": false,
+    "enable_ipv6": false,
     "ipam_driver": "null",
+    "ipam_config": [
+      {
+        "Subnet": "0.0.0.0/0"
+      }
+    ],
+    "options": {},
     "labels": {
       "app": "kathara",
       "external": "",
@@ -42,7 +56,14 @@
     "scope": "local",
     "internal": false,
     "attachable": false,
+    "enable_ipv6": false,
     "ipam_driver": "null",
+    "ipam_config": [
+      {
+        "Subnet": "0.0.0.0/0"
+      }
+    ],
+    "options": {},
     "labels": {
       "app": "kathara",
       "external": "",
@@ -60,7 +81,14 @@
     "scope": "local",
     "internal": false,
     "attachable": false,
+    "enable_ipv6": false,
     "ipam_driver": "null",
+    "ipam_config": [
+      {
+        "Subnet": "0.0.0.0/0"
+      }
+    ],
+    "options": {},
     "labels": {
       "app": "kathara",
       "external": "",
@@ -78,7 +106,14 @@
     "scope": "local",
     "internal": false,
     "attachable": false,
+    "enable_ipv6": false,
     "ipam_driver": "null",
+    "ipam_config": [
+      {
+        "Subnet": "0.0.0.0/0"
+      }
+    ],
+    "options": {},
     "labels": {
       "app": "kathara",
       "external": "",
@@ -96,7 +131,14 @@
     "scope": "local",
     "internal": false,
     "attachable": false,
+    "enable_ipv6": false,
     "ipam_driver": "null",
+    "ipam_config": [
+      {
+        "Subnet": "0.0.0.0/0"
+      }
+    ],
+    "options": {},
     "labels": {
       "app": "kathara",
       "external": "",
@@ -114,7 +156,14 @@
     "scope": "local",
     "internal": false,
     "attachable": false,
+    "enable_ipv6": false,
     "ipam_driver": "null",
+    "ipam_config": [
+      {
+        "Subnet": "0.0.0.0/0"
+      }
+    ],
+    "options": {},
     "labels": {
       "app": "kathara",
       "external": "",
@@ -132,7 +181,14 @@
     "scope": "local",
     "internal": false,
     "attachable": false,
+    "enable_ipv6": false,
     "ipam_driver": "null",
+    "ipam_config": [
+      {
+        "Subnet": "0.0.0.0/0"
+      }
+    ],
+    "options": {},
     "labels": {
       "app": "kathara",
       "external": "",
@@ -150,7 +206,14 @@
     "scope": "local",
     "internal": false,
     "attachable": false,
+    "enable_ipv6": false,
     "ipam_driver": "null",
+    "ipam_config": [
+      {
+        "Subnet": "0.0.0.0/0"
+      }
+    ],
+    "options": {},
     "labels": {
       "app": "kathara",
       "external": "",
@@ -168,7 +231,14 @@
     "scope": "local",
     "internal": false,
     "attachable": false,
+    "enable_ipv6": false,
     "ipam_driver": "null",
+    "ipam_config": [
+      {
+        "Subnet": "0.0.0.0/0"
+      }
+    ],
+    "options": {},
     "labels": {
       "app": "kathara",
       "external": "",
@@ -186,7 +256,14 @@
     "scope": "local",
     "internal": false,
     "attachable": false,
+    "enable_ipv6": false,
     "ipam_driver": "null",
+    "ipam_config": [
+      {
+        "Subnet": "0.0.0.0/0"
+      }
+    ],
+    "options": {},
     "labels": {
       "app": "kathara",
       "external": "",
@@ -204,7 +281,14 @@
     "scope": "local",
     "internal": false,
     "attachable": false,
+    "enable_ipv6": false,
     "ipam_driver": "null",
+    "ipam_config": [
+      {
+        "Subnet": "0.0.0.0/0"
+      }
+    ],
+    "options": {},
     "labels": {
       "app": "kathara",
       "external": "",
@@ -222,7 +306,14 @@
     "scope": "local",
     "internal": false,
     "attachable": false,
+    "enable_ipv6": false,
     "ipam_driver": "null",
+    "ipam_config": [
+      {
+        "Subnet": "0.0.0.0/0"
+      }
+    ],
+    "options": {},
     "labels": {
       "app": "kathara",
       "external": "",
@@ -240,7 +331,14 @@
     "scope": "local",
     "internal": false,
     "attachable": false,
+    "enable_ipv6": false,
     "ipam_driver": "null",
+    "ipam_config": [
+      {
+        "Subnet": "0.0.0.0/0"
+      }
+    ],
+    "options": {},
     "labels": {
       "app": "kathara",
       "external": "",
@@ -258,7 +356,14 @@
     "scope": "local",
     "internal": false,
     "attachable": false,
+    "enable_ipv6": false,
     "ipam_driver": "null",
+    "ipam_config": [
+      {
+        "Subnet": "0.0.0.0/0"
+      }
+    ],
+    "options": {},
     "labels": {
       "app": "kathara",
       "external": "",
@@ -276,7 +381,14 @@
     "scope": "local",
     "internal": false,
     "attachable": false,
+    "enable_ipv6": false,
     "ipam_driver": "null",
+    "ipam_config": [
+      {
+        "Subnet": "0.0.0.0/0"
+      }
+    ],
+    "options": {},
     "labels": {
       "app": "kathara",
       "external": "",
@@ -294,7 +406,14 @@
     "scope": "local",
     "internal": false,
     "attachable": false,
+    "enable_ipv6": false,
     "ipam_driver": "null",
+    "ipam_config": [
+      {
+        "Subnet": "0.0.0.0/0"
+      }
+    ],
+    "options": {},
     "labels": {
       "app": "kathara",
       "external": "",
@@ -312,7 +431,14 @@
     "scope": "local",
     "internal": false,
     "attachable": false,
+    "enable_ipv6": false,
     "ipam_driver": "null",
+    "ipam_config": [
+      {
+        "Subnet": "0.0.0.0/0"
+      }
+    ],
+    "options": {},
     "labels": {
       "app": "kathara",
       "external": "",
@@ -330,7 +456,14 @@
     "scope": "local",
     "internal": false,
     "attachable": false,
+    "enable_ipv6": false,
     "ipam_driver": "null",
+    "ipam_config": [
+      {
+        "Subnet": "0.0.0.0/0"
+      }
+    ],
+    "options": {},
     "labels": {
       "app": "kathara",
       "external": "",
@@ -348,7 +481,14 @@
     "scope": "local",
     "internal": false,
     "attachable": false,
+    "enable_ipv6": false,
     "ipam_driver": "null",
+    "ipam_config": [
+      {
+        "Subnet": "0.0.0.0/0"
+      }
+    ],
+    "options": {},
     "labels": {
       "app": "kathara",
       "external": "",
@@ -366,7 +506,14 @@
     "scope": "local",
     "internal": false,
     "attachable": false,
+    "enable_ipv6": false,
     "ipam_driver": "null",
+    "ipam_config": [
+      {
+        "Subnet": "0.0.0.0/0"
+      }
+    ],
+    "options": {},
     "labels": {
       "app": "kathara",
       "external": "",
@@ -384,7 +531,14 @@
     "scope": "local",
     "internal": false,
     "attachable": false,
+    "enable_ipv6": false,
     "ipam_driver": "null",
+    "ipam_config": [
+      {
+        "Subnet": "0.0.0.0/0"
+      }
+    ],
+    "options": {},
     "labels": {
       "app": "kathara",
       "external": "",
@@ -402,7 +556,14 @@
     "scope": "local",
     "internal": false,
     "attachable": false,
+    "enable_ipv6": false,
     "ipam_driver": "null",
+    "ipam_config": [
+      {
+        "Subnet": "0.0.0.0/0"
+      }
+    ],
+    "options": {},
     "labels": {
       "app": "kathara",
       "external": "",
@@ -420,7 +581,14 @@
     "scope": "local",
     "internal": false,
     "attachable": false,
+    "enable_ipv6": false,
     "ipam_driver": "null",
+    "ipam_config": [
+      {
+        "Subnet": "0.0.0.0/0"
+      }
+    ],
+    "options": {},
     "labels": {
       "app": "kathara",
       "external": "",

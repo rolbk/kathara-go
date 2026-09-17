@@ -1,8 +1,8 @@
 {
   "device": "controller",
   "ip_br_link": [
-    "eth0 UP <MAC> <BROADCAST,MULTICAST,UP,LOWER_UP>",
-    "eth1@if<IFINDEX> UP <MAC> <BROADCAST,MULTICAST,UP,LOWER_UP>",
+    "eth0 UP <MAC2> <BROADCAST,MULTICAST,UP,LOWER_UP>",
+    "eth1@if<IFINDEX> UP <MAC1> <BROADCAST,MULTICAST,UP,LOWER_UP>",
     "lo UNKNOWN 00:00:00:00:00:00 <LOOPBACK,UP,LOWER_UP>"
   ],
   "ip_addr": [
@@ -12,11 +12,13 @@
           "family": "inet",
           "label": "eth0",
           "local": "20.0.0.100",
+          "preferred_life_time": 4294967295,
           "prefixlen": 24,
-          "scope": "global"
+          "scope": "global",
+          "valid_life_time": 4294967295
         }
       ],
-      "address": "<MAC>",
+      "address": "<MAC2>",
       "broadcast": "ff:ff:ff:ff:ff:ff",
       "flags": [
         "BROADCAST",
@@ -39,11 +41,13 @@
           "family": "inet",
           "label": "eth1",
           "local": "<DOCKERIP>",
+          "preferred_life_time": 4294967295,
           "prefixlen": 16,
-          "scope": "global"
+          "scope": "global",
+          "valid_life_time": 4294967295
         }
       ],
-      "address": "<MAC>",
+      "address": "<MAC1>",
       "broadcast": "ff:ff:ff:ff:ff:ff",
       "flags": [
         "BROADCAST",
@@ -64,8 +68,10 @@
           "family": "inet",
           "label": "lo",
           "local": "127.0.0.1",
+          "preferred_life_time": 4294967295,
           "prefixlen": 8,
-          "scope": "host"
+          "scope": "host",
+          "valid_life_time": 4294967295
         }
       ],
       "address": "00:00:00:00:00:00",
@@ -99,29 +105,47 @@
     "/hostlab": [
       {
         "kind": "d",
-        "path": "./controller"
+        "path": "./controller",
+        "mode": "755",
+        "uid": "0",
+        "gid": "0"
       },
       {
         "kind": "f",
         "path": "./controller.startup",
+        "mode": "744",
+        "uid": "0",
+        "gid": "0",
         "sha256": "9311ef1529b02f0f5de90bc2e2edf701ffefc0e107225684e7ec0a9faf9424d5"
       },
       {
         "kind": "d",
-        "path": "./controller/pox"
+        "path": "./controller/pox",
+        "mode": "755",
+        "uid": "0",
+        "gid": "0"
       },
       {
         "kind": "d",
-        "path": "./controller/pox/ext"
+        "path": "./controller/pox/ext",
+        "mode": "755",
+        "uid": "0",
+        "gid": "0"
       },
       {
         "kind": "f",
         "path": "./controller/pox/ext/ARP.py",
+        "mode": "644",
+        "uid": "0",
+        "gid": "0",
         "sha256": "bf89e26c4018cf250e2ca2934a775876960e4b840065e2c6ed1b504118c3dbb4"
       },
       {
         "kind": "f",
         "path": "./controller/pox/ext/HostDiscovery.py",
+        "mode": "644",
+        "uid": "0",
+        "gid": "0",
         "sha256": "8969bfbe27c7421ec150e4ce25c5f35d41cbc3fb1e2fa1da6a8f0aa3d8d47dc6"
       }
     ],

@@ -11,8 +11,10 @@
           "family": "inet",
           "label": "eth0",
           "local": "100.50.25.16",
+          "preferred_life_time": 4294967295,
           "prefixlen": 26,
-          "scope": "global"
+          "scope": "global",
+          "valid_life_time": 4294967295
         }
       ],
       "address": "00:00:00:00:00:03",
@@ -37,8 +39,10 @@
           "family": "inet",
           "label": "lo",
           "local": "127.0.0.1",
+          "preferred_life_time": 4294967295,
           "prefixlen": 8,
-          "scope": "host"
+          "scope": "host",
+          "valid_life_time": 4294967295
         }
       ],
       "address": "00:00:00:00:00:00",
@@ -71,11 +75,17 @@
     "/hostlab": [
       {
         "kind": "d",
-        "path": "./pc3"
+        "path": "./pc3",
+        "mode": "755",
+        "uid": "0",
+        "gid": "0"
       },
       {
         "kind": "f",
         "path": "./pc3.startup",
+        "mode": "744",
+        "uid": "0",
+        "gid": "0",
         "sha256": "09a0099a4125eb52a68b7fba18db1680a021b8f2a95e547cebe06e734bebdc3c"
       }
     ],

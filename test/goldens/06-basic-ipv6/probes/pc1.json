@@ -10,9 +10,11 @@
         {
           "family": "inet6",
           "local": "fe80::200:ff:fe00:1",
+          "preferred_life_time": 4294967295,
           "prefixlen": 64,
           "protocol": "kernel_ll",
-          "scope": "link"
+          "scope": "link",
+          "valid_life_time": 4294967295
         }
       ],
       "address": "00:00:00:00:00:01",
@@ -37,15 +39,19 @@
           "family": "inet",
           "label": "lo",
           "local": "127.0.0.1",
+          "preferred_life_time": 4294967295,
           "prefixlen": 8,
-          "scope": "host"
+          "scope": "host",
+          "valid_life_time": 4294967295
         },
         {
           "family": "inet6",
           "local": "::1",
+          "preferred_life_time": 4294967295,
           "prefixlen": 128,
           "protocol": "kernel_lo",
-          "scope": "host"
+          "scope": "host",
+          "valid_life_time": 4294967295
         }
       ],
       "address": "00:00:00:00:00:00",

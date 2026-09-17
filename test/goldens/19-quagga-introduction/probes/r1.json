@@ -1,8 +1,8 @@
 {
   "device": "r1",
   "ip_br_link": [
-    "eth0 UP <MAC> <BROADCAST,MULTICAST,UP,LOWER_UP>",
-    "eth1 UP <MAC> <BROADCAST,MULTICAST,UP,LOWER_UP>",
+    "eth0 UP <MAC1> <BROADCAST,MULTICAST,UP,LOWER_UP>",
+    "eth1 UP <MAC2> <BROADCAST,MULTICAST,UP,LOWER_UP>",
     "lo UNKNOWN 00:00:00:00:00:00 <LOOPBACK,UP,LOWER_UP>"
   ],
   "ip_addr": [
@@ -12,11 +12,13 @@
           "family": "inet",
           "label": "eth0",
           "local": "100.0.0.1",
+          "preferred_life_time": 4294967295,
           "prefixlen": 24,
-          "scope": "global"
+          "scope": "global",
+          "valid_life_time": 4294967295
         }
       ],
-      "address": "<MAC>",
+      "address": "<MAC1>",
       "broadcast": "ff:ff:ff:ff:ff:ff",
       "flags": [
         "BROADCAST",
@@ -38,11 +40,13 @@
           "family": "inet",
           "label": "eth1",
           "local": "150.0.0.1",
+          "preferred_life_time": 4294967295,
           "prefixlen": 30,
-          "scope": "global"
+          "scope": "global",
+          "valid_life_time": 4294967295
         }
       ],
-      "address": "<MAC>",
+      "address": "<MAC2>",
       "broadcast": "ff:ff:ff:ff:ff:ff",
       "flags": [
         "BROADCAST",
@@ -64,8 +68,10 @@
           "family": "inet",
           "label": "lo",
           "local": "127.0.0.1",
+          "preferred_life_time": 4294967295,
           "prefixlen": 8,
-          "scope": "host"
+          "scope": "host",
+          "valid_life_time": 4294967295
         }
       ],
       "address": "00:00:00:00:00:00",
@@ -94,34 +100,55 @@
     "/hostlab": [
       {
         "kind": "d",
-        "path": "./r1"
+        "path": "./r1",
+        "mode": "755",
+        "uid": "0",
+        "gid": "0"
       },
       {
         "kind": "f",
         "path": "./r1.startup",
+        "mode": "744",
+        "uid": "0",
+        "gid": "0",
         "sha256": "e7076a124293e8804d75a3098635c0d11151d6da2dd49295c68f662efdb6f2f9"
       },
       {
         "kind": "d",
-        "path": "./r1/etc"
+        "path": "./r1/etc",
+        "mode": "755",
+        "uid": "0",
+        "gid": "0"
       },
       {
         "kind": "d",
-        "path": "./r1/etc/quagga"
+        "path": "./r1/etc/quagga",
+        "mode": "755",
+        "uid": "0",
+        "gid": "0"
       },
       {
         "kind": "f",
         "path": "./r1/etc/quagga/daemons",
+        "mode": "644",
+        "uid": "0",
+        "gid": "0",
         "sha256": "ed2702c0971008970fa0825429cbb9dbe821b01c6cfc3c5c7cd1831692f01d00"
       },
       {
         "kind": "f",
         "path": "./r1/etc/quagga/ripd.conf",
+        "mode": "644",
+        "uid": "0",
+        "gid": "0",
         "sha256": "19d6b6cd027bcf1336e83cb665893a96b34fbb4306f8dc9bb8a3dbbe98eb5f8c"
       },
       {
         "kind": "f",
         "path": "./r1/etc/quagga/zebra.conf",
+        "mode": "644",
+        "uid": "0",
+        "gid": "0",
         "sha256": "17e29a846ecf9c310c1c0443b42242c3f8da5636dae016f92dcb2579ae79f654"
       }
     ],

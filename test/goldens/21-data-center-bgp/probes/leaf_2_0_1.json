@@ -1,10 +1,10 @@
 {
   "device": "leaf_2_0_1",
   "ip_br_link": [
-    "eth0 UP <MAC> <BROADCAST,MULTICAST,UP,LOWER_UP>",
-    "eth1 UP <MAC> <BROADCAST,MULTICAST,UP,LOWER_UP>",
-    "eth2 UP <MAC> <BROADCAST,MULTICAST,UP,LOWER_UP>",
-    "eth3 UP <MAC> <BROADCAST,MULTICAST,UP,LOWER_UP>",
+    "eth0 UP <MAC9> <BROADCAST,MULTICAST,UP,LOWER_UP>",
+    "eth1 UP <MAC10> <BROADCAST,MULTICAST,UP,LOWER_UP>",
+    "eth2 UP <MAC11> <BROADCAST,MULTICAST,UP,LOWER_UP>",
+    "eth3 UP <MAC12> <BROADCAST,MULTICAST,UP,LOWER_UP>",
     "lo UNKNOWN 00:00:00:00:00:00 <LOOPBACK,UP,LOWER_UP>"
   ],
   "ip_addr": [
@@ -13,12 +13,14 @@
         {
           "family": "inet6",
           "local": "<LINKLOCAL6>",
+          "preferred_life_time": 4294967295,
           "prefixlen": 64,
           "protocol": "kernel_ll",
-          "scope": "link"
+          "scope": "link",
+          "valid_life_time": 4294967295
         }
       ],
-      "address": "<MAC>",
+      "address": "<MAC9>",
       "broadcast": "ff:ff:ff:ff:ff:ff",
       "flags": [
         "BROADCAST",
@@ -39,12 +41,14 @@
         {
           "family": "inet6",
           "local": "<LINKLOCAL6>",
+          "preferred_life_time": 4294967295,
           "prefixlen": 64,
           "protocol": "kernel_ll",
-          "scope": "link"
+          "scope": "link",
+          "valid_life_time": 4294967295
         }
       ],
-      "address": "<MAC>",
+      "address": "<MAC10>",
       "broadcast": "ff:ff:ff:ff:ff:ff",
       "flags": [
         "BROADCAST",
@@ -66,18 +70,22 @@
           "family": "inet",
           "label": "eth2",
           "local": "202.1.1.1",
+          "preferred_life_time": 4294967295,
           "prefixlen": 24,
-          "scope": "global"
+          "scope": "global",
+          "valid_life_time": 4294967295
         },
         {
           "family": "inet6",
           "local": "<LINKLOCAL6>",
+          "preferred_life_time": 4294967295,
           "prefixlen": 64,
           "protocol": "kernel_ll",
-          "scope": "link"
+          "scope": "link",
+          "valid_life_time": 4294967295
         }
       ],
-      "address": "<MAC>",
+      "address": "<MAC11>",
       "broadcast": "ff:ff:ff:ff:ff:ff",
       "flags": [
         "BROADCAST",
@@ -99,18 +107,22 @@
           "family": "inet",
           "label": "eth3",
           "local": "202.1.2.1",
+          "preferred_life_time": 4294967295,
           "prefixlen": 24,
-          "scope": "global"
+          "scope": "global",
+          "valid_life_time": 4294967295
         },
         {
           "family": "inet6",
           "local": "<LINKLOCAL6>",
+          "preferred_life_time": 4294967295,
           "prefixlen": 64,
           "protocol": "kernel_ll",
-          "scope": "link"
+          "scope": "link",
+          "valid_life_time": 4294967295
         }
       ],
-      "address": "<MAC>",
+      "address": "<MAC12>",
       "broadcast": "ff:ff:ff:ff:ff:ff",
       "flags": [
         "BROADCAST",
@@ -132,15 +144,19 @@
           "family": "inet",
           "label": "lo",
           "local": "127.0.0.1",
+          "preferred_life_time": 4294967295,
           "prefixlen": 8,
-          "scope": "host"
+          "scope": "host",
+          "valid_life_time": 4294967295
         },
         {
           "family": "inet6",
           "local": "::1",
+          "preferred_life_time": 4294967295,
           "prefixlen": 128,
           "protocol": "kernel_lo",
-          "scope": "host"
+          "scope": "host",
+          "valid_life_time": 4294967295
         }
       ],
       "address": "00:00:00:00:00:00",
@@ -169,29 +185,47 @@
     "/hostlab": [
       {
         "kind": "d",
-        "path": "./leaf_2_0_1"
+        "path": "./leaf_2_0_1",
+        "mode": "755",
+        "uid": "0",
+        "gid": "0"
       },
       {
         "kind": "f",
         "path": "./leaf_2_0_1.startup",
+        "mode": "744",
+        "uid": "0",
+        "gid": "0",
         "sha256": "fbcea7d03c64ce045d015688e5fb2a401fe8d558859521d511c4dbc478caba41"
       },
       {
         "kind": "d",
-        "path": "./leaf_2_0_1/etc"
+        "path": "./leaf_2_0_1/etc",
+        "mode": "755",
+        "uid": "0",
+        "gid": "0"
       },
       {
         "kind": "d",
-        "path": "./leaf_2_0_1/etc/frr"
+        "path": "./leaf_2_0_1/etc/frr",
+        "mode": "755",
+        "uid": "0",
+        "gid": "0"
       },
       {
         "kind": "f",
         "path": "./leaf_2_0_1/etc/frr/bgpd.conf",
+        "mode": "644",
+        "uid": "0",
+        "gid": "0",
         "sha256": "53899bb44d3b3353f5dcf88b657b4603c0eae0916e11b282a54edb8011607e71"
       },
       {
         "kind": "f",
         "path": "./leaf_2_0_1/etc/frr/daemons",
+        "mode": "644",
+        "uid": "0",
+        "gid": "0",
         "sha256": "5657c4ce63f553664b2e687783f644094382916a996edd08fb31deebc2c88d4a"
       }
     ],

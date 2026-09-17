@@ -12,7 +12,15 @@ import (
 
 // SchemaVersion is stamped into every snapshot. Bump it whenever the recorded
 // shape changes in a way that invalidates stored goldens.
-const SchemaVersion = 1
+//
+// 2: the blind-spot pass. Adds Config.Tty / Config.OpenStdin, HostConfig.Binds,
+// network enable_ipv6 / ipam_config / options and fs-tree mode/uid/gid to the
+// recorded subset; stops sorting HostConfig.Ulimits and `ip -j addr`'s
+// addr_info; keeps valid_life_time / preferred_life_time and the completed
+// progress line; replaces the blanket `<MAC>` with keyed `<MAC1>`, `<MAC2>`, …
+// tokens; drops the /etc/hosts RFC1918 rewrite. All 47 goldens were
+// re-recorded from the Python oracle.
+const SchemaVersion = 2
 
 // Scenario kinds.
 const (
@@ -116,6 +124,18 @@ type Scenario struct {
 	// kathara.mac_addr driver opt (see the MAC ruling in NORMALIZATION.md).
 	ExpectExplicitMAC bool `yaml:"expect_explicit_mac"`
 
+	// VolatileMACs names interfaces, as `<device>:<ifname>`, whose hardware
+	// address the *kernel* derives from another interface's address rather than
+	// anyone assigning it. The only case in the corpus is a Linux bridge: the
+	// bridge driver sets the bridge's address to the numerically smallest MAC
+	// among its enslaved ports (`br_stp_recalculate_bridge_id`), and on the
+	// default path every port MAC is random per deploy, so *which* port the
+	// bridge copies is a coin flip. Named interfaces record `<MACDERIVED>`
+	// instead of a keyed token, which keeps the address's presence asserted
+	// while waiving the identity relation that is not ours to assert. See
+	// NORMALIZATION.md section 3.
+	VolatileMACs []string `yaml:"volatile_macs"`
+
 	// TimeoutSeconds overrides the default per-scenario wall-clock limit.
 	TimeoutSeconds int `yaml:"timeout_seconds"`
 
@@ -157,6 +177,19 @@ func (s *Scenario) SettleDelay() time.Duration {
 		return 0
 	}
 	return time.Duration(s.SettleSeconds) * time.Second
+}
+
+// VolatileMACSet is the set of interface names on one device whose MAC the
+// kernel derives (see VolatileMACs).
+func (s *Scenario) VolatileMACSet(device string) map[string]bool {
+	out := map[string]bool{}
+	for _, entry := range s.VolatileMACs {
+		dev, ifname, ok := strings.Cut(entry, ":")
+		if ok && dev == device {
+			out[ifname] = true
+		}
+	}
+	return out
 }
 
 // HasProbe reports whether the resolved probe set contains name.
@@ -282,6 +315,13 @@ func (m *Manifest) Resolve(repoRoot, labsRootOverride string) error {
 		for _, d := range s.HostDirs {
 			if !filepath.IsAbs(d) || strings.Contains(d, "..") {
 				return fmt.Errorf("scenario %q: host_dirs entry %q must be an absolute path with no parent traversal", s.Name, d)
+			}
+		}
+
+		for _, entry := range s.VolatileMACs {
+			dev, ifname, ok := strings.Cut(entry, ":")
+			if !ok || dev == "" || ifname == "" {
+				return fmt.Errorf("scenario %q: volatile_macs entry %q must be <device>:<ifname>", s.Name, entry)
 			}
 		}
 

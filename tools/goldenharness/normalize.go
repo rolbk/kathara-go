@@ -3,7 +3,7 @@ package main
 import (
 	"crypto/md5" // #nosec G401 -- reproduces Kathara's utils.generate_urlsafe_hash, not a security primitive
 	"encoding/base64"
-	"encoding/json"
+	"fmt"
 	"net"
 	"regexp"
 	"sort"
@@ -18,7 +18,6 @@ const (
 	TokLabHash     = "<LABHASH>"
 	TokUser        = "<USER>"
 	TokHome        = "<HOME>"
-	TokMAC         = "<MAC>"
 	TokLinkLocal6  = "<LINKLOCAL6>"
 	TokAnonVol     = "<ANONVOL>"
 	TokAnonVolPath = "<ANONVOL_PATH>"
@@ -27,7 +26,21 @@ const (
 	TokContainerID = "<CID>"
 	TokShortID     = "<CID12>"
 	TokIfIndex     = "<IFINDEX>"
+	// TokDerivedMAC stands in for the address of an interface whose MAC the
+	// kernel copied from another interface (a Linux bridge takes the smallest
+	// MAC among its ports). Scoped to the interfaces a scenario names in
+	// `volatile_macs`; see NORMALIZATION.md section 3.
+	TokDerivedMAC = "<MACDERIVED>"
 )
+
+// macTokenFormat renders the per-MAC token. A scrubbed MAC is *keyed*: the
+// first distinct MAC a scenario scrubs becomes `<MAC1>`, the second `<MAC2>`,
+// and so on, and every later occurrence of the same address reuses its token.
+// The MAC value itself is random per deploy (NORMALIZATION.md section 3), but
+// which interface carries which value, whether two interfaces share one, and
+// how many distinct addresses a scenario has are all real assertions that a
+// single blanket `<MAC>` deleted.
+const macTokenFormat = "<MAC%d>"
 
 var (
 	// ANSI CSI and OSC sequences. Rich disables colour when stdout is not a
@@ -59,23 +72,17 @@ var (
 	// (NORMALIZATION.md section 7).
 	reVethPeerIfIndex = regexp.MustCompile(`@if[0-9]+\b`)
 
-	// Docker's default address pools, used for the bridged path. The address a
-	// bridged device receives depends on allocation order across the daemon.
-	reDockerIP = regexp.MustCompile(`\b(?:172\.(?:1[6-9]|2[0-9]|3[01])|192\.168)\.[0-9]{1,3}\.[0-9]{1,3}\b`)
-
-	// Rich progress bars. U+2501 and U+2578..U+257B are the bar glyphs; the
-	// panel borders use a different block (U+2500, U+2502, corners) and stay.
-	reProgressBar = regexp.MustCompile("[━╸╹╺╻]")
-
 	// Rich spinner frames. The braille block U+2800..U+28FF is only ever
 	// produced by rich's spinner column, and which frame is on screen is a
 	// function of elapsed time, so the glyph differs between two runs of the
-	// same scenario.
+	// same scenario. A progress line carrying one is therefore a render of an
+	// *unfinished* task (SpinnerColumn renders its finished text — a blank —
+	// once `completed >= total`), and only that render is dropped.
 	reSpinner = regexp.MustCompile(`[\x{2800}-\x{28FF}]`)
 
 	// docker pull layer progress.
 	reLayerProgress = regexp.MustCompile(`^[0-9a-f]{12}: `)
-	rePullNoise     = regexp.MustCompile(`^(Digest: sha256:|Status: (Downloaded|Image is up to date)|Pull complete|Downloading|Extracting|Verifying Checksum|Waiting|Already exists)`)
+	rePullNoise     = regexp.MustCompile(`^(Digest: sha256:|Status: (Downloaded|Image is up to date)|Pull complete|Downloading|Extracting|Verifying Checksum|Waiting|Already exists|\[Downloading |\[Download Complete )`)
 
 	reHex64 = regexp.MustCompile(`^[0-9a-f]{64}$`)
 )
@@ -94,14 +101,44 @@ type Normalizer struct {
 	// keepLL6 holds the EUI-64 link-local addresses derived from explicitly
 	// pinned MACs. Those are deterministic and survive scrubbing.
 	keepLL6 map[string]bool
+	// macTokens keys every scrubbed MAC to a stable per-scenario token, in the
+	// order the scenario first observes it. See macTokenFormat.
+	macTokens map[string]string
 }
 
 // NewNormalizer builds a normalizer. Literal replacements are applied
 // longest-first so that a container name is tokenized before the lab hash it
 // embeds.
 func NewNormalizer() *Normalizer {
-	return &Normalizer{keepMACs: map[string]bool{}, keepLL6: map[string]bool{}}
+	return &Normalizer{
+		keepMACs:  map[string]bool{},
+		keepLL6:   map[string]bool{},
+		macTokens: map[string]string{},
+	}
 }
+
+// macToken returns the keyed token for a scrubbed MAC, assigning the next
+// ordinal the first time the scenario sees that address.
+//
+// Ordinals are assigned in observation order, which the harness makes
+// deterministic by construction: containers are inspected before any probe
+// runs, devices are probed in sorted name order, and within a device the `ip
+// -br link` probe — a full dump of the namespace in ifindex order, i.e. in the
+// order Kathara created the interfaces — runs before every other probe that can
+// carry a MAC. Two recordings of the same scenario therefore number the same
+// addresses the same way; the record-twice byte-diff in README.md is what
+// proves it.
+func (n *Normalizer) macToken(low string) string {
+	if t, ok := n.macTokens[low]; ok {
+		return t
+	}
+	t := fmt.Sprintf(macTokenFormat, len(n.macTokens)+1)
+	n.macTokens[low] = t
+	return t
+}
+
+// MACTokenCount is the number of distinct scrubbed MACs the scenario observed.
+func (n *Normalizer) MACTokenCount() int { return len(n.macTokens) }
 
 // AddLiteral registers a literal substitution. Empty or one-character sources
 // are ignored to avoid catastrophic over-replacement.
@@ -196,7 +233,7 @@ func (n *Normalizer) scrubMACs(s string) string {
 		case n.keepMACs[low]:
 			b.WriteString(low)
 		default:
-			b.WriteString(TokMAC)
+			b.WriteString(n.macToken(low))
 		}
 	}
 	b.WriteString(s[last:])
@@ -215,10 +252,19 @@ func (n *Normalizer) scrubLinkLocal6(s string) string {
 }
 
 // Lines normalizes a captured stream into a stable []string: CRLF folded, log
-// records unwrapped to logical lines, progress bars and pull progress dropped,
-// trailing whitespace trimmed, trailing blank lines removed. Unwrapping runs
-// before token substitution: a host path wrapped across lines by rich could
-// otherwise never match its literal.
+// records unwrapped to logical lines, unfinished progress renders and pull
+// progress dropped, trailing whitespace trimmed, trailing blank lines removed.
+// Unwrapping runs before token substitution: a host path wrapped across lines
+// by rich could otherwise never match its literal.
+//
+// The *completed* progress line is kept. `rich.live.Live` suppresses every
+// intermediate refresh on a non-terminal and prints the final render exactly
+// once at stop, and `HandleProgressBar`'s column set — description, spinner,
+// `BarColumn(bar_width=None)`, `MofNCompleteColumn`, `expand=True` — carries no
+// clock: at `COLUMNS=80` the row is a pure function of the description, the
+// counts and the console width. `[Deploying devices]   ━…━ 3/3` is therefore a
+// byte-exact assertion that the deploy ran to completion, and dropping it was
+// deleting one.
 func (n *Normalizer) Lines(s string) []string {
 	s = StripANSI(s)
 	s = strings.ReplaceAll(s, "\r\n", "\n")
@@ -228,7 +274,7 @@ func (n *Normalizer) Lines(s string) []string {
 	raw := strings.Split(s, "\n")
 	out := make([]string, 0, len(raw))
 	for _, line := range raw {
-		if reProgressBar.MatchString(line) || reSpinner.MatchString(line) {
+		if reSpinner.MatchString(line) {
 			continue
 		}
 		if reLayerProgress.MatchString(line) || rePullNoise.MatchString(line) {
@@ -331,16 +377,16 @@ func (n *Normalizer) FileLines(s string) []string {
 	return out
 }
 
-// HostsLines normalizes /etc/hosts: on top of the usual rules, addresses from
-// Docker's default pools are tokenized because the bridged device's address
-// depends on daemon-wide allocation order.
-func (n *Normalizer) HostsLines(s string) []string {
-	lines := n.FileLines(s)
-	for i, l := range lines {
-		lines[i] = reDockerIP.ReplaceAllString(l, TokDockerIP)
-	}
-	return lines
-}
+// HostsLines normalizes /etc/hosts. It is deliberately nothing more than
+// FileLines: the file's one daemon-allocated address — the `bridged` device's
+// address on Docker's default network — is registered as a literal from
+// `docker inspect` before any text is rendered (NORMALIZATION.md section 2), so
+// it is already tokenized by the time this runs. An earlier revision also
+// rewrote every address in 172.16.0.0/12 and 192.168.0.0/16 here as belt and
+// braces; that rule never fired once across the 47 goldens and could only ever
+// have destroyed a lab-configured address, which is exactly the assertion
+// /etc/hosts exists to carry.
+func (n *Normalizer) HostsLines(s string) []string { return n.FileLines(s) }
 
 // ScrubVethPeerIfIndex tokenizes the `@if<n>` peer-ifindex suffix that
 // `ip link` renders for a veth whose peer lives in another network namespace.
@@ -360,16 +406,23 @@ func StripANSI(s string) string {
 
 // volatileAddrKeys are dropped from `ip -j addr` output. Every one of them is
 // either host-global (interface indices), namespace-scoped or time-derived.
+//
+// `valid_life_time` and `preferred_life_time` are deliberately **not** here.
+// They were dropped as "time-derived", which is only true of an address the
+// kernel learned: every entry that survives the `kernel_ra` filter below is
+// either statically configured by the lab or the kernel's own link-local, and
+// both carry the constant 4294967295 ("forever"). Verified on the corpus —
+// every surviving entry in the 47 recordings reports 4294967295 for both keys —
+// so keeping them asserts that a port does not accidentally hand Docker or the
+// kernel a lease where the lab asked for a permanent address.
 var volatileAddrKeys = map[string]bool{
-	"ifindex":             true,
-	"link_index":          true,
-	"link_netnsid":        true,
-	"altnames":            true,
-	"alt_names":           true,
-	"valid_life_time":     true,
-	"preferred_life_time": true,
-	"parentbus":           true,
-	"parentdev":           true,
+	"ifindex":      true,
+	"link_index":   true,
+	"link_netnsid": true,
+	"altnames":     true,
+	"alt_names":    true,
+	"parentbus":    true,
+	"parentdev":    true,
 	// Duplicate Address Detection state. An address is `tentative` from the
 	// moment it is assigned until DAD finishes (one solicit, ~1 s later);
 	// `optimistic` and `dadfailed` are the other two states of the same
@@ -400,13 +453,10 @@ var volatileAddrKeys = map[string]bool{
 // carried by containers.json and by `ip -br link`.
 var raLearnedProtocols = map[string]bool{"kernel_ra": true}
 
-// sortedAddrArrayKeys names the `ip -j addr` arrays whose observed order is
-// not stable. Everything else (notably "flags") keeps kernel order, which is
-// deterministic and therefore worth asserting.
-var sortedAddrArrayKeys = map[string]bool{"addr_info": true}
-
 // ScrubAddrJSON normalizes the decoded `ip -j addr` document: volatile keys
-// removed, MACs and link-local addresses scrubbed, unstable arrays sorted.
+// removed, RA-learned addresses dropped, MACs and link-local addresses
+// scrubbed. No array inside the document is reordered — see NORMALIZATION.md
+// section 7 on why `addr_info` no longer is.
 func (n *Normalizer) ScrubAddrJSON(v any) any {
 	return n.scrubAddrValue("", v)
 }
@@ -430,9 +480,6 @@ func (n *Normalizer) scrubAddrValue(key string, v any) any {
 			}
 			out = append(out, n.scrubAddrValue(key, e))
 		}
-		if sortedAddrArrayKeys[key] {
-			sortByCanonicalJSON(out)
-		}
 		return out
 	case string:
 		return n.Text(t)
@@ -452,45 +499,23 @@ func isRALearnedAddr(e any) bool {
 	return raLearnedProtocols[proto]
 }
 
-// sortByCanonicalJSON gives arrays a deterministic order without needing to
-// know their element shape.
-func sortByCanonicalJSON(a []any) {
-	keys := make([]string, len(a))
-	for i, e := range a {
-		b, err := json.Marshal(e)
-		if err != nil {
-			keys[i] = ""
-			continue
-		}
-		keys[i] = string(b)
-	}
-	idx := make([]int, len(a))
-	for i := range idx {
-		idx[i] = i
-	}
-	sort.SliceStable(idx, func(i, j int) bool { return keys[idx[i]] < keys[idx[j]] })
-	orig := append([]any(nil), a...)
-	for i, j := range idx {
-		a[i] = orig[j]
-	}
-}
-
 // SplitSortCSV splits a comma-joined driver-opt value and sorts it. Kathara
 // builds com.docker.network.endpoint.sysctls by joining a Python set, whose
 // iteration order is hash-randomized per process (ORDERING.tsv, "!!" row
 // DockerMachine.py:470).
+//
+// Split and sort is the whole sanctioned transform. Elements are **not**
+// trimmed and empty ones are **not** dropped: `",".join(set)` over a set of
+// `k=v` strings can only produce an empty element from an empty member or a
+// stray separator, both of which would be a real defect in the value Kathara
+// put on the wire, and surrounding whitespace in a sysctl name is likewise a
+// defect rather than noise. Removing either would have silently repaired the
+// recording of a port that emitted `a=1,,b=2`.
 func SplitSortCSV(s string) []string {
 	if s == "" {
 		return []string{}
 	}
-	parts := strings.Split(s, ",")
-	out := make([]string, 0, len(parts))
-	for _, p := range parts {
-		p = strings.TrimSpace(p)
-		if p != "" {
-			out = append(out, p)
-		}
-	}
+	out := strings.Split(s, ",")
 	sort.Strings(out)
 	return out
 }

@@ -1,7 +1,7 @@
 {
   "device": "s1",
   "ip_br_link": [
-    "eth0 UP <MAC> <BROADCAST,MULTICAST,UP,LOWER_UP>",
+    "eth0 UP <MAC1> <BROADCAST,MULTICAST,UP,LOWER_UP>",
     "lo UNKNOWN 00:00:00:00:00:00 <LOOPBACK,UP,LOWER_UP>"
   ],
   "ip_addr": [
@@ -11,11 +11,13 @@
           "family": "inet",
           "label": "eth0",
           "local": "10.0.0.1",
+          "preferred_life_time": 4294967295,
           "prefixlen": 24,
-          "scope": "global"
+          "scope": "global",
+          "valid_life_time": 4294967295
         }
       ],
-      "address": "<MAC>",
+      "address": "<MAC1>",
       "broadcast": "ff:ff:ff:ff:ff:ff",
       "flags": [
         "BROADCAST",
@@ -37,8 +39,10 @@
           "family": "inet",
           "label": "lo",
           "local": "127.0.0.1",
+          "preferred_life_time": 4294967295,
           "prefixlen": 8,
-          "scope": "host"
+          "scope": "host",
+          "valid_life_time": 4294967295
         }
       ],
       "address": "00:00:00:00:00:00",
@@ -67,28 +71,46 @@
     "/hostlab": [
       {
         "kind": "d",
-        "path": "./s1"
+        "path": "./s1",
+        "mode": "755",
+        "uid": "0",
+        "gid": "0"
       },
       {
         "kind": "f",
         "path": "./s1.startup",
+        "mode": "744",
+        "uid": "0",
+        "gid": "0",
         "sha256": "f76b1dc5ec56795bee93fa8221510fd05c5f3356e01e2b611cb0aca5e3807c53"
       },
       {
         "kind": "d",
-        "path": "./s1/var"
+        "path": "./s1/var",
+        "mode": "755",
+        "uid": "0",
+        "gid": "0"
       },
       {
         "kind": "d",
-        "path": "./s1/var/www"
+        "path": "./s1/var/www",
+        "mode": "755",
+        "uid": "0",
+        "gid": "0"
       },
       {
         "kind": "d",
-        "path": "./s1/var/www/html"
+        "path": "./s1/var/www/html",
+        "mode": "755",
+        "uid": "0",
+        "gid": "0"
       },
       {
         "kind": "f",
         "path": "./s1/var/www/html/index.html",
+        "mode": "644",
+        "uid": "0",
+        "gid": "0",
         "sha256": "0fe6b72354cc928b16bf08fe8665f0fb36a08573b7a1e9a6f32cfa7181061971"
       }
     ],

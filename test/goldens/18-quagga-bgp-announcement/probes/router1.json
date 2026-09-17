@@ -1,8 +1,8 @@
 {
   "device": "router1",
   "ip_br_link": [
-    "eth0 UP <MAC> <BROADCAST,MULTICAST,UP,LOWER_UP>",
-    "eth1 UP <MAC> <BROADCAST,MULTICAST,UP,LOWER_UP>",
+    "eth0 UP <MAC1> <BROADCAST,MULTICAST,UP,LOWER_UP>",
+    "eth1 UP <MAC2> <BROADCAST,MULTICAST,UP,LOWER_UP>",
     "lo UNKNOWN 00:00:00:00:00:00 <LOOPBACK,UP,LOWER_UP>"
   ],
   "ip_addr": [
@@ -12,11 +12,13 @@
           "family": "inet",
           "label": "eth0",
           "local": "193.10.11.1",
+          "preferred_life_time": 4294967295,
           "prefixlen": 24,
-          "scope": "global"
+          "scope": "global",
+          "valid_life_time": 4294967295
         }
       ],
-      "address": "<MAC>",
+      "address": "<MAC1>",
       "broadcast": "ff:ff:ff:ff:ff:ff",
       "flags": [
         "BROADCAST",
@@ -38,11 +40,13 @@
           "family": "inet",
           "label": "eth1",
           "local": "195.11.14.1",
+          "preferred_life_time": 4294967295,
           "prefixlen": 24,
-          "scope": "global"
+          "scope": "global",
+          "valid_life_time": 4294967295
         }
       ],
-      "address": "<MAC>",
+      "address": "<MAC2>",
       "broadcast": "ff:ff:ff:ff:ff:ff",
       "flags": [
         "BROADCAST",
@@ -64,8 +68,10 @@
           "family": "inet",
           "label": "lo",
           "local": "127.0.0.1",
+          "preferred_life_time": 4294967295,
           "prefixlen": 8,
-          "scope": "host"
+          "scope": "host",
+          "valid_life_time": 4294967295
         }
       ],
       "address": "00:00:00:00:00:00",
@@ -94,34 +100,55 @@
     "/hostlab": [
       {
         "kind": "d",
-        "path": "./router1"
+        "path": "./router1",
+        "mode": "755",
+        "uid": "0",
+        "gid": "0"
       },
       {
         "kind": "f",
         "path": "./router1.startup",
+        "mode": "744",
+        "uid": "0",
+        "gid": "0",
         "sha256": "c994f03aaf4e307b4de1c5c6c7e3b582a1885b1eb67c707e09c0ca059d7aee2f"
       },
       {
         "kind": "d",
-        "path": "./router1/etc"
+        "path": "./router1/etc",
+        "mode": "755",
+        "uid": "0",
+        "gid": "0"
       },
       {
         "kind": "d",
-        "path": "./router1/etc/quagga"
+        "path": "./router1/etc/quagga",
+        "mode": "755",
+        "uid": "0",
+        "gid": "0"
       },
       {
         "kind": "f",
         "path": "./router1/etc/quagga/bgpd.conf",
+        "mode": "644",
+        "uid": "0",
+        "gid": "0",
         "sha256": "ad01954c4b54a8349106ce85bb2e6e58b8731f319a00af1f90f4004876477512"
       },
       {
         "kind": "f",
         "path": "./router1/etc/quagga/daemons",
+        "mode": "644",
+        "uid": "0",
+        "gid": "0",
         "sha256": "a9ae8a7dac470fc7388823df4731291a649f8e867b64fc27852e90e4ba35cf2b"
       },
       {
         "kind": "f",
         "path": "./router1/etc/quagga/zebra.conf",
+        "mode": "644",
+        "uid": "0",
+        "gid": "0",
         "sha256": "0ca458fafc7021030c0f083986c329b06131f76709b7572696a0814d84c257de"
       }
     ],

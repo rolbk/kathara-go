@@ -1,9 +1,9 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "name": "20-vxlan-base",
   "kind": "deploy",
   "status": "golden",
-  "note": "frr plus core mix with in-device VXLAN interfaces.",
+  "note": "frr plus core mix with in-device VXLAN interfaces. `br100` is a Linux bridge over `vtep100` (a kernel-random vxlan MAC) and `eth0` (a plugin-random one), so the address it inherits — the smallest of the two — is a coin flip per deploy: three Python deploys gave eth0, vtep100, eth0. It is the only interface in the corpus whose MAC is kernel-derived from unpinned addresses; 10-one-bridge's `mainbridge` is the same construct over four MACs the lab pins, so its inheritance stays a real assertion.",
   "lab_dir": "<LABDIR>",
   "flags": [],
   "probes": [
@@ -16,6 +16,10 @@
   "fs_roots": [
     "/hostlab",
     "/shared"
+  ],
+  "volatile_macs": [
+    "vtep1:br100",
+    "vtep2:br100"
   ],
   "lab_hash_source": "path",
   "lab_hash_derived_ok": true,

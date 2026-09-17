@@ -1,9 +1,9 @@
 {
   "device": "as20r2",
   "ip_br_link": [
-    "eth0 UP <MAC> <BROADCAST,MULTICAST,UP,LOWER_UP>",
-    "eth1 UP <MAC> <BROADCAST,MULTICAST,UP,LOWER_UP>",
-    "eth2 UP <MAC> <BROADCAST,MULTICAST,UP,LOWER_UP>",
+    "eth0 UP <MAC22> <BROADCAST,MULTICAST,UP,LOWER_UP>",
+    "eth1 UP <MAC23> <BROADCAST,MULTICAST,UP,LOWER_UP>",
+    "eth2 UP <MAC24> <BROADCAST,MULTICAST,UP,LOWER_UP>",
     "lo UNKNOWN 00:00:00:00:00:00 <LOOPBACK,UP,LOWER_UP>"
   ],
   "ip_addr": [
@@ -13,11 +13,13 @@
           "family": "inet",
           "label": "eth0",
           "local": "11.20.0.2",
+          "preferred_life_time": 4294967295,
           "prefixlen": 24,
-          "scope": "global"
+          "scope": "global",
+          "valid_life_time": 4294967295
         }
       ],
-      "address": "<MAC>",
+      "address": "<MAC22>",
       "broadcast": "ff:ff:ff:ff:ff:ff",
       "flags": [
         "BROADCAST",
@@ -39,11 +41,13 @@
           "family": "inet",
           "label": "eth1",
           "local": "20.0.0.5",
+          "preferred_life_time": 4294967295,
           "prefixlen": 30,
-          "scope": "global"
+          "scope": "global",
+          "valid_life_time": 4294967295
         }
       ],
-      "address": "<MAC>",
+      "address": "<MAC23>",
       "broadcast": "ff:ff:ff:ff:ff:ff",
       "flags": [
         "BROADCAST",
@@ -65,11 +69,13 @@
           "family": "inet",
           "label": "eth2",
           "local": "20.0.0.2",
+          "preferred_life_time": 4294967295,
           "prefixlen": 30,
-          "scope": "global"
+          "scope": "global",
+          "valid_life_time": 4294967295
         }
       ],
-      "address": "<MAC>",
+      "address": "<MAC24>",
       "broadcast": "ff:ff:ff:ff:ff:ff",
       "flags": [
         "BROADCAST",
@@ -91,8 +97,10 @@
           "family": "inet",
           "label": "lo",
           "local": "127.0.0.1",
+          "preferred_life_time": 4294967295,
           "prefixlen": 8,
-          "scope": "host"
+          "scope": "host",
+          "valid_life_time": 4294967295
         }
       ],
       "address": "00:00:00:00:00:00",
@@ -126,34 +134,55 @@
     "/hostlab": [
       {
         "kind": "d",
-        "path": "./as20r2"
+        "path": "./as20r2",
+        "mode": "755",
+        "uid": "0",
+        "gid": "0"
       },
       {
         "kind": "f",
         "path": "./as20r2.startup",
+        "mode": "744",
+        "uid": "0",
+        "gid": "0",
         "sha256": "a1fd1cfb24f6c09d4a65f72b4c90c4bd9bb40805c997cb95ef83d85421ee3720"
       },
       {
         "kind": "d",
-        "path": "./as20r2/etc"
+        "path": "./as20r2/etc",
+        "mode": "755",
+        "uid": "0",
+        "gid": "0"
       },
       {
         "kind": "d",
-        "path": "./as20r2/etc/frr"
+        "path": "./as20r2/etc/frr",
+        "mode": "755",
+        "uid": "0",
+        "gid": "0"
       },
       {
         "kind": "f",
         "path": "./as20r2/etc/frr/daemons",
+        "mode": "644",
+        "uid": "0",
+        "gid": "0",
         "sha256": "64430061aa8e52a2c3471784c1134b0da1f55d601e4533c62dc29721adf71a56"
       },
       {
         "kind": "f",
         "path": "./as20r2/etc/frr/frr.conf",
+        "mode": "644",
+        "uid": "0",
+        "gid": "0",
         "sha256": "7ca1023e6a537100c0242d5fc93713a6d018775fc4584cbbeb18f0da8a1e1a9a"
       },
       {
         "kind": "f",
         "path": "./as20r2/etc/frr/vtysh.conf",
+        "mode": "644",
+        "uid": "0",
+        "gid": "0",
         "sha256": "3a09ebf98b34371ec76786b41c6c617ce7558bc3793e675308b2222d05614eb9"
       }
     ],

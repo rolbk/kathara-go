@@ -1,9 +1,9 @@
 {
   "device": "as14r1",
   "ip_br_link": [
-    "eth0 UP <MAC> <BROADCAST,MULTICAST,UP,LOWER_UP>",
-    "eth1 UP <MAC> <BROADCAST,MULTICAST,UP,LOWER_UP>",
-    "eth2 UP <MAC> <BROADCAST,MULTICAST,UP,LOWER_UP>",
+    "eth0 UP <MAC15> <BROADCAST,MULTICAST,UP,LOWER_UP>",
+    "eth1 UP <MAC16> <BROADCAST,MULTICAST,UP,LOWER_UP>",
+    "eth2 UP <MAC17> <BROADCAST,MULTICAST,UP,LOWER_UP>",
     "lo UNKNOWN 00:00:00:00:00:00 <LOOPBACK,UP,LOWER_UP>"
   ],
   "ip_addr": [
@@ -13,11 +13,13 @@
           "family": "inet",
           "label": "eth0",
           "local": "13.14.0.14",
+          "preferred_life_time": 4294967295,
           "prefixlen": 24,
-          "scope": "global"
+          "scope": "global",
+          "valid_life_time": 4294967295
         }
       ],
-      "address": "<MAC>",
+      "address": "<MAC15>",
       "broadcast": "ff:ff:ff:ff:ff:ff",
       "flags": [
         "BROADCAST",
@@ -39,11 +41,13 @@
           "family": "inet",
           "label": "eth1",
           "local": "11.14.0.14",
+          "preferred_life_time": 4294967295,
           "prefixlen": 24,
-          "scope": "global"
+          "scope": "global",
+          "valid_life_time": 4294967295
         }
       ],
-      "address": "<MAC>",
+      "address": "<MAC16>",
       "broadcast": "ff:ff:ff:ff:ff:ff",
       "flags": [
         "BROADCAST",
@@ -65,11 +69,13 @@
           "family": "inet",
           "label": "eth2",
           "local": "10.14.0.14",
+          "preferred_life_time": 4294967295,
           "prefixlen": 24,
-          "scope": "global"
+          "scope": "global",
+          "valid_life_time": 4294967295
         }
       ],
-      "address": "<MAC>",
+      "address": "<MAC17>",
       "broadcast": "ff:ff:ff:ff:ff:ff",
       "flags": [
         "BROADCAST",
@@ -91,8 +97,10 @@
           "family": "inet",
           "label": "lo",
           "local": "127.0.0.1",
+          "preferred_life_time": 4294967295,
           "prefixlen": 8,
-          "scope": "host"
+          "scope": "host",
+          "valid_life_time": 4294967295
         }
       ],
       "address": "00:00:00:00:00:00",
@@ -126,34 +134,55 @@
     "/hostlab": [
       {
         "kind": "d",
-        "path": "./as14r1"
+        "path": "./as14r1",
+        "mode": "755",
+        "uid": "0",
+        "gid": "0"
       },
       {
         "kind": "f",
         "path": "./as14r1.startup",
+        "mode": "744",
+        "uid": "0",
+        "gid": "0",
         "sha256": "3cc8707dda73238e231e03950e6ffdee5210167a2f342fb4974785fb0bd1ec32"
       },
       {
         "kind": "d",
-        "path": "./as14r1/etc"
+        "path": "./as14r1/etc",
+        "mode": "755",
+        "uid": "0",
+        "gid": "0"
       },
       {
         "kind": "d",
-        "path": "./as14r1/etc/frr"
+        "path": "./as14r1/etc/frr",
+        "mode": "755",
+        "uid": "0",
+        "gid": "0"
       },
       {
         "kind": "f",
         "path": "./as14r1/etc/frr/daemons",
+        "mode": "644",
+        "uid": "0",
+        "gid": "0",
         "sha256": "64430061aa8e52a2c3471784c1134b0da1f55d601e4533c62dc29721adf71a56"
       },
       {
         "kind": "f",
         "path": "./as14r1/etc/frr/frr.conf",
+        "mode": "644",
+        "uid": "0",
+        "gid": "0",
         "sha256": "92f587273e0980588a3f860985cfdd3f762b6dfc6ddbfcf7b5dc9e4d07517dba"
       },
       {
         "kind": "f",
         "path": "./as14r1/etc/frr/vtysh.conf",
+        "mode": "644",
+        "uid": "0",
+        "gid": "0",
         "sha256": "d2ffed229dec21fce6d22f459bd9d040c7ae51d5184928773145fb115a721b72"
       }
     ],

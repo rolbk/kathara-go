@@ -1,17 +1,17 @@
 {
   "device": "s1",
   "ip_br_link": [
-    "eth0 UP <MAC> <BROADCAST,MULTICAST,UP,LOWER_UP>",
-    "eth1 UP <MAC> <BROADCAST,MULTICAST,UP,LOWER_UP>",
-    "eth2 UP <MAC> <BROADCAST,MULTICAST,UP,LOWER_UP>",
+    "eth0 UP <MAC4> <BROADCAST,MULTICAST,UP,LOWER_UP>",
+    "eth1 UP <MAC5> <BROADCAST,MULTICAST,UP,LOWER_UP>",
+    "eth2 UP <MAC6> <BROADCAST,MULTICAST,UP,LOWER_UP>",
     "lo UNKNOWN 00:00:00:00:00:00 <LOOPBACK,UP,LOWER_UP>",
-    "ovs-system DOWN <MAC> <BROADCAST,MULTICAST>",
-    "s1 DOWN <MAC> <BROADCAST,MULTICAST>"
+    "ovs-system DOWN <MAC2> <BROADCAST,MULTICAST>",
+    "s1 DOWN <MAC3> <BROADCAST,MULTICAST>"
   ],
   "ip_addr": [
     {
       "addr_info": [],
-      "address": "<MAC>",
+      "address": "<MAC4>",
       "broadcast": "ff:ff:ff:ff:ff:ff",
       "flags": [
         "BROADCAST",
@@ -30,7 +30,7 @@
     },
     {
       "addr_info": [],
-      "address": "<MAC>",
+      "address": "<MAC5>",
       "broadcast": "ff:ff:ff:ff:ff:ff",
       "flags": [
         "BROADCAST",
@@ -53,11 +53,13 @@
           "family": "inet",
           "label": "eth2",
           "local": "20.0.1.1",
+          "preferred_life_time": 4294967295,
           "prefixlen": 24,
-          "scope": "global"
+          "scope": "global",
+          "valid_life_time": 4294967295
         }
       ],
-      "address": "<MAC>",
+      "address": "<MAC6>",
       "broadcast": "ff:ff:ff:ff:ff:ff",
       "flags": [
         "BROADCAST",
@@ -79,8 +81,10 @@
           "family": "inet",
           "label": "lo",
           "local": "127.0.0.1",
+          "preferred_life_time": 4294967295,
           "prefixlen": 8,
-          "scope": "host"
+          "scope": "host",
+          "valid_life_time": 4294967295
         }
       ],
       "address": "00:00:00:00:00:00",
@@ -100,7 +104,7 @@
     },
     {
       "addr_info": [],
-      "address": "<MAC>",
+      "address": "<MAC2>",
       "broadcast": "ff:ff:ff:ff:ff:ff",
       "flags": [
         "BROADCAST",
@@ -116,7 +120,7 @@
     },
     {
       "addr_info": [],
-      "address": "<MAC>",
+      "address": "<MAC3>",
       "broadcast": "ff:ff:ff:ff:ff:ff",
       "flags": [
         "BROADCAST",
@@ -144,11 +148,17 @@
     "/hostlab": [
       {
         "kind": "d",
-        "path": "./s1"
+        "path": "./s1",
+        "mode": "755",
+        "uid": "0",
+        "gid": "0"
       },
       {
         "kind": "f",
         "path": "./s1.startup",
+        "mode": "744",
+        "uid": "0",
+        "gid": "0",
         "sha256": "ac6427104c8c9a71a92b0a09e5016cbb6f33f6f698268979c4864ecd24c92f83"
       }
     ],

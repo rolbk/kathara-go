@@ -1,7 +1,7 @@
 {
   "device": "web2",
   "ip_br_link": [
-    "eth0 UP <MAC> <BROADCAST,MULTICAST,UP,LOWER_UP>",
+    "eth0 UP <MAC12> <BROADCAST,MULTICAST,UP,LOWER_UP>",
     "lo UNKNOWN 00:00:00:00:00:00 <LOOPBACK,UP,LOWER_UP>"
   ],
   "ip_addr": [
@@ -11,11 +11,13 @@
           "family": "inet",
           "label": "eth0",
           "local": "30.0.0.2",
+          "preferred_life_time": 4294967295,
           "prefixlen": 24,
-          "scope": "global"
+          "scope": "global",
+          "valid_life_time": 4294967295
         }
       ],
-      "address": "<MAC>",
+      "address": "<MAC12>",
       "broadcast": "ff:ff:ff:ff:ff:ff",
       "flags": [
         "BROADCAST",
@@ -37,8 +39,10 @@
           "family": "inet",
           "label": "lo",
           "local": "127.0.0.1",
+          "preferred_life_time": 4294967295,
           "prefixlen": 8,
-          "scope": "host"
+          "scope": "host",
+          "valid_life_time": 4294967295
         }
       ],
       "address": "00:00:00:00:00:00",
@@ -67,28 +71,46 @@
     "/hostlab": [
       {
         "kind": "d",
-        "path": "./web2"
+        "path": "./web2",
+        "mode": "755",
+        "uid": "0",
+        "gid": "0"
       },
       {
         "kind": "f",
         "path": "./web2.startup",
+        "mode": "744",
+        "uid": "0",
+        "gid": "0",
         "sha256": "d104f4ed9713df9a3628760b7e2c5ed6852d75d531d21612af461f4b4beedbce"
       },
       {
         "kind": "d",
-        "path": "./web2/var"
+        "path": "./web2/var",
+        "mode": "755",
+        "uid": "0",
+        "gid": "0"
       },
       {
         "kind": "d",
-        "path": "./web2/var/www"
+        "path": "./web2/var/www",
+        "mode": "755",
+        "uid": "0",
+        "gid": "0"
       },
       {
         "kind": "d",
-        "path": "./web2/var/www/html"
+        "path": "./web2/var/www/html",
+        "mode": "755",
+        "uid": "0",
+        "gid": "0"
       },
       {
         "kind": "f",
         "path": "./web2/var/www/html/index.html",
+        "mode": "644",
+        "uid": "0",
+        "gid": "0",
         "sha256": "e7456a9898dee5365d29866278f9676ea80891efe55b8202997ef32a44b2cb33"
       }
     ],

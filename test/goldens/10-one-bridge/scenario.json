@@ -1,5 +1,5 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "name": "10-one-bridge",
   "kind": "deploy",
   "status": "golden",

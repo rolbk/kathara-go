@@ -1,5 +1,5 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "name": "11-capture-packets",
   "kind": "deploy",
   "status": "golden",

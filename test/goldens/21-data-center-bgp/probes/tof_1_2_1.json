@@ -1,10 +1,10 @@
 {
   "device": "tof_1_2_1",
   "ip_br_link": [
-    "eth0 UP <MAC> <BROADCAST,MULTICAST,UP,LOWER_UP>",
-    "eth1 UP <MAC> <BROADCAST,MULTICAST,UP,LOWER_UP>",
-    "eth2 UP <MAC> <BROADCAST,MULTICAST,UP,LOWER_UP>",
-    "eth3 UP <MAC> <BROADCAST,MULTICAST,UP,LOWER_UP>",
+    "eth0 UP <MAC41> <BROADCAST,MULTICAST,UP,LOWER_UP>",
+    "eth1 UP <MAC42> <BROADCAST,MULTICAST,UP,LOWER_UP>",
+    "eth2 UP <MAC43> <BROADCAST,MULTICAST,UP,LOWER_UP>",
+    "eth3 UP <MAC44> <BROADCAST,MULTICAST,UP,LOWER_UP>",
     "lo UNKNOWN 00:00:00:00:00:00 <LOOPBACK,UP,LOWER_UP>"
   ],
   "ip_addr": [
@@ -13,12 +13,14 @@
         {
           "family": "inet6",
           "local": "<LINKLOCAL6>",
+          "preferred_life_time": 4294967295,
           "prefixlen": 64,
           "protocol": "kernel_ll",
-          "scope": "link"
+          "scope": "link",
+          "valid_life_time": 4294967295
         }
       ],
-      "address": "<MAC>",
+      "address": "<MAC41>",
       "broadcast": "ff:ff:ff:ff:ff:ff",
       "flags": [
         "BROADCAST",
@@ -39,12 +41,14 @@
         {
           "family": "inet6",
           "local": "<LINKLOCAL6>",
+          "preferred_life_time": 4294967295,
           "prefixlen": 64,
           "protocol": "kernel_ll",
-          "scope": "link"
+          "scope": "link",
+          "valid_life_time": 4294967295
         }
       ],
-      "address": "<MAC>",
+      "address": "<MAC42>",
       "broadcast": "ff:ff:ff:ff:ff:ff",
       "flags": [
         "BROADCAST",
@@ -65,12 +69,14 @@
         {
           "family": "inet6",
           "local": "<LINKLOCAL6>",
+          "preferred_life_time": 4294967295,
           "prefixlen": 64,
           "protocol": "kernel_ll",
-          "scope": "link"
+          "scope": "link",
+          "valid_life_time": 4294967295
         }
       ],
-      "address": "<MAC>",
+      "address": "<MAC43>",
       "broadcast": "ff:ff:ff:ff:ff:ff",
       "flags": [
         "BROADCAST",
@@ -91,12 +97,14 @@
         {
           "family": "inet6",
           "local": "<LINKLOCAL6>",
+          "preferred_life_time": 4294967295,
           "prefixlen": 64,
           "protocol": "kernel_ll",
-          "scope": "link"
+          "scope": "link",
+          "valid_life_time": 4294967295
         }
       ],
-      "address": "<MAC>",
+      "address": "<MAC44>",
       "broadcast": "ff:ff:ff:ff:ff:ff",
       "flags": [
         "BROADCAST",
@@ -118,15 +126,19 @@
           "family": "inet",
           "label": "lo",
           "local": "127.0.0.1",
+          "preferred_life_time": 4294967295,
           "prefixlen": 8,
-          "scope": "host"
+          "scope": "host",
+          "valid_life_time": 4294967295
         },
         {
           "family": "inet6",
           "local": "::1",
+          "preferred_life_time": 4294967295,
           "prefixlen": 128,
           "protocol": "kernel_lo",
-          "scope": "host"
+          "scope": "host",
+          "valid_life_time": 4294967295
         }
       ],
       "address": "00:00:00:00:00:00",
@@ -155,29 +167,47 @@
     "/hostlab": [
       {
         "kind": "d",
-        "path": "./tof_1_2_1"
+        "path": "./tof_1_2_1",
+        "mode": "755",
+        "uid": "0",
+        "gid": "0"
       },
       {
         "kind": "f",
         "path": "./tof_1_2_1.startup",
+        "mode": "744",
+        "uid": "0",
+        "gid": "0",
         "sha256": "ee42eedc0fc4ceed3c221469fab935170a92c1ba2d5c64d765cd9910e87164d7"
       },
       {
         "kind": "d",
-        "path": "./tof_1_2_1/etc"
+        "path": "./tof_1_2_1/etc",
+        "mode": "755",
+        "uid": "0",
+        "gid": "0"
       },
       {
         "kind": "d",
-        "path": "./tof_1_2_1/etc/frr"
+        "path": "./tof_1_2_1/etc/frr",
+        "mode": "755",
+        "uid": "0",
+        "gid": "0"
       },
       {
         "kind": "f",
         "path": "./tof_1_2_1/etc/frr/bgpd.conf",
+        "mode": "644",
+        "uid": "0",
+        "gid": "0",
         "sha256": "e6f614e9361bc2bcc838bbd23b23460ce35af31c0d1016d3f5b542d29bc6bd31"
       },
       {
         "kind": "f",
         "path": "./tof_1_2_1/etc/frr/daemons",
+        "mode": "644",
+        "uid": "0",
+        "gid": "0",
         "sha256": "5657c4ce63f553664b2e687783f644094382916a996edd08fb31deebc2c88d4a"
       }
     ],

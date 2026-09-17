@@ -34,6 +34,11 @@ type ScenarioRecord struct {
 	DeviceFiles   []string `json:"device_files,omitempty"`
 	HostFiles     []string `json:"host_files,omitempty"`
 	HostDirs      []string `json:"host_dirs,omitempty"`
+	// VolatileMACs is the scenario's list of `<device>:<ifname>` interfaces
+	// whose MAC the kernel derives from another interface's random address. It
+	// is recorded so that a golden says, in the golden itself, which identity
+	// assertions were waived and where.
+	VolatileMACs []string `json:"volatile_macs,omitempty"`
 
 	// Derived-identifier assertions. The values themselves are host dependent
 	// and are tokenized everywhere else in the snapshot; what is recorded here
@@ -109,33 +114,50 @@ type EndpointRecord struct {
 
 // ContainerRecord is the golden subset of `docker inspect <container>`.
 type ContainerRecord struct {
-	Device        string                         `json:"device"`
-	ContainerName string                         `json:"container_name"` // tokenized
-	Hostname      string                         `json:"hostname"`
-	Image         string                         `json:"image"`
-	User          string                         `json:"user"`
-	Labels        map[string]string              `json:"labels"` // tokenized values
-	ShellLabel    string                         `json:"shell_label"`
-	CapAdd        []string                       `json:"cap_add"`
-	CapDrop       []string                       `json:"cap_drop,omitempty"`
-	Privileged    bool                           `json:"privileged"`
-	Sysctls       []string                       `json:"sysctls"` // "k=v", sorted
-	Ulimits       []UlimitRecord                 `json:"ulimits"` // sorted by name
-	Memory        int64                          `json:"memory"`
-	NanoCPUs      int64                          `json:"nano_cpus"`
-	Env           []string                       `json:"env"` // Docker order, not sorted
-	Entrypoint    []string                       `json:"entrypoint,omitempty"`
-	Cmd           []string                       `json:"cmd,omitempty"`
-	NetworkMode   string                         `json:"network_mode"` // tokenized
-	Mounts        []MountRecord                  `json:"mounts"`       // sorted by destination
-	PortBindings  map[string][]PortBindingRecord `json:"port_bindings"`
-	ExposedPorts  map[string][]PortBindingRecord `json:"exposed_ports"`
-	Endpoints     []EndpointRecord               `json:"endpoints"` // sorted by iface
-	State         string                         `json:"state"`
-	Running       bool                           `json:"running"`
+	Device        string            `json:"device"`
+	ContainerName string            `json:"container_name"` // tokenized
+	Hostname      string            `json:"hostname"`
+	Image         string            `json:"image"`
+	User          string            `json:"user"`
+	Labels        map[string]string `json:"labels"` // tokenized values
+	ShellLabel    string            `json:"shell_label"`
+	CapAdd        []string          `json:"cap_add"`
+	CapDrop       []string          `json:"cap_drop,omitempty"`
+	Privileged    bool              `json:"privileged"`
+	// Tty and OpenStdin are `tty=True` and `stdin_open=True` of
+	// DockerMachine.create's kwargs. Both are unconditional in Python and both
+	// are user-visible: a container created without a TTY renders `kathara
+	// connect` unusable and loses the line discipline every lab's startup
+	// output is written through.
+	Tty          bool                           `json:"tty"`
+	OpenStdin    bool                           `json:"open_stdin"`
+	Sysctls      []string                       `json:"sysctls"` // "k=v", sorted
+	Ulimits      []UlimitRecord                 `json:"ulimits"` // insertion order, never sorted
+	Memory       int64                          `json:"memory"`
+	NanoCPUs     int64                          `json:"nano_cpus"`
+	Env          []string                       `json:"env"` // Docker order, not sorted
+	Entrypoint   []string                       `json:"entrypoint,omitempty"`
+	Cmd          []string                       `json:"cmd,omitempty"`
+	NetworkMode  string                         `json:"network_mode"` // tokenized
+	Binds        []string                       `json:"binds"`        // tokenized, HostConfig order
+	Mounts       []MountRecord                  `json:"mounts"`       // sorted by destination
+	PortBindings map[string][]PortBindingRecord `json:"port_bindings"`
+	ExposedPorts map[string][]PortBindingRecord `json:"exposed_ports"`
+	Endpoints    []EndpointRecord               `json:"endpoints"` // sorted by iface
+	State        string                         `json:"state"`
+	Running      bool                           `json:"running"`
 }
 
 // NetworkRecord is the golden subset of `docker network inspect <network>`.
+//
+// EnableIPv6, IPAMConfig and Options are the rest of what
+// `DockerLink.create`'s `networks.create(...)` call decides. Python passes
+// `ipam=IPAMConfig(driver='null')` and nothing else, so the daemon answers with
+// EnableIPv6 false, the single `0.0.0.0/0` config row the null driver
+// synthesizes, and an empty option map — a Kathara collision domain is a pure
+// L2 segment with no address management. Recording them is what makes a port
+// that enabled IPv6 on the network, handed the link a subnet, or passed a
+// driver option fail the golden instead of passing it.
 type NetworkRecord struct {
 	Link            string            `json:"link"`
 	NetworkName     string            `json:"network_name"` // tokenized
@@ -143,16 +165,25 @@ type NetworkRecord struct {
 	Scope           string            `json:"scope"`
 	Internal        bool              `json:"internal"`
 	Attachable      bool              `json:"attachable"`
+	EnableIPv6      bool              `json:"enable_ipv6"`
 	IPAMDriver      string            `json:"ipam_driver"`
-	Labels          map[string]string `json:"labels"` // tokenized values
+	IPAMConfig      []map[string]any  `json:"ipam_config"` // daemon order, tokenized values
+	Options         map[string]string `json:"options"`     // tokenized values
+	Labels          map[string]string `json:"labels"`      // tokenized values
 	External        string            `json:"external"`
 	ExternalPresent bool              `json:"external_label_present"`
 }
 
-// FSEntry is one node of a mounted file tree.
+// FSEntry is one node of a mounted file tree. Mode, UID and GID are `stat`'s
+// `%a`, `%u` and `%g` verbatim (empty when the image has no usable `stat`);
+// they are strings so that a missing value is distinguishable from a zero one
+// and so that no parse of the container's output can fail.
 type FSEntry struct {
 	Kind   string `json:"kind"` // "f" | "d" | "l"
 	Path   string `json:"path"`
+	Mode   string `json:"mode"`
+	UID    string `json:"uid"`
+	GID    string `json:"gid"`
 	SHA256 string `json:"sha256,omitempty"`
 	Target string `json:"target,omitempty"`
 }

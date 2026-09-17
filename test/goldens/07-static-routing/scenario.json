@@ -1,5 +1,5 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "name": "07-static-routing",
   "kind": "deploy",
   "status": "golden",

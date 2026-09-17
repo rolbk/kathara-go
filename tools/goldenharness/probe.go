@@ -9,16 +9,27 @@ import (
 )
 
 // fsTreeScript walks one in-container directory and prints a stable,
-// tab-separated listing: kind, path, and either a sha256 (files) or a link
-// target (symlinks). find output is sorted in the C locale inside the
-// container so the listing never depends on readdir order.
+// tab-separated listing: kind, path, permission bits, owner uid, owner gid,
+// and either a sha256 (files) or a link target (symlinks). find output is
+// sorted in the C locale inside the container so the listing never depends on
+// readdir order.
+//
+// The mode/uid/gid triple is what `pack_data` actually shipped, not just the
+// bytes: `Machine.py:392`'s tar is built from the host tree and the bind mount
+// carries the host's ownership through, so a port that rewrote a mode or
+// dropped the setuid bit while producing identical content would otherwise be
+// invisible. `stat` is not given `-L`, so a symlink reports its own mode
+// rather than its target's. A `stat` that is missing or refuses the format
+// yields an empty triple rather than failing the walk.
 const fsTreeScript = `root="$1"
 [ -d "$root" ] || { echo "__MISSING__"; exit 0; }
 cd "$root" || exit 3
 find . -mindepth 1 | LC_ALL=C sort | while IFS= read -r f; do
-  if [ -L "$f" ]; then printf 'l\t%s\t%s\n' "$f" "$(readlink "$f")";
-  elif [ -d "$f" ]; then printf 'd\t%s\t\n' "$f";
-  else printf 'f\t%s\t%s\n' "$f" "$(sha256sum "$f" 2>/dev/null | cut -d' ' -f1)"; fi
+  m="$(stat -c '%a	%u	%g' "$f" 2>/dev/null)"
+  case "$m" in *"	"*"	"*) ;; *) m="		" ;; esac
+  if [ -L "$f" ]; then printf 'l\t%s\t%s\t%s\n' "$f" "$m" "$(readlink "$f")";
+  elif [ -d "$f" ]; then printf 'd\t%s\t%s\t\n' "$f" "$m";
+  else printf 'f\t%s\t%s\t%s\n' "$f" "$m" "$(sha256sum "$f" 2>/dev/null | cut -d' ' -f1)"; fi
 done`
 
 // fileProbeScript reports existence, sha256 and content of one path.
@@ -59,15 +70,20 @@ func (p *Prober) Probe(ctx context.Context, device, containerID string, sc *Scen
 		return res.Stdout, true
 	}
 
+	// Interfaces whose MAC the kernel derived from another interface's random
+	// address; their address is recorded as a token that asserts presence but
+	// not identity (NORMALIZATION.md section 3, `volatile_macs`).
+	derived := sc.VolatileMACSet(device)
+
 	if sc.HasProbe(ProbeLink) {
 		if s, ok := record(ProbeLink, p.docker.Exec(ctx, containerID, "ip", "-br", "link")); ok {
-			out.IPBrLink = p.normalizeBrLink(s)
+			out.IPBrLink = p.normalizeBrLink(s, derived)
 		}
 	}
 
 	if sc.HasProbe(ProbeAddr) {
 		if s, ok := record(ProbeAddr, p.docker.Exec(ctx, containerID, "ip", "-j", "addr")); ok {
-			addrs, err := p.normalizeAddrJSON(s)
+			addrs, err := p.normalizeAddrJSON(s, derived)
 			if err != nil {
 				errs[ProbeAddr] = err.Error()
 			} else {
@@ -155,8 +171,25 @@ func (p *Prober) Probe(ctx context.Context, device, containerID string, sc *Scen
 // pinned by the lab, tokenizes the veth peer-ifindex suffix, then sorts the
 // lines. Interface order in the kernel dump follows ifindex, which is
 // host-global, and so is the peer index rendered as `eth1@if451`.
-func (p *Prober) normalizeBrLink(s string) []string {
-	lines := p.norm.FileLines(s)
+//
+// An interface in `derived` has its address replaced *before* the generic
+// scrub, so the value never claims a keyed `<MACn>` ordinal — which also keeps
+// the ordinals of the other interfaces stable however the kernel's copy landed.
+func (p *Prober) normalizeBrLink(s string, derived map[string]bool) []string {
+	raw := strings.Split(strings.ReplaceAll(s, "\r\n", "\n"), "\n")
+	for i, l := range raw {
+		fields := strings.Fields(l)
+		if len(fields) == 0 {
+			continue
+		}
+		// `ip -br link` renders a cross-namespace veth as `eth1@if451`; the
+		// manifest names the interface, not the peer suffix.
+		name, _, _ := strings.Cut(fields[0], "@")
+		if derived[name] {
+			raw[i] = maskMACFields(fields)
+		}
+	}
+	lines := p.norm.FileLines(strings.Join(raw, "\n"))
 	for i, l := range lines {
 		lines[i] = p.norm.ScrubVethPeerIfIndex(strings.Join(strings.Fields(l), " "))
 	}
@@ -164,11 +197,42 @@ func (p *Prober) normalizeBrLink(s string) []string {
 	return lines
 }
 
-// normalizeAddrJSON decodes `ip -j addr`, strips volatile keys and sorts.
-func (p *Prober) normalizeAddrJSON(s string) ([]map[string]any, error) {
+// maskMACFields replaces every MAC-shaped field of one `ip -br link` row with
+// TokDerivedMAC and rejoins the row.
+func maskMACFields(fields []string) string {
+	out := make([]string, len(fields))
+	for i, f := range fields {
+		if reMAC.MatchString(f) {
+			out[i] = TokDerivedMAC
+			continue
+		}
+		out[i] = f
+	}
+	return strings.Join(out, " ")
+}
+
+// normalizeAddrJSON decodes `ip -j addr` and strips the volatile keys. The
+// `address` of an interface in `derived` is replaced before the scrub, for the
+// reason given on normalizeBrLink.
+func (p *Prober) normalizeAddrJSON(s string, derived map[string]bool) ([]map[string]any, error) {
 	var doc []any
 	if err := json.Unmarshal([]byte(s), &doc); err != nil {
 		return nil, fmt.Errorf("decode ip -j addr: %w", err)
+	}
+	if len(derived) > 0 {
+		for _, e := range doc {
+			m, ok := e.(map[string]any)
+			if !ok {
+				continue
+			}
+			name, _ := m["ifname"].(string)
+			if !derived[name] {
+				continue
+			}
+			if _, has := m["address"]; has {
+				m["address"] = TokDerivedMAC
+			}
+		}
 	}
 	scrubbed, ok := p.norm.ScrubAddrJSON(doc).([]any)
 	if !ok {
@@ -194,13 +258,20 @@ func (p *Prober) parseFSTree(s string) []FSEntry {
 		if line == "" {
 			continue
 		}
-		parts := strings.SplitN(line, "\t", 3)
-		if len(parts) < 2 {
+		// kind \t path \t mode \t uid \t gid \t (sha256 | link target)
+		parts := strings.SplitN(line, "\t", 6)
+		if len(parts) < 5 {
 			continue
 		}
-		e := FSEntry{Kind: parts[0], Path: p.norm.Text(parts[1])}
-		if len(parts) == 3 {
-			v := p.norm.Text(strings.TrimSpace(parts[2]))
+		e := FSEntry{
+			Kind: parts[0],
+			Path: p.norm.Text(parts[1]),
+			Mode: parts[2],
+			UID:  parts[3],
+			GID:  parts[4],
+		}
+		if len(parts) == 6 {
+			v := p.norm.Text(strings.TrimSpace(parts[5]))
 			switch e.Kind {
 			case "l":
 				e.Target = v

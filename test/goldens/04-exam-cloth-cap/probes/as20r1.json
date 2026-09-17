@@ -1,10 +1,10 @@
 {
   "device": "as20r1",
   "ip_br_link": [
-    "eth0 UP <MAC> <BROADCAST,MULTICAST,UP,LOWER_UP>",
-    "eth1 UP <MAC> <BROADCAST,MULTICAST,UP,LOWER_UP>",
-    "eth2 UP <MAC> <BROADCAST,MULTICAST,UP,LOWER_UP>",
-    "eth3 UP <MAC> <BROADCAST,MULTICAST,UP,LOWER_UP>",
+    "eth0 UP <MAC18> <BROADCAST,MULTICAST,UP,LOWER_UP>",
+    "eth1 UP <MAC19> <BROADCAST,MULTICAST,UP,LOWER_UP>",
+    "eth2 UP <MAC20> <BROADCAST,MULTICAST,UP,LOWER_UP>",
+    "eth3 UP <MAC21> <BROADCAST,MULTICAST,UP,LOWER_UP>",
     "lo UNKNOWN 00:00:00:00:00:00 <LOOPBACK,UP,LOWER_UP>"
   ],
   "ip_addr": [
@@ -14,11 +14,13 @@
           "family": "inet",
           "label": "eth0",
           "local": "20.1.0.1",
+          "preferred_life_time": 4294967295,
           "prefixlen": 24,
-          "scope": "global"
+          "scope": "global",
+          "valid_life_time": 4294967295
         }
       ],
-      "address": "<MAC>",
+      "address": "<MAC18>",
       "broadcast": "ff:ff:ff:ff:ff:ff",
       "flags": [
         "BROADCAST",
@@ -40,11 +42,13 @@
           "family": "inet",
           "label": "eth1",
           "local": "20.0.0.1",
+          "preferred_life_time": 4294967295,
           "prefixlen": 30,
-          "scope": "global"
+          "scope": "global",
+          "valid_life_time": 4294967295
         }
       ],
-      "address": "<MAC>",
+      "address": "<MAC19>",
       "broadcast": "ff:ff:ff:ff:ff:ff",
       "flags": [
         "BROADCAST",
@@ -66,11 +70,13 @@
           "family": "inet",
           "label": "eth2",
           "local": "10.20.0.1",
+          "preferred_life_time": 4294967295,
           "prefixlen": 24,
-          "scope": "global"
+          "scope": "global",
+          "valid_life_time": 4294967295
         }
       ],
-      "address": "<MAC>",
+      "address": "<MAC20>",
       "broadcast": "ff:ff:ff:ff:ff:ff",
       "flags": [
         "BROADCAST",
@@ -92,11 +98,13 @@
           "family": "inet",
           "label": "eth3",
           "local": "20.2.0.1",
+          "preferred_life_time": 4294967295,
           "prefixlen": 24,
-          "scope": "global"
+          "scope": "global",
+          "valid_life_time": 4294967295
         }
       ],
-      "address": "<MAC>",
+      "address": "<MAC21>",
       "broadcast": "ff:ff:ff:ff:ff:ff",
       "flags": [
         "BROADCAST",
@@ -118,8 +126,10 @@
           "family": "inet",
           "label": "lo",
           "local": "127.0.0.1",
+          "preferred_life_time": 4294967295,
           "prefixlen": 8,
-          "scope": "host"
+          "scope": "host",
+          "valid_life_time": 4294967295
         }
       ],
       "address": "00:00:00:00:00:00",
@@ -154,34 +164,55 @@
     "/hostlab": [
       {
         "kind": "d",
-        "path": "./as20r1"
+        "path": "./as20r1",
+        "mode": "755",
+        "uid": "0",
+        "gid": "0"
       },
       {
         "kind": "f",
         "path": "./as20r1.startup",
+        "mode": "744",
+        "uid": "0",
+        "gid": "0",
         "sha256": "624a8dd8975676ed0d7b69ae5fa17d0938dae7de4c15275b1d2addd6deef4423"
       },
       {
         "kind": "d",
-        "path": "./as20r1/etc"
+        "path": "./as20r1/etc",
+        "mode": "755",
+        "uid": "0",
+        "gid": "0"
       },
       {
         "kind": "d",
-        "path": "./as20r1/etc/frr"
+        "path": "./as20r1/etc/frr",
+        "mode": "755",
+        "uid": "0",
+        "gid": "0"
       },
       {
         "kind": "f",
         "path": "./as20r1/etc/frr/daemons",
+        "mode": "644",
+        "uid": "0",
+        "gid": "0",
         "sha256": "64430061aa8e52a2c3471784c1134b0da1f55d601e4533c62dc29721adf71a56"
       },
       {
         "kind": "f",
         "path": "./as20r1/etc/frr/frr.conf",
+        "mode": "644",
+        "uid": "0",
+        "gid": "0",
         "sha256": "9901c9e5b39d5a38dd35908dcf429cd23a3b4f93871b2372c534189e226e6577"
       },
       {
         "kind": "f",
         "path": "./as20r1/etc/frr/vtysh.conf",
+        "mode": "644",
+        "uid": "0",
+        "gid": "0",
         "sha256": "2d43d664055bba631dce6f989954fea8dfd1667412d9967d33da52044491714a"
       }
     ],

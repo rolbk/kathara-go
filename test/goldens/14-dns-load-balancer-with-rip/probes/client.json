@@ -1,7 +1,7 @@
 {
   "device": "client",
   "ip_br_link": [
-    "eth0 UP <MAC> <BROADCAST,MULTICAST,UP,LOWER_UP>",
+    "eth0 UP <MAC1> <BROADCAST,MULTICAST,UP,LOWER_UP>",
     "lo UNKNOWN 00:00:00:00:00:00 <LOOPBACK,UP,LOWER_UP>"
   ],
   "ip_addr": [
@@ -11,11 +11,13 @@
           "family": "inet",
           "label": "eth0",
           "local": "40.0.0.2",
+          "preferred_life_time": 4294967295,
           "prefixlen": 24,
-          "scope": "global"
+          "scope": "global",
+          "valid_life_time": 4294967295
         }
       ],
-      "address": "<MAC>",
+      "address": "<MAC1>",
       "broadcast": "ff:ff:ff:ff:ff:ff",
       "flags": [
         "BROADCAST",
@@ -37,8 +39,10 @@
           "family": "inet",
           "label": "lo",
           "local": "127.0.0.1",
+          "preferred_life_time": 4294967295,
           "prefixlen": 8,
-          "scope": "host"
+          "scope": "host",
+          "valid_life_time": 4294967295
         }
       ],
       "address": "00:00:00:00:00:00",
@@ -67,20 +71,32 @@
     "/hostlab": [
       {
         "kind": "d",
-        "path": "./client"
+        "path": "./client",
+        "mode": "755",
+        "uid": "0",
+        "gid": "0"
       },
       {
         "kind": "f",
         "path": "./client.startup",
+        "mode": "744",
+        "uid": "0",
+        "gid": "0",
         "sha256": "f0e45755907d499581576c37eb91686a5c5079d9b3b011cf86185df7abd1a129"
       },
       {
         "kind": "d",
-        "path": "./client/etc"
+        "path": "./client/etc",
+        "mode": "755",
+        "uid": "0",
+        "gid": "0"
       },
       {
         "kind": "f",
         "path": "./client/etc/resolv.conf",
+        "mode": "644",
+        "uid": "0",
+        "gid": "0",
         "sha256": "5ed9e119122303ef5962d040edab5c8a06c20e9d3804f1b40aeecf79c9b9a2f0"
       }
     ],

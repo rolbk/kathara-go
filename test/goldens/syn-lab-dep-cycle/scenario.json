@@ -1,5 +1,5 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "name": "syn-lab-dep-cycle",
   "kind": "error",
   "status": "golden",

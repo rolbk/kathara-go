@@ -23,11 +23,17 @@ func buildContainerRecords(raw []rawContainer, linkByNetwork map[string]string, 
 	var failures []string
 	out := make([]ContainerRecord, 0, len(raw))
 
+	// Containers are processed in device order, and each container's endpoints
+	// in network-name order, so that everything the normalizer keys on first
+	// observation — the MAC tokens of section 3 — is assigned identically in
+	// two recordings of the same scenario. `docker inspect` answers in the
+	// order the ids were passed, which is creation order, i.e. deploy-pool
+	// completion order.
+	raw = append([]rawContainer(nil), raw...)
+	sort.SliceStable(raw, func(i, j int) bool { return deviceOf(raw[i]) < deviceOf(raw[j]) })
+
 	for _, c := range raw {
-		device := c.Config.Labels["name"]
-		if device == "" {
-			device = strings.TrimPrefix(c.Name, "/")
-		}
+		device := deviceOf(c)
 
 		rec := ContainerRecord{
 			Device:        device,
@@ -45,6 +51,8 @@ func buildContainerRecords(raw []rawContainer, linkByNetwork map[string]string, 
 			CapAdd:       NormalizeCapabilities(append([]string{}, c.HostConfig.CapAdd...)),
 			CapDrop:      NormalizeCapabilities(append([]string{}, c.HostConfig.CapDrop...)),
 			Privileged:   c.HostConfig.Privileged,
+			Tty:          c.Config.Tty,
+			OpenStdin:    c.Config.OpenStdin,
 			Memory:       c.HostConfig.Memory,
 			NanoCPUs:     c.HostConfig.NanoCpus,
 			Env:          append([]string{}, c.Config.Env...),
@@ -55,6 +63,20 @@ func buildContainerRecords(raw []rawContainer, linkByNetwork map[string]string, 
 			Running:      c.State.Running,
 			PortBindings: map[string][]PortBindingRecord{},
 			ExposedPorts: map[string][]PortBindingRecord{},
+		}
+
+		// HostConfig.Binds verbatim: the list Kathara posted, in the order it
+		// built it (ORDERING.tsv `Machine.py`/`DockerMachine.py:305` — shared,
+		// then hosthome, then the device's own `volume` options). Only the host
+		// side of each `host:guest:mode` triple is tokenized, by the same
+		// literal substitution the Mounts array's Source goes through. A nil
+		// list stays nil: the daemon reports `"Binds": null` for a device with
+		// no volumes at all, and that is not the same fact as an empty list.
+		if c.HostConfig.Binds != nil {
+			rec.Binds = make([]string, 0, len(c.HostConfig.Binds))
+			for _, b := range c.HostConfig.Binds {
+				rec.Binds = append(rec.Binds, n.Text(b))
+			}
 		}
 
 		for k, v := range c.Config.Labels {
@@ -72,11 +94,16 @@ func buildContainerRecords(raw []rawContainer, linkByNetwork map[string]string, 
 		}
 		sort.Strings(rec.Sysctls)
 
+		// Ulimits keep the order the daemon reports, which is the order Kathara
+		// sent: `meta['ulimits']` is a dict fed by `machine[ulimit]=` lines in
+		// lab.conf order (ORDERING.tsv `Machine.py:236` and
+		// `DockerMachine.py:229`, both "deterministic_in_python: yes
+		// (insertion)", both flagged golden-visible). Sorting here deleted that
+		// assertion.
 		rec.Ulimits = make([]UlimitRecord, 0, len(c.HostConfig.Ulimits))
 		for _, u := range c.HostConfig.Ulimits {
 			rec.Ulimits = append(rec.Ulimits, UlimitRecord{Name: u.Name, Soft: u.Soft, Hard: u.Hard})
 		}
-		sort.Slice(rec.Ulimits, func(i, j int) bool { return rec.Ulimits[i].Name < rec.Ulimits[j].Name })
 
 		rec.Mounts = make([]MountRecord, 0, len(c.Mounts))
 		for _, m := range c.Mounts {
@@ -119,7 +146,8 @@ func buildContainerRecords(raw []rawContainer, linkByNetwork map[string]string, 
 		_, wantsBridge := c.Config.Labels["bridged_iface"]
 		sawBridgeEndpoint := false
 
-		for netName, ep := range c.NetworkSettings.Networks {
+		for _, netName := range sortedNetworkNames(c) {
+			ep := c.NetworkSettings.Networks[netName]
 			_, onKatharaNet := linkByNetwork[netName]
 			er := EndpointRecord{
 				Network:         n.Text(netName),
@@ -229,6 +257,16 @@ func buildContainerRecords(raw []rawContainer, linkByNetwork map[string]string, 
 	return out, failures
 }
 
+// deviceOf is the Kathara device name of a container: the `name` label the
+// manager stamps on every container it creates, falling back to the container
+// name for anything that somehow lacks one.
+func deviceOf(c rawContainer) string {
+	if name := c.Config.Labels["name"]; name != "" {
+		return name
+	}
+	return strings.TrimPrefix(c.Name, "/")
+}
+
 func convertBinds(binds []rawPortBind) []PortBindingRecord {
 	out := make([]PortBindingRecord, 0, len(binds))
 	for _, b := range binds {
@@ -259,13 +297,33 @@ func buildNetworkRecords(raw []rawNetwork, n *Normalizer) ([]NetworkRecord, map[
 			Scope:           net.Scope,
 			Internal:        net.Internal,
 			Attachable:      net.Attachable,
+			EnableIPv6:      net.EnableIPv6,
 			IPAMDriver:      net.IPAM.Driver,
+			IPAMConfig:      []map[string]any{},
+			Options:         map[string]string{},
 			Labels:          map[string]string{},
 			External:        external,
 			ExternalPresent: present,
 		}
 		for k, v := range net.Labels {
 			rec.Labels[k] = n.Text(v)
+		}
+		for k, v := range net.Options {
+			rec.Options[k] = n.Text(v)
+		}
+		// The null IPAM driver synthesizes a single 0.0.0.0/0 row; the array
+		// order is the daemon's and is kept, the values tokenized like any
+		// other recorded string.
+		for _, cfg := range net.IPAM.Config {
+			entry := make(map[string]any, len(cfg))
+			for k, v := range cfg {
+				if s, ok := v.(string); ok {
+					entry[k] = n.Text(s)
+					continue
+				}
+				entry[k] = v
+			}
+			rec.IPAMConfig = append(rec.IPAMConfig, entry)
 		}
 		linkByNetwork[net.Name] = rec.Link
 		out = append(out, rec)
