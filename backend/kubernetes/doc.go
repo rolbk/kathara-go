@@ -47,7 +47,9 @@
 // # Concurrency
 //
 // Every fan-out reproduces `multiprocessing.dummy.Pool` + `chunk_list` exactly:
-// see [runChunked]. CONCURRENCY.tsv rows 14-25 pin it per site, including the
+// see [runChunked], whose failed chunk reports the canonical joined batch of
+// ERROR_CODES.md §6 rather than Python's nondeterministic first-arriving
+// exception. CONCURRENCY.tsv rows 14-25 pin it per site, including the
 // two that have no Docker counterpart — the pod watcher that runs alongside the
 // deploy fan-out and the VNI reservation map that Python hosts in a
 // `multiprocessing.Manager` process and that is a mutex here.

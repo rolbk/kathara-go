@@ -268,6 +268,38 @@ func TestDeployLabForbiddenIsLabTerminating(t *testing.T) {
 	}
 }
 
+// TestTranslateForbiddenTranslatesABatchElementwise is the interaction between
+// `deploy_lab`'s `except ApiException` and the batch errors of
+// ERROR_CODES.md §6: a half-failed chunk reports a JOIN, and `errors.As` walks
+// into every branch of one.
+//
+// So the translation has to be applied per element. Applied to the join as a
+// whole, one device's 403 would answer `isForbidden` for the batch and replace
+// all of it — the primary error included — with a single
+// [kerrors.ErrLabTerminating], which is neither Python's behaviour nor §6.5's
+// `errors` array.
+func TestTranslateForbiddenTranslatesABatchElementwise(t *testing.T) {
+	primary := kerrors.NewMachineBinary("frr", "pc1")
+	forbidden := apierrors.NewForbidden(
+		schema.GroupResource{Group: "apps", Resource: "deployments"}, "pc2", errors.New("terminating"))
+
+	got := translateForbidden(errors.Join(primary, forbidden))
+
+	batch := kerrors.Joined(got)
+	if len(batch) != 2 {
+		t.Fatalf("the batch carries %d errors, want both of them", len(batch))
+	}
+	if !errors.Is(batch[0], kerrors.ErrMachineBinary) {
+		t.Errorf("element 0 = %v, want the untouched primary", batch[0])
+	}
+	if !errors.Is(batch[1], kerrors.ErrLabTerminating) {
+		t.Errorf("element 1 = %v, want the 403 translated to LabTerminating", batch[1])
+	}
+	if got := kerrors.Code(got); got != kerrors.CodeMachineBinary {
+		t.Errorf("Code = %q, want the primary's %q", got, kerrors.CodeMachineBinary)
+	}
+}
+
 // TestDeployMachineAndLinkGuards is EXPECTATIONS-k8s §4 "deploy_machine /
 // deploy_link": the LabNotFound spellings, which differ between the two.
 func TestDeployMachineAndLinkGuards(t *testing.T) {

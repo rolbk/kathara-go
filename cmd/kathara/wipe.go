@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"runtime"
 	"slices"
+	"strings"
 
 	"github.com/KatharaFramework/kathara-go/internal/cliout"
 	"github.com/KatharaFramework/kathara-go/internal/util"
@@ -155,17 +156,17 @@ func runCheck(ctx context.Context, a *app) (int, error) {
 	// One `console.print` per statement, in Python's order: the manager line is
 	// on screen before `get_release_version()` is called, so a backend that
 	// fails to answer leaves the first line printed.
-	a.console.Print(fmt.Sprintf("Current Manager is:\t\t%s", report.Manager))
+	a.console.Print(expandTabs(fmt.Sprintf("Current Manager is:\t\t%s", report.Manager)))
 	if report.ManagerVersion, err = mgr.GetReleaseVersion(ctx); err != nil {
 		return 1, err
 	}
-	a.console.Print(fmt.Sprintf("Manager version is:\t\t%s", report.ManagerVersion))
+	a.console.Print(expandTabs(fmt.Sprintf("Manager version is:\t\t%s", report.ManagerVersion)))
 	// Python prints "Python version is:" here. The Go binary has no
 	// interpreter to name; JSON_CLI_CONTRACT.md §3.7 calls the key
 	// `runtime_version` and asks human mode for "the analogous Go line".
-	a.console.Print(fmt.Sprintf("Go version is:\t\t\t%s", report.RuntimeVersion))
-	a.console.Print(fmt.Sprintf("Kathara version is:\t\t%s", report.KatharaVersion))
-	a.console.Print(fmt.Sprintf("Operating System version is:\t%s", report.OSVersion))
+	a.console.Print(expandTabs(fmt.Sprintf("Go version is:\t\t\t%s", report.RuntimeVersion)))
+	a.console.Print(expandTabs(fmt.Sprintf("Kathara version is:\t\t%s", report.KatharaVersion)))
+	a.console.Print(expandTabs(fmt.Sprintf("Operating System version is:\t%s", report.OSVersion)))
 
 	// `Setting.open_terminals = False` before the test lab, so that the check
 	// never spawns a window.
@@ -191,6 +192,49 @@ func runCheck(ctx context.Context, a *app) (int, error) {
 	a.console.Print("✓ Container run successfully.")
 	a.console.Emit(report)
 	return 0, nil
+}
+
+// checkTabSize is rich's `tab_size`, which `Console.print` applies to every
+// string it renders.
+const checkTabSize = 8
+
+// expandTabs is rich's tab handling, the reason the five `check` labels line
+// up: `Text.expand_tabs` replaces each tab with spaces up to the next
+// `tab_size` stop *before* the segment ever reaches the terminal
+// (`rich/text.py`, called from `Console.render_str`). Python therefore never
+// emits a tab, and neither does this — the labels are 14, 19 and 28 columns
+// wide, and every value starts at column 32.
+//
+// Writing the raw tab, as an earlier build did, is not the same output: a
+// terminal with tab stops other than eight lays the report out differently,
+// and `kathara check > file` leaves a control character in the file where the
+// oracle leaves spaces.
+//
+// Only the ASCII labels of `runCheck` reach this, so a column is a byte; rich
+// measures in cells, which would differ only for a wide or combining rune.
+func expandTabs(s string) string {
+	if !strings.ContainsRune(s, '\t') {
+		return s
+	}
+	var b strings.Builder
+	b.Grow(len(s) + checkTabSize)
+	column := 0
+	for _, r := range s {
+		switch r {
+		case '\t':
+			width := checkTabSize - column%checkTabSize
+			b.WriteString(strings.Repeat(" ", width))
+			column += width
+		case '\n':
+			// A tab after a newline measures from the new line's start.
+			b.WriteRune(r)
+			column = 0
+		default:
+			b.WriteRune(r)
+			column++
+		}
+	}
+	return b.String()
 }
 
 // deployAndUndeploy is the body of the check's `try`, which catches every

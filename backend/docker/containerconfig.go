@@ -270,10 +270,14 @@ func envList(envs *model.OrderedMap[string, string]) []string {
 // machine.get_ulimits().items()]` (`DockerMachine.py:229`), in insertion order
 // — the list order is visible in `docker inspect`'s `HostConfig.Ulimits`
 // (ORDERING.tsv row 32).
+//
+// Unlike [envList] and [portBindings], the empty case is an empty LIST, not
+// nil: the Python expression is a comprehension, so a device with no `ulimit=`
+// option passes `ulimits=[]`, and docker-py's `create_host_config` gates on
+// `if ulimits is not None` — the empty list goes into the payload and the
+// daemon records `"Ulimits": []`. A nil slice would encode as `null`, since the
+// SDK field carries no `omitempty`.
 func ulimitList(ulimits *model.OrderedMap[string, model.Ulimit]) []*container.Ulimit {
-	if ulimits.Len() == 0 {
-		return nil
-	}
 	out := make([]*container.Ulimit, 0, ulimits.Len())
 	for _, entry := range ulimits.Entries() {
 		out = append(out, &container.Ulimit{

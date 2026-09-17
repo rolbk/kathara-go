@@ -281,11 +281,15 @@ func runCommand(ctx context.Context, a *app, spec *commandSpec, args []string) i
 	return code
 }
 
-// usageError is argparse's `parser.error()`: usage text plus one message on
-// **stderr**, exit 2, and no JSON on stdout in any mode
+// usageError is argparse's `parser.error()`: the `usage:` block plus one
+// message on **stderr**, exit 2, and no JSON on stdout in any mode
 // (JSON_CLI_CONTRACT.md §5.5).
+//
+// `print_usage`, not `print_help`: argparse's `error()` prints the usage line
+// and the message and nothing else. [parser.usageBlock] is that half;
+// `UsageString()` — the full help — belongs to `-h` alone.
 func (a *app) usageError(spec *commandSpec, err error) int {
-	_, _ = fmt.Fprint(a.console.Err, spec.Cmd.UsageString())
+	_, _ = fmt.Fprint(a.console.Err, spec.Cmd.usageBlock())
 	_, _ = fmt.Fprintf(a.console.Err, "kathara %s: error: %s\n", spec.Name, err.Error())
 	return 2
 }

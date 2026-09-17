@@ -39,5 +39,8 @@
 //
 // Every fan-out reproduces `multiprocessing.dummy.Pool` + `chunk_list` exactly:
 // see [runChunked]. The shape is neither fail-fast nor complete-then-aggregate,
-// and CONCURRENCY.tsv rows 5-13 pin it per site.
+// and CONCURRENCY.tsv rows 5-13 pin it per site. What a failed chunk REPORTS is
+// not Python's nondeterministic first-arriving exception but the canonical
+// batch of ERROR_CODES.md §6: every failure, joined, ordered by device or
+// collision-domain name.
 package docker

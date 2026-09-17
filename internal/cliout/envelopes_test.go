@@ -364,6 +364,67 @@ func TestErrorBatchAddsTheErrorsSibling(t *testing.T) {
 	}
 }
 
+// TestErrorBatchRendersOnlyThePrimaryInTheErrorObject is ERROR_CODES.md §6.3-5:
+// the `error` object of a batch is the PRIMARY error — element 0 of the
+// canonically ordered join — and nothing else. Not the join's own rendering,
+// whose `Error()` is every message glued with newlines, and not a mix of the
+// primary's code with a sibling's structured fields.
+//
+// The batch here is heterogeneous on purpose: the primary carries `machine`
+// only, the sibling carries `binary` + `machine`, so a renderer that walks the
+// whole join with errors.As instead of the primary alone shows up as a stray
+// `binary` key.
+func TestErrorBatchRendersOnlyThePrimaryInTheErrorObject(t *testing.T) {
+	// The batch a half-failed chunk produces: the primary plus two decoys, in
+	// the canonical bytewise-by-device order the backend pools sort it into
+	// (ERROR_CODES.md §6.2 — pinned on the producing side by the two backends'
+	// TestRunChunkedJoinsEveryFailureInCanonicalOrder).
+	joined := errors.Join(
+		kerrors.NewMachineNotRunning("pc1"),
+		kerrors.NewMachineBinary("frr", "pc2"),
+		kerrors.NewMachineNotRunning("pc3"),
+	)
+
+	var out bytes.Buffer
+	c := New(&out, &bytes.Buffer{}, FormatJSON, LevelWarning)
+	if code := c.EmitError(joined); code != 1 {
+		t.Errorf("exit = %d, want 1", code)
+	}
+
+	want := `{"error":{"code":"MachineNotRunning","message":"Device ` + "`pc1`" + ` is not running.","machine":"pc1"},` +
+		`"errors":[` +
+		`{"code":"MachineNotRunning","message":"Device ` + "`pc1`" + ` is not running.","machine":"pc1"},` +
+		`{"code":"MachineBinary","message":"Binary ` + "`frr`" + ` not found in device ` + "`pc2`" + `.","binary":"frr","machine":"pc2"},` +
+		`{"code":"MachineNotRunning","message":"Device ` + "`pc3`" + ` is not running.","machine":"pc3"}` +
+		`]}` + "\n"
+	if got := out.String(); got != want {
+		t.Errorf("\n got %s\nwant %s", got, want)
+	}
+}
+
+// TestErrorBatchHumanLineIsThePrimaryOnly is ERROR_CODES.md §6.4: human mode
+// prints ONE `CRITICAL ({label}) {message}` line — Python's observable output
+// for a half-failed batch — so the join's newline-glued rendering must never
+// reach it, and the label is the primary's class, not a sibling's.
+func TestErrorBatchHumanLineIsThePrimaryOnly(t *testing.T) {
+	joined := errors.Join(
+		kerrors.NewMachineNotRunning("pc1"),
+		kerrors.NewMachineBinary("frr", "pc2"),
+		kerrors.NewMachineNotRunning("pc3"),
+	)
+
+	var out bytes.Buffer
+	c := New(&out, &bytes.Buffer{}, FormatHuman, LevelWarning)
+	if code := c.EmitError(joined); code != 1 {
+		t.Errorf("exit = %d, want 1", code)
+	}
+
+	want := "CRITICAL (MachineNotRunningError) Device `pc1` is not running.\n"
+	if got := out.String(); got != want {
+		t.Errorf("\n got %q\nwant %q", got, want)
+	}
+}
+
 // TestJSONLEvents is §4.1: the five event shapes, with their pinned key order.
 func TestJSONLEvents(t *testing.T) {
 	var out bytes.Buffer
@@ -393,6 +454,37 @@ func TestJSONLErrorEvent(t *testing.T) {
 		` is not running.","machine":"pc1"}}` + "\n"
 	if got := out.String(); got != want {
 		t.Errorf("\n got %s\nwant %s", got, want)
+	}
+}
+
+// TestJSONLErrorEventOfABatchIsThePrimaryAlone pins the one place the two
+// structured formats diverge: `json` grows the §5.1 `errors` sibling for a
+// batch, `jsonl` does not — its event stays "the same inner object … under
+// `type`" whatever the join carries.
+//
+// Unreachable in 1.0 (§1.2 gives `jsonl` to `exec`, which is single-device), so
+// this is a shape lock rather than a behavior test: it is what fails if someone
+// widens `jsonl` to a fan-out command and leaves the arm alone, and it is what
+// has to be rewritten deliberately on the day the sibling is added there.
+func TestJSONLErrorEventOfABatchIsThePrimaryAlone(t *testing.T) {
+	joined := errors.Join(
+		kerrors.NewMachineNotRunning("pc1"),
+		kerrors.NewMachineBinary("frr", "pc2"),
+	)
+
+	var out bytes.Buffer
+	c := New(&out, &bytes.Buffer{}, FormatJSONL, LevelWarning)
+	if code := c.EmitError(joined); code != 1 {
+		t.Errorf("exit = %d, want 1", code)
+	}
+
+	want := `{"type":"error","error":{"code":"MachineNotRunning","message":"Device ` + "`pc1`" +
+		` is not running.","machine":"pc1"}}` + "\n"
+	if got := out.String(); got != want {
+		t.Errorf("\n got %s\nwant %s", got, want)
+	}
+	if strings.Contains(out.String(), `"errors"`) {
+		t.Errorf("the jsonl event must not carry the `errors` sibling: %s", out.String())
 	}
 }
 

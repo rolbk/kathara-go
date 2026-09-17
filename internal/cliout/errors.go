@@ -55,10 +55,12 @@ func (c *Console) EmitError(err error) int {
 	if err == nil {
 		return 0
 	}
+	batch := kerrors.Joined(err)
+	primary := primaryOf(err, batch)
 	switch c.Format {
 	case FormatJSON:
-		obj := newObj().Raw("error", encodeErrorObject(err))
-		if batch := kerrors.Joined(err); len(batch) > 1 {
+		obj := newObj().Raw("error", encodeErrorObject(primary))
+		if len(batch) > 1 {
 			items := make([][]byte, 0, len(batch))
 			for _, e := range batch {
 				items = append(items, encodeErrorObject(e))
@@ -70,20 +72,50 @@ func (c *Console) EmitError(err error) int {
 		_, _ = fmt.Fprintln(c.Out)
 		c.mu.Unlock()
 	case FormatJSONL:
-		obj := newObj().Str("type", "error").Raw("error", encodeErrorObject(err))
+		// No `errors` sibling here, deliberately. §5.1 gives the sibling to the
+		// `json` object; the `jsonl` bullet next to it pins the event as "the
+		// same inner object … under `type`" and says nothing about a batch,
+		// and §4.3/§9 make new keys and event types the additive path. In 1.0
+		// the arm cannot see a batch anyway: §1.2's table gives `jsonl` to
+		// `exec` alone, and `exec` addresses one device, so `batch` is empty
+		// or a singleton on every reachable call. Should a later release give
+		// `jsonl` to a fan-out command, this is the line that has to grow the
+		// sibling — pinned by TestJSONLErrorEventOfABatchIsThePrimaryAlone.
+		obj := newObj().Str("type", "error").Raw("error", encodeErrorObject(primary))
 		c.mu.Lock()
 		_, _ = c.Out.Write(obj.Bytes())
 		_, _ = fmt.Fprintln(c.Out)
 		c.mu.Unlock()
 	default:
-		c.Log(LevelCritical, "(%s) %s", HumanLabelOf(err), err.Error())
+		c.Log(LevelCritical, "(%s) %s", HumanLabelOf(primary), primary.Error())
 		if c.Traceback {
-			for cause := errors.Unwrap(err); cause != nil; cause = errors.Unwrap(cause) {
+			for cause := errors.Unwrap(primary); cause != nil; cause = errors.Unwrap(cause) {
 				c.Log(LevelCritical, "  caused by: %s", cause.Error())
 			}
 		}
 	}
 	return 1
+}
+
+// primaryOf is ERROR_CODES.md §6.3: the error a batch is REPORTED as, which is
+// element 0 of the canonically ordered join the backend built (§6.2).
+//
+// Everything user-visible is derived from it and not from the join itself: the
+// join's own `Error()` glues every message with newlines, which would turn the
+// one `CRITICAL` line Python prints into several and put a multi-line string in
+// the envelope's `message`; and `errors.As` over a join walks into the siblings,
+// which would let a sibling's structured fields (`binary`, `link`, …) land in
+// an `error` object whose `code` came from the primary. The full list is what
+// the `errors` sibling key is for.
+//
+// A non-batch error is its own primary, and so is a join with one element —
+// which is exactly what a single-device failure produces (§6.5: `errors` is
+// absent there).
+func primaryOf(err error, batch []error) error {
+	if len(batch) == 0 {
+		return err
+	}
+	return batch[0]
 }
 
 // encodeErrorObject builds the inner `error` object of §5.1: `code`, then

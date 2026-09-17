@@ -1,6 +1,8 @@
 package docker
 
 import (
+	"bytes"
+	"encoding/json"
 	"errors"
 	"maps"
 	"math"
@@ -347,6 +349,36 @@ func TestUlimitList(t *testing.T) {
 	}
 	if !reflect.DeepEqual(got, want) {
 		t.Errorf("ulimitList = %+v, want %+v", got[0], want[0])
+	}
+}
+
+// TestUlimitListEmptyIsAnEmptyList is the NILABILITY exception the other list
+// builders of this file do NOT have: `DockerMachine.py:229` builds the ulimit
+// list with a comprehension, so a device with no `ulimit=` option passes
+// `ulimits=[]` — not `None` — and docker-py's `create_host_config` gates on
+// `if ulimits is not None`, so the empty list is put in the payload and the
+// daemon records `"Ulimits": []`.
+//
+// A nil slice here would serialize as `"Ulimits": null` (the SDK field carries
+// no `omitempty`), which is the shape a live diff caught against a
+// Python-created container.
+func TestUlimitListEmptyIsAnEmptyList(t *testing.T) {
+	got := ulimitList(newFixtureMachine(t, false).Ulimits())
+	if got == nil {
+		t.Fatal("ulimitList = nil for a device with no ulimits, want an empty list — docker-py sends []")
+	}
+	if len(got) != 0 {
+		t.Fatalf("ulimitList = %+v, want an empty list", got)
+	}
+
+	// The observable is the request body, so assert the encoding rather than
+	// the Go nilness alone (PORT_SPEC §9C).
+	payload, err := json.Marshal(container.HostConfig{Resources: container.Resources{Ulimits: got}})
+	if err != nil {
+		t.Fatalf("marshal HostConfig: %v", err)
+	}
+	if !bytes.Contains(payload, []byte(`"Ulimits":[]`)) {
+		t.Errorf("HostConfig encodes as %s, want it to carry \"Ulimits\":[]", payload)
 	}
 }
 

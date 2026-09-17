@@ -1525,3 +1525,223 @@ func TestVstartEmptyStringOptionsAreStillPresent(t *testing.T) {
 		}
 	})
 }
+
+// TestFromArchiveExtractionDirectoryLifetime is JSON_CLI_CONTRACT.md §7.4's
+// "The temp directory is the lab's host path for mounts/`hostlab` during the
+// run".
+//
+// A successful deploy must leave the extraction directory on disk: the
+// containers outlive the CLI and bind-mount `/shared` and `/hostlab` out of it,
+// so removing it turns every path under `/shared` into an ENOENT the moment
+// `lstart` returns. Every branch that deploys nothing removes it.
+func TestFromArchiveExtractionDirectoryLifetime(t *testing.T) {
+	// run drives one archive deploy with its own private TMPDIR, and answers
+	// the extraction directories still on disk when the command returned.
+	run := func(t *testing.T, fake kathara.Manager, labConf string, args ...string) (int, []string) {
+		t.Helper()
+		tmp := t.TempDir()
+		// os.MkdirTemp("", …) reads os.TempDir(), which is TMPDIR on unix and
+		// TMP/TEMP on Windows.
+		for _, key := range []string{"TMPDIR", "TMP", "TEMP"} {
+			t.Setenv(key, tmp)
+		}
+
+		var buf bytes.Buffer
+		tw := tar.NewWriter(&buf)
+		writeTarFile(t, tw, "lab.conf", labConf)
+		if err := tw.Close(); err != nil {
+			t.Fatal(err)
+		}
+
+		a := newTestApp(t)
+		a.stdin = &buf
+		withManager(a, fake)
+		spec := commandTable(a.app)["lstart"]
+		code := runCommand(t.Context(), a.app, spec, append([]string{
+			"--from-archive", "-", "--name", "Archive scenario", "--format", "json",
+		}, args...))
+
+		left, err := filepath.Glob(filepath.Join(tmp, "kathara-archive-*"))
+		if err != nil {
+			t.Fatal(err)
+		}
+		return code, left
+	}
+
+	t.Run("a successful deploy keeps it", func(t *testing.T) {
+		code, left := run(t, &fakeManager{}, "pc1[0]=\"A\"\n")
+		if code != 0 {
+			t.Fatalf("exit = %d", code)
+		}
+		if len(left) != 1 {
+			t.Fatalf("extraction directories left = %v, want exactly one for the run", left)
+		}
+		// It is the lab's host path, so the scenario has to still be in it.
+		if _, err := os.Stat(filepath.Join(left[0], "lab.conf")); err != nil {
+			t.Errorf("lab.conf is gone from the live lab's host path: %v", err)
+		}
+	})
+
+	t.Run("--dry-mode removes it", func(t *testing.T) {
+		code, left := run(t, &fakeManager{}, "pc1[0]=\"A\"\n", "--dry-mode")
+		if code != 0 {
+			t.Fatalf("exit = %d", code)
+		}
+		if len(left) != 0 {
+			t.Errorf("extraction directories left = %v, want none after a dry run", left)
+		}
+	})
+
+	t.Run("a failed deploy removes it", func(t *testing.T) {
+		fake := &fakeManager{deployErr: errTestf("the daemon said no")}
+		code, left := run(t, fake, "pc1[0]=\"A\"\n")
+		if code == 0 {
+			t.Fatal("exit = 0, want a failure")
+		}
+		if len(left) != 0 {
+			t.Errorf("extraction directories left = %v, want none when nothing deployed", left)
+		}
+	})
+
+	t.Run("a scenario with no devices removes it", func(t *testing.T) {
+		code, left := run(t, &fakeManager{}, "LAB_DESCRIPTION=\"empty\"\n")
+		if code == 0 {
+			t.Fatal("exit = 0, want the empty-scenario failure")
+		}
+		if len(left) != 0 {
+			t.Errorf("extraction directories left = %v, want none when nothing deployed", left)
+		}
+	})
+}
+
+// TestLabHashAddressingReportsANullName is §3.0.1's `string|null`: a scenario
+// addressed by `--lab-hash` has no name, and an empty string is not the same
+// answer as "none". The envelope would otherwise contradict itself, reporting
+// `"name":""` beside the `"path":null` the very same branch emits.
+func TestLabHashAddressingReportsANullName(t *testing.T) {
+	// `lclean` stands for all three §8 commands: the nameless scenario is
+	// built once, in [app.resolveRunningLab], which `exec` and `lconfig` share.
+	a := newTestApp(t)
+	withManager(a, &fakeManager{})
+	spec := commandTable(a.app)["lclean"]
+
+	code := runCommand(t.Context(), a.app, spec, []string{"--lab-hash", "abc123", "--format", "json"})
+	if code != 0 {
+		t.Fatalf("exit = %d\n%s%s", code, a.stdoutString(), a.stderrString())
+	}
+	want := `"lab":{"name":null,"hash":"abc123","path":null}`
+	if !strings.Contains(a.stdoutString(), want) {
+		t.Errorf("stdout = %s\nwant it to contain %s", a.stdoutString(), want)
+	}
+}
+
+// TestWipeDoesNotCollapseSameNamedCollisionDomains is §3.4's `links`: two
+// scenarios can each own a collision domain called `A`, those are two distinct
+// networks, and `wipe` removes both. The machines half of the same envelope
+// does not deduplicate two devices called `pc1` either, and an envelope whose
+// two halves count differently is the bug.
+func TestWipeDoesNotCollapseSameNamedCollisionDomains(t *testing.T) {
+	a := newTestApp(t)
+	withManager(a, &fakeManager{
+		stats: []kathara.MachineStatsEntry{
+			{ID: "c1", Stats: &kathara.MachineStats{Name: "pc1"}},
+			{ID: "c2", Stats: &kathara.MachineStats{Name: "pc1"}},
+		},
+		links: []kathara.LinkStatsEntry{
+			{ID: "n1", Stats: &kathara.LinkStats{Name: "A"}},
+			{ID: "n2", Stats: &kathara.LinkStats{Name: "A"}},
+			{ID: "n3", Stats: &kathara.LinkStats{Name: "B"}},
+		},
+	})
+	spec := commandTable(a.app)["wipe"]
+
+	if code := runCommand(t.Context(), a.app, spec, []string{"-f", "--format", "json"}); code != 0 {
+		t.Fatalf("exit = %d\n%s", code, a.stderrString())
+	}
+	want := `{"settings_wiped":false,"all_users":false,"machines":["pc1","pc1"],"links":["A","A","B"]}` + "\n"
+	if got := a.stdoutString(); got != want {
+		t.Errorf("\n got %s\nwant %s", got, want)
+	}
+}
+
+// TestCheckReportExpandsTabsLikeRich pins the five report labels to the columns
+// rich puts them in.
+//
+// Python writes `\t\t` (and one `\t` on the longest label) into
+// `console.print`, and rich expands tabs to eight-column stops before anything
+// reaches the terminal — so every value starts at column 32 and no tab is ever
+// emitted. Writing the raw control character instead re-lays-out the report on
+// any terminal whose stops differ, and leaves a tab in `kathara check > file`
+// where the oracle leaves spaces.
+func TestCheckReportExpandsTabsLikeRich(t *testing.T) {
+	a := newTestApp(t)
+	withManager(a, &fakeCheckManager{name: "Docker (Kathara)", release: "29.7.1"})
+	spec := commandTable(a.app)["check"]
+
+	if code := runCommand(t.Context(), a.app, spec, nil); code != 0 {
+		t.Fatalf("exit = %d\n%s", code, a.stderrString())
+	}
+
+	out := a.stdoutString()
+	if strings.ContainsRune(out, '\t') {
+		t.Errorf("the report emitted a raw tab; rich never does:\n%q", out)
+	}
+	for _, label := range []string{
+		"Current Manager is:", "Manager version is:", "Go version is:",
+		"Kathara version is:", "Operating System version is:",
+	} {
+		line := reportLine(t, out, label)
+		value := strings.TrimLeft(line[len(label):], " ")
+		if column := len(line) - len(value); column != 32 {
+			t.Errorf("%q value starts at column %d, want 32 (line %q)", label, column, line)
+		}
+	}
+}
+
+// reportLine finds the `check` report line beginning with label.
+func reportLine(t *testing.T, out, label string) string {
+	t.Helper()
+	for _, line := range strings.Split(out, "\n") {
+		if strings.HasPrefix(line, label) {
+			return line
+		}
+	}
+	t.Fatalf("no %q line in:\n%s", label, out)
+	return ""
+}
+
+// TestExpandTabsIsRichsRule covers the stop arithmetic itself, including the
+// case a tab lands exactly on a stop and must still advance a full eight.
+func TestExpandTabsIsRichsRule(t *testing.T) {
+	for _, tc := range []struct{ in, want string }{
+		{"", ""},
+		{"no tabs", "no tabs"},
+		{"a\tb", "a       b"},
+		{"1234567\tb", "1234567 b"},
+		{"12345678\tb", "12345678        b"},
+		{"Operating System version is:\tX", "Operating System version is:    X"},
+		{"a\tb\nc\td", "a       b\nc       d"},
+	} {
+		if got := expandTabs(tc.in); got != tc.want {
+			t.Errorf("expandTabs(%q) = %q, want %q", tc.in, got, tc.want)
+		}
+	}
+}
+
+// fakeCheckManager answers the four calls `check` makes.
+type fakeCheckManager struct {
+	kathara.Manager
+
+	name    string
+	release string
+}
+
+func (f *fakeCheckManager) GetFormattedManagerName() string { return f.name }
+
+func (f *fakeCheckManager) GetReleaseVersion(context.Context) (string, error) {
+	return f.release, nil
+}
+
+func (f *fakeCheckManager) DeployMachine(context.Context, *model.Machine) error { return nil }
+
+func (f *fakeCheckManager) UndeployMachine(context.Context, *model.Machine, bool) error { return nil }

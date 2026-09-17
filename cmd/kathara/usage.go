@@ -444,6 +444,19 @@ func (p *parser) usageAt(width int) string {
 // pipe and therefore what every non-terminal invocation sees.
 func (p *parser) usage() string { return p.usageAt(80) }
 
+// usageBlock is `ArgumentParser.format_usage()`: the `usage:` line alone.
+//
+// It is what `parser.error()` prints — `self.print_usage(_sys.stderr)` followed
+// by the one-line message — and it is NOT `format_help()`. Conflating the two
+// is a visible difference and not a cosmetic one: `kathara vclean` with no
+// `-n` answers argparse with two lines on stderr, where printing the full help
+// answered with thirteen, description and option table and wiki epilog
+// included. `--help` keeps `format_help()` ([parser.usage]).
+//
+// The width is the same fixed 80 columns [parser.usage] renders at
+// (DIVERGENCES.md 103).
+func (p *parser) usageBlock() string { return p.formatUsage(helpWidth(80)) }
+
 // helpPosition is `min(self._action_max_length + 2, self._max_help_position)`,
 // where `_action_max_length` is the longest invocation plus the section indent.
 func (p *parser) helpPosition() int {

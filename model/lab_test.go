@@ -783,6 +783,32 @@ func TestLabGetLinksFromMachines(t *testing.T) {
 		}
 	})
 
+	t.Run("nil device crashes", func(t *testing.T) {
+		t.Parallel()
+		lab := build(t)
+
+		machine, err := lab.GetMachine("pc2")
+		if err != nil {
+			t.Fatalf("GetMachine: %v", err)
+		}
+
+		// `set(map(lambda x: x.name, machines))` runs before the intersection,
+		// so a None anywhere in the argument dies on `.name` — whether or not
+		// the other entries are registered devices. Oracle-verified:
+		// get_links_from_machine_objs([pc2, None]) and ([None]) both raise
+		// AttributeError: 'NoneType' object has no attribute 'name'.
+		for _, arg := range [][]*Machine{{machine, nil}, {nil}} {
+			got, err := lab.GetLinksFromMachineObjs(arg)
+			if !errors.Is(err, ErrPyAttributeError) ||
+				err.Error() != "'NoneType' object has no attribute 'name'" {
+				t.Errorf("GetLinksFromMachineObjs(%v) error = %v, want the AttributeError", arg, err)
+			}
+			if got != nil {
+				t.Errorf("GetLinksFromMachineObjs(%v) = %v, want no links", arg, keysOf(got))
+			}
+		}
+	})
+
 	t.Run("tombstone crashes", func(t *testing.T) {
 		t.Parallel()
 		lab := build(t)

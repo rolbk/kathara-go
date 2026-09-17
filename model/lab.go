@@ -490,10 +490,21 @@ func (l *Lab) GetLinksFromMachines(names []string) (map[string]struct{}, error) 
 // (`model/Lab.py:217`): the same, keyed by the devices' names — which are still
 // intersected against the scenario, so a device object that is not registered
 // contributes nothing.
+//
+// A nil device is NOT skipped. Python reads every name up front,
+// `set(map(lambda x: x.name, machines))`, and that map runs before the
+// intersection, so a `None` anywhere in the argument dies on `.name` no matter
+// what the rest of the list holds. Oracle-verified for both `[pc2, None]` and
+// `[None]`: `AttributeError: 'NoneType' object has no attribute 'name'`
+// (InternalError at the CLI boundary, ERROR_CODES.md §1.4). Reachable from the
+// §7 client API, which takes the device objects from the caller.
 func (l *Lab) GetLinksFromMachineObjs(machines []*Machine) (map[string]struct{}, error) {
 	selected := make(map[string]struct{}, len(machines))
 	for _, machine := range machines {
-		if machine != nil && l.machines.Has(machine.Name) {
+		if machine == nil {
+			return nil, newNoneAttributeError("name")
+		}
+		if l.machines.Has(machine.Name) {
 			selected[machine.Name] = struct{}{}
 		}
 	}

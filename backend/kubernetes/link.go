@@ -100,7 +100,7 @@ func (s *linkService) DeployLinks(ctx context.Context, lab *model.Lab, selected,
 		networkIDs[link] = allocator.Allocate(link.Name)
 	}
 
-	if err := runChunked(ctx, links, func(ctx context.Context, link *model.Link) error {
+	if err := runChunked(ctx, links, linkItemName, func(ctx context.Context, link *model.Link) error {
 		return s.deployLink(ctx, networkIDs[link], link)
 	}); err != nil {
 		return err
@@ -238,7 +238,7 @@ func (s *linkService) Undeploy(ctx context.Context, labHash string, selected kat
 		return err
 	}
 
-	if err := runChunked(ctx, networks, s.undeployLink); err != nil {
+	if err := runChunked(ctx, networks, networkItemName, s.undeployLink); err != nil {
 		return err
 	}
 
@@ -256,7 +256,7 @@ func (s *linkService) Wipe(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	return runChunked(ctx, networks, s.undeployLink)
+	return runChunked(ctx, networks, networkItemName, s.undeployLink)
 }
 
 // undeployLink is `_undeploy_link` (`KubernetesLink.py:173`).

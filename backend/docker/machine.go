@@ -149,7 +149,7 @@ func (s *machineService) DeployMachines(ctx context.Context, lab *model.Lab, sel
 
 	var deployErr error
 	if !lab.HasDependencies {
-		deployErr = runChunked(ctx, machines, s.deployAndStart)
+		deployErr = runChunked(ctx, machines, machineItemName, s.deployAndStart)
 	} else {
 		// CONCURRENCY.tsv row 6: a plain loop, first error aborts
 		// immediately, and the order is `lab.dep`'s — which
@@ -830,7 +830,7 @@ func (s *machineService) Undeploy(ctx context.Context, labHash string, selected,
 		return err
 	}
 
-	if err := runChunked(ctx, containers, s.undeployMachine); err != nil {
+	if err := runChunked(ctx, containers, containerItemName, s.undeployMachine); err != nil {
 		return err
 	}
 
@@ -848,7 +848,7 @@ func (s *machineService) Wipe(ctx context.Context, user string) error {
 	if err != nil {
 		return err
 	}
-	return runChunked(ctx, containers, s.undeployMachine)
+	return runChunked(ctx, containers, containerItemName, s.undeployMachine)
 }
 
 // undeployMachine is `_undeploy_machine` (`DockerMachine.py:632`), which

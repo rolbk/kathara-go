@@ -20,15 +20,23 @@ import (
 	"github.com/KatharaFramework/kathara-go/model"
 )
 
-// barGlyph is `rich.progress.BarColumn`'s complete block. The Layer A harness
-// drops any line containing it (NORMALIZATION.md §6.6), because the bar's width
-// is a function of the console width and of how many redraws a run happened to
-// emit; a progress line the port renders must therefore carry it, or it would
-// survive normalization and diff against a golden that has none.
+// barGlyph is `rich.progress.BarColumn`'s complete block.
+//
+// The **completed** progress row is a golden: on a non-terminal `rich` prints
+// one render per bar, at stop, and `HandleProgressBar`'s columns carry no
+// clock, so at a pinned width the row is a pure function of the description and
+// the counts (NORMALIZATION.md §6.6). This renderer therefore has to agree with
+// rich's layout byte for byte, which it does — description, one space, the
+// spinner cell, one space, the bar, one space, `done/total`, filling the
+// console width exactly.
 const barGlyph = "━"
 
 // spinnerFrames is `rich`'s "dots" spinner, the braille cycle that
-// NORMALIZATION.md §6.6 drops alongside the bar.
+// NORMALIZATION.md §6.6 drops: which frame is on screen is a function of
+// elapsed time. `SpinnerColumn` renders a frame whenever the task is *not*
+// finished and its blank finished-text once `completed >= total`
+// (`rich/progress.py`, `SpinnerColumn.render`), which is what makes "carries a
+// braille glyph" mean "this render caught the bar mid-flight".
 var spinnerFrames = []rune("⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏")
 
 // ProgressBar is `cli/ui/event/HandleProgressBar.py`: one bar per message,
@@ -121,8 +129,15 @@ func (b *ProgressBar) paintLocked(final bool) {
 	width := c.Width
 	desc := fmt.Sprintf("[%s]", b.Message)
 	counts := fmt.Sprintf("%d/%d", b.done, b.total)
+	// `SpinnerColumn` goes blank on a *finished* task, not on the last render:
+	// rich's `task.finished` is `completed >= total`, so a display torn down
+	// while items are still outstanding — a failure part-way through a deploy —
+	// prints a braille frame even at stop. Blanking the cell on `final` alone
+	// made this port emit a spinner-free row exactly where Python emits a
+	// time-derived one, i.e. a row the Layer A normalizer keeps against a
+	// golden that drops it.
 	spinner := string(spinnerFrames[b.frame%len(spinnerFrames)])
-	if final {
+	if b.done >= b.total {
 		spinner = " "
 	}
 
@@ -130,14 +145,18 @@ func (b *ProgressBar) paintLocked(final bool) {
 	if barWidth < 1 {
 		barWidth = 1
 	}
+	// A *partial* bar is spelled differently from rich's, which paints the
+	// whole width in `━` and distinguishes done from not-done by style alone
+	// (`bar.complete` against `bar.back`) plus a `╸` half-tick. This port emits
+	// no styling, so a full-width run of `━` would read as "finished" at every
+	// point; the remainder is left blank instead. Nothing observable rests on
+	// it: every partial render carries a spinner frame and is dropped, and the
+	// completed bar — the one a golden compares — is a full run either way.
 	filled := barWidth
 	if b.total > 0 && b.done < b.total {
 		filled = b.done * barWidth / b.total
 	}
 	if filled < 1 {
-		// The line must carry at least one bar glyph so that the Layer A
-		// normalizer drops it; an empty bar would leave a bare
-		// "[Deploying devices]  0/3" in the recording.
 		filled = 1
 	}
 	if filled > barWidth {

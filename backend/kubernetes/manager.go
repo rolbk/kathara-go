@@ -6,6 +6,7 @@ package kubernetes
 
 import (
 	"context"
+	"errors"
 	"io"
 	"log/slog"
 	"strings"
@@ -434,7 +435,21 @@ func (m *Manager) DeployLab(ctx context.Context, lab *model.Lab, opts kathara.De
 // A non-API error passes through untouched — Python's `except` does not catch
 // those, so a [kerrors.ErrMachineAlreadyExists] from the machine layer arrives
 // unchanged.
+//
+// A batch (ERROR_CODES.md §6, built by [runChunked]) is translated ELEMENTWISE
+// and re-joined in the same order. Python's `except` saw the one exception that
+// escaped the pool and classified that; applied to the join as a whole,
+// `errors.As` would reach into every sibling, so one device's 403 would replace
+// the entire batch — primary included — with [kerrors.ErrLabTerminating].
 func translateForbidden(err error) error {
+	if batch := kerrors.Joined(err); len(batch) > 0 {
+		translated := make([]error, len(batch))
+		for i, e := range batch {
+			translated[i] = translateForbidden(e)
+		}
+		return errors.Join(translated...)
+	}
+
 	switch {
 	case err == nil:
 		return nil

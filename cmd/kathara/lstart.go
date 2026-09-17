@@ -178,11 +178,54 @@ func runLstart(ctx context.Context, a *app, f *lstartFlags, selected []string) (
 	var out lstartOutcome
 
 	labPath, cleanup, err := f.resolveScenario(a)
-	if cleanup != nil {
-		defer cleanup()
-	}
 	if err != nil {
+		if cleanup != nil {
+			cleanup()
+		}
 		return out, err
+	}
+
+	// The `--from-archive` extraction directory's lifetime.
+	//
+	// §7.4 pins it: "The temp directory is the lab's host path for
+	// mounts/`hostlab` during the run." `/shared` and `/hostlab` are bind
+	// mounts rooted in it and the containers outlive this process, so removing
+	// it on the success path would leave the running scenario with a dangling
+	// bind — every access under `/shared` answering ENOENT.
+	//
+	// It is therefore removed only on the paths that end with `deployed`
+	// false: a usage or extraction failure (handled inside `resolveScenario`
+	// and just above), a parse or validation failure before `DeployLab`, and
+	// `--dry-mode`, which never deploys at all.
+	//
+	// Nothing removes it afterwards, and that is deliberate rather than a leak
+	// left behind: §7.5 tears an archive lab down by identity
+	// (`lclean --lab-hash`/`--lab-name`), which never learns the path, so
+	// `lclean` has nothing to remove — the same lifecycle the Python client's
+	// own temporary-directory deploys have, where `undeploy_lab` on the hash
+	// leaves the directory to the caller. Removal on `lclean` is not part of
+	// the contract and is not attempted.
+	//
+	// Caveat, recorded rather than fixed: "nothing deployed" is the intent of
+	// the `deployed` flag, not a guarantee of the error paths. A `DeployLab`
+	// that FAILS also lands in the cleanup branch, and it is not always
+	// empty-handed — §6.1 runs the failing chunk to completion and nothing
+	// rolls back the chunks before it, so a partial failure can leave
+	// containers running while this cleanup deletes the directory their
+	// `/hostlab` and `/shared` binds are rooted in, which is exactly the
+	// dangling-bind state the success path exists to avoid. Keeping the
+	// directory there would leak it on every failed deploy instead, with
+	// `lclean` (above) unable to collect it. Removal stays the pinned choice
+	// and the surviving containers of a half-deployed archive scenario are its
+	// price: their `/shared` and `/hostlab` reads answer ENOENT until `lclean`
+	// removes them.
+	deployed := false
+	if cleanup != nil {
+		defer func() {
+			if !deployed {
+				cleanup()
+			}
+		}()
 	}
 
 	if err := a.loadCustomConfiguration(labPath); err != nil {
@@ -312,6 +355,10 @@ func runLstart(ctx context.Context, a *app, f *lstartFlags, selected []string) (
 	if err := mgr.DeployLab(ctx, lab, opts); err != nil {
 		return out, err
 	}
+	// From here the scenario is running out of `labPath`, so an archive's
+	// extraction directory must survive this function: see the lifetime note
+	// at the top.
+	deployed = true
 
 	out.Machines, out.Links = deployedNames(lab, opts)
 

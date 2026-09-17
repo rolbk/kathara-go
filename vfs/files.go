@@ -135,7 +135,9 @@ func CopyDirectory(fsys FS, srcPath, dstPath string) error {
 //
 // os.DirFS + fs.WalkDir cannot express this: it reports a symlink as a non-dir
 // entry, so a link to a directory would be opened as a file and the copy would
-// abort with EISDIR partway through the tree.
+// abort with EISDIR partway through the tree. [WalkFollow] is the same
+// classification applied to an [FS] rather than to a host directory; anything
+// porting an `fs.walk` or `copy_fs` call needs one of the two.
 //
 // A symlink loop terminates the way Python's does: os.Stat eventually fails
 // with ELOOP (Python surfaces it as fs.errors.OperationFailed) and the error

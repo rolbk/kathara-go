@@ -4,12 +4,14 @@ import (
 	"archive/tar"
 	"bytes"
 	"compress/gzip"
+	"errors"
 	"io"
 	"os"
 	"path/filepath"
 	"reflect"
 	"runtime"
 	"slices"
+	"syscall"
 	"testing"
 	"time"
 
@@ -447,5 +449,106 @@ func TestLabFilesOrder(t *testing.T) {
 	want := []string{"pc1.startup", "pc1.shutdown", "shared.startup", "shared.shutdown"}
 	if got := labFiles("pc1"); !reflect.DeepEqual(got, want) {
 		t.Errorf("labFiles = %q, want %q", got, want)
+	}
+}
+
+// symlinkInLab creates a symlink inside the scenario directory. It is the one
+// shape a device folder can hold that io/fs cannot describe.
+func symlinkInLab(t *testing.T, lab *model.Lab, target, linkName string) {
+	t.Helper()
+
+	root, ok := lab.FSPath()
+	if !ok {
+		t.Fatal("scenario has no host path")
+	}
+	link := filepath.Join(root, filepath.FromSlash(linkName))
+	if err := os.MkdirAll(filepath.Dir(link), 0o755); err != nil {
+		t.Fatalf("mkdir: %v", err)
+	}
+	if err := os.Symlink(target, link); err != nil {
+		t.Fatalf("symlink %s -> %s: %v", link, target, err)
+	}
+}
+
+// TestPackDataFollowsSymlinkedDirectory is `copy_fs` over an `OSFS`, whose
+// scandir types entries with `os.DirEntry.is_dir()` — a follow. A device folder
+// holding `linkdir -> real/` therefore ships the target's contents at
+// `linkdir/`, oracle-verified: `copy_fs` writes `/linkdir/f.txt` next to
+// `/real/f.txt` and `Walker().dirs()` reports `['/linkdir', '/real']`.
+//
+// With the non-following walk the link was classified as a plain file, the read
+// failed with `path should be a file`, and `lstart` aborted with a CRITICAL
+// InternalError after the container had already been created.
+func TestPackDataFollowsSymlinkedDirectory(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		// Symlink creation needs a privilege there, and Windows runtime is
+		// out of 1.0 scope (PORT_SPEC §0.3).
+		t.Skip("symlinks are not creatable unprivileged on Windows")
+	}
+	lab := newLabOnDisk(t)
+	writeLabFile(t, lab, "pc1/real/f.txt", "inner\n")
+	writeLabFile(t, lab, "pc1/plain.txt", "plain\n")
+	symlinkInLab(t, lab, "real", "pc1/linkdir")
+	symlinkInLab(t, lab, "plain.txt", "pc1/linkfile")
+
+	machine, err := lab.GetOrNewMachine("pc1", nil)
+	if err != nil {
+		t.Fatalf("GetOrNewMachine: %v", err)
+	}
+
+	data, err := packData(machine)
+	if err != nil {
+		t.Fatalf("packData: %v", err)
+	}
+	if data == nil {
+		t.Fatal("packData produced nothing")
+	}
+
+	members := unpack(t, data)
+	index := make(map[string]packedMember, len(members))
+	for _, member := range members {
+		index[member.Name] = member
+	}
+
+	if member, ok := index["hostlab/pc1/linkdir/"]; !ok || !member.IsDir {
+		t.Errorf("hostlab/pc1/linkdir/ = %+v, %v; want a directory member", member, ok)
+	}
+	for name, want := range map[string]string{
+		"hostlab/pc1/linkdir/f.txt": "inner\n",
+		"hostlab/pc1/real/f.txt":    "inner\n",
+		"hostlab/pc1/linkfile":      "plain\n",
+		"hostlab/pc1/plain.txt":     "plain\n",
+	} {
+		member, ok := index[name]
+		if !ok {
+			t.Errorf("member %q missing from %v", name, index)
+			continue
+		}
+		if member.IsDir || member.Content != want {
+			t.Errorf("member %q = %+v, want the file %q", name, member, want)
+		}
+	}
+}
+
+// TestPackDataSymlinkLoopFailsWithELOOP is the same walk meeting a cycle.
+// Neither side detects one: the path grows a component per level until the
+// kernel refuses it, which is `fs.errors.OperationFailed, [Errno 40] Too many
+// levels of symbolic links` in Python (verified live) and ELOOP here. What
+// matters is that it terminates with an error instead of recursing forever.
+func TestPackDataSymlinkLoopFailsWithELOOP(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("symlinks are not creatable unprivileged on Windows")
+	}
+	lab := newLabOnDisk(t)
+	writeLabFile(t, lab, "pc1/keep.txt", "keep\n")
+	symlinkInLab(t, lab, ".", "pc1/self")
+
+	machine, err := lab.GetOrNewMachine("pc1", nil)
+	if err != nil {
+		t.Fatalf("GetOrNewMachine: %v", err)
+	}
+
+	if _, err := packData(machine); !errors.Is(err, syscall.ELOOP) {
+		t.Errorf("packData over a symlink loop = %v, want ELOOP", err)
 	}
 }

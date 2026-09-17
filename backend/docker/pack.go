@@ -185,11 +185,18 @@ func packData(machine *model.Machine) ([]byte, error) {
 // `Walker(exclude=['.DS_Store'])` produces `/.DS_Store` and
 // `/.DS_Store/inner.txt` while dropping `/sub/.DS_Store`. Pruning the subtree
 // would silently lose files the device ships.
+//
+// The walk is [vfs.WalkFollow], not [vfs.Walk]: pyfilesystem types each entry
+// with `os.DirEntry.is_dir()`, which FOLLOWS symlinks, so a device folder
+// holding `linkdir -> real/` ships the target's contents at `linkdir/`. With
+// the non-following walk the link landed on the file path instead and the
+// whole deploy died on `path should be a file`, leaving the container
+// Created.
 func writeDeviceFiles(tw *tar.Writer, machine *model.Machine, machineDir string) error {
 	excluded := util.ExcludedFiles()
 
 	var dirs, files []string
-	err := vfs.Walk(machine.FS, ".", func(name string, entry fs.DirEntry, err error) error {
+	err := vfs.WalkFollow(machine.FS, ".", func(name string, entry fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}

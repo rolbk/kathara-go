@@ -154,6 +154,7 @@ func newLinfoCmd(a *app) *commandSpec {
 	)
 	flags.StringVarP(&directory, "directory", "d", "",
 		"Specify the folder containing the network scenario.")
+	cmd.meta("directory", "DIRECTORY")
 	flags.BoolVarP(&watch, "watch", "w", false,
 		"Watch mode, can be used only when a network scenario is launched.")
 	flags.BoolVarP(&watch, "live", "l", false,

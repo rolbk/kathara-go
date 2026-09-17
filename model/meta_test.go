@@ -334,6 +334,17 @@ func TestAddMetaVolume(t *testing.T) {
 		// The guest path is NOT stripped (oracle Q1).
 		{name: "guest path keeps its newline", in: "/h|/g\n", key: "/h", want: Volume{"/g\n", "ro"}},
 
+		// posixpath.normpath keeps a leading "//" when there are EXACTLY two
+		// slashes (POSIX leaves such a prefix implementation-defined), and
+		// collapses three or more to one. Oracle: abspath('//data') ==
+		// '//data', abspath('///data') == '/data', abspath('//a//b') ==
+		// '//a/b'.
+		{name: "double slash host path", in: "//data|/g", key: "//data", want: Volume{"/g", "ro"}},
+		{name: "double slash is normalised inside", in: "//a//b|/g", key: "//a/b", want: Volume{"/g", "ro"}},
+		{name: "double slash with dotdot", in: "//data/../e|/g", key: "//e", want: Volume{"/g", "ro"}},
+		{name: "triple slash host path", in: "///data|/g", key: "/data", want: Volume{"/g", "ro"}},
+		{name: "bare double slash", in: "//|/g", key: "//", want: Volume{"/g", "ro"}},
+
 		{
 			name: "one part", in: "/h",
 			wantMsg: "The volume specified `/h` is not in a valid format: <host_path>|<guest_path>|[<mode>]",

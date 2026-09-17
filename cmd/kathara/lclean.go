@@ -125,7 +125,17 @@ func runLclean(ctx context.Context, a *app, f *lcleanFlags, selected []string) (
 func (a *app) resolveRunningLab(directory, labHash, labName string) (*model.Lab, error) {
 	switch {
 	case labHash != "":
-		lab := model.NewLab("", a.defaults())
+		// A scenario addressed by hash has no name at all, and §3.0.1 pins
+		// `lab.name` as `string|null`. `Lab("")` would be a *named* scenario
+		// whose name happens to be empty, which serialises as `"name":""` and
+		// makes the E2/E10 envelope self-inconsistent with the null `path` the
+		// same branch emits. `Lab(None, path="")` is the nameless
+		// constructor; the hash it computed from the empty path is then
+		// replaced by the one the caller gave.
+		lab, err := model.NewLabFromPath("", a.defaults())
+		if err != nil {
+			return nil, err
+		}
 		lab.Hash = labHash
 		return lab, nil
 	case labName != "":
@@ -196,8 +206,15 @@ func snapshotLinkNames(ctx context.Context, mgr kathara.Manager, ref kathara.Lab
 			names = append(names, entry.Stats.Name)
 		}
 	}
+	// Sorted, but NOT deduplicated. `wipe` reads this inventory-wide, where two
+	// scenarios can each own a collision domain called `A`: those are two
+	// distinct networks, and both are removed. §3.4 asks `links` for "the names
+	// of what was removed", exactly as it asks `machines` — and the machines
+	// side, built the same way in `runWipe`, does not collapse two devices
+	// called `pc1` from two scenarios into one entry either. Compacting here
+	// would have made the two halves of one envelope disagree.
 	slices.Sort(names)
-	return slices.Compact(names), nil
+	return names, nil
 }
 
 // undeployedNames is the E2 envelope's pair, canonically sorted: Python's

@@ -5,6 +5,7 @@ import (
 	"math/big"
 	"path/filepath"
 	"regexp"
+	"runtime"
 	"slices"
 	"strconv"
 	"strings"
@@ -598,10 +599,26 @@ func (m *Machine) addVolumeMeta(value string) (any, bool, error) {
 // A failure to read the working directory leaves the path as given, which is
 // what Python would do only if `os.getcwd()` itself failed (it raises there;
 // the difference is unreachable outside a deleted CWD).
+//
+// [filepath.Abs] is `ntpath.abspath` enough on Windows, but on POSIX it is one
+// case short of `posixpath.abspath`: `posixpath.normpath` PRESERVES a leading
+// `//` when there are exactly two slashes — POSIX leaves that prefix
+// implementation-defined — and collapses three or more to one, while
+// [filepath.Clean] collapses every run. The difference is observable in the
+// volume keys, which is where the bind mounts are created from: the oracle
+// records `//data` for `--volume //data|/g`, and [filepath.Abs] alone gives
+// `/data`. Oracle-verified: `//data` → `//data`, `//a//b` → `//a/b`,
+// `//data/../e` → `//e`, `//` → `//`, `///data` → `/data`.
+//
+// Only an absolute argument can carry the prefix: a relative one is joined
+// onto `os.getcwd()` first, and no working directory starts with `//`.
 func absPath(p string) string {
 	abs, err := filepath.Abs(p)
 	if err != nil {
 		return p
+	}
+	if runtime.GOOS != "windows" && strings.HasPrefix(p, "//") && !strings.HasPrefix(p, "///") {
+		return "/" + abs
 	}
 	return abs
 }

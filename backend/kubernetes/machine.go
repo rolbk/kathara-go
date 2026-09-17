@@ -215,7 +215,7 @@ func (s *machineService) DeployMachines(ctx context.Context, lab *model.Lab, sel
 
 	var deployErr error
 	if !lab.HasDependencies {
-		deployErr = runChunked(opCtx, machines, s.deployMachine)
+		deployErr = runChunked(opCtx, machines, machineItemName, s.deployMachine)
 	} else {
 		// CONCURRENCY.tsv row `KubernetesMachine.py:201`: a plain loop, first
 		// error aborts immediately, and the order is `lab.dep`'s — which
@@ -1009,7 +1009,7 @@ func (s *machineService) Undeploy(ctx context.Context, labHash string, selected,
 		s.waitMachinesShutdown(watchCtx, watcher, watched)
 	}()
 
-	if undeployErr := runChunked(ctx, pods, s.undeployMachine); undeployErr != nil {
+	if undeployErr := runChunked(ctx, pods, podItemName, s.undeployMachine); undeployErr != nil {
 		// `with Pool(...)` raising skips `wait_thread.join()` entirely
 		// (`KubernetesMachine.py:605-609`), so the failure is reported at once;
 		// stopping the watcher rather than leaking it is DIVERGENCES.md 72.
@@ -1119,7 +1119,7 @@ func (s *machineService) Wipe(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	return runChunked(ctx, pods, s.undeployMachine)
+	return runChunked(ctx, pods, podItemName, s.undeployMachine)
 }
 
 // undeployMachine is `_undeploy_machine` → `_delete_machine`

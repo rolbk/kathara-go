@@ -245,3 +245,66 @@ func TestUsageCarriesNoSentinel(t *testing.T) {
 		}
 	}
 }
+
+// TestUsageErrorPrintsTheUsageBlockOnly is argparse's `ArgumentParser.error()`:
+// `print_usage(stderr)` then one message, and nothing else.
+//
+// The oracle, verified: `python -m kathara vclean` writes exactly
+//
+//	usage: kathara vclean [-h] -n DEVICE_NAME
+//	kathara vclean: error: the following arguments are required: -n/--name
+//
+// — two lines. Printing `format_help()` there instead answered with thirteen:
+// the description, the whole option table and the wiki epilog, on stderr, for
+// a missing flag.
+func TestUsageErrorPrintsTheUsageBlockOnly(t *testing.T) {
+	for _, tc := range []struct {
+		command string
+		args    []string
+		message string
+	}{
+		{"vclean", nil, "kathara vclean: error: the following arguments are required: -n/--name"},
+		{"wipe", []string{"extra"}, "kathara wipe: error: unrecognized arguments: extra"},
+		{"lconfig", []string{"-n", "pc1"}, "kathara lconfig: error: one of the arguments --add --rm is required"},
+	} {
+		t.Run(tc.command, func(t *testing.T) {
+			a := newTestApp(t)
+			spec := commandTable(a.app)[tc.command]
+			if code := runCommand(t.Context(), a.app, spec, tc.args); code != 2 {
+				t.Fatalf("exit = %d, want 2", code)
+			}
+			if a.stdoutString() != "" {
+				t.Errorf("stdout = %q, want nothing (§5.5)", a.stdoutString())
+			}
+
+			lines := strings.Split(strings.TrimSuffix(a.stderrString(), "\n"), "\n")
+			// The usage block may wrap; the message never does.
+			if got := lines[len(lines)-1]; got != tc.message {
+				t.Errorf("last line = %q, want %q", got, tc.message)
+			}
+			if !strings.HasPrefix(lines[0], "usage: kathara "+tc.command) {
+				t.Errorf("first line = %q, want the usage block", lines[0])
+			}
+			// Everything `format_help()` adds and `format_usage()` does not.
+			for _, forbidden := range []string{"options:", "positional arguments:", wikiDescription} {
+				if strings.Contains(a.stderrString(), forbidden) {
+					t.Errorf("stderr carries %q — that is print_help, not print_usage:\n%s",
+						forbidden, a.stderrString())
+				}
+			}
+		})
+	}
+}
+
+// TestLinfoDeclaresTheDirectoryMetavar is the `-d DIRECTORY` of
+// `testdata/argparse_help/linfo.txt`. Without the metavar the option renders as
+// a bare `-d`, which reads as a flag that takes no value.
+func TestLinfoDeclaresTheDirectoryMetavar(t *testing.T) {
+	a := newTestApp(t)
+	text := commandTable(a.app)["linfo"].Cmd.usage()
+	for _, want := range []string{"[-d DIRECTORY]", "-d, --directory DIRECTORY"} {
+		if !strings.Contains(text, want) {
+			t.Errorf("linfo help is missing %q:\n%s", want, text)
+		}
+	}
+}

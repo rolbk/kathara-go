@@ -48,7 +48,7 @@ func (s *linkService) DeployLinks(ctx context.Context, lab *model.Lab, selected,
 			return err
 		}
 
-		if err := runChunked(ctx, links, s.deployLink); err != nil {
+		if err := runChunked(ctx, links, linkItemName, s.deployLink); err != nil {
 			return err
 		}
 
@@ -244,7 +244,7 @@ func (s *linkService) Undeploy(ctx context.Context, labHash string, selected kat
 		return err
 	}
 
-	if err := runChunked(ctx, networks, s.undeployLink); err != nil {
+	if err := runChunked(ctx, networks, networkItemName, s.undeployLink); err != nil {
 		return err
 	}
 
@@ -271,7 +271,7 @@ func (s *linkService) Wipe(ctx context.Context, user string) error {
 	if err != nil {
 		return err
 	}
-	return runChunked(ctx, networks, s.undeployLink)
+	return runChunked(ctx, networks, networkItemName, s.undeployLink)
 }
 
 // reloadAndKeepEmpty is the `for item in networks: item.reload()` loop plus the
