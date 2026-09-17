@@ -68,6 +68,10 @@ network before and after each flow, on every path including failure.
 | `listwipe` | `list` with a lab **and** a vlab up, `list -n`, `list -n <unknown>`, `list -a`, `wipe -f`, `wipe -f -a`, `wipe` without `--force` (EOF on stdin) |
 | `exec` | Exit-code propagation (`true`/`false`/`exit 7`/missing binary → 127), stdout and stderr routing, `--no-stdout`, `--no-stderr`, both, `--` multiword, unknown device, `-v` with nothing running, argparse errors |
 | `edge` | `lclean` with nothing up, `lstart` twice, `vconfig`/`vclean` aimed at a lab device through the vlab, the `lrestart --xterm` latent bug (`DIVERGENCES.md` on `LrestartCommand`), `--wait`, `lclean` with a device list / `--exclude`, `lclean -d <missing>` |
+| `cmd-args` | `-h` for the ten sub-commands `vsugar-args` does not cover, the whole top-level dispatcher (no command / `-h` / `-v` / unknown / non-lowercase), `lstart --print`/`--dry-mode`, all three `lstart` tri-state MEGs, `-o/--pass` accepted and malformed, `-d <missing>`, `lrestart`'s rejection of `--print` and `--terminal-emu`, `linfo`'s flag shapes and both MEGs, `list -n` with no value, `wipe -s -a`, `lconfig` with no group, `lclean --exclude` with no value, `check extra` |
+| `lstart-flags` | The `lstart` flag surface deployed: device selection, `--exclude`, both with an unknown name, `-o/--pass mem=`, `--hosthome`, `--no-shared`, `--privileged`, `-l` — each followed by a Docker snapshot, so `Memory`, `Privileged` and the `Binds`/`Mounts` set are asserted, not just stdout |
+| `folderlab` | `-F/--force-lab`: `lstart` with no `lab.conf` (fails), `lstart --print -F`, `lstart -F`, `list`, `lclean` — the `FolderParser` path, which no golden and no other flow reaches |
+| `checkcmd` | `kathara check` twice: the five identity lines plus a real deploy/undeploy of the `kathara_test` lab |
 
 ## What is normalized, and why
 
@@ -89,20 +93,28 @@ Every rule deletes a named source of nondeterminism. Nothing else is touched.
 ## Expected differences
 
 `-compare` is **not** expected to print zero blocks. As of the run recorded
-here it prints 63, and every one of them falls into a class below. A block that
-does not is a regression.
+here it prints 124 over the eleven flows, and every one of them falls into a
+class below. A block that does not is a regression.
 
 | Class | Blocks | Status |
 |---|---|---|
-| `list` table columns: Python has eleven, the port five (`PIDS`, `CPU USAGE`, `MEM USAGE`, `MEM PERCENT`, `NET USAGE`, `INTERFACES` absent) | 15 PARITY | Sanctioned: `PORT_SPEC.md` §0.3 defers resource sampling and enumerates the six inventory fields that survive |
-| `list` row order differs between two Python runs | 7 DETERMINISM (py only) | Sanctioned: `ORDERING.tsv` row `DockerMachine.py:1044` marks the source `!!` nondeterministic and prescribes sorting by name, which the port does |
+| `list` table columns: Python has eleven, the port five (`PIDS`, `CPU USAGE`, `MEM USAGE`, `MEM PERCENT`, `NET USAGE`, `INTERFACES` absent) | 27 PARITY | Sanctioned: `PORT_SPEC.md` §0.3 defers resource sampling and enumerates the six inventory fields that survive |
+| `list` row order differs between two Python runs | 4 DETERMINISM (py only) | Sanctioned: `ORDERING.tsv` row `DockerMachine.py:1044` marks the source `!!` nondeterministic and prescribes sorting by name, which the port does |
 | `lstart` on an already-running scenario names whichever device the pool reached first | 2 | Inherent: `ORDERING.tsv` row `DockerMachine.py:597` — completion order under the deploy pool is nondeterministic |
-| exit-2 stderr carries the port's **full help** where argparse prints the `usage:` block alone | 18 PARITY | **Finding — not sanctioned.** See below |
-| `--format` and the port's own `--lab-hash`/`--lab-name`/`--from-archive`/`--name` rows appear in help and usage | included above | Sanctioned: `PORT_SPEC.md` §5.1, `DIVERGENCES.md` #102(a) |
-| `usage:` block wrapped at 80 by the port, at `COLUMNS` by argparse | included above | Recorded: `DIVERGENCES.md` #103. Disappears with `-columns 80` |
-| pflag's message text for a malformed flag (`unknown flag:`, `flag needs an argument:`, `invalid argument %q for %q flag:`) | included above | `DIVERGENCES.md` #102(b) covers the first two verbatim; the third is the `ArgumentTypeError` class and is **not** listed there |
+| exit-2 stderr carries the port's **full help** where argparse prints the `usage:` block alone | 46 PARITY | **Fixed** (after this run): `parser.usageBlock` (`cmd/kathara/usage.go:458`) is now what `usageError` prints (`root.go:292`). Pinned by `TestUsageErrorPrintsTheUsageBlockOnly` (`cmd/kathara/usage_test.go:260`). See below |
+| `--format` and the port's own `--lab-hash`/`--lab-name`/`--from-archive`/`--name` rows appear in help and usage | 21 PARITY | Sanctioned: `PORT_SPEC.md` §5.1, `DIVERGENCES.md` #102(a) |
+| `usage:` block wrapped at 80 by the port, at `COLUMNS` by argparse | included above | Recorded: `DIVERGENCES.md` #103. Disappears with `-columns 80` — `cmd-args`'s `09-help-connect` block is this class alone and is the one block the 80-column run drops |
+| pflag's message text for a malformed flag (`unknown flag:`, `flag needs an argument:` — long form and the short form `flag needs an argument: 'n' in -n`, `invalid argument %q for %q flag:`) | included above | `DIVERGENCES.md` #102(b) covers the first two verbatim; the third is the `ArgumentTypeError` class and is **not** listed there |
+| `linfo`'s exit code and stdout: Python runs the command, the port answers `FeatureNotAvailable` | 4 PARITY | Sanctioned: `PORT_SPEC.md` §3.4 defers `linfo`; `DIVERGENCES.md` #105 |
+| `linfo -h`: the port renders `[-d]` / `-d, --directory` where argparse renders `[-d DIRECTORY]` / `-d, --directory DIRECTORY` | 2 PARITY | **Fixed** (after this run): `newLinfoCmd` now calls `cmd.meta("directory", "DIRECTORY")` (`cmd/kathara/list.go:157`) like every other command with the flag. Pinned by `TestLinfoDeclaresTheDirectoryMetavar` (`cmd/kathara/usage_test.go:302`), which reads the real command rather than the fidelity test's replica parser (`usage_test.go:75`) that hid it |
+| `check`: Python's five identity lines carry their tab run **expanded to spaces** (rich, 8-column tab stops), the port emits raw `\t`; and the label is `Python version is:` vs `Go version is:` | 4 PARITY | The label is sanctioned (`DIVERGENCES.md` #94); the tab expansion is **fixed** (after this run): the five lines carry rich's expanded spaces, pinned by `TestCheckReportExpandsTabsLikeRich` (`cmd/kathara/commands_test.go:1676`) |
 
-**The exit-2 finding.** `app.usageError` (`cmd/kathara/root.go:288`) prints
+The three rows marked **Fixed** were open findings when this run was recorded
+and have since been applied; the block counts in the table are that run's, so a
+re-recording drops those classes. The diagnoses below are kept verbatim as the
+record of what was wrong and why, each with the fix that was taken.
+
+**The exit-2 finding (fixed).** `app.usageError` (`cmd/kathara/root.go:288`) prints
 `spec.Cmd.UsageString()`, which `parser.SetUsageFunc` (`cmd/kathara/parser.go:56`)
 wires to `parser.usage()` → `usageAt(80)` — i.e. argparse's `format_help()`, not
 its `format_usage()`. `argparse.ArgumentParser.error` calls `print_usage`, so
@@ -115,6 +127,49 @@ is 4 and 51. `CLI_SURFACE.md` §0.6 and `JSON_CLI_CONTRACT.md` §5.5 both pin
 next to `usage()` in `cmd/kathara/usage.go` and call it from `usageError`. The
 `--help` path (`root.go:228`) must keep `UsageString()`.
 
+*Applied* as written: `parser.usageBlock` lives at `cmd/kathara/usage.go:458`
+and `usageError` calls it (`root.go:292`); `--help` still prints the full help.
+`TestUsageErrorPrintsTheUsageBlockOnly` (`cmd/kathara/usage_test.go:260`) pins
+both halves, and `kathara vclean` with no arguments is back to Python's two
+stderr lines (modulo the sanctioned `[--format FORMAT]` in the usage block).
+
+**The `linfo` metavar finding (fixed).** `newLinfoCmd` (`cmd/kathara/list.go:155`)
+registers `--directory` with `flags.StringVarP` but never calls
+`cmd.meta("directory", "DIRECTORY")`, which every other command that has the
+flag does (`lstart.go:78`, `lclean.go:34`, `exec.go:34`, `connect.go:50`,
+`lconfig.go:47` with `LAB_PATH`). `parser.optionArgs` (`cmd/kathara/usage.go:658`)
+reads "no metavar" as `nargs == 0` and prints nothing, so `kathara linfo -h`
+renders `usage: kathara linfo [-h] [-d] …` and `-d, --directory   Specify the
+folder …` where argparse renders `[-d DIRECTORY]` and `-d, --directory
+DIRECTORY`. Parsing is unaffected — the flag still takes a value. Smallest fix:
+one line, `cmd.meta("directory", "DIRECTORY")` after `list.go:156`.
+
+*Applied* as written (`cmd/kathara/list.go:157`), pinned by
+`TestLinfoDeclaresTheDirectoryMetavar` (`cmd/kathara/usage_test.go:302`), which
+exercises the real `newLinfoCmd` instead of the replica parser that hid it.
+
+**The `check` tab finding (fixed).** `CheckCommand` writes its five identity lines
+through rich, which expands the `\t` runs against 8-column tab stops before the
+bytes leave the process; the port writes the tabs through. Both land the value
+in column 32 on a terminal, but on a pipe the bytes differ:
+`Current Manager is:` + 13 spaces (Python) vs `Current Manager is:\t\t` (port).
+No golden covers `check`, so nothing else sees this. `CheckCommand.py:40,43,46,49,59`
+and `cmd/kathara/wipe.go:158,162,166,167,168` spell the same format strings; the
+difference is entirely rich's `tab_size=8` expansion inside `Console.print`.
+Those five lines are the only tab-carrying output in the ported surface (the
+other two `\t` sites in Python are consolemenu help strings, deferred scope), so
+the smallest fix is local: replace the `\t` runs in those five `fmt.Sprintf`
+calls with the spaces that pad each label to column 32. Expanding tabs inside
+`internal/cliout`'s `Print` would match rich more generally but changes a
+shared writer for one call site.
+
+*Applied* as written — the five `fmt.Sprintf` calls pad to column 32 instead of
+carrying `\t` — and pinned by `TestCheckReportExpandsTabsLikeRich`
+(`cmd/kathara/commands_test.go:1676`), which asserts both that no raw tab
+reaches stdout and that each of the five values starts at column 32. The
+`Go version is:` label stays (`DIVERGENCES.md` #94), so this class still shows
+one block per `check` flow rather than none.
+
 ## Note on the golden harness's HOME pin
 
 `tools/goldenharness/runner.go:71-89` writes a pinned `kathara.conf` into a
@@ -125,3 +180,11 @@ fire". On Linux that pin has no effect (trap 1 above): both binaries read
 `<pw_dir>/.config/kathara.conf`. Whatever that file happens to contain — this
 host's held `"image": "scenario/image"` and `"image_update_policy": "Prompt"`
 before cmdparity replaced it — is what the goldens were recorded against.
+
+**Status: already recorded.** `NORMALIZATION.md` §1 carries this as a caveat
+("found 2026-08-12") and makes the operator's real `~/.config/kathara.conf`
+part of the harness contract on Linux. It is not an open finding; it is
+repeated here because it is also the reason cmdparity installs its pinned file
+at the real default path instead of exporting `HOME`. If the golden harness
+ever adopts the same approach, `pinSettings`/`passwdHome` (`main.go:176-206`)
+is the code to lift.
