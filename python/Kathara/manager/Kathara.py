@@ -239,6 +239,14 @@ class Kathara(object):
         ``kathara list`` is inventory-wide (contract §8 gives no scenario
         addressing flags to it), so the scenario filter is applied here on the
         ``network_scenario_id`` field.
+
+        ``all_users`` carries the CLI's root gate (`ListCommand.py:58`,
+        `cmd/kathara/list.go:57-62`) into every caller. For
+        ``get_machines_stats`` that is a re-worded `PrivilegeError`
+        (DIVERGENCES.md 27, v3.8.3 raises its own at
+        `DockerMachine.py:1037-1038`); for ``get_machine(s)_api_objects`` it is
+        a **narrowing** (DIVERGENCES.md 122), v3.8.3 having no privilege check
+        on that path at all.
         """
         args: List[str] = []
         if machine_name:
@@ -322,8 +330,14 @@ class Kathara(object):
             NotSupportedError: If a device has a disconnected (tombstoned) interface, or if an
                 option or global metadata value has no `lstart` spelling.
         """
-        # Rendered first: it carries the both-given guard, which v3.8.3 checks
-        # before it looks at anything else (`DockerManager.py:146-147`).
+        # Rendered first: it carries the both-given guard
+        # (`DockerManager.py:146-147`). v3.8.3 runs `lab.check_integrity()`
+        # ahead of it (`:144`), which the client cannot: integrity is validated
+        # by the binary, on the lab.conf this call is about to ship. So a
+        # scenario that is *both* mis-numbered and asked to select and exclude
+        # devices answers `InvocationError` here where v3.8.3 answered
+        # `NonSequentialMachineInterfaceError` — same two refusals, opposite
+        # order, and every single-fault case is unchanged.
         selection_args = self._selection_args(selected_machines, excluded_machines)
 
         if not lab.machines:
@@ -335,6 +349,11 @@ class Kathara(object):
                 raise MachineNotFoundError(f"The following devices are not in the network scenario: {missing}.")
 
             if lab.links:
+                # DIVERGENCES.md 123: v3.8.3 *does* deploy this — `deploy_links`
+                # takes `lab.links` whole before any device is created
+                # (`DockerManager.py:169-170`). A lab.conf with no device line
+                # cannot say it, so this is a refusal rather than a silent
+                # success.
                 raise _not_supported(
                     "deploy_lab of a network scenario with collision domains but no devices",
                     "`lstart` deploys the collision domains its devices declare; there is no device-less deploy."
@@ -536,6 +555,12 @@ class Kathara(object):
         # `--force` is mandatory in JSON mode: without it the binary answers
         # `ConfirmationRequired` and wipes nothing (contract §1.5). An API call
         # is by definition the explicit form of the request.
+        #
+        # DIVERGENCES.md 121: the `PrivilegeError` documented above is the
+        # *CLI's* gate (`WipeCommand.py:65-66`, reproduced in
+        # `cmd/kathara/wipe.go:79-84`). v3.8.3's `DockerManager.wipe` has no
+        # privilege check of its own, so this call is narrower than the API it
+        # replaces whenever `all_users` is set.
         args = ["-f"]
         if all_users:
             args += ["-a"]
@@ -557,13 +582,13 @@ class Kathara(object):
 
         ``connect`` addresses a scenario by directory or by ``-v``: contract §8
         gives ``--lab-hash``/``--lab-name`` to `exec`, `lclean` and `lconfig`
-        only. A named scenario with no directory — every ``Lab("name")`` the
-        tutorials and the API build — is therefore addressed through a scenario
-        directory containing nothing but its ``LAB_NAME=`` line: `LabParser`
-        assigns that through the name setter, which recomputes the hash from it
-        (`JSON_CLI_CONTRACT.md` §3.0.1, A8), so the binary lands on exactly the
-        hash `deploy_lab` deployed under. Only a scenario known by hash alone
-        cannot be addressed, a hash not being invertible into a name.
+        only. A **named** scenario — with or without a directory of its own — is
+        therefore addressed through a scenario directory containing nothing but
+        its ``LAB_NAME=`` line: `LabParser` assigns that through the name setter,
+        which recomputes the hash from it (`JSON_CLI_CONTRACT.md` §3.0.1, A8), so
+        the binary lands on exactly the hash `deploy_lab` deployed under. Only a
+        scenario known by hash alone cannot be addressed, a hash not being
+        invertible into a name.
 
         Args:
             machine_name (str): The name of the device to connect.
@@ -576,7 +601,9 @@ class Kathara(object):
             shell (str): The name of the shell to use for connecting.
             logs (bool): If True, print startup logs on stdout.
             wait (Union[bool, Tuple[int, float]]): Ignored: `kathara connect` always waits for the startup
-                commands to finish.
+                commands to finish. v3.8.3 threads this down to
+                `DockerMachine.connect` (`DockerManager.py:405-411`), where False skips the wait; the
+                command line has no spelling for it (DIVERGENCES.md 124).
 
         Returns:
             None
@@ -600,20 +627,37 @@ class Kathara(object):
             _proc.run_interactive("connect", ["-v"] + tail)
             return
 
+        # The **name** decides, and the directory is only the fallback. A named
+        # scenario is deployed under `hash(name)` — `deploy_lab` passes
+        # `--name=lab.hash_seed`, and v3.8.3 addresses `connect_tty` by
+        # `lab.hash` unconditionally (`DockerManager.py:398-401`) — while
+        # `connect -d <dir>` takes the *directory's* identity: the `LAB_NAME=`
+        # of the lab.conf found on disk, or `hash(<dir>)` when it has none
+        # (contract §3.0.1; `cmd/kathara/lclean.go:145-155`). For a scenario
+        # that has both a name and a directory those two agree only by
+        # accident, so the name is served first, through a synthesised
+        # `LAB_NAME=` directory.
+        if name:
+            with self._named_scenario_dir(name) as directory:
+                _proc.run_interactive("connect", ["-d", directory] + tail)
+            return
+
+        # No name: the hash `Lab.__init__` computed is the one derived from this
+        # very directory, so handing the directory back reproduces it — the one
+        # case `-d <lab path>` is right for. (Residual, unreachable through
+        # `LabParser`, which would have set the name: a hand-built
+        # `Lab(None, path=d)` over a `d/lab.conf` that *does* carry a `LAB_NAME`
+        # line lands on that name's hash instead.)
         if lab is not None and lab.has_host_path():
             _proc.run_interactive("connect", ["-d", lab.fs_path()] + tail)
             return
 
-        if not name:
-            raise _not_supported(
-                "connect_tty by hash",
-                "`connect` takes `-d`/`-v` only: contract §8 gives `--lab-hash`/`--lab-name` to `exec`, `lclean` "
-                "and `lconfig`, and a hash cannot be turned back into the name it was derived from. Pass the "
-                "network scenario object or its name, or use `exec`."
-            )
-
-        with self._named_scenario_dir(name) as directory:
-            _proc.run_interactive("connect", ["-d", directory] + tail)
+        raise _not_supported(
+            "connect_tty by hash",
+            "`connect` takes `-d`/`-v` only: contract §8 gives `--lab-hash`/`--lab-name` to `exec`, `lclean` "
+            "and `lconfig`, and a hash cannot be turned back into the name it was derived from. Pass the "
+            "network scenario object or its name, or use `exec`."
+        )
 
     @staticmethod
     @contextlib.contextmanager
@@ -634,6 +678,23 @@ class Kathara(object):
                 "connect_tty to a network scenario named `%s`" % name,
                 "`connect` addresses a nameless scenario through a `LAB_NAME=` line, and a lab.conf metadata "
                 "value cannot contain `=`, a quote or a newline."
+            )
+
+        # Leading or trailing whitespace does not round-trip either, and it is
+        # the quieter failure: both parsers `.strip()` the metadata value
+        # (`LabParser.py:52`; the port's `labfile/labconf.go` `applyLabMetadata`
+        # through `pyStrip`), so a scenario deployed as `--name=" foo "` lives
+        # under `hash(" foo ")` while the synthesised directory resolves to
+        # `hash("foo")` — `connect` would reach a different scenario, or none,
+        # with no error of its own. Refusing here keeps the guarantee this
+        # helper exists for: the directory's identity IS `name`. Whitespace-only
+        # names fall in the same way, `" "` stripping to `""`.
+        if name != name.strip():
+            raise _not_supported(
+                "connect_tty to a network scenario named `%s`" % name,
+                "`connect` addresses a nameless scenario through a `LAB_NAME=` line, and the parser strips a "
+                "lab.conf metadata value, so a name with leading or trailing whitespace would resolve to a "
+                "different network scenario."
             )
 
         with tempfile.TemporaryDirectory(prefix="kathara-connect-") as directory:
@@ -1100,9 +1161,11 @@ class Kathara(object):
 
         Contract §3.7 makes `check` the only carrier of `manager` and
         `manager_version`, and running it deploys and undeploys a test device
-        (possibly pulling its image). v3.8.3's getters were plain SDK queries;
-        memoizing keeps them cheap to call in a loop, and neither value can
-        change while the process runs.
+        (possibly pulling its image). v3.8.3's getters were free — a literal and
+        one SDK call (`DockerManager.py:1043-1058`) — so the first call is a
+        real deploy where they were not, and fails when the daemon cannot run a
+        container (DIVERGENCES.md 125). Memoizing keeps them cheap to call in a
+        loop, and neither value can change while the process runs.
         """
         if not _CHECK_REPORT:
             _CHECK_REPORT.update(_proc.run_json("check", []))

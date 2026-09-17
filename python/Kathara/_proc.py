@@ -159,11 +159,21 @@ def exception_from_error(error: Dict[str, Any]) -> BaseException:
             envelope's ``message`` verbatim — `ERROR_CODES.md` §4 makes that a
             contract, because kathara-lab-checker embeds it in its reports.
     """
+    if not isinstance(error, dict):
+        # §5.1 pins `error` as an object. A build that sends anything else is
+        # not speaking the contract, and the same rule §9.2 gives for a code
+        # this client cannot read applies to a shape it cannot read: the base
+        # `KatharaError`, never an `AttributeError` from inside the decoder.
+        return KatharaError("Malformed error envelope: `error` must be an object, got %r." % (error,))
+
     code = error.get("code")
     message = error.get("message", "")
     fields = _fields(error)
 
-    cls = CODE_TO_EXCEPTION.get(code)
+    # §9.2: an unknown code buckets to `KatharaError`, and so does a `code` that
+    # is not a string at all — `dict.get` would raise `TypeError` on an
+    # unhashable one before any of that could happen.
+    cls = CODE_TO_EXCEPTION.get(code) if isinstance(code, str) else None
     if cls is None or cls is KatharaError:
         return KatharaError(message, code=code, fields=fields)
 
@@ -234,6 +244,12 @@ def _usage_error(argv: List[str], stderr: str, returncode: int) -> InvocationErr
     return InvocationError(
         "`%s` rejected the invocation (exit %d): %s" % (" ".join(argv[1:]), returncode, detail)
     )
+
+
+def _malformed_event_error(argv: List[str], detail: str, stderr: str) -> KatharaError:
+    """Build the error for a `jsonl` event whose shape the contract forbids."""
+    suffix = " (stderr: %s)" % stderr.strip() if stderr.strip() else ""
+    return KatharaError("Malformed event from `%s`: %s%s" % (" ".join(argv[1:]), detail, suffix))
 
 
 def _protocol_error(argv: List[str], stdout: str, stderr: str, returncode: int) -> KatharaError:
@@ -356,9 +372,18 @@ class ExecStream(object):
     def exit_code(self) -> int:
         """Return the exit code of the execution.
 
-        If the stream has not been consumed yet it is drained first (the remote
-        exit code only exists after the process ends), mirroring the Python
-        implementation, which called ``exec_inspect`` after stream exhaustion.
+        If the stream has not been consumed yet it is drained first: the remote
+        exit code arrives *in* the stream, as the terminal ``exit`` event
+        (`JSON_CLI_CONTRACT.md` §4.1), and there is no second channel to ask.
+
+        **The drained chunks are discarded** (DIVERGENCES.md 126): nothing
+        buffers them, so calling this before iterating leaves an exhausted
+        stream and no output. v3.8.3 consumed nothing here —
+        ``int(exec_inspect(...)['ExitCode'])`` (`DockerExecStream.py:38`) — and
+        raised ``TypeError`` when the exec was still running, so a caller could
+        not reach that state in the first place. Draining after the stream has
+        been consumed, which is what ``collect_exec`` and every observed
+        consumer do, is identical in both.
 
         Returns:
             int: The exit code of the execution.
@@ -445,7 +470,20 @@ def stream_jsonl(command: str, args: List[str]) -> ExecStream:
                     if data:
                         yield None, data.encode("utf-8")
                 elif event_type == "exit":
-                    stream._set_exit_code(int(event.get("code", 0)))
+                    code = event.get("code")
+                    if not isinstance(code, int) or isinstance(code, bool):
+                        # §4.1 types the terminal `exit` event's `code` as an
+                        # int, so `null` (or a string, or `true`) cannot be
+                        # spoken by a conforming binary — but `int(None)` would
+                        # answer that with a `TypeError` from the middle of the
+                        # stream. A payload the contract forbids is a protocol
+                        # error, reported like every other one.
+                        stream._set_finished()
+                        stderr = _finish(process, stderr_file)
+                        raise _malformed_event_error(
+                            argv, "the `exit` event's `code` must be an integer, got %r." % (code,), stderr
+                        )
+                    stream._set_exit_code(code)
                     stream._set_finished()
                     return
                 elif event_type == "error":

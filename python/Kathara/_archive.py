@@ -37,6 +37,7 @@ gets the honest ``FeatureNotAvailable`` error from the binary (`ERROR_CODES.md`
 §5) instead of being silently deployed without them.
 """
 
+import gzip
 import io
 import posixpath
 import tarfile
@@ -60,7 +61,10 @@ DEVICE_INTRODUCER_META: str = "bridged"
 DEVICE_INTRODUCER_VALUE: str = "false"
 
 #: `PORT_SPEC.md` §7.3 wheels are reproducible; so is this archive. A fixed
-#: mtime keeps two packs of the same scenario byte-identical.
+#: mtime keeps two packs of the same scenario byte-identical — in the tar
+#: headers *and* in the gzip header, which carries an mtime of its own
+#: (:func:`pack_lab` writes the `gzip.GzipFile` itself for that reason:
+#: ``tarfile.open(mode="w:gz")`` stamps the wall clock there).
 _FIXED_MTIME: int = 0
 
 
@@ -312,32 +316,45 @@ def pack_lab(lab: 'LabPackage.Lab', compress: bool = True) -> bytes:
         InvocationError: If the scenario cannot be expressed as a lab.conf.
         NotSupportedError: If a device has a disconnected (tombstoned) interface.
     """
+    buffer = io.BytesIO()
+
+    if not compress:
+        with tarfile.open(fileobj=buffer, mode="w", format=tarfile.PAX_FORMAT) as tar:
+            _add_members(tar, lab)
+        return buffer.getvalue()
+
+    # NOT `tarfile.open(mode="w:gz")`: that hands the gzip writer no `mtime`, so
+    # it stamps `time.time()` into the gzip header and two packs of the same
+    # scenario differ in four bytes. The archive is reproducible or it is not.
+    with gzip.GzipFile(fileobj=buffer, mode="wb", mtime=_FIXED_MTIME) as compressor:
+        with tarfile.open(fileobj=compressor, mode="w", format=tarfile.PAX_FORMAT) as tar:
+            _add_members(tar, lab)
+
+    return buffer.getvalue()
+
+
+def _add_members(tar: tarfile.TarFile, lab: 'LabPackage.Lab') -> None:
+    """Write the generated files and every path of ``lab.fs`` into ``tar``."""
     lab_conf = generate_lab_conf(lab).encode("utf-8")
     lab_dep = generate_lab_dep(lab)
 
-    buffer = io.BytesIO()
-    mode = "w:gz" if compress else "w"
+    _add_bytes(tar, "lab.conf", lab_conf)
+    if lab_dep is not None:
+        _add_bytes(tar, "lab.dep", lab_dep.encode("utf-8"))
 
-    with tarfile.open(fileobj=buffer, mode=mode, format=tarfile.PAX_FORMAT) as tar:
-        _add_bytes(tar, "lab.conf", lab_conf)
-        if lab_dep is not None:
-            _add_bytes(tar, "lab.dep", lab_dep.encode("utf-8"))
+    for path, is_dir in _walk(lab):
+        arcname = path.lstrip("/")
+        if not arcname or arcname in GENERATED_FILES:
+            continue
+        if posixpath.basename(arcname) in EXCLUDED_FILES:
+            continue
 
-        for path, is_dir in _walk(lab):
-            arcname = path.lstrip("/")
-            if not arcname or arcname in GENERATED_FILES:
-                continue
-            if posixpath.basename(arcname) in EXCLUDED_FILES:
-                continue
-
-            if is_dir:
-                _add_dir(tar, arcname, _file_mode(lab, path, 0o755))
-            else:
-                with lab.fs.open(path, "rb") as source:
-                    payload = source.read()
-                _add_bytes(tar, arcname, payload, _file_mode(lab, path, 0o644))
-
-    return buffer.getvalue()
+        if is_dir:
+            _add_dir(tar, arcname, _file_mode(lab, path, 0o755))
+        else:
+            with lab.fs.open(path, "rb") as source:
+                payload = source.read()
+            _add_bytes(tar, arcname, payload, _file_mode(lab, path, 0o644))
 
 
 def _walk(lab: 'LabPackage.Lab') -> List[Tuple[str, bool]]:

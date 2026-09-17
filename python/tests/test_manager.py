@@ -798,6 +798,62 @@ class UnsupportedSurfaceTest(FakeBinaryTestCase):
         self.assertIn("-l", argv)
         self.assertEqual("pc1", argv[-1])
 
+    def test_connect_tty_of_a_named_scenario_ignores_its_directory(self):
+        # A scenario that has BOTH a name and a directory is deployed under
+        # `--name=<name>`, so its identity is `hash(name)` (contract §7.2, A8) —
+        # exactly what v3.8.3 addresses `connect_tty` by (`DockerManager.py:398`,
+        # `lab_hash = lab.hash`). `connect -d <dir>` would instead take the
+        # directory's own identity (the `LAB_NAME=` of the lab.conf on disk, or
+        # `hash(<dir>)` when there is none, contract §3.0.1), which is a
+        # different scenario. The name must win.
+        directory = os.path.join(self.tmpdir, "scenario")
+        os.makedirs(directory)
+        with open(os.path.join(directory, "lab.conf"), "w") as lab_conf:
+            # A stale on-disk name, i.e. the identity the directory carries and
+            # the deployed scenario does not.
+            lab_conf.write('LAB_NAME=Something Else\npc1[0]="A"\n')
+
+        lab = Lab("BGP Announcement", path=directory)
+        lab.new_machine("router1")
+        self.assertTrue(lab.has_host_path())
+
+        self.plan([{"stdout": "", "exit": 0}])
+        seen = {}
+
+        original = manager_module._proc.run_interactive
+
+        def capture(command, args):
+            passed = args[args.index("-d") + 1]
+            with open(os.path.join(passed, "lab.conf")) as lab_conf:
+                seen["lab_conf"] = lab_conf.read()
+            seen["directory"] = passed
+            return original(command, args)
+
+        manager_module._proc.run_interactive = capture
+        try:
+            self.manager.connect_tty("router1", lab=lab)
+        finally:
+            manager_module._proc.run_interactive = original
+
+        # Not the scenario's own directory: a synthesised one carrying the name
+        # the scenario was deployed under, and nothing else.
+        self.assertNotEqual(directory, seen["directory"].rstrip(os.sep))
+        self.assertEqual("LAB_NAME=BGP Announcement\n", seen["lab_conf"])
+        self.assertEqual(lab.hash, generate_urlsafe_hash("BGP Announcement"))
+        self.assertFalse(os.path.exists(seen["directory"]))
+
+    def test_connect_tty_by_name_ignores_a_directory_the_lab_also_has(self):
+        # The same rule reached through `lab_name=`, which carries no directory
+        # at all: unchanged, and pinned here so the branch order cannot be
+        # re-derived from the `lab=` case alone.
+        self.plan([{"stdout": "", "exit": 0}])
+        self.manager.connect_tty("pc1", lab_name="Test scenario")
+
+        argv = self.last_argv()
+        self.assertEqual("connect", argv[0])
+        self.assertIn("-d", argv)
+        self.assertNotIn("-v", argv)
+
     def test_connect_tty_vlab(self):
         self.plan([{"stdout": "", "exit": 0}])
         self.manager.connect_tty("pc1", lab_name="kathara_vlab")
@@ -851,6 +907,20 @@ class UnsupportedSurfaceTest(FakeBinaryTestCase):
         with self.assertRaises(NotSupportedError):
             self.manager.connect_tty("pc1", lab_name="a=b")
         self.assertEqual([], self.calls())
+
+    def test_connect_tty_to_a_name_that_does_not_survive_stripping_is_refused(self):
+        # A `LAB_NAME=` value is `.strip()`ed by both parsers (`LabParser.py:52`,
+        # `labfile/labconf.go` `applyLabMetadata`), so ` foo ` written into the
+        # synthesised lab.conf comes back as `foo`: the scenario is deployed
+        # under `hash(" foo ")` and `connect -d <dir>` would address
+        # `hash("foo")`. Same misaddressing class as an unwritable name, so the
+        # same refusal — including for a whitespace-only name, which strips to
+        # the empty string.
+        for name in (" foo ", "foo\t", "\nfoo", " "):
+            with self.subTest(name=name):
+                with self.assertRaises(NotSupportedError):
+                    self.manager.connect_tty("pc1", lab_name=name)
+                self.assertEqual([], self.calls())
 
 
 if __name__ == "__main__":

@@ -239,6 +239,27 @@ class ArchiveContentTest(ArchiveTestCase):
         lab.connect_machine_to_link("pc1", "A")
         self.assertEqual(_archive.pack_lab(lab), _archive.pack_lab(lab))
 
+    def test_gzip_header_carries_no_wall_clock(self):
+        # `_archive._FIXED_MTIME`'s claim covers the *gzip* header too, and that
+        # is the half two same-second packs cannot expose: bytes 4-8 are the
+        # gzip MTIME field, and `tarfile.open(mode="w:gz")` fills them with
+        # `time.time()`, so two packs of the same scenario differ whenever they
+        # straddle a second boundary. Byte-identical, or the claim is false.
+        lab = Lab("repro")
+        lab.connect_machine_to_link("pc1", "A")
+
+        packed = _archive.pack_lab(lab)
+
+        self.assertEqual(b"\x1f\x8b", packed[:2], "the default encoding is gzip")
+        self.assertEqual(0, int.from_bytes(packed[4:8], "little"))
+
+        # Still a tar the far side (and the stdlib) reads back, uncompressed
+        # form included.
+        with tarfile.open(fileobj=io.BytesIO(packed), mode="r:gz") as tar:
+            self.assertIn("lab.conf", tar.getnames())
+        with tarfile.open(fileobj=io.BytesIO(_archive.pack_lab(lab, compress=False)), mode="r") as tar:
+            self.assertIn("lab.conf", tar.getnames())
+
     def test_excluded_files_are_dropped(self):
         lab = Lab("excluded")
         machine = lab.new_machine("pc1")

@@ -246,6 +246,70 @@ class ErrorEnvelopeTest(FakeBinaryTestCase):
         with self.assertRaises(KatharaError):
             manager.undeploy_lab(lab_hash="deadbeef")
 
+    def test_error_envelope_that_is_not_an_object_raises_kathara_error(self):
+        # Contract §5.1 types `error` as an object. A build that sends a bare
+        # string is not speaking the contract, and the client must answer that
+        # the way §9.2 answers any envelope it cannot read — with the base
+        # `KatharaError` — not with an `AttributeError` from its own decoder.
+        manager = Kathara.get_instance()
+        self.plan([{"stdout": '{"error":"boom"}', "exit": 1}])
+
+        with self.assertRaises(KatharaError) as caught:
+            manager.undeploy_lab(lab_hash="deadbeef")
+
+        self.assertIn("boom", str(caught.exception))
+        self.assertIsNone(caught.exception.code)
+
+    def test_error_envelope_with_a_non_string_code_raises_kathara_error(self):
+        # `dict.get` on an unhashable key raises `TypeError`; an unknown code
+        # buckets to `KatharaError` (§9.2) and so must an unreadable one.
+        manager = Kathara.get_instance()
+        self.plan([{"stdout": '{"error":{"code":["MachineNotFound"],"message":"boom"}}', "exit": 1}])
+
+        with self.assertRaises(KatharaError) as caught:
+            manager.undeploy_lab(lab_hash="deadbeef")
+
+        self.assertEqual("boom", str(caught.exception))
+
+    def test_jsonl_error_event_that_is_not_an_object_raises_kathara_error(self):
+        # The same shape guard on the streaming side (§4.1's `error` event).
+        manager = Kathara.get_instance()
+        self.plan([
+            self.probe_response(),
+            self.events_response([{"type": "error", "error": "boom"}], exit_code=1),
+        ])
+
+        stream = manager.exec("pc1", ["true"], lab_hash="H1")
+        with self.assertRaises(KatharaError):
+            list(stream)
+
+    def test_jsonl_exit_event_with_a_null_code_is_a_protocol_error(self):
+        # §4.1 types the `exit` event's `code` as an int, so `null` cannot come
+        # from a conforming binary — but `int(None)` would answer it with a
+        # `TypeError` raised from inside the client's own generator.
+        manager = Kathara.get_instance()
+        self.plan([
+            self.probe_response(),
+            self.events_response([{"type": "stdout", "data": "hi"}, {"type": "exit", "code": None}]),
+        ])
+
+        stream = manager.exec("pc1", ["true"], lab_hash="H1")
+        with self.assertRaises(KatharaError) as caught:
+            list(stream)
+
+        self.assertIn("`exit` event", str(caught.exception))
+
+    def test_jsonl_exit_event_with_a_string_code_is_a_protocol_error(self):
+        manager = Kathara.get_instance()
+        self.plan([
+            self.probe_response(),
+            self.events_response([{"type": "exit", "code": "0"}]),
+        ])
+
+        stream = manager.exec("pc1", ["true"], lab_hash="H1")
+        with self.assertRaises(KatharaError):
+            list(stream)
+
     def test_empty_stdout_with_nonzero_exit_raises_kathara_error(self):
         manager = Kathara.get_instance()
         self.plan([{"stdout": "", "stderr": "panic: boom", "exit": 3}])
