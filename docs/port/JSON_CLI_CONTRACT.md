@@ -44,6 +44,33 @@ Every non-interactive command accepts `--format {human,json,jsonl}`, default `hu
   help + exit 1; `kathara -v` → `Current version: <ver>` on stdout + exit 0
   (`kathara.py:60-67,82-84`). Scripted clients must invoke known lowercase commands.
 
+> **Erratum (2026-09-08) — the pre-dispatch list above is incomplete: the startup
+> settings check is a fourth human-only case, and it precedes the unknown-command
+> one.** The frozen bullet is left as written; this note records what the tree does
+> and why, in the manner of `RULINGS.md`'s errata.
+>
+> `kathara.py:69-76` runs `Setting.get_instance().check()` after the lowercase test
+> and **before** `CommandFactory().create_instance(...)`, for every command whose name
+> does not contain `"settings"` (plus `config`, per this file's neighbouring
+> PROPOSED-DIVERGENCES note). A `SettingsError` or `DockerDaemonConnectionError` there
+> is `logging.critical(f"({type(e).__name__}) {str(e)}")` and `sys.exit(1)`. The port
+> reproduces the sequence exactly (`cmd/kathara/root.go:186-193`, step 3), and
+> `--format` is resolved only in step 5 (`runCommand` → `applyFormat`), so a broken
+> settings file answers **`CRITICAL (SettingsError) …` on stdout with exit 1 no matter
+> what `--format` token argv carries** — including `--format json`, which gets no error
+> envelope. Two consequences a scripted client can hit: (a) `--format json` is not a
+> guarantee of a parseable stdout, the same as for the three cases already listed; and
+> (b) because the check runs first, an *unknown* command on a machine with a broken
+> settings file reports the settings failure, not ``Unrecognized command `X`.`` — the
+> order in the bullet above is dispatch order for a healthy settings file only.
+> Pinned by `TestSettingsCheckFailureExits1` and `TestSettingsCheckSkipIsASubstringTest`
+> (`cmd/kathara/dispatch_test.go`).
+>
+> **Action for the contract owner:** fold the settings-check case into §1.1's
+> pre-dispatch bullet at the next version bump (§9.3), noting that it precedes the
+> unknown-command case. No envelope, exit code or key order changes, so nothing in §9.1
+> is affected.
+
 ### 1.2 Mode semantics
 
 - **`human`** — Python v3.8.3 output, unchanged, byte-golden. This includes Python's stream
@@ -100,6 +127,32 @@ keep deploys unattended; destruction (`wipe`) is the one action that must be exp
 `--force` already exists as the explicit form, so JSON mode requires it instead of guessing.
 `ConfirmationRequired` is a JSON-mode-only stable code contributed to `ERROR_CODES.md` by
 this contract; it can never be raised in human mode.
+
+> **Erratum (2026-09-08) — the `exec --wait` row's human column, "unchanged", is not
+> exact: Ctrl-C during the startup wait is swallowed in Python and ends the command in
+> the port.** The frozen cell is left as written; this note records the delta, in the
+> manner of `RULINGS.md`'s errata.
+>
+> `DockerMachine._wait_startup_execution` wraps its whole poll body in
+> `try: … except KeyboardInterrupt: pass` (`DockerMachine.py:948-950`, commented
+> *"Disable the CTRL+C interrupt while waiting for startup, otherwise terminal will
+> close"*), so in v3.8.3 a SIGINT delivered while the loop polls `cat /tmp/EOS` is
+> discarded and the wait continues; only the ENTER override, the retry budget, an
+> `APIError` or the probe succeeding ends it. The port's analogue of that
+> KeyboardInterrupt is context cancellation, and `waitStartupExecution` returns
+> `ctx.Err()` rather than swallowing it (`backend/docker/machine.go:1223-1224` for the
+> probe arm, `:1274` for the retry sleep) — precisely so §6.2's interrupt contract can
+> hold, which requires the
+> cancellation to reach the top frame. So the row's **`json`/`jsonl` column is exact as
+> written** ("Interrupt via signal only" — the signal now works), and it is the *human*
+> column that shifts: the wait becomes interruptible where 3.8.3's was not. This is a
+> §0.1 divergence, recorded as `DIVERGENCES.md` entry 129, not a contract change: no
+> envelope, exit code or key order moves, and §6.2 is unaffected (it already says a
+> cancelled operation exits 0 in every mode).
+>
+> **Action for the contract owner:** at the next version bump (§9.3), replace that cell's
+> "unchanged" with "unchanged except that Ctrl-C ends the wait, which v3.8.3 swallowed",
+> or accept the erratum as the record.
 
 ---
 

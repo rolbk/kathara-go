@@ -207,8 +207,10 @@ consumer could notice, none of it closable inside the frozen JSON CLI contract.
     frozen message is `You must be root in order to show all Kathara devices of
     all users.` (`ListCommand.py:58`). Same class, same failure, different
     `str(e)` — and `ERROR_CODES.md` §4 makes `str(e)` contract. Not fixable
-    client-side: the message is produced by the binary. The same substitution
-    applies to `get_machine(s)_api_objects(all_users=True)`.
+    client-side: the message is produced by the binary.
+    `get_machine(s)_api_objects(all_users=True)` is **not** the same
+    substitution — v3.8.3 has no root gate there at all, so the client narrows
+    the call rather than re-wording its error. See item 122.
 28. **A disconnected (tombstoned) interface makes `deploy_lab` refuse, where
     v3.8.3 deploys.** `Machine.remove_interface` keeps the key and nulls the
     value, and `check_integrity` tolerates the hole (`model/Machine.py:136-141`),
@@ -240,15 +242,21 @@ consumer could notice, none of it closable inside the frozen JSON CLI contract.
     object and takes the model's next free number. Only observable on a device
     deployed with `bridged`, and only in the local model — the binary numbers the
     interface it actually creates.
-32. **A named scenario with no directory is addressed for `connect_tty` through a
-    synthesised scenario directory.** `connect` takes `-d`/`-v` only (contract §8
-    gives `--lab-hash`/`--lab-name` to `exec`, `lclean` and `lconfig`), so the
-    client writes a throwaway directory containing one `LAB_NAME=<name>` line and
-    passes `-d`. `LabParser` assigns that through the name setter, which
-    recomputes the hash from it (contract §3.0.1, A8), so the binary lands on the
-    hash `deploy_lab` deployed under. Observable as a temporary directory that
-    exists for the duration of the call. A scenario known **only** by hash still
-    raises `NotSupportedError`: a hash cannot be turned back into its name.
+32. **A named scenario is addressed for `connect_tty` through a synthesised
+    scenario directory** — including one that has a directory of its own.
+    `connect` takes `-d`/`-v` only (contract §8 gives `--lab-hash`/`--lab-name`
+    to `exec`, `lclean` and `lconfig`), so the client writes a throwaway
+    directory containing one `LAB_NAME=<name>` line and passes `-d`. `LabParser`
+    assigns that through the name setter, which recomputes the hash from it
+    (contract §3.0.1, A8), so the binary lands on the hash `deploy_lab` deployed
+    under. The scenario's *own* directory is used only when the scenario has no
+    name, that being the case where the directory is what the hash was derived
+    from: a named scenario is deployed under `hash(name)` whatever directory it
+    also has, while `connect -d <dir>` would take the directory's identity (its
+    `LAB_NAME=` line, or `hash(<dir>)`), and the two agree only by accident.
+    Observable as a temporary directory that exists for the duration of the
+    call. A scenario known **only** by hash still raises `NotSupportedError`: a
+    hash cannot be turned back into its name.
 33. **Device names outside the lab.conf grammar cannot be deployed.** The API
     accepts any string for `new_machine`, and v3.8.3's `deploy_lab` never
     round-trips through a file, so `Lab.new_machine("PC1")` deploys; the client
@@ -412,6 +420,22 @@ what follows is where the *port* behaves differently from 3.8.3.
     strips a leading `~` or `$VAR` case but not those two); every other path
     behaves identically.
 
+130. **`Envs()` and `Ulimits()` hand back the live container even when it is
+     empty, where Python hands back a throwaway `{}`.** (Added 2026-09-08; the
+     id continues the file's maximum, the entry sits here because it is a
+     `model/` accessor.) `get_envs` is `return self.meta['envs'] if
+     self.meta['envs'] else {}` (`model/Machine.py:459`) and `get_ulimits` is
+     the same shape (`:467`), so on an empty container the caller gets a
+     *fresh* dict and mutating it changes nothing; on a non-empty one it gets
+     the live dict and mutating it does. `Machine.Envs`/`Machine.Ulimits`
+     (`model/machine.go:418,421`) return `m.Meta.Envs`/`m.Meta.Ulimits`
+     unconditionally, so the empty case aliases too and a caller that writes
+     into the result now reaches the device. Only the empty case differs; the
+     non-empty case is Python's own aliasing, kept for the same reason
+     `ExecCommands` keeps it (model.md gotcha 22: do not defensively copy).
+     Unreachable from the CLI, which never mutates a getter's result;
+     reachable from the §7 client API.
+
 ## From `event/` (Python bug, validated against 3.8.3)
 
 Ported as-is. The bug's *reproduction* is `internal/cliout`'s, not `event`'s —
@@ -497,6 +521,30 @@ follows is where the *port* behaves differently from 3.8.3.
     a name repeats on the path. Pinned by `TestFlattenCycleGuard`; the
     cycle-free behaviour is pinned against the oracle over 590 random graphs by
     `TestDepGenAgainstOracle`.
+
+    **The same divergence exists on ACYCLIC input, where it is not a cycle
+    guard but a depth ceiling** (added 2026-09-08). Both `_order` *and*
+    `has_loop` recurse once per level of the chain, so a plain acyclic lab.dep
+    that is deep enough exhausts CPython's frame budget with no cycle anywhere
+    in it. Oracle-measured through `DepParser.parse` at the default
+    `sys.getrecursionlimit() == 1000`, on a chain `m1: m2`, `m2: m3`, …:
+    **995 lines parse fine; 996 lines raise `RecursionError` inside
+    `depgen._order`, and from 997 lines the failure moves earlier, into
+    `depgen.has_loop`** (`DepParser.py:72` calls `has_loop` before `flatten`).
+    `RecursionError` is a `RuntimeError`, and nothing on the path catches it,
+    so the CLI dies with a traceback rather than any Kathara error — and the
+    exact cut-off is not even a property of the lab, it moves with how many
+    frames the caller had already spent. The Go `orderFrom` recurses on the
+    same shape but has no frame limit short of the 1 GB goroutine stack:
+    `labfile.ParseDep` on the 1499-line chain that `RecursionError`s in Python
+    returns all 1500 names in the right order (measured, same file, both
+    implementations). So the port is *more* permissive here, not less — the
+    cycle guard above narrows Go's behaviour on cyclic input, this widens it on
+    deep acyclic input, and both fall out of the same refusal to reproduce
+    CPython's stack ceiling, which PORT_SPEC §10 forbids reproducing (the Go
+    analogue of running out of stack is a fatal, not a recoverable error). No
+    synthetic limit is imposed to close it: it takes ~1000 chained devices to
+    reach, and on that input Python's answer is a crash, not a result.
 47. **`LAB_DESCRIPTION=` and an omitted `LAB_DESCRIPTION` are one value.**
     NILABILITY.tsv:25 freezes `Lab.description/version/author/email/web` as
     plain Go strings with `"" = absent`, because every 3.8.3 reader tests them
@@ -783,6 +831,31 @@ code comments and pinned by tests, not listed here.
     relative, basename-rooted names. Reproducing it would widen a hole
     PROPOSED-DIVERGENCES.md already asks to close, which is why the clamp
     stands and is recorded here instead.
+
+129. **Ctrl-C during the startup wait is swallowed in Python and ends the
+     command in the port.** (Added 2026-09-08; the id continues the file's
+     maximum, the entry sits here because it is a `backend/docker` behaviour.)
+     `DockerMachine._wait_startup_execution` wraps the whole poll body in
+     `try: … except KeyboardInterrupt: pass` (`DockerMachine.py:948-950`, with
+     the comment *"Disable the CTRL+C interrupt while waiting for startup,
+     otherwise terminal will close"*), so a SIGINT delivered while the loop is
+     polling `cat /tmp/EOS` is discarded and the wait simply carries on — only
+     the ENTER override, the retry budget, an `APIError` or the probe
+     succeeding can end it. The Go analogue of a KeyboardInterrupt on that path
+     is context cancellation, and `machineService.waitStartupExecution`
+     deliberately does **not** swallow it: it returns `ctx.Err()` both from the
+     probe arm and from the retry sleep (`backend/docker/machine.go:1223-1224`
+     and `:1274`), which the caller turns into the orderly interrupt exit
+     that `JSON_CLI_CONTRACT.md` §6.2 pins — exit 0, `{"interrupted":true}` in
+     `json`, the warning line in `human`. Swallowing it would strand the CLI in
+     a wait that no signal can leave, and the terminal Python's `except` was
+     protecting has not been opened yet at that point in the port (the pane and
+     the external emulator both start after the deploy, entries 109 and 110).
+     **User-visible:** Ctrl-C during `exec --wait`'s and `connect`'s startup
+     wait is a no-op in 3.8.3 and ends the command here. The reasoning is
+     already in the function's doc comment; this entry is the discoverable
+     record of it, and `JSON_CLI_CONTRACT.md` §1.5's `exec --wait` row — whose
+     human column reads "unchanged" — carries a dated erratum pointing here.
 
 ## From `backend/kubernetes/` (port divergences and reproduced Python bugs)
 
@@ -1088,17 +1161,33 @@ code comments and pinned by tests, not listed here.
     is emitted as `CRITICAL ` + first row, then nine spaces + the rest.
     Verified against the recording end to end.
 
-92. **Progress bars are not rendered to a non-terminal, and always carry a bar
-    glyph when they are.** `rich.live.Live` suppresses every intermediate
-    refresh on a file or a dumb terminal and prints the final state once at
-    stop, which is what put `[Deploying devices] ━━━ 3/3` into the pre-rule
-    recordings; `NORMALIZATION.md` §6.6 now drops any line containing
-    `━ ╸ ╹ ╺ ╻` or a braille spinner frame. `cliout.ProgressBar` reproduces the
-    suppression and guarantees at least one `━` in every line it does emit, so
-    a bar can never survive normalization and diff against a golden that has
-    none. The intermediate frames on a real terminal are redrawn with `\r`
-    rather than through a `Live` region; the observable difference is that a
-    resize mid-deploy does not reflow the bar.
+92. **Only a *partial* progress bar is spelled differently; the completed one
+    is byte-exact.** `rich.live.Live` suppresses every intermediate refresh on
+    a file or a dumb terminal and prints the final state once at stop, so a
+    recording holds one row per bar. `HandleProgressBar` builds that row out of
+    `TextColumn`, `SpinnerColumn`, `BarColumn(bar_width=None)` and
+    `MofNCompleteColumn` with `expand=True` — no elapsed- or remaining-time
+    column — so at a pinned width it is a pure function of the description and
+    the counts, and `cliout.ProgressBar` reproduces it byte for byte:
+    `[Deploying devices]` + three spaces + 54 `━` + ` 3/3`, filling 80 columns.
+    `NORMALIZATION.md` §6.6 compares it as a golden. (An earlier revision of
+    both documents had the harness drop every line containing `━ ╸ ╹ ╺ ╻` on
+    the belief that the width depended on "how many redraws the run happened to
+    emit", and this renderer forced at least one `━` into every row so as to be
+    dropped along with it. Neither was true of a non-terminal recording, and
+    dropping the row deleted the assertion that the deploy ran to completion.)
+
+    What still differs is a bar caught mid-flight. rich paints the whole width
+    in `━` and separates done from not-done by style alone (`bar.complete`
+    against `bar.back`) plus a `╸` half-tick; this port emits no styling, so a
+    full-width run would read as "finished" at every point and the remainder is
+    left blank instead. Nothing observable rests on it: `SpinnerColumn` renders
+    a braille frame whenever `completed < total` — including at stop, which
+    this port now reproduces — and §6.6 drops every row carrying one, so a
+    partial bar never reaches a golden on either side. The intermediate frames
+    on a real terminal are redrawn with `\r` rather than through a `Live`
+    region; the observable difference is that a resize mid-deploy does not
+    reflow the bar.
 
 93. **`kathara list --watch` redraws in place instead of taking over the
     screen.** Python opens a `rich.live.Live(screen=True)` alternate-screen
@@ -1194,10 +1283,18 @@ code comments and pinned by tests, not listed here.
      have written the raw bytes into the redirected file.
 
 102. **argparse's prefix matching aside, the sub-command help and every exit-2
-     usage block are argparse's byte for byte — but they are rendered by a
-     ported `HelpFormatter`, not by `pflag.FlagUsages`.** `CLI_SURFACE.md`'s
-     conventions call "usage + error to stderr, exit 2" part of the observable
-     contract, and pflag's own renderer disagrees with argparse on every axis:
+     usage block are argparse's layout — but they are rendered by a ported
+     `HelpFormatter`, not by `pflag.FlagUsages`, and they are two different
+     blocks.** `-h` prints `format_help()` ([parser.usage]): the usage line, the
+     description, the option table and the wiki epilog. An exit-2 path prints
+     what `ArgumentParser.error()` prints, `format_usage()` alone
+     ([parser.usageBlock]), followed by the one-line message — two lines on
+     stderr for `kathara vclean` with no `-n`, oracle-verified. An earlier build
+     printed the full help from `usageError` too, which answered that missing
+     flag with thirteen lines; `TestUsageErrorPrintsTheUsageBlockOnly` pins the
+     split. `CLI_SURFACE.md`'s conventions call "usage + error to stderr,
+     exit 2" part of the observable contract, and pflag's own renderer disagrees
+     with argparse on every axis:
      it sorts alphabetically, prints Go type names (`-d, --directory string`),
      appends `(default [])`, splits a two-spelling action into two rows, has no
      `positional arguments:` section, and — for the `nargs='*'` options — leaks
@@ -1208,7 +1305,9 @@ code comments and pinned by tests, not listed here.
      `TestArgparseHelpFormatterMatchesOracle` diffs the result against
      `testdata/argparse_help/*.txt`, which are `parser.format_help()` run on the
      real Python command objects at COLUMNS=80, for all thirteen parsers — they
-     match exactly. Two residual differences remain and are deliberate:
+     match exactly, and the `usage:` block an exit-2 path prints is the first
+     lines of that same rendering. Two residual differences remain and are
+     deliberate:
      (a) the port's own flags (`--format`, `--lab-hash`, `--lab-name`,
      `--from-archive`, `--name`) appear in the real commands' help, which is why
      the fidelity test drives replica parsers instead; (b) the *error message*
@@ -1307,8 +1406,13 @@ code comments and pinned by tests, not listed here.
      withdrawn there for the same reason.
 ## From Layer D gate runs (2026-08-12)
 
-11. **`connect_tty` via the subprocess client prints CLI chrome** ("Waiting startup commands execution. Press [ENTER] to override...") that 3.8.3's pure API path never printed — inherent to the §7 architecture (client shells out to `kathara connect`). Cosmetic.
-12. **Accidental root-logger installation not replicated.** 3.8.3's `decorators.py:13` calls root `logging.debug(...)` during `Kathara.get_instance()`, implicitly firing `logging.basicConfig()`; user scripts' later `logger.info` narration thereby reaches stderr. The Go-backed client has no such side effect, so tutorial narration is invisible unless the user configures logging. Recorded per §10 (accidental side effect, not replicated by patch); tutorials still pass gate 2.
+Renumbered 2026-09-08: these two entries were written as 11 and 12, which are
+already the `utils.py` entries at the top of this file. They are now 127 and
+128, the two ids after the highest one in use. Nothing referenced them under
+the old numbers.
+
+127. **`connect_tty` via the subprocess client prints CLI chrome** ("Waiting startup commands execution. Press [ENTER] to override...") that 3.8.3's pure API path never printed — inherent to the §7 architecture (client shells out to `kathara connect`). Cosmetic.
+128. **Accidental root-logger installation not replicated.** 3.8.3's `decorators.py:13` calls root `logging.debug(...)` during `Kathara.get_instance()`, implicitly firing `logging.basicConfig()`; user scripts' later `logger.info` narration thereby reaches stderr. The Go-backed client has no such side effect, so tutorial narration is invisible unless the user configures logging. Recorded per §10 (accidental side effect, not replicated by patch); tutorials still pass gate 2.
 
 ## From the terminal rebuild, `term/` (sanctioned §0.2 #2 divergences, not Python bugs)
 
@@ -1488,3 +1592,86 @@ reproduces.
      Popen does there (`term/external_unix.go`); the Windows arm is left alone
      because both alternatives — NUL handles or this console's handles — are
      wrong in different ways and neither can be verified from this repository.
+
+## From the wide-verification triage of the §7 Python client (port divergences, not Python bugs)
+
+Numbered after every identifier above, as the earlier client sections were.
+These belong with items 27-33: the API narrowings a caller can hit, each one a
+consequence of the client being the CLI rather than the manager. Items 121, 122
+and 125 are the same shape — the client inherits a `cli/command/` gate or cost
+that the v3.8.3 *manager* API did not have.
+
+121. **`wipe(all_users=True)` needs root, where the v3.8.3 API did not.**
+     `DockerManager.wipe` has no privilege check of its own (`:348-368`): it
+     drops to `DockerMachine.wipe(user=None)` and removes every user's devices.
+     The root gate lives in the CLI command (`WipeCommand.py:65-66`, `You must be
+     root in order to wipe all Kathara devices of all users.`), and the client
+     *is* that command — `kathara wipe -f -a`, gated at
+     `cmd/kathara/wipe.go:79-84` — so a non-root API caller now gets
+     `PrivilegeError` instead of a wipe. `wipe()` without `all_users` is
+     unaffected. (The `-f` the client always passes is not a divergence: it is
+     the API path's own no-prompt semantics spelled for a CLI, contract §1.5.)
+
+122. **`get_machine_api_object` / `get_machines_api_objects` with
+     `all_users=True` need root, where v3.8.3 answered them for anyone.** The
+     v3.8.3 path is `DockerManager.get_machines_api_objects`
+     (`:579-605`) → `DockerMachine.get_machines_api_objects_by_filters(user=None)`
+     (`:997-1018`), which — unlike `get_machines_stats`, whose `is_admin()` check
+     is right next to it at `:1037-1038` — has **no** privilege check: a non-root
+     caller got every user's containers back. The client reads the inventory
+     through `kathara list -a`, which is root-gated (`ListCommand.py:58`;
+     `cmd/kathara/list.go:57-62`), so the same call raises `PrivilegeError`. This
+     is a narrowing, not the message substitution item 27 used to claim for it;
+     item 27's stats case is unchanged and remains a substitution.
+
+123. **A network scenario with collision domains but no devices cannot be
+     deployed.** v3.8.3's `deploy_lab` deploys the links before it deploys any
+     device (`DockerManager.py:169-170` → `DockerLink.deploy_links`, which takes
+     `lab.links` whole when no selection is given, `:50`), so a scenario built
+     out of `get_or_new_link` alone creates the Docker networks and returns.
+     `lstart` has no device-less deploy: the archive's lab.conf would carry no
+     device line at all, and collision domains exist on the far side only
+     because a device declares them. The client raises `NotSupportedError`
+     naming the case rather than deploying nothing and reporting success. A
+     scenario with **neither** devices nor links still succeeds and deploys
+     nothing, which is v3.8.3 parity.
+
+124. **`connect_tty(wait=...)` and `connect_tty_obj(wait=...)` are ignored; the
+     binary always waits.** v3.8.3 threads `wait` down to
+     `DockerMachine.connect` (`DockerManager.py:404-411`), where `False` skips
+     the startup-command wait outright and a `(retries, interval)` tuple bounds
+     it. `kathara connect` has no flag for either (contract §1.1 marks it
+     human-only and interactive; §8 gives it no addressing flags, let alone a
+     wait budget), so every client call behaves as `wait=True`. The parameter
+     stays in the signature — callers pass it positionally — and the docstring
+     says it is ignored. `exec(wait=...)` is the different case: `--wait` exists,
+     so `True`/`False` are exact and only the retry-budget tuple is refused with
+     `NotSupportedError`.
+
+125. **`get_release_version` and `get_formatted_manager_name` deploy a
+     container.** In v3.8.3 they are free: the manager name is a literal and the
+     version is one SDK call (`DockerManager.py:1043-1058`,
+     `self.client.version()["Version"]`). The contract carries `manager` and
+     `manager_version` in the `check` envelope only (§3.7), and producing that
+     envelope runs the `kathara_test` / `hello_world` deploy-and-undeploy
+     self-test, pulling the default image when it is missing. The client
+     memoizes the report for the life of the process (`_CHECK_REPORT`), so a
+     loop pays once and neither value can change meanwhile; the first call is
+     still a real deploy, and it fails where v3.8.3's returned a string if the
+     daemon cannot run a container. The values themselves are the v3.8.3 ones —
+     `check` reports exactly these two getters' output.
+
+126. **`ExecStream.exit_code()` drains the stream, and discards what it
+     drains.** v3.8.3's `DockerExecStream.exit_code` is
+     `int(exec_inspect(...)['ExitCode'])` (`DockerExecStream.py:38`): it consumes
+     nothing, answers correctly once the command has ended, and raises
+     `TypeError: int() argument must be...` when it has not (a running exec
+     inspects as `'ExitCode': None`). The client's remote exit code arrives *in*
+     the stream, as the terminal `exit` event (contract §4.1), so `exit_code()`
+     iterates to the end before it can answer — and the `(stdout, stderr)` chunk
+     pairs it walks past are dropped, since nothing is buffering them. Calling
+     `exit_code()` first and iterating afterwards therefore yields no output at
+     all, where v3.8.3 raised `TypeError` before the caller could get that far.
+     Consuming the stream first — what `exec(stream=False)` does through
+     `collect_exec`, and what every observed consumer does — is identical in
+     both.

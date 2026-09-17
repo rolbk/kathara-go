@@ -294,26 +294,35 @@ and moving the fields onto an interface would change a shape `ERROR_CODES.md`
 `PACKAGE_GRAPH.md` §1.2, or drop the `file`/`line` fields from
 `JSON_CLI_CONTRACT.md` §5.4.
 
-## `kathara linfo --format json` is a usage error, not a machine-readable stub
+## `kathara linfo --format json` — superseded, see DIVERGENCES entry 105
 
-`JSON_CLI_CONTRACT.md` §1.1's table row for `linfo` reads
-"FeatureNotAvailable stub in 1.0 (§5.6): errors in every mode" in the `human`
-column, with an em dash in the `json` and `jsonl` columns. Taken literally —
-which is how the port took it — `linfo` declares no `--format` at all, so
-`kathara linfo --format json` is an unknown-flag usage error with exit **2**,
-and the only way to see the deferral is the human line
-`CRITICAL (FeatureNotAvailable) The linfo command is not supported…`.
+**Superseded 2026-09-08.** This section described the port as taking
+`JSON_CLI_CONTRACT.md` §1.1's `linfo` row literally — no `--format` flag at
+all, so `kathara linfo --format json` was an unknown-flag usage error with exit
+2 — and asked the contract owner to confirm that reading or replace it. That is
+not what the tree does, and has not been for some time: the second reading was
+taken instead, and the decision is recorded as a **divergence, not a proposal**,
+in `DIVERGENCES.md` entry 105.
 
-That is defensible (the em dashes say the two modes do not exist for this
-command) but it means a scripted client that probes `linfo` cannot parse the
-refusal, and the phrase "errors in every mode" reads as though it could. The
-alternative is one line: give `linfo` a `--format {human,json}` and let it emit
-E13 with `"feature":"linfo"`. It is additive under §9.2 either way, so the
-choice can be made after 1.0 without a contract version bump — but not
-silently, because the exit code differs (2 today, 1 then).
+The implemented behaviour, for the avoidance of a second stale copy:
 
-**Action for the contract owner:** confirm the literal reading, or say that
-`linfo` takes `--format` and errors through E13.
+| invocation | stdout | exit |
+|---|---|---|
+| `kathara linfo` | `CRITICAL (FeatureNotAvailable) The linfo command is not supported in this release. Use Kathará 3.8.x.` | 1 |
+| `kathara linfo --format json` | `{"error":{"code":"FeatureNotAvailable","message":…,"feature":"linfo"}}` | 1 |
+| `kathara linfo --format jsonl` | (usage on stderr) | 2 |
+
+`linfo` therefore **does** declare `--format`, accepting `human` and `json` and
+rejecting `jsonl` the way every other non-streaming command rejects it. The
+reason is entry 105's: §5.6 registers `linfo` as a `feature` token of the JSON
+*error envelope*, an envelope that exists only in the machine formats, so under
+the literal reading that registration could never be reached by any invocation.
+All three rows are pinned by `TestLinfoErrorsInEveryMode`
+(`cmd/kathara/flags_test.go`).
+
+**Action for the contract owner** is unchanged and lives with entry 105:
+confirm the reading, or say the flag should be rejected and the §5.6 token is
+documentation-only. Nothing further is proposed here.
 
 ## `kathara config` is exempt from the startup settings check
 
