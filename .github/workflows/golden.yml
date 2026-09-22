@@ -69,9 +69,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@v6
         with:
           go-version-file: go.mod
           cache-dependency-path: "**/go.sum"
@@ -127,18 +127,18 @@ jobs:
     runs-on: ${{ inputs.runner || 'ubuntu-latest' }}
     timeout-minutes: 120
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       # The golden set includes 24 scenarios from the pinned Kathara-Labs
       # revision plus local synthetic scenarios.
       - name: Check out KatharaFramework/Kathara-Labs
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           repository: KatharaFramework/Kathara-Labs
           ref: ${{ inputs.labs_ref || '87fbf87e009938a4a62a696a87a730966fd35bff' }}
           path: kathara-labs
 
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@v6
         with:
           go-version-file: go.mod
           cache-dependency-path: "**/go.sum"
