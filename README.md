@@ -26,7 +26,7 @@ Kathará uses Docker to create devices and collision domains. Install Docker,
 make sure your user can access its daemon, then build the command:
 
 ```console
-git clone https://github.com/KatharaFramework/kathara-go.git
+git clone https://github.com/rolbk/kathara-go.git
 cd kathara-go
 mkdir -p bin
 go build -o bin/kathara ./cmd/kathara
