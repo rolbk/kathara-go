@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 	"time"
@@ -44,15 +45,26 @@ func runAttachHelper(spec string) {
 // testDriver returns a Driver bound to a private tmux server, killed on cleanup.
 func testDriver(t *testing.T) *Driver {
 	t.Helper()
+	if runtime.GOOS == "windows" {
+		t.Skip("tmux integration tests require Unix-domain sockets")
+	}
 	if _, err := exec.LookPath("tmux"); err != nil {
 		t.Skip("tmux not installed; skipping tmux integration test")
 	}
 
-	d := &Driver{SocketPath: filepath.Join(t.TempDir(), "tmux.sock"), Config: os.DevNull}
+	// A socket path is limited to roughly 100 bytes on macOS. t.TempDir uses
+	// macOS's long /var/folders/... temporary root, so use a short private
+	// directory under /tmp for the tmux server instead.
+	dir, err := os.MkdirTemp("/tmp", "kathara-tmux-")
+	if err != nil {
+		t.Fatalf("creating tmux socket directory: %v", err)
+	}
+	d := &Driver{SocketPath: filepath.Join(dir, "sock"), Config: os.DevNull}
 
 	t.Cleanup(func() {
 		// kill-server exits 1 when no server is running, which is fine here.
 		_, _ = d.run(context.Background(), "kill-server")
+		_ = os.RemoveAll(dir)
 	})
 	return d
 }
@@ -384,10 +396,6 @@ func TestAttachSelectAndDetach(t *testing.T) {
 	d := testDriver(t)
 	ctx := testContext(t)
 
-	if _, err := exec.LookPath("script"); err != nil {
-		t.Skip("script(1) not installed; cannot allocate a pty for the attach test")
-	}
-
 	session := SessionName("attachlab", "")
 	for _, dev := range []string{"pc1", "pc2", "pc3"} {
 		if _, err := d.EnsureWindow(ctx, session, Window{Name: dev, Command: "sleep 300"}); err != nil {
@@ -518,10 +526,6 @@ func TestAttachSelectAndDetach(t *testing.T) {
 func TestAttachSwitchesClientOnSameServer(t *testing.T) {
 	d := testDriver(t)
 	ctx := testContext(t)
-
-	if _, err := exec.LookPath("script"); err != nil {
-		t.Skip("script(1) not installed; cannot allocate a pty for the attach test")
-	}
 
 	first := SessionName("switchfrom", "")
 	second := SessionName("switchto", "")
@@ -756,14 +760,6 @@ type attachHelper struct {
 	stderr *strings.Builder // only for helpers started without a pty
 }
 
-// startAttachHelper runs `script -q -e -c <testbin> /dev/null`, which gives the
-// helper a pty; tmux refuses to attach without one ("open terminal failed: not
-// a terminal"). script -e propagates the command's exit status.
-func startAttachHelper(t *testing.T, ctx context.Context, self string, env []string, spec string) *attachHelper {
-	t.Helper()
-	return startHelper(t, exec.CommandContext(ctx, "script", "-q", "-e", "-c", shellQuote(self), "/dev/null"), env, spec)
-}
-
 // startHelperProcess runs the helper *without* a pty. Used for the same-server
 // switch-client path, which must not need one: if Attach took an exec path
 // instead, tmux would refuse with "open terminal failed: not a terminal" and
@@ -780,14 +776,7 @@ func startHelperProcess(t *testing.T, ctx context.Context, self string, env []st
 
 func startHelper(t *testing.T, cmd *exec.Cmd, env []string, spec string) *attachHelper {
 	t.Helper()
-
-	// tmux clients refuse to attach under a missing or `dumb` TERM ("open
-	// terminal failed: missing or unsuitable terminal"). CI runners export no
-	// usable TERM, so pin one for the helper; a real terminal's value wins.
-	if v := termValue(env); v == "" || v == "dumb" {
-		env = append(envWithout(env, "TERM"), "TERM=xterm-256color")
-	}
-	cmd.Env = append(env, attachHelperEnv+"="+spec)
+	configureHelperCommand(cmd, env, spec)
 	if err := cmd.Start(); err != nil {
 		t.Fatalf("starting attach helper (%s): %v", spec, err)
 	}
@@ -807,6 +796,18 @@ func startHelper(t *testing.T, cmd *exec.Cmd, env []string, spec string) *attach
 		}
 	})
 	return h
+}
+
+// configureHelperCommand supplies the environment shared by plain and pty
+// attach helpers.
+func configureHelperCommand(cmd *exec.Cmd, env []string, spec string) {
+	// tmux clients refuse to attach under a missing or `dumb` TERM ("open
+	// terminal failed: missing or unsuitable terminal"). CI runners export no
+	// usable TERM, so pin one for the helper; a real terminal's value wins.
+	if v := termValue(env); v == "" || v == "dumb" {
+		env = append(envWithout(env, "TERM"), "TERM=xterm-256color")
+	}
+	cmd.Env = append(env, attachHelperEnv+"="+spec)
 }
 
 // expectExit waits for the helper to exit cleanly, e.g. after a detach.
@@ -836,10 +837,6 @@ func waitFor(t *testing.T, timeout time.Duration, cond func() bool) {
 		}
 		time.Sleep(25 * time.Millisecond)
 	}
-}
-
-func shellQuote(s string) string {
-	return "'" + strings.ReplaceAll(s, "'", `'\''`) + "'"
 }
 
 func envWithout(env []string, key string) []string {
