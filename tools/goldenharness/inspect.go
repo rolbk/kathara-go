@@ -65,13 +65,6 @@ func buildContainerRecords(raw []rawContainer, linkByNetwork map[string]string, 
 			ExposedPorts: map[string][]PortBindingRecord{},
 		}
 
-		// HostConfig.Binds verbatim: the list Kathara posted, in the order it
-		// built it (ORDERING.tsv `Machine.py`/`DockerMachine.py:305` — shared,
-		// then hosthome, then the device's own `volume` options). Only the host
-		// side of each `host:guest:mode` triple is tokenized, by the same
-		// literal substitution the Mounts array's Source goes through. A nil
-		// list stays nil: the daemon reports `"Binds": null` for a device with
-		// no volumes at all, and that is not the same fact as an empty list.
 		if c.HostConfig.Binds != nil {
 			rec.Binds = make([]string, 0, len(c.HostConfig.Binds))
 			for _, b := range c.HostConfig.Binds {
@@ -94,12 +87,6 @@ func buildContainerRecords(raw []rawContainer, linkByNetwork map[string]string, 
 		}
 		sort.Strings(rec.Sysctls)
 
-		// Ulimits keep the order the daemon reports, which is the order Kathara
-		// sent: `meta['ulimits']` is a dict fed by `machine[ulimit]=` lines in
-		// lab.conf order (ORDERING.tsv `Machine.py:236` and
-		// `DockerMachine.py:229`, both "deterministic_in_python: yes
-		// (insertion)", both flagged golden-visible). Sorting here deleted that
-		// assertion.
 		rec.Ulimits = make([]UlimitRecord, 0, len(c.HostConfig.Ulimits))
 		for _, u := range c.HostConfig.Ulimits {
 			rec.Ulimits = append(rec.Ulimits, UlimitRecord{Name: u.Name, Soft: u.Soft, Hard: u.Hard})

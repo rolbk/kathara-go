@@ -7,10 +7,6 @@ import "strings"
 const BridgeLinkName = "kathara_host_bridge"
 
 // Link is a Kathará collision domain (`model/Link.py`).
-//
-// It is a plain record plus one back-reference set: `machines` is maintained by
-// [Machine.AddInterface], [Machine.RemoveInterface] and [Lab.RemoveMachine],
-// never by the Link itself, exactly as in Python.
 type Link struct {
 	// Lab is the scenario the collision domain belongs to. It is never nil for
 	// a Link built by [Lab.NewLink] or [Lab.GetOrNewLink].
@@ -24,16 +20,9 @@ type Link struct {
 
 	// External is `Link.external`, the host interfaces attached to this
 	// collision domain by a lab.ext file.
-	//
-	// The feature is deferred to post-1.0 (PORT_SPEC §0.3), so nothing in 1.0
-	// fills this: [Lab.AttachExternalLinks] answers
-	// [kerrors.NewFeatureNotAvailable]. The field exists because
-	// NILABILITY.tsv:22 requires the shape to survive the deferral.
+
 	External []ExternalLink
 
-	// APIObject is the backend handle, nil until the collision domain is
-	// deployed. For [BridgeLinkName] it can legitimately stay nil even when
-	// deployed (NILABILITY.tsv:21).
 	APIObject any
 
 	machines *OrderedMap[string, *Machine]
@@ -47,9 +36,6 @@ func newLink(lab *Lab, name string) *Link {
 	}
 }
 
-// Machines returns the devices attached to this collision domain, in attach
-// order (ORDERING.tsv `model/Link.py:28`): the managers iterate it when wiring,
-// and it is the DEVICES column of the topology listings.
 func (l *Link) Machines() []*Machine { return l.machines.Values() }
 
 // MachineNames returns the attached device names, in attach order.

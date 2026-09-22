@@ -1,15 +1,3 @@
-// This file is `cli/command/LrestartCommand.py` (CLI_SURFACE.md §3), including
-// the latent bug it is required to reproduce.
-//
-// `lrestart` parses argv with its OWN parser — which accepts `--xterm` and
-// rejects `--print`/`--terminal-emu` — then runs `lclean` with a rebuilt argv
-// and `lstart` with the **raw, original** argv (`LrestartCommand.py:139-140`).
-// lstart's parser has no `--xterm`, so `kathara lrestart --xterm foo` passes
-// lrestart's validation, tears the scenario down, and then dies with exit 2.
-// There is no working way to set a terminal emulator through `lrestart`.
-// DIVERGENCES.md records it; JSON_CLI_CONTRACT.md §3.3 pins the json-mode
-// consequence (the clean happens, stdout stays empty, exit 2).
-
 package main
 
 import (

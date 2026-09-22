@@ -14,15 +14,6 @@ import (
 	"github.com/KatharaFramework/kathara-go/kerrors"
 )
 
-// TestAliasesAreTheSameObjects is the whole of PACKAGE_GRAPH.md D-1: the
-// taxonomy had to move one package down to break the `kathara` ↔ `model` cycle,
-// and the aliases are what keep the PORT_SPEC §4.3 surface where the spec put
-// it.
-//
-// An alias is not a copy. `errors.Is(err, kathara.ErrLabNotFound)` and
-// `errors.Is(err, kerrors.ErrLabNotFound)` have to be the same question, in
-// both directions, or code that catches by one spelling silently stops catching
-// errors raised with the other.
 func TestAliasesAreTheSameObjects(t *testing.T) {
 	t.Parallel()
 
@@ -58,8 +49,6 @@ func TestAliasesAreTheSameObjects(t *testing.T) {
 		})
 	}
 
-	// The seven classes PORT_SPEC §4.3 spells out by name, matched through a
-	// real constructor's product rather than by identity.
 	err := kerrors.NewMachineNotRunning("pc1")
 	if !errors.Is(err, ErrMachineNotRunning) {
 		t.Error("a kerrors-built error does not match the kathara alias")
@@ -91,8 +80,7 @@ func TestAliasedFunctionsForward(t *testing.T) {
 	if got, want := HumanLabel(CodeMachineNotRunning), "MachineNotRunningError"; got != want {
 		t.Errorf("HumanLabel = %q, want %q", got, want)
 	}
-	// An error the taxonomy does not name buckets to InternalError
-	// (ERROR_CODES.md §1.2).
+
 	if got, want := Code(errBackend), CodeInternalError; got != want {
 		t.Errorf("Code(untyped) = %q, want %q", got, want)
 	}
@@ -112,13 +100,6 @@ func TestAliasedFunctionsForward(t *testing.T) {
 
 // TestEveryInspectableKerrorsSymbolIsAliased is D-1's promise made checkable:
 // "the surface holds".
-//
-// It parses `../kerrors` and demands an alias here for every exported constant,
-// error variable and type. The eighty-odd `New…`/`Wrap…` constructors are
-// deliberately excluded — they are for code that *raises*, which means the
-// backends and `cmd/kathara`, and those import `kerrors` directly. A new
-// sentinel or a new code added to the taxonomy without an alias here fails this
-// test rather than quietly leaving a hole in the public API.
 func TestEveryInspectableKerrorsSymbolIsAliased(t *testing.T) {
 	t.Parallel()
 

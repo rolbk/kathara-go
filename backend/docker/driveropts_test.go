@@ -46,16 +46,6 @@ func attach(t *testing.T, machine *model.Machine, linkName string, number int, m
 	return iface
 }
 
-// TestCreateDriverOpt is EXPECTATIONS-docker.md §1.5 — the six-row
-// `_create_driver_opt` matrix, which is the wiring contract with the network
-// plugin and the primary Layer A assertion surface (SYNTHESIS §1.2).
-//
-// The endpoint-sysctls value is compared as a SORTED LIST rather than as a
-// string, exactly as the Python suite's own `order_driver_opt` helper does:
-// Python joins a set and its element order is hash-randomised per run. The
-// accepted ruling on OQ-8 is that the port emits a canonical sorted order, so
-// the string equality is asserted separately in
-// [TestCreateDriverOptSortsCanonically].
 func TestCreateDriverOpt(t *testing.T) {
 	tests := []struct {
 		name          string
@@ -156,10 +146,6 @@ func TestCreateDriverOpt(t *testing.T) {
 	}
 }
 
-// TestCreateDriverOptSortsCanonically is the OQ-8 ruling: Python joins a
-// `set`, whose order changes between runs of the same command
-// (ORDERING.tsv row 40, "KNOWN nondeterministic site"); the port emits a
-// canonical SORTED order, and the same input always produces the same string.
 func TestCreateDriverOptSortsCanonically(t *testing.T) {
 	machine := newFixtureMachine(t, true,
 		"net.ipv6.neigh.eth0.anycast_delay=50",
@@ -200,9 +186,6 @@ func TestCreateDriverOptDedupes(t *testing.T) {
 	}
 }
 
-// TestCreateDriverOptEmptyMACIsAbsent is SYNTHESIS §1.3's last bullet: the
-// guard is `if interface.mac_address:`, so "" behaves exactly like None and the
-// plugin derives an address.
 func TestCreateDriverOptEmptyMACIsAbsent(t *testing.T) {
 	machine := newFixtureMachine(t, false)
 	iface := attach(t, machine, "A", 0, "")
@@ -216,8 +199,6 @@ func TestCreateDriverOptEmptyMACIsAbsent(t *testing.T) {
 	}
 }
 
-// TestIfaceSysctls covers `_get_iface_sysctls` including its two reproduced
-// bugs (docker-backend.md gotcha 5).
 func TestIfaceSysctls(t *testing.T) {
 	tests := []struct {
 		name    string
@@ -250,7 +231,7 @@ func TestIfaceSysctls(t *testing.T) {
 			want:    nil,
 		},
 		{
-			// BUG (reproduced): the match is `re.match` with no end anchor, so
+			// Compatibility edge case: the match is `re.match` with no end anchor, so
 			// the pattern built for interface 1 also matches eth10 — and the
 			// rewrite is `re.sub`, which replaces every occurrence, so eth10
 			// comes back as IFNAME0: a setting for an interface that does not
@@ -291,10 +272,10 @@ func TestIfaceSysctls(t *testing.T) {
 	}
 }
 
-// TestIfaceSysctlREAcceptsTheCommaClass pins the `[4,6]` bug in the
-// container-side filter: it is a character CLASS containing a literal comma,
-// not the alternation the author meant, so `net.ipv,.conf.eth0.x` matches and
-// is stripped from the container sysctls on a new engine.
+// TestIfaceSysctlREAcceptsTheCommaClass pins the `[4,6]` edge case in the
+// container-side filter: it is a character class containing a literal comma,
+// so `net.ipv,.conf.eth0.x` matches and is stripped from the container sysctls
+// on a new engine.
 func TestIfaceSysctlREAcceptsTheCommaClass(t *testing.T) {
 	for _, key := range []string{
 		"net.ipv4.conf.eth0.rp_filter",

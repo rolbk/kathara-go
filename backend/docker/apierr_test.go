@@ -13,9 +13,6 @@ import (
 // response, mirroring `client/errors.go`'s unexported `httpError` field for
 // field: the message is the daemon's `message` behind one fixed prefix, and the
 // status lives in a separate `errdef` field that only `errors.Is` reaches.
-//
-// This is not a mock of an SDK call — PORT_SPEC §9C forbids those. It is the
-// value the classifiers classify, reconstructed so they can be tested on it.
 type daemonHTTPError struct{ err, errdef error }
 
 func (e *daemonHTTPError) Error() string        { return e.err.Error() }
@@ -63,12 +60,6 @@ func TestExplanation(t *testing.T) {
 // TestStatusCodeRoundTrips measures exactly how much of
 // `APIError.response.status_code` survives the Go SDK, because [statusCode]'s
 // callers are only allowed to lean on the part that does.
-//
-// The statuses errdefs has a sentinel for come back unchanged. Everything else
-// — an unmapped status, and an error that never touched the daemon — comes
-// back as 500, because `httpError.Unwrap` returns the message rather than the
-// sentinel and `errors.As` can no longer find the number. That is the
-// limitation each sniff compensates for with a substring test.
 func TestStatusCodeRoundTrips(t *testing.T) {
 	for _, status := range []int{404, 409, 500} {
 		if got := statusCode(daemonError(status, "x")); got != status {
@@ -121,13 +112,8 @@ func TestPluginInconsistentStateSniff(t *testing.T) {
 
 // TestPluginSniffCannotSeeAnUnmappedStatus records the residue of
 // [TestStatusCodeRoundTrips]: a 510 carrying one of the two plugin phrases is
-// indistinguishable from a 500 carrying it, so the port translates where Python
+// indistinguishable from a 500 carrying it, so this implementation translates where Python
 // would re-raise.
-//
-// It is unreachable in practice — the daemon answers 500 for both phrases, and
-// the Python suite's own 510 test uses an explanation that matches neither — so
-// the row is recorded rather than worked around. PROPOSED-DIVERGENCES.md
-// carries it.
 func TestPluginSniffCannotSeeAnUnmappedStatus(t *testing.T) {
 	if !isPluginInconsistentState(daemonError(510, "network does not exist")) {
 		t.Skip("the SDK grew a way to recover an unmapped status; tighten isServerError")
@@ -162,12 +148,6 @@ func TestDialTCPSniff(t *testing.T) {
 
 // TestVersionComparisonMatchesDockerPy is `docker.utils.version_lt` /
 // `version_gte`, whose answers were read off docker-py 7.2.0 directly.
-//
-// The row that matters most is `26.0` versus `26.0.0`: docker-py pads the
-// shorter tuple with zeros and calls them EQUAL, where `internal/util`'s
-// `LessThan` — Kathará's own `version.less_than` — compares tuples and would
-// call the shorter one smaller. Using the wrong one flips the engine fork on a
-// daemon that reports a two-component version.
 func TestVersionComparisonMatchesDockerPy(t *testing.T) {
 	tests := []struct {
 		v1, v2  string
@@ -222,8 +202,8 @@ func TestVersionComparisonShortCircuitsOnEquality(t *testing.T) {
 	}
 }
 
-// TestVersionComparisonRejectsAnUnparsableComponent is the crash a daemon
-// version like "v27.0.0" produces: the parser answers "" and `int("")` raises,
+// TestVersionComparisonRejectsAnUnparsableComponent covers the exception a
+// daemon version like "v27.0.0" produces: the parser answers "" and `int("")` raises,
 // at the comparison rather than at the constructor.
 func TestVersionComparisonRejectsAnUnparsableComponent(t *testing.T) {
 	for _, v := range []string{"", "3.8.3-beta", "v27"} {

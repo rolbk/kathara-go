@@ -14,12 +14,6 @@ import (
 // TestEncodeDockerConfigJSONMatchesCPython pins the whole of
 // `store_b64_docker_json_callback`: the stored value is the base64 of
 // `json.dumps(json.load(f))`, not of the file's bytes.
-//
-// Every `want` below is the literal output of CPython 3 for the same input,
-// captured from `json.dumps(json.loads(src))` — which is where the
-// `", "`/`": "` separators, the `\uXXXX` escaping of non-ASCII, the literal
-// `<&>`, the `2.50` → `2.5` narrowing, the `-0` → `0` normalisation and the
-// last-wins-first-position duplicate-key rule all come from.
 func TestEncodeDockerConfigJSONMatchesCPython(t *testing.T) {
 	cases := []struct {
 		name string
@@ -81,8 +75,6 @@ func TestEncodeDockerConfigJSONMatchesCPython(t *testing.T) {
 	}
 }
 
-// TestEncodeDockerConfigJSONErrors pins the two failure classes ERROR_CODES.md
-// §1.2 assigns: `OS` for the open, `Value` for the parse.
 func TestEncodeDockerConfigJSONErrors(t *testing.T) {
 	t.Run("missing file is an OS error", func(t *testing.T) {
 		_, err := settings.EncodeDockerConfigJSON(filepath.Join(t.TempDir(), "absent.json"))

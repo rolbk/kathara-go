@@ -15,16 +15,12 @@ from ..setting.addon.KubernetesSettingsAddon import KubernetesSettingsAddon
 AVAILABLE_DEBUG_LEVELS: List[str] = ["CRITICAL", "ERROR", "WARNING", "INFO", "DEBUG", "EXCEPTION"]
 AVAILABLE_MANAGERS: List[str] = ["docker", "kubernetes"]
 
-#: Formatted manager names, as `IManager.get_formatted_manager_name()` returns
-#: them. Static because the client has no manager classes to ask
-#: (`JSON_CLI_CONTRACT.md` §3.7 pins the same two strings).
+#: Formatted manager names exposed by the client.
 FORMATTED_MANAGER_NAMES: Dict[str, str] = {
     "docker": "Docker (Kathara)",
     "kubernetes": "Kubernetes (Megalos)",
 }
 
-#: Explicit addon registry. Replaces `SettingsAddonFactory`'s dynamic import
-#: (spec §0.2 #7 deletes the `class_for_name` reflection).
 SETTINGS_ADDONS: Dict[str, type] = {
     "docker": DockerSettingsAddon,
     "kubernetes": KubernetesSettingsAddon,
@@ -50,22 +46,7 @@ DEFAULT_SETTINGS_PATH: str = os.path.join(utils.get_current_user_home(), ".confi
 
 
 class Setting(object):
-    """Class responsible for interacting with Kathara Settings.
-
-    The file path, the JSON schema, the defaults, the validation rules and the
-    error messages are all unchanged from v3.8.3 (spec §0.4 freezes the config
-    file path and schema; `ERROR_CODES.md` §2 freezes the `SettingsError`
-    reasons), so this class and the Go binary read and write the same
-    ``kathara.conf``.
-
-    Two pieces of v3.8.3 behaviour are gone, both deliberate:
-
-    * the **GitHub release check** in :meth:`check` — spec §0.3 defers the
-      webhooks, and a settings read must not make a network call;
-    * the **manager instantiation** in ``_check_manager`` — the client has no
-      manager classes; the allowed set is the frozen
-      :data:`AVAILABLE_MANAGERS` list and the error message is unchanged.
-    """
+    """Class responsible for interacting with Kathara Settings."""
 
     __slots__ = ['image', 'manager_type', 'terminal', 'open_terminals', 'device_shell', 'net_prefix',
                  'device_prefix', 'debug_level', 'print_startup_log', 'enable_ipv6', 'volume_mount_policy',
@@ -243,18 +224,7 @@ class Setting(object):
             raise SettingsError("Manager Type not allowed.")
 
     def check_image(self, image: str = None) -> None:
-        """Check if the specified image is valid.
-
-        Args:
-            image (str): The name of the image to check. If None, check the default image.
-
-        Returns:
-            None
-
-        Raises:
-            NotSupportedError: Always. Checking a single image has no command in
-                the JSON CLI contract (`PORT_SPEC.md` §5.5).
-        """
+        """Check if the specified image is valid."""
         image = self.image if not image else image
 
         # Required to import here because otherwise there is a cyclic dependency
@@ -283,10 +253,6 @@ class Setting(object):
             return os.path.isfile(terminal) and os.access(terminal, os.X_OK)
 
         def check_osx():
-            # v3.8.3 asked `appscript` whether the app exists. The client does
-            # not depend on appscript (spec §6 replaces it with `osascript` on
-            # the Go side), so the macOS check is delegated to the binary and
-            # only the obviously-broken case is caught here.
             return bool(terminal)
 
         if not utils.exec_by_platform(check_unix, lambda: True, check_osx):

@@ -10,9 +10,6 @@ import (
 	"github.com/KatharaFramework/kathara-go/model"
 )
 
-// TestMachineDeployedSubscriberOrder is ORDERING.tsv row 96: `machine_deployed`
-// has two subscribers and the order is observable — the progress bar advances,
-// and only then does the terminal window open (`register.py:72,81`).
 func TestMachineDeployedSubscriberOrder(t *testing.T) {
 	a := newTestApp(t)
 	a.console.TTY = true
@@ -75,9 +72,6 @@ func TestNoTerminalsPathIsComplete(t *testing.T) {
 	}
 }
 
-// TestTerminalsAreNeverOpenedInMachineFormats: a scripted client gets no
-// windows, whatever the settings say. JSON_CLI_CONTRACT.md §1.3 makes the whole
-// UI layer inert there.
 func TestTerminalsAreNeverOpenedInMachineFormats(t *testing.T) {
 	a := newTestApp(t)
 	a.console.Format = cliout.FormatJSON
@@ -104,7 +98,8 @@ func TestTerminalsAreNeverOpenedInMachineFormats(t *testing.T) {
 
 // TestKubernetesMachineDeployedCarriesNoObject is the per-backend payload
 // variance of `event.MachineDeployed`: Megalos dispatches the device *name*
-// with no object, which in Python would crash on `item.get_num_terms()`.
+// with no object, for which Python raises while accessing
+// `item.get_num_terms()`.
 func TestKubernetesMachineDeployedCarriesNoObject(t *testing.T) {
 	a := newTestApp(t)
 	a.settings.OpenTerminals = true
@@ -160,8 +155,6 @@ func TestUnregisterStopsTheProgressBars(t *testing.T) {
 	}
 }
 
-// TestVolumePromptAutoAnswersYesInMachineFormats is JSON_CLI_CONTRACT.md §1.5:
-// the volumes the scenario declared are mounted, and the notice goes to stderr.
 func TestVolumePromptAutoAnswersYesInMachineFormats(t *testing.T) {
 	a := newTestApp(t)
 	a.console.Format = cliout.FormatJSON
@@ -210,8 +203,6 @@ func TestVolumePromptDeclinedSetsMountVolumesFalse(t *testing.T) {
 	}
 }
 
-// TestImageUpdatePromptAutoAnswersNoInMachineFormats is the other half of §1.5:
-// a pull nobody asked for never happens unattended.
 func TestImageUpdatePromptAutoAnswersNoInMachineFormats(t *testing.T) {
 	a := newTestApp(t)
 	a.console.Format = cliout.FormatJSON

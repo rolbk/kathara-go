@@ -5,21 +5,14 @@ of nondeterminism it exists to remove. Nothing may be normalized without an
 entry here: a normalization with no named nondeterminism source is a
 correctness assertion being silently deleted.
 
-Sources referenced below:
-
-- `docs/port/ORDERING.tsv` — the per-construct ordering audit. Rows whose
-  `go_strategy` column starts with `!!` are the sites where the Python is
-  *actually* nondeterministic (as opposed to merely order-sensitive).
-- The MAC-derivation finding (`PROPOSED-DIVERGENCES.md`, "Deterministic MACs
-  via kathara.machine driver opt"): `PORT_SPEC.md` §9 claims Kathara derives
-  interface MACs as `md5("<machine>-<iface>")`. That is **empirically false**
-  for Kathara 3.8.3 with the `kathara/katharanp_vde` plugin. The plugin
-  (`NetworkPlugin` `vde/go-src/src/katharanp.go:123`) only applies the
-  deterministic derivation when the driver opts `kathara.machine` **and**
-  `kathara.iface` are both present; `DockerMachine._create_driver_opt` sends
-  `kathara.iface` + `kathara.link` and never `kathara.machine`, so the plugin
-  falls back to `md5(NetworkID-EndpointID)` — a fresh random MAC per deploy.
-  Two deploys of the same lab were observed to produce different `eth0` MACs.
+One important source of nondeterminism is MAC derivation. Kathará does not
+always derive interface MACs as `md5("<machine>-<iface>")`; that is
+**empirically false** for Kathará 3.8.3 with the `kathara/katharanp_vde`
+plugin. The plugin only applies deterministic derivation when both
+`kathara.machine` and `kathara.iface` driver options are present. The Python
+implementation sends `kathara.iface` and `kathara.link`, so the plugin instead
+falls back to `md5(NetworkID-EndpointID)`: a fresh random MAC per deploy.
+Two deploys of the same lab can therefore produce different `eth0` MACs.
 
 ---
 
@@ -27,12 +20,12 @@ Sources referenced below:
 
 | Rule | Why |
 |---|---|
-| Child processes inherit only `PATH`, `HOME`, `USER`, `LOGNAME`, `DOCKER_*`, `XDG_CONFIG_HOME`, `SSL_CERT_*`. | An inherited `COLUMNS`, `TERM`, locale or `PYTHONHASHSEED` would silently change the recording. Whitelisting makes the environment part of the harness, not of the operator's shell. |
+| Child processes inherit only `PATH`, `HOME`, `USER`, `LOGNAME`, `DOCKER_HOST`, `DOCKER_CONTEXT`, `DOCKER_CONFIG`, `XDG_CONFIG_HOME`, `SSL_CERT_FILE`, and `SSL_CERT_DIR`. | An inherited `COLUMNS`, `TERM`, locale or `PYTHONHASHSEED` would silently change the recording. Whitelisting makes the environment part of the harness, not of the operator's shell. |
 | `COLUMNS=80`, `LINES=24` are forced. | `rich` lays its panels and tables out to the console width. Without a pin, the same command records differently in a 100-column terminal and in CI. 80 is `rich`'s own non-TTY default. |
 | `TERM=dumb`, `NO_COLOR=1`. | Removes the TTY-dependent colour path entirely instead of relying on ANSI stripping to undo it. ANSI stripping still runs, as belt and braces, for a binary under test that colours unconditionally. |
-| `LC_ALL=C.UTF-8`, `LANG=C.UTF-8`. | Locale changes collation and number/message formatting. |
+| `LC_ALL=C.UTF-8`, `LANG=C.UTF-8`, `PYTHONIOENCODING=utf-8`, `PYTHONUNBUFFERED=1`. | Locale and Python stream settings change collation, buffering, and text encoding. |
 | `PYTHONHASHSEED` is **not** set. | Deliberate. Setting it would hide the very set-iteration nondeterminism that rules 5.2 and 5.3 exist to normalize, and the Go build has no equivalent knob. Recordings must survive a randomly seeded oracle. |
-| `HOME` is overridden to a harness-owned directory containing a pinned `.config/kathara.conf` (the stock 3.8.3 defaults, `image_update_policy` forced to `Never`, `last_checked` pinned far in the future). | Three sources at once. (1) The operator's real `kathara.conf` is mutable state: an edited `debug_level` or `image` would silently change every recording. (2) `Setting.check()` phones GitHub for a release check when `last_checked` is a week old, prints a three-line banner when a newer release exists, and rewrites the settings file — time-, network- and release-state-dependent. (3) `image_update_policy "Prompt"` makes every `lstart` fetch each image's registry digest; an upstream push turns the run into a confirmation prompt on stdout. `Never` suppresses the prompt and the pull, so recordings are independent of registry state. The binary under test still resolves `~` itself, so the Go build is subject to the same pinning. **Caveat, found 2026-08-12: on Linux this pinning does not reach the settings file at all.** `utils.get_current_user_home()` (`utils.py:212`) picks the `passwd_home` arm on Linux and returns `pw_dir` from the passwd database — `$HOME` is not consulted — and `Setting.DEFAULT_SETTINGS_PATH` (`Setting.py:36`) is computed from it. `internal/util/home_linux.go` ports that faithfully, so **both** implementations read the invoking account's real `~/.config/kathara.conf` and ignore the harness copy. The pinned file still matters on macOS/Windows (`expanduser('~')`, which honours `$HOME`), and the `HOME` override still governs `/hosthome`-adjacent paths and anything else that reads the environment. Until the harness can point Kathara's settings path directly, **the operator's real `~/.config/kathara.conf` is part of the harness contract on Linux** and must carry `image_update_policy: "Never"` and a far-future `last_checked`. This was not academic: an upstream push of `lscr.io/linuxserver/wireshark` turned the three labs that use it (`05-two-computers`, `06-basic-ipv6`, `11-capture-packets`) into an EOF-on-confirmation-prompt failure under the real file's stock `"Prompt"`. |
+| `HOME` is overridden to a harness-owned directory containing a pinned `.config/kathara.conf` (the stock 3.8.3 defaults, `image_update_policy` forced to `Never`, `last_checked` pinned far in the future). | This isolates recordings from local settings, weekly release checks, and image-update prompts. On Linux, settings resolution uses the passwd home directory rather than `$HOME`, so the harness reads the invoking account's real `~/.config/kathara.conf`; configure it with `image_update_policy: "Never"` and a far-future `last_checked` for reproducible runs. The harness-owned file remains effective on macOS and Windows, where home expansion honours `$HOME`. |
 | stdin is an empty reader, never inherited. | A confirmation prompt (image update, volume mount) must see EOF and take its default path instead of blocking until the scenario timeout. |
 | Working directory is the repository root; the lab is always passed with `-d <abs path>`. | `Machine.add_meta("volume", ...)` calls `os.path.abspath` against the process cwd, and `lstart` falls back to cwd when `-d` is absent. Pinning both makes the recording independent of where the harness was invoked. |
 
@@ -56,8 +49,8 @@ tokenized through its components rather than as a whole.
 
 ## 3. MAC addresses
 
-Following the MAC ruling above, `PORT_SPEC` §9's "use MACs aggressively"
-instruction is **inverted** for the default path:
+Because default-path MACs are nondeterministic, the harness handles them as
+follows:
 
 1. Before any text is rendered, the harness collects the set of MACs that the
    lab pinned explicitly, i.e. the values of the `kathara.mac_addr` driver opt
@@ -96,8 +89,8 @@ instruction is **inverted** for the default path:
    (`20-vxlan-base`'s `eth0` records 8057) while a device the `.startup` script
    creates takes the next low free one (`vtep100` records 2), so the startup's
    interfaces are numbered first. What matters is only that the order is the
-   same in two runs, and the record-twice byte-diff (README.md, "Proving a
-   recording is deterministic") is what checks that rather than asserting it.
+   same in two runs. A record-twice byte diff checks this before a snapshot is
+   accepted.
 
    Residual, accepted: `<LINKLOCAL6>` (point 4) is still a blanket token, so
    the identity relation between an unpinned MAC and the EUI-64 address derived
@@ -179,24 +172,24 @@ snapshot survives a repository move while the derivation stays asserted.
 ### 5.1 Structures whose Python order *is* deterministic
 
 These are recorded in observed order, never sorted, because their order is part
-of the contract and a reordering by the Go port is a real defect:
+of the observable behavior and a reordering is a real defect:
 
-| Recorded field | ORDERING.tsv row |
+| Recorded field | Why the order is retained |
 |---|---|
 | `containers[].env` | `Machine.py:200` — `meta['envs']` dict insertion feeds the Docker `Env` list. |
 | `containers[].ulimits` | `Machine.py:236` (`meta['ulimits'][key]=…`, dict insertion) and `DockerMachine.py:229` (`[Ulimit(...) for k, v in machine.get_ulimits().items()]`). Both rows read *deterministic_in_python: yes (insertion)*, and both name `HostConfig.Ulimits` list order in `docker inspect` as golden-visible. **This was sorted by name until schema 2**, on the claim that "the daemon rebuilds the array"; the daemon does not — it echoes `HostConfig` as posted, which is why the ordering audit calls the order golden-visible in the first place. `syn-ulimit` declares `nofile` then `nproc`, whose insertion order happens to equal sorted order, so the stored goldens do not move; the assertion the sort deleted — that a port iterates the ulimit map in lab.conf order rather than in Go map order — is now live. |
 | ~~`containers[].cap_add`~~ | `DockerMachine.py:347` region — a fixed `MACHINE_CAPABILITIES` list literal. **Withdrawn**: the Go Docker SDK reorders the list client-side, so its stored order is not observable from Kathara code on both sides. Now canonicalized (set assertion) — section 10. |
 | `containers[].cmd`, `containers[].entrypoint` | image/`args` metadata, source order. |
-| `containers[].binds` | `ORDERING.tsv` row 36 / `DockerMachine.py:300-325` — `volumes` is an ordered dict, so `HostConfig.Binds` comes out shared → hosthome → the device's own `volume` options, and the list order is golden-visible. Recorded verbatim (host side tokenized), never sorted, and a `null` from a device with no volumes at all is kept as `null` rather than flattened to `[]`. |
+| `containers[].binds` | `volumes` is an ordered dict, so `HostConfig.Binds` comes out shared → hosthome → the device's own `volume` options. It is recorded verbatim; a device with no volumes keeps `null` rather than being flattened to `[]`. |
 | `networks[].ipam_config` | The daemon's own array; the `null` IPAM driver synthesizes exactly one `0.0.0.0/0` row and its position is not something either implementation chooses. |
 | `commands[].stdout` / `stderr` line order | Whatever plain lines survive rule 6 keep their order (panels, log records, `✓` check lines, and the completed progress rows). Note this does **not** assert deploy submission order: the bar names no device, only `done/total`, and completion order under the deploy pool is nondeterministic anyway (`DockerMachine.py:178`). What the bar rows do assert is the count, and that collision domains are deployed before devices and torn down after them. Submission order is asserted only where a scenario makes it observable as a side effect — `syn-lab-dep`'s `shared/boot-order.txt`. |
 | `probes[].startup_logs` line order | `DockerMachine.py:546` — `"; ".join(STARTUP_COMMANDS)` plus the `exec_commands` interleave; `/var/log/startup.log` is the observable of that order. |
 
 ### 5.2 Structures sorted because Python's order is genuinely random
 
-| Recorded field | Normalization | ORDERING.tsv row |
+| Recorded field | Normalization | Why |
 |---|---|---|
-| `containers[].endpoints[].endpoint_sysctls` | The `com.docker.network.endpoint.sysctls` driver-opt string is split on `,` and sorted. Nothing else: elements are **not** trimmed and empty ones are **not** dropped. | `DockerMachine.py:470` (`!!`): built by `",".join(sysctl_opts)` over a Python **set** of strings, whose iteration order is hash-randomized per process. `DockerMachine.py:441` (`!!`) feeds it from another set. This is the single normalization `ORDERING.tsv` explicitly instructs Layer A to perform — the *order* is the nondeterminism, and split+sort is the whole sanctioned repair. The trim-and-drop-empties that used to run alongside it had no nondeterminism source at all: `",".join` over a set of `k=v` strings can only yield an empty element from an empty set member or a stray separator, and leading whitespace can only come from a malformed sysctl name. Both are defects in what Kathara put on the wire, and silently repairing them meant a port that emitted `a=1,,b=2` recorded the same bytes as one that did not. |
+| `containers[].endpoints[].endpoint_sysctls` | The `com.docker.network.endpoint.sysctls` driver-opt string is split on `,` and sorted. Nothing else: elements are **not** trimmed and empty ones are **not** dropped. | Python builds it from a set whose iteration order is randomized. Trimming or dropping elements would conceal malformed output rather than remove nondeterminism. |
 
 ### 5.3 Structures sorted because the *observation* has no defined order
 
@@ -213,7 +206,7 @@ order in the first place.
 | `probes[].ip_br_link` | whole line | Kernel dump order follows `ifindex`, which is host-global and depends on every interface ever created on the box. |
 | `probes[].ip_addr` | `ifname` **only** | Interface order in the dump follows `ifindex`, which is host-global. Nothing *inside* an interface object is reordered any more. `addr_info` used to be sorted by canonical JSON "because SLAAC addresses can appear asynchronously", and that stopped being a reason the moment rule 7 began dropping every `kernel_ra` entry whole: dropping preserves the relative order of the entries that survive, so the asynchrony the rule named could no longer reach the recording. What survives is the lab's own static addresses and the kernel's link-local, added in a fixed order — link-local at carrier-up, statics by the `.startup` script — so their order is an assertion about what the port configured, not an artifact of the observation. Two pieces of evidence back the removal. The sort is a **no-op on all 47 recordings** (every stored `addr_info` array is already in canonical-JSON order; checked directly), so nothing churned and no golden depends on it either way. And it was reachable: canonical JSON orders a static `2001::…` before the `fe80::…` link-local the kernel lists it *after*, so the first lab in the corpus to configure a static global IPv6 address — none does today, `06-basic-ipv6`'s globals are all RA-learned and dropped — would have had that assertion silently reordered away. `flags` and every other nested array kept kernel order all along. |
 | `probes[].ip_route` | whole line | Kernel route dump order is not specified. Only enabled for scenarios whose routing table is fully static (see the manifest); labs running FRR/Quagga converge nondeterministically and record static facets only. |
-| `probes[].fs_trees[]` | path | `find` output is `readdir` order. It is already sorted inside the container under `LC_ALL=C` and re-sorted here. Matches `ORDERING.tsv` `Machine.py:392`: "walk in sorted order; extracted tree identical; do NOT golden-compare raw tar bytes" — which is exactly why the file tree is recorded as paths plus sha256 of contents rather than as tar bytes. Each entry also carries `stat`'s `%a`, `%u` and `%g`: `pack_data` builds its tar from the host tree and the bind mounts carry the host's ownership through, so a port that rewrote a mode, dropped an exec bit or chowned the tree while shipping byte-identical content was previously invisible. `stat` is run without `-L`, so a symlink reports its own mode; an image with no usable `stat` yields an empty triple rather than failing the walk. |
+| `probes[].fs_trees[]` | path | `find` output is `readdir` order. The file tree is recorded as paths plus content hashes rather than raw tar bytes. Entries also retain mode, uid, and gid; `stat` runs without `-L`, so a symlink reports its own mode. |
 | `teardown.kathara_networks` | name | Must be empty; sorted so a failure diff is stable. |
 
 ## 6. Text stream normalization
@@ -332,9 +325,8 @@ addressed entirely by `radvd` on `r1`/`r2` (`MinRtrAdvInterval 3`,
 `MaxRtrAdvInterval 9`), and the kernel delays its own Router Solicitation by a
 random interval of up to one second (RFC 4861 §6.3.7). Two recordings of the
 same lab disagree on whether `2001::3:200:ff:fe00:3` is there yet — observed,
-not hypothesised. This is the same class as a BGP- or OSPF-learned route
-(`GOLDEN_CANDIDATES.md`'s determinism caveat) and is dropped for the same
-reason: daemon-learned state is not a golden. It is dropped **by protocol**,
+not hypothesised. This is the same class as a BGP- or OSPF-learned route and is
+dropped for the same reason: daemon-learned state is not a golden. It is dropped **by protocol**,
 not by address shape, so a statically configured address in the same prefix
 would still be compared exactly.
 
@@ -407,15 +399,15 @@ Not normalization, but part of what makes a recording reproducible.
 
 | Kept exact | Rationale |
 |---|---|
-| Exit codes. | The whole error taxonomy (`PORT_SPEC` §4.3) is observable here. |
-| The `rich` metadata panel and its box-drawing borders. | Deterministic once `COLUMNS` is pinned. A padding change in the Go port's `lipgloss` rendering is a real user-visible difference and should fail. |
+| Exit codes. | Command success and failure are observable behavior. |
+| The `rich` metadata panel and its box-drawing borders. | Deterministic once `COLUMNS` is pinned. A padding change in the Go renderer is a real user-visible difference and should fail. |
 | sha256, mode, uid and gid of every file in `/hostlab` and `/shared`. | The sha256 is the assertion that `pack_data` shipped the right bytes; the `stat` triple is the assertion that it shipped them with the right permissions and ownership. `01-simple-configuration` records `/hostlab/pc1.startup` at `744`, which is `pack_data`'s `0644` plus the `chmod u+x /hostlab/{machine_name}.startup` of `STARTUP_COMMANDS` — a fact spanning both halves of the deploy that nothing observed before schema 2. |
 | The completed progress rows. | Rule 6.6. `[Deploying collision domains]   ━…━ 1/1` and its three siblings are byte-exact at a pinned `COLUMNS`, and they are the only record that the deploy and the teardown ran over the right number of items in the right order. |
-| `containers[].labels`, minus tokenized values. | `name`, `lab_hash`, `user`, `app`, `shell`, `bridged_iface` are the contract the manager uses to find its own objects. |
+| `containers[].labels`, minus tokenized values. | `name`, `lab_hash`, `user`, `app`, `shell`, and `bridged_iface` are how the manager finds its own objects. |
 | `containers[].tty`, `containers[].open_stdin`. | `tty=True` and `stdin_open=True` are unconditional in `DockerMachine.create`'s kwargs and both are user-visible: without a TTY, `kathara connect` is unusable and every startup script's output loses its line discipline. Nothing recorded them before schema 2, which made a lost `tty=True` the most consequential untested create parameter in the whole request. |
-| `containers[].binds`. | The `HostConfig.Binds` list as posted, verbatim and in order (section 5.1). The daemon's rebuilt `Mounts` view was recorded all along, but it drops the request's order and reshapes the `host:guest:mode` triple, so a port that mounted `/shared` read-only or reordered the three binds was only partly observable. |
-| `networks[].external`. | `lab.ext` is deferred, and `DockerLink.py:145` requires the label to be the empty string in 1.0. Recording it pins that. |
-| `networks[].enable_ipv6`, `networks[].ipam_config`, `networks[].options`. | The rest of what `DockerLink.create`'s `networks.create(...)` decides. Python passes `ipam=IPAMConfig(driver='null')` and nothing else, so the daemon answers `EnableIPv6: false`, the single `0.0.0.0/0` row the null driver synthesizes, and an empty option map — a collision domain is a pure L2 segment with no address management. Recording only `ipam_driver`, as schema 1 did, let a port that enabled IPv6 on the network, handed the link a real subnet or passed a driver option produce a byte-identical golden. |
+| `containers[].binds`. | The `HostConfig.Binds` list as posted, verbatim and in order (section 5.1). The daemon's rebuilt `Mounts` view was recorded all along, but it drops the request's order and reshapes the `host:guest:mode` triple, so an implementation that mounted `/shared` read-only or reordered the three binds was only partly observable. |
+| `networks[].external`. | External links are unsupported, and ordinary collision domains carry an empty external label. |
+| `networks[].enable_ipv6`, `networks[].ipam_config`, `networks[].options`. | The rest of what `DockerLink.create`'s `networks.create(...)` decides. Python passes `ipam=IPAMConfig(driver='null')` and nothing else, so the daemon answers `EnableIPv6: false`, the single `0.0.0.0/0` row the null driver synthesizes, and an empty option map — a collision domain is a pure L2 segment with no address management. Recording only `ipam_driver`, as schema 1 did, let an implementation that enabled IPv6 on the network, handed the link a real subnet, or passed a driver option produce a byte-identical golden. |
 | `port_bindings` and `exposed_ports`. | Daemon-normalized maps; key order is handled by canonical JSON. |
 
 ## 10. Container capabilities (`cap_add` / `cap_drop`)
@@ -458,7 +450,7 @@ what it was told differs.
 **Ruling.** Canonicalize in the harness rather than chase byte-equality. A
 byte-exact golden here would assert a property of the client library, not of
 the port, and could only be satisfied by forking or bypassing the SDK — a real
-cost for zero semantic gain. The divergence is recorded in `DIVERGENCES.md`.
+cost for zero semantic gain.
 
 **What is still asserted.** Membership and cardinality: a missing
 `NET_ADMIN`, a stray `SYS_PTRACE`, an empty list where five capabilities were
@@ -480,7 +472,7 @@ Python oracle at 47/47.
 `SchemaVersion` (`manifest.go`) is stamped into every `scenario.json`. A bump
 means the stored goldens were re-recorded, not migrated.
 
-**2 — the blind-spot pass.** Every rule above that says "used to" belongs to
+**2 — the coverage pass.** Every rule above that says "used to" belongs to
 this bump. Recorded subset widened: `containers[].tty` / `open_stdin`,
 `containers[].binds`, `networks[].enable_ipv6` / `ipam_config` / `options`, and
 `mode`/`uid`/`gid` on every `fs_trees` entry. Normalizations withdrawn: the

@@ -3,18 +3,6 @@ package main
 // Flows added by the wide-verification pass. They cover the command surface
 // that neither the Layer A goldens (which drive `lstart`/probe/`lclean` with a
 // fixed argv per scenario) nor the original seven flows reach:
-//
-//   - the whole `lstart` / `lrestart` *flag* surface (CLI_SURFACE.md §1 and §3):
-//     device selection, `--exclude`, `-o/--pass`, the three tri-state MEGs,
-//     `--privileged`, `-l`, `-F` and `--print`;
-//   - `-h` for every one of the thirteen sub-commands plus the top-level
-//     dispatcher (CLI_SURFACE.md §0.1-§0.2), which is the only place the port's
-//     ported argparse HelpFormatter meets the *real* command objects — the
-//     fidelity unit test (`cmd/kathara/usage_test.go`) drives replica parsers;
-//   - `check` (CLI_SURFACE.md §12), which no golden and no flow touched.
-//
-// They are appended rather than spliced into `flows` so that the file the first
-// pass recorded stays untouched and its recordings stay comparable.
 func init() { flows = append(flows, extraFlows...) }
 
 var extraFlows = []Flow{
@@ -54,19 +42,16 @@ var extraFlows = []Flow{
 			{Name: "21-lstart-hosthome-meg", Args: []string{"lstart", "--print", "-H", "--hosthome"}, Dir: "lab", NoDocker: true},
 			{Name: "22-lstart-shared-meg", Args: []string{"lstart", "--print", "-S", "--shared"}, Dir: "lab", NoDocker: true},
 
-			// `-o/--pass` goes through OptionParser (CLI_SURFACE.md §0.5).
 			{Name: "23-lstart-pass-ok", Args: []string{"lstart", "--print", "-o", "mem=64m"}, Dir: "lab", NoDocker: true},
 			{Name: "24-lstart-pass-malformed", Args: []string{"lstart", "--print", "-o", "bogus"}, Dir: "lab", NoDocker: true},
 
 			{Name: "25-lstart-missing-dir", Args: []string{"lstart", "--print", "-d", "/nonexistent-dir"}, NoDocker: true},
 			{Name: "26-lstart-unknown-flag", Args: []string{"lstart", "--bogus"}, Dir: "lab", NoDocker: true},
 
-			// lrestart rejects --print and --terminal-emu in its own parser,
-			// before any clean happens (CLI_SURFACE.md §3).
 			{Name: "27-lrestart-print", Args: []string{"lrestart", "--print"}, Dir: "lab", NoDocker: true},
 			{Name: "28-lrestart-terminal-emu", Args: []string{"lrestart", "--terminal-emu", "/usr/bin/xterm"}, Dir: "lab", NoDocker: true},
 
-			// linfo: the flag shapes are observable even though the port
+			// linfo: the flag shapes are observable even though this implementation
 			// answers FeatureNotAvailable.
 			{Name: "29-linfo-directory", Args: []string{"linfo", "-d", "."}, Dir: "lab", NoDocker: true},
 			{Name: "30-linfo-conf-name", Args: []string{"linfo", "-c", "-n", "pc1"}, Dir: "lab", NoDocker: true},
@@ -120,8 +105,6 @@ var extraFlows = []Flow{
 		},
 	},
 
-	// (9) `check` (CLI_SURFACE.md §12): five identity lines plus a real
-	// deploy/undeploy of the `kathara_test` lab.
 	{
 		Name:    "checkcmd",
 		Fixture: "",

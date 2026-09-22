@@ -13,26 +13,23 @@ import (
 
 // testdata/labfile_oracle.json was produced BY CPython and Kathará 3.8.3, not
 // by this port:
-//
 //	/root/kathara/pyvenv/bin/python tools/vectorcheck/labfile_probe.py \
 //	    > labfile/testdata/labfile_oracle.json
-//
 // The 142 vectors of `testdata/vectors` pin the parsers' observable behaviour;
 // this file is the differential underneath them, for the five primitives the
 // port had to rewrite rather than translate:
-//
 //   - the lab.conf device-line pattern, whose `\3` backreference RE2 cannot
 //     express, over a generated line corpus — [matchDeviceLine] must agree on
 //     whether each line matches AND on all three captures;
 //   - `^\w+$` over collision-domain names, which is Unicode-aware where RE2's
 //     `\w` is not;
 //   - the lab.dep line pattern, same reason;
-//   - `bytes.decode('utf-8')`, whose failure position, span and reason the port
+//   - `bytes.decode('utf-8')`, whose failure position, span and reason this implementation
 //     reproduces by hand;
 //   - `depgen.has_loop` and `depgen.flatten`, whose within-level order is
 //     lab.dep line order rather than a canonical topological one.
-//
-// Python is the truth. When Go disagrees, Go is wrong.
+// Python is the reference implementation for these compatibility checks;
+// investigate any difference.
 
 type oracleDocument struct {
 	DeviceLines []oracleDeviceLine `json:"device_lines"`
@@ -98,8 +95,7 @@ func loadOracle(t *testing.T) oracleDocument {
 
 // TestDeviceLineAgainstOracle is the differential for the hand-rolled
 // backreference matcher. A disagreement here is a lab.conf that parses
-// differently in the two implementations, which is the one thing the port
-// cannot afford.
+// differently in the two implementations and therefore needs investigation.
 func TestDeviceLineAgainstOracle(t *testing.T) {
 	cases := loadOracle(t).DeviceLines
 	if len(cases) == 0 {

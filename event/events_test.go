@@ -42,9 +42,7 @@ type catalogFile struct {
 	} `json:"cli_unregistrations"`
 }
 
-// catalogEntry is one row of this package's side of the contract: the Go type,
-// the name it reports, and which payload field carries each of the kwargs the
-// Python dispatch sites pass.
+// catalogEntry maps an event type to its name and payload fields.
 type catalogEntry struct {
 	name   Name
 	nameOf func() Name
@@ -171,22 +169,6 @@ func TestNameOfReportsTheWireName(t *testing.T) {
 	}
 }
 
-// TestNameOfIsTotal: there is no instantiation of [NameOf] that compiles and
-// answers nothing, which is what makes [Subscribe] unable to file a handler
-// under a name no dispatch can reach (PORT_SPEC §10).
-//
-// The instantiations that used to be the hazard are now compile errors, so they
-// cannot be asserted from a test that has to build. Recorded here instead, with
-// the go1.26 diagnostics, since that is the evidence the guarantee rests on:
-//
-//	NameOf[Event]()               // Event does not satisfy Payload
-//	NameOf[*LinkDeployed]()       // *LinkDeployed does not satisfy Payload
-//	                              //   (*LinkDeployed missing in
-//	                              //   event.DockerImageUpdateFound | …)
-//
-// Before the constraint closed, the first answered the empty name and the
-// second panicked ("value method event.LinkDeployed.eventName called using nil
-// *LinkDeployed pointer").
 func TestNameOfIsTotal(t *testing.T) {
 	for _, e := range catalog() {
 		if got := e.nameOf(); got == "" {
@@ -391,16 +373,6 @@ func TestPullProgressDetailKeepsTheAbsentKey(t *testing.T) {
 // (`{"errorDetail": {...}, "error": "..."}`) carry no `status` key, docker-py
 // yields them through untouched, and `HandleDockerImagePull.update` indexes
 // `progress['status']` regardless — oracle-probed on 3.8.3:
-//
-//	>>> HandleDockerImagePull().update({'errorDetail': {'message': 'boom'}, 'error': 'boom'})
-//	KeyError: 'status'
-//	>>> dispatcher.dispatch('docker_pull_progress', progress={'errorDetail': {}, 'error': 'x'})
-//	KeyError: KeyError('status')      # propagates: no try block on the path
-//
-// The payload therefore has to be able to say "the key was not there", or the
-// port turns a crash into a pull that reports success. This pins that it can,
-// and that the resulting failure travels out of [Dispatch] the way the KeyError
-// travels out of `dispatch`.
 func TestPullProgressCanCarryAnErrorLine(t *testing.T) {
 	d := New()
 
@@ -419,7 +391,7 @@ func TestPullProgressCanCarryAnErrorLine(t *testing.T) {
 		t.Fatalf("Dispatch of a status line: %v", err)
 	}
 
-	// The failure line, which 3.8.3 crashes on.
+	// The failure line, on which 3.8.3 raises a KeyError.
 	err := Dispatch(d, DockerPullProgress{Progress: PullProgress{}})
 	if !errors.Is(err, model.ErrPyKeyError) {
 		t.Fatalf("Dispatch of an error line = %v, want the KeyError 3.8.3 raises", err)
@@ -462,11 +434,6 @@ func TestCountMirrorsLenItems(t *testing.T) {
 	}
 }
 
-// TestMachineDeployedCarriesEitherBackendsPayload pins the variance
-// PACKAGE_GRAPH.md §2.7 asks for: a subscriber can tell the Docker device
-// object from the Kubernetes device name instead of crashing on one of them,
-// which is what `HandleMachineTerminal.run` would do on Megalos if terminals
-// were not force-disabled there (`manager/kubernetes/KubernetesMachine.py:174`).
 func TestMachineDeployedCarriesEitherBackendsPayload(t *testing.T) {
 	d := New()
 	var names []string

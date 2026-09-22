@@ -13,9 +13,6 @@ import (
 	"github.com/KatharaFramework/kathara-go/settings"
 )
 
-// testApp is an [app] over in-memory streams, which is what PORT_SPEC §0.2 #10
-// bought: with the manager, the settings and the dispatcher all fields rather
-// than singletons, a whole command runs in a test with no Docker daemon.
 type testApp struct {
 	*app
 	stdout *bytes.Buffer

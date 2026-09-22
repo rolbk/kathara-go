@@ -53,16 +53,6 @@ func (s *blockingSession) Close() error                { s.closed.Store(true); r
 
 // TestConnectFailsFastWhenStdinIsNotATerminal is the parity property of
 // [errStdinNotATerminal].
-//
-// Python's `TerminalRunner.start` dies in `enter_raw` — oracle-measured
-// `CRITICAL (error) (25, 'Inappropriate ioctl for device')`, exit 1 — the
-// instant stdin is not a terminal. Before this check the port did the opposite
-// of failing: the stdin pump hit EOF at once and the output pump waited on a
-// shell that would never exit, so `kathara connect pc1 < /dev/null` HUNG.
-//
-// A pipe stands in for `/dev/null`: both are `*os.File`s that `IsTerminal`
-// rejects, so the test also proves the check is a terminal test and not an
-// is-it-a-file test.
 func TestConnectFailsFastWhenStdinIsNotATerminal(t *testing.T) {
 	r, w, err := os.Pipe()
 	if err != nil {
@@ -106,8 +96,7 @@ func TestConnectFailsFastWhenStdinIsNotATerminal(t *testing.T) {
 	if !errors.Is(got.err, syscall.ENOTTY) {
 		t.Errorf("error = %v, want it to wrap ENOTTY", got.err)
 	}
-	// ERROR_CODES.md §1.2's `OSError` row: terminal-internal sites bucket to
-	// `InternalError`, whose human line §1.4 pins to `CRITICAL (InternalError)`.
+
 	if code := kerrors.Code(got.err); code != kerrors.CodeInternalError {
 		t.Errorf("code = %q, want %q", code, kerrors.CodeInternalError)
 	}
@@ -121,13 +110,6 @@ func TestConnectFailsFastWhenStdinIsNotATerminal(t *testing.T) {
 	}
 }
 
-// TestConnectMuxAttachesBeforeItDrawsAnything is PORT_SPEC §3.3 item 4's
-// "unchanged behaviour" where it is easiest to lose: the failure modes.
-//
-// A device that is not running has to fail the way it failed before the
-// multiplexer existed — exit 1, the error on the console, no window — rather
-// than open an alternate screen, render the error into a pane the user then has
-// to detach from, and exit 0.
 func TestConnectMuxAttachesBeforeItDrawsAnything(t *testing.T) {
 	t.Run("a failed attach exits 1 with the error", func(t *testing.T) {
 		mgr := &connectManager{err: kerrors.NewMachineNotRunning("pc1")}

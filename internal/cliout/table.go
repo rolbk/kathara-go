@@ -2,9 +2,8 @@
 // plus the slice of `rich.table.Table` they reach: the column-width solver
 // (`Table._calculate_column_widths`, `_collapse_widths`, `ratio_distribute`,
 // `ratio_reduce`) and the row renderer.
-//
 // Neither table is covered by a Layer A golden — no recorded scenario runs
-// `kathara list` — so the port of the solver is here for behavioural fidelity
+// `kathara list` — so this implementation of the solver is here for behavioural fidelity
 // rather than to satisfy a byte diff. It is reproduced rather than approximated
 // because a hand-rolled "divide the width evenly" would put the columns in
 // different places for every device count, and `kathara list` is the command
@@ -246,10 +245,6 @@ func ratioDistribute(total int, ratios []int, minimums []int) []int {
 }
 
 // ratioReduce is `rich._ratio.ratio_reduce`.
-//
-// It rounds with CPython's `round()`, which is round-half-to-even, not Go's
-// `math.Round`, which rounds half away from zero. The difference shows on the
-// top-level help table, whose second column reduces by an exact half-integer.
 func ratioReduce(total int, ratios, maximums, values []int) []int {
 	work := make([]int, len(ratios))
 	copy(work, ratios)
@@ -335,10 +330,6 @@ func collapseWidths(widths []int, wrapable []bool, maxWidth int) []int {
 }
 
 // Timestamp is `f"TIMESTAMP: {datetime.now()}"`, the title of both tables.
-//
-// CPython's `str(datetime)` writes microseconds only when they are non-zero,
-// and never a timezone for a naive `datetime.now()`; both are reproduced so
-// that a port's table header cannot be told from Python's by its shape.
 func Timestamp(now time.Time) string {
 	if now.Nanosecond()/1000 == 0 {
 		return "TIMESTAMP: " + now.Format("2006-01-02 15:04:05")
@@ -371,11 +362,6 @@ func ColumnHeader(key string) string {
 // RenderPlainTable is `Kathara.strings.formatted_strings()`: a two-column
 // `rich.Table` with `show_header=False, show_edge=False, show_lines=False,
 // box=None`, laid out to the console width.
-//
-// With no box the table has no extra width at all (`Table._extra_width` adds
-// nothing when `self.box` is None), so the two columns divide the whole width
-// between them — at 80 that is 10 and 70, i.e. content widths of 8 and 68,
-// which is where `lconfig`'s description folds after "in a".
 func RenderPlainTable(rows [][]string, width int) []string {
 	if width <= 0 {
 		width = DefaultWidth

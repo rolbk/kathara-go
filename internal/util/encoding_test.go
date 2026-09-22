@@ -15,11 +15,6 @@ import (
 	"unicode/utf8"
 )
 
-// The whole suite is driven by testdata/encoding/expected.json, recorded from
-// the real Python by tools/vectorcheck/encoding_probe.py. Python is the truth:
-// a disagreement means the Go port is wrong, unless it is one of the
-// impossible-parity items listed in docs/port/SPIKES/encoding.md.
-
 type fixture struct {
 	Name                string    `json:"name"`
 	Size                int       `json:"size"`
@@ -76,8 +71,7 @@ func loadExpectations(t *testing.T) expectations {
 		t.Fatal("expected.json has no fixtures")
 	}
 	if exp.BinaryOrNot != oracleBinaryOrNot {
-		t.Fatalf("expected.json was recorded against binaryornot %s, this port targets %s; "+
-			"see docs/port/SPIKES/encoding.md before re-recording",
+		t.Fatalf("expected.json was recorded against binaryornot %s, this implementation targets %s",
 			exp.BinaryOrNot, oracleBinaryOrNot)
 	}
 	return exp
@@ -141,17 +135,6 @@ func TestIsBinaryStringParity(t *testing.T) {
 // differently from the exact value), so the Python side is not even stable
 // across hosts. Go's math.Log2 is Log(frac)*(1/Ln2), which disagrees with
 // glibc on ~20% of those ratios by up to 2 ulp.
-//
-// Measured consequence over a 20 000-chunk fuzz corpus spanning eight byte
-// distributions: entropy differed on 4.16% of chunks by at most 52 ulp
-// (4.6e-14 absolute), every other feature was bit-identical, and the
-// binary/text verdict differed on 0 chunks. The tree's nineteen entropy
-// thresholds are six-decimal sklearn split points; the closest any sample got
-// to one was 8.9e-6, a margin of 1.9e8 over the worst drift.
-//
-// So: exact equality for every feature except entropy, which gets a tolerance
-// four orders of magnitude tighter than the closest observed threshold
-// approach and five orders looser than the worst observed drift.
 const (
 	entropyFeature   = 7
 	entropyTolerance = 1e-9
@@ -319,11 +302,6 @@ func TestConvertWin2LinuxWriteParity(t *testing.T) {
 	}
 }
 
-// TestReplaceChainIsDeadCode pins the finding that Python's
-// `.replace("\n\r", "\n").replace("\r\n", "\n")` inside convert_win_2_linux can
-// never fire: universal-newline text mode has already removed every CR by the
-// time it runs. If this ever fails, the newline model in normalizeText is
-// wrong and root-utils.md line 475 was right after all.
 func TestReplaceChainIsDeadCode(t *testing.T) {
 	exp := loadExpectations(t)
 	decoded := 0
@@ -381,7 +359,7 @@ func TestPathlibSuffix(t *testing.T) {
 			t.Errorf("pathlibSuffix(%q) = %q, want %q", c.in, got, c.want)
 		}
 	}
-	// The consequences that matter to the port.
+	// The consequences that matter to this implementation.
 	if !HasBinaryExtension("machine1/etc/config.gz") {
 		t.Error("a .gz lab file must be treated as binary")
 	}
@@ -406,8 +384,6 @@ func TestIsBinaryMissingFile(t *testing.T) {
 	}
 }
 
-// TestEmptyFileIsNotNil pins the NILABILITY.tsv row: an empty text file yields
-// an empty, non-nil slice, which is distinct from Python's None.
 func TestEmptyFileIsNotNil(t *testing.T) {
 	p := filepath.Join(t.TempDir(), "empty.txt")
 	if err := os.WriteFile(p, nil, 0o644); err != nil {

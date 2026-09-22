@@ -1,20 +1,3 @@
-// Command goldenharness records and verifies the Layer A CLI golden snapshots
-// described in PORT_SPEC.md §9.
-//
-// It never imports Kathara. It drives whatever binary KATHARA_CMD names — the
-// Python 3.8.3 oracle today, the Go build tomorrow — over the scenario list in
-// scenarios.yaml, and snapshots the observable state of each run as a tree of
-// canonical JSON files under test/goldens/<scenario>/.
-//
-// Subcommands:
-//
-//	record   drive the binary under test and (over)write the stored snapshots
-//	verify   re-record into a scratch tree and diff against the stored snapshots
-//	diff     compare two snapshot trees that already exist on disk
-//	list     print the resolved scenario list
-//
-// Every normalization applied to a recording is documented, with its
-// nondeterminism source, in NORMALIZATION.md.
 package main
 
 import (

@@ -24,10 +24,6 @@ func intItemName(item int) string { return strconv.Itoa(item) }
 
 // TestChunk is `utils.chunk_list`: successive slices of `size`, with a list
 // shorter than `size` coming back as one chunk.
-//
-// Python's two branches produce the same content and differ only in the type of
-// the single chunk, which nothing observes; the boundaries are what matter,
-// because they are the barriers the fan-out waits on.
 func TestChunk(t *testing.T) {
 	tests := []struct {
 		name  string
@@ -55,10 +51,6 @@ func TestChunk(t *testing.T) {
 	}
 }
 
-// TestRunChunkedCompletesTheChunkThenReports is the error semantic
-// CONCURRENCY.tsv records for all eight pool sites and which is neither of the
-// two obvious ones: every task of the CURRENT chunk runs to completion even
-// after a sibling has failed, and only then is the error reported.
 func TestRunChunkedCompletesTheChunkThenReports(t *testing.T) {
 	size := util.PoolSize()
 	items := make([]int, size)
@@ -164,15 +156,6 @@ func TestRunChunkedRunsEverythingOnSuccess(t *testing.T) {
 	}
 }
 
-// TestJoinFailuresOrdersTheBatchBytewiseByName is ERROR_CODES.md §6.2: the
-// batch is ordered by the failed item's name, BYTEWISE ascending — so `PC1`
-// sorts before `pc1` (0x50 < 0x70) and `pc10` before `pc2` (`1` < `2`), which
-// is what distinguishes a byte comparison from a case-insensitive or numeric
-// one.
-//
-// Element 0 of the join is the primary error of §6.3, and [kerrors.Code] reads
-// the join's first coded element, so the order chosen here is literally the
-// `code` the JSON envelope reports.
 func TestJoinFailuresOrdersTheBatchBytewiseByName(t *testing.T) {
 	// Arrival order, i.e. the order the workers happened to finish in.
 	failed := []batchFailure{
@@ -201,10 +184,6 @@ func TestJoinFailuresOrdersTheBatchBytewiseByName(t *testing.T) {
 	}
 }
 
-// TestJoinFailuresOfOneDoesNotGrowAnErrorsKey is the §6.5 boundary: a single
-// failure — the only shape Python could express — must stay a one-element
-// batch, which is what makes the renderer omit the `errors` key and reproduce
-// Python's output byte for byte.
 func TestJoinFailuresOfOneDoesNotGrowAnErrorsKey(t *testing.T) {
 	only := kerrors.NewMachineNotRunning("pc1")
 	err := joinFailures([]batchFailure{{name: "pc1", err: only}})
@@ -220,21 +199,6 @@ func TestJoinFailuresOfOneDoesNotGrowAnErrorsKey(t *testing.T) {
 	}
 }
 
-// TestRunChunkedJoinsEveryFailureInCanonicalOrder is the fix for the
-// batch-error semantics of ERROR_CODES.md §6 items 2, 3 and 5, and the
-// regression the wide-verification triage asked for by name: a chunk with a
-// primary failure and TWO decoy failures must report all three, always in the
-// same order, no matter which worker finished first.
-//
-// The old behaviour — a bare errgroup, whose `Wait` returns whichever error
-// arrived first — passed the "an error is reported" bar while making the
-// reported error depend on the scheduler: the triage observed z9, z9, a1, z9
-// across four live runs of the same scenario, and the siblings were dropped
-// entirely.
-//
-// The stagger below reproduces that: the alphabetically FIRST device is made to
-// finish LAST, so an implementation that reports the first arrival can only
-// ever answer `z9`.
 func TestRunChunkedJoinsEveryFailureInCanonicalOrder(t *testing.T) {
 	size := util.PoolSize()
 	if size < 3 {
@@ -278,8 +242,6 @@ func TestRunChunkedJoinsEveryFailureInCanonicalOrder(t *testing.T) {
 		t.Fatalf("the batch carries %d errors, want all %d failures of the chunk", len(batch), size)
 	}
 
-	// §6.2: bytewise by name. `a1` sorts first however late it arrived, and the
-	// decoys follow in their own order.
 	want := make([]string, 0, size)
 	want = append(want, "Device `a1` is not running.")
 	for i := 1; i < size; i++ {
@@ -291,9 +253,6 @@ func TestRunChunkedJoinsEveryFailureInCanonicalOrder(t *testing.T) {
 		}
 	}
 
-	// §6.3 + §6.5 as the renderer reads them: the primary is element 0, the
-	// envelope's `code` comes off the join, and every sibling is still
-	// reachable. The byte-level rendering is pinned in internal/cliout.
 	if got := kerrors.Code(err); got != kerrors.CodeMachineNotRunning {
 		t.Errorf("Code(join) = %q, want the primary's %q", got, kerrors.CodeMachineNotRunning)
 	}
@@ -378,10 +337,6 @@ func TestItemNamesAreTheKatharaNames(t *testing.T) {
 	}
 }
 
-// TestRunChunkedThreadsTheContext: the context reaches the worker so the SDK
-// calls inside it can be cancelled, which is the Ctrl-C path
-// (JSON_CLI_CONTRACT.md §6.2). What it must NOT do is cancel siblings when one
-// of them fails, which [TestRunChunkedCompletesTheChunkThenReports] covers.
 func TestRunChunkedThreadsTheContext(t *testing.T) {
 	type key struct{}
 	ctx := context.WithValue(context.Background(), key{}, "threaded")

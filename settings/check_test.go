@@ -10,10 +10,6 @@ import (
 	"github.com/KatharaFramework/kathara-go/kerrors"
 )
 
-// TestCheckStampsAndSavesWhenStale is the surviving half of the deferred
-// update webhook (DIVERGENCES.md item 34): with no GitHub call to fail,
-// `checked` stays True, so `last_checked` moves to now and the file is
-// rewritten. Probed against 3.8.3 with the webhook stubbed to succeed.
 func TestCheckStampsAndSavesWhenStale(t *testing.T) {
 	const now = 1_800_000_000.5
 	pinClock(t, now)
@@ -63,10 +59,6 @@ func TestCheckDoesNotSaveWhenFresh(t *testing.T) {
 	}
 }
 
-// TestCheckWritesToDefaultPathNotTheLoadedOne pins the Python bug
-// DIVERGENCES.md records: `check()` calls `save_to_disk()` with no argument,
-// so a per-scenario `kathara.conf` gets copied over the user's global one.
-// Probed against 3.8.3.
 func TestCheckWritesToDefaultPathNotTheLoadedOne(t *testing.T) {
 	const now = 1_800_000_000.0
 	pinClock(t, now)
@@ -227,10 +219,6 @@ func TestCheckDebugLevel(t *testing.T) {
 	}
 }
 
-// TestDebugLevelMessageMatchesRegistry pins the join `kerrors` froze against
-// the list this package owns. The message interpolates
-// `", ".join(AVAILABLE_DEBUG_LEVELS)` (ORDERING.tsv:112), so adding a level
-// here without updating the frozen text would ship a lie.
 func TestDebugLevelMessageMatchesRegistry(t *testing.T) {
 	want := "Settings file is not valid: Debug Level must be one of the following: " +
 		strings.Join(availableDebugLevels, ", ") + ". Fix it or delete it before launching."

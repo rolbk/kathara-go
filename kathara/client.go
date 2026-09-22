@@ -1,16 +1,3 @@
-// This file is `manager/Kathara.py`, the facade — with its singleton removed
-// (PORT_SPEC §0.2 #10) and its thirty delegating bodies otherwise untouched.
-//
-// "Untouched" is meant literally. Every one of those bodies in
-// `manager/Kathara.py:63-605` is `self.manager.<name>(<the same arguments, in
-// the same order>)`: no validation, no transformation, no added behaviour
-// (analysis/manager-foundation.md §1.11). The argument checks that guard the
-// lab-identifier triple live in the backends, eleven sites each, and moving
-// them up here would be visible — `get_machine_stats` is a generator function,
-// so its check does not run until the caller takes the first element, and a
-// client-side check would raise it at call time instead. So this file
-// delegates, and [LabRef.RequireSingle] is where a backend gets the check.
-
 package kathara
 
 import (
@@ -25,20 +12,8 @@ import (
 )
 
 // ErrNoSettings is [NewClient] called without a configuration.
-//
-// It carries no taxonomy code, so `kerrors.Code` buckets it to
-// `InternalError`, and that is right: Python could not reach this state —
-// `Kathara.__init__` read a `Setting` singleton that constructs itself on first
-// access — so there is no Python message to reproduce and inventing an
-// `InvocationError` string would add a row to the frozen ERROR_CODES.md
-// catalogue for a failure only a Go embedder can cause.
 var ErrNoSettings = errors.New("kathara: settings must not be nil")
 
-// Config is what a backend needs from whoever embeds it, and it exists because
-// PORT_SPEC §0.2 #10 took away the two singletons a Python manager constructor
-// read: `Setting.get_instance()` and `EventDispatcher.get_instance()`.
-//
-// [NewClient] fills it and hands it to the [Factory].
 type Config struct {
 	// Settings is the loaded configuration. Never nil in a Config a
 	// [NewClient] built.
@@ -52,22 +27,15 @@ type Config struct {
 	Dispatcher *event.Dispatcher
 
 	// Defaults are the four settings values [model] falls back to when a
-	// device says nothing (OQ-4). [NewClient] derives them from Settings with
+	// device says nothing. [NewClient] derives them from Settings with
 	// [DefaultsFrom]; a backend that builds a [model.Lab] — which
 	// `get_lab_from_api` does — must pass these to [model.NewLab] rather than
 	// reaching for a global.
 	Defaults model.Defaults
 }
 
-// DefaultsFrom is the OQ-4 wiring: the four `Setting.get_instance()` reads that
-// `model/Machine.py` used to do (`:484` image, `:547` device_shell, `:589`
-// volume_mount_policy, `:608` enable_ipv6), resolved once by the caller
-// instead.
-//
-// `model` cannot import `settings` (PACKAGE_GRAPH.md §1.2 forbids the edge, so
-// that a process can hold two scenarios with different defaults), and this
-// package imports both, which makes it the one place the two schemas can be
-// matched up by name.
+// DefaultsFrom maps the image, shell, volume policy, and IPv6 settings to model
+// defaults.
 func DefaultsFrom(s *settings.Settings) model.Defaults {
 	if s == nil {
 		return model.DefaultDefaults()
@@ -82,23 +50,6 @@ func DefaultsFrom(s *settings.Settings) model.Defaults {
 
 // Client is the facade of `manager/Kathara.py`: one [Manager], selected by
 // `manager_type`, with a method per interface method that forwards to it.
-//
-// It is a value, not a singleton. `Kathara.get_instance()` built the backend on
-// first call, stored itself in a class attribute and raised
-// `InstantiationError("This class is a singleton!")` if anyone constructed a
-// second one, which froze the backend choice for the process; PORT_SPEC §0.2
-// #10 removes all of that, and two Clients over two backends can now exist side
-// by side.
-//
-// What survives is the timing. [NewClient] builds the backend immediately, so
-// a Docker daemon that is not running, an unreadable kubeconfig or a missing
-// network plugin is an error from the constructor — not from the first
-// operation — exactly as `Kathara.__init__` made it
-// (analysis/manager-foundation.md §7 gotcha 9).
-//
-// A Client adds no locking of its own. It is as safe for concurrent use as the
-// [Manager] underneath it, which for both real backends means "yes": they run
-// their own fan-outs.
 type Client struct {
 	manager Manager
 
@@ -143,23 +94,6 @@ func WithDefaults(d model.Defaults) ClientOption {
 
 // NewClient is `Kathara.__init__`: read `manager_type`, resolve the backend,
 // construct it.
-//
-// The resolution failure is the one place the error shape had to be chosen
-// rather than copied. Python's is `ClassNotFoundError`, raised bare and with no
-// message, which ERROR_CODES.md keeps as a RESERVED code with no Go
-// representation because the only thing that ever rendered it was the unknown-
-// *command* path. What a user actually sees for an unusable `manager_type` is
-// `Setting._check_manager`'s `SettingsError("Manager Type not allowed.")`,
-// raised from the startup check that runs before any command — so that is what
-// this returns, as [ErrSettings] / `kerrors.ErrSettingsManagerType`, byte for
-// byte. It is also the honest answer in the `nok8s` build, where
-// `manager_type: kubernetes` passes `settings.Settings.CheckManager` (the
-// frozen schema vocabulary still lists it) and then finds no backend: this
-// binary does not allow it.
-//
-// Errors: [ErrNoSettings] for a nil configuration, [ErrSettings] when
-// `manager_type` names no registered backend, and whatever the backend's
-// [Factory] answers.
 func NewClient(ctx context.Context, s *settings.Settings, opts ...ClientOption) (*Client, error) {
 	if s == nil {
 		return nil, ErrNoSettings
@@ -201,12 +135,6 @@ func NewClient(ctx context.Context, s *settings.Settings, opts ...ClientOption) 
 }
 
 // NewClientWithManager wraps an already-constructed [Manager].
-//
-// Python has no such entry point — its facade could only build its manager by
-// reflection — but Go embedders that construct a backend directly, and every
-// test in this package, need one, and it is the same object graph [NewClient]
-// produces. It returns nil for a nil manager, so that a mis-wired caller fails
-// at its own call site rather than on the first delegation.
 func NewClientWithManager(m Manager) *Client {
 	if m == nil {
 		return nil
@@ -219,14 +147,6 @@ func (c *Client) Manager() Manager { return c.manager }
 
 // AvailableManagers is `Kathara.get_available_managers_name()`: every backend
 // this client could have been built over, in declared order.
-//
-// Python declares it static, so it does not consult the client's own backend
-// and neither does this — but "static" there still meant the one process-global
-// table that `__init__` had resolved against, so the two could not disagree.
-// Here they can: [WithRegistry] is the way an embedder avoids package state, so
-// this answers from the registry [NewClient] actually used, and falls back to
-// [DefaultRegistry] only for a [NewClientWithManager] client, which resolved
-// nothing. The package-level [AvailableManagers] is the static analogue.
 func (c *Client) AvailableManagers() []ManagerInfo {
 	if c.registry == nil {
 		return AvailableManagers()
@@ -410,6 +330,5 @@ func (c *Client) GetFormattedManagerName() string {
 	return c.manager.GetFormattedManagerName()
 }
 
-// Client implements the same contract it proxies, which is what
-// `class Kathara(IManager)` said.
+// Client implements Manager by proxying the selected backend.
 var _ Manager = (*Client)(nil)

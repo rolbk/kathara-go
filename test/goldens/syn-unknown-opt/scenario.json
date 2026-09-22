@@ -3,7 +3,7 @@
   "name": "syn-unknown-opt",
   "kind": "deploy",
   "status": "golden",
-  "note": "Pins the current silent pass-through of an unknown device option so the Go port cannot diverge by accident.",
+  "note": "Pins the current silent pass-through of an unknown device option so the implementation cannot diverge by accident.",
   "lab_dir": "<LABDIR>",
   "flags": [],
   "probes": [

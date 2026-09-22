@@ -1,7 +1,7 @@
 // This file holds the CPython `int(str)` primitive that `version.parse` and
 // `parse_docker_engine_version` are built on. It is separate from version.go
 // because the semantics belong to the interpreter, not to Kathará: the RULINGS
-// entry for OQ-14a ("Replicate CPython") makes them binding wherever a Python
+// CPython-compatible parsing is required wherever Python dispatches on these
 // `int()` or `str.isdigit()` is on a user-reachable path.
 
 package util
@@ -20,18 +20,6 @@ import (
 var ErrPyIntSyntax = errors.New("invalid literal for int() with base 10")
 
 // ErrPyIntRange is returned when the literal parses but does not fit a Go int.
-//
-// CPython has no such failure — its ints are arbitrary precision — so this is
-// a bounded divergence, and it *is* reachable: `pc1[99999999999999999999]=A`
-// in a lab.conf hands twenty digits to `int()` (LabParser.py:60), which CPython
-// accepts and Kathará then rejects downstream with
-// `NonSequentialMachineInterfaceError` (measured). Recorded in DIVERGENCES.md.
-//
-// The distinction from [ErrPyIntSyntax] is load-bearing for the caller.
-// LabParser dispatches on whether `int()` *raised*, and RULINGS.md OQ-14a pins
-// that to the int-parse result alone: only [ErrPyIntSyntax] means "this is a
-// meta name, not an interface number". A literal that is out of range is still
-// a number and must stay on the interface path.
 var ErrPyIntRange = errors.New("integer literal out of range for int")
 
 // PyIntFailure renders the ValueError CPython raises for the literal s, message
@@ -43,12 +31,6 @@ func PyIntFailure(cause error, s string) error {
 
 // intSpace reports whether r is one of the code points CPython's `int()`
 // tolerates around a literal.
-//
-// It is measured, not assumed: `int(chr(cp) + "1")` was run over the whole code
-// space against the oracle (tools/vectorcheck/utils_probe.py's sibling probe).
-// The set is *not* the one `str.strip()` removes — 0x1C to 0x1F are stripped by
-// `strip()` and rejected by `int()`, which is why [Slug] and this function
-// carry different whitespace tables.
 func intSpace(r rune) bool {
 	switch {
 	case r >= 0x09 && r <= 0x0D, r == 0x20, r == 0x85, r == 0xA0,
@@ -62,12 +44,6 @@ func intSpace(r rune) bool {
 // ndZeros lists the code point of every Unicode decimal-digit-zero, i.e. the
 // first element of each `Nd` run of ten. CPython's `int()` accepts any `Nd`
 // code point and reads its decimal value, so `int("٣")` is 3.
-//
-// The table is explicit rather than derived from [unicode.Nd] because several
-// Nd runs are adjacent — the five mathematical alphanumeric sets occupy
-// U+1D7CE to U+1D7FF back to back — so "walk down to the first non-digit" would
-// compute the wrong zero. Generated from the oracle's unicodedata (Unicode
-// 15.1); Go's own tables are 15.0, and no Nd character was added between them.
 var ndZeros = [...]rune{
 	0x0030, 0x0660, 0x06F0, 0x07C0, 0x0966, 0x09E6, 0x0A66, 0x0AE6,
 	0x0B66, 0x0BE6, 0x0C66, 0x0CE6, 0x0D66, 0x0DE6, 0x0E50, 0x0ED0,
@@ -100,8 +76,6 @@ func decimalValue(r rune) (int, bool) {
 // distinction is load-bearing exactly once, in
 // [ParseDockerEngineVersion], which keeps a character because `isdigit()` says
 // yes and then hands the result to a parse that says no.
-//
-// Generated from the oracle's unicodedata (Unicode 15.1).
 var nonDecimalDigits = [...][2]rune{
 	{0x00B2, 0x00B3}, {0x00B9, 0x00B9}, {0x1369, 0x1371}, {0x19DA, 0x19DA},
 	{0x2070, 0x2070}, {0x2074, 0x2079}, {0x2080, 0x2089}, {0x2460, 0x2468},
@@ -125,19 +99,6 @@ func PyIsDigit(r rune) bool {
 }
 
 // PyInt is CPython's `int(s)` with base 10.
-//
-// It exists because Kathará feeds user text straight into `int()` and dispatches
-// on whether it raised, so "which strings are numbers" is part of the observable
-// contract (RULINGS.md OQ-14a). Accepted, in this order:
-//
-//   - leading and trailing whitespace, for the [intSpace] set;
-//   - one optional '+' or '-';
-//   - one or more decimal digits from any Unicode script, so "٣" is 3;
-//   - PEP 515 underscores strictly *between* digits: "1_0" is 10, while "_1",
-//     "1_" and "1__0" are all errors.
-//
-// Everything else — an empty string, "0x1", "3-beta", the superscript "²" —
-// returns an error wrapping [ErrPyIntSyntax].
 func PyInt(s string) (int, error) {
 	trimmed := strings.TrimFunc(s, intSpace)
 
@@ -190,22 +151,6 @@ func PyInt(s string) (int, error) {
 // PythonRepr renders s the way CPython's `repr()` would, which is how a string
 // appears inside the ValueError text of a failed `int()` and therefore inside
 // a message the CLI prints.
-//
-// The quote character is a single quote, unless s contains one and no double
-// quote — the one case where CPython switches, to avoid an escape.
-//
-// What gets escaped is decided by `str.isprintable()`, not by "is it ASCII":
-// every code point outside the Unicode Other and Separator categories, ASCII
-// space excepted, is emitted as itself, so `repr('caffè')` keeps its è and
-// `repr('日本語')` is the three characters. The rest escape, in the width
-// CPython picks by magnitude: `\xNN` below U+0100, `\uNNNN` below U+10000,
-// `\UNNNNNNNN` above. Tab, newline and carriage return have their own short
-// forms and are checked first.
-//
-// [unicode.IsPrint] is exactly `str.isprintable()`: both are the complement of
-// categories C and Z with ASCII space added back. They are built from
-// different Unicode editions — Go 15.0, the oracle 15.1 — which differ only in
-// the CJK ideographs of Extension I, none of which can reach a version string.
 func PythonRepr(s string) string {
 	quote := byte('\'')
 	if strings.ContainsRune(s, '\'') && !strings.ContainsRune(s, '"') {
@@ -245,11 +190,6 @@ func PythonRepr(s string) string {
 // PythonStrListRepr is `str(['a', 'b'])` for a list of strings: the elements'
 // [PythonRepr], comma-space separated, in square brackets. An empty slice —
 // and a nil one — renders `[]`, as `str([])` does.
-//
-// This is what a `%s` or an f-string placeholder produces when the value is a
-// `List[str]`, which is how the two backends' `exec` and `connect` debug lines
-// render their already-`shlex.split` command and shell
-// (`DockerMachine.py:677,777`, `KubernetesMachine.py:727,817`).
 func PythonStrListRepr(items []string) string {
 	parts := make([]string, 0, len(items))
 	for _, item := range items {

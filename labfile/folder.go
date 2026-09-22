@@ -14,30 +14,6 @@ import (
 
 // ParseFolder is `FolderParser.parse` (`parser/netkit/FolderParser.py:12`):
 // every subdirectory of the scenario directory is a device.
-//
-// It is the `lstart -F/--force-lab` fallback, used when there is no lab.conf.
-// The devices it creates have no interfaces and no metas — only a filesystem.
-//
-// Three behaviours are worth knowing before calling it:
-//
-//   - The reserved names `shared` and `_test` are skipped SILENTLY, where
-//     `LabParser` raises a ValueError for the same names. Same list, opposite
-//     handling (README SURPRISE 15).
-//   - One badly named directory kills the whole run. Anything that breaks the
-//     device charset — `PC1`, `my-notes`, a 31-character name — reaches the
-//     device constructor and comes back as `Invalid device name \`PC1\`.`, so a
-//     `Docs/` folder next to the devices makes `lstart -F` fail outright
-//     (DIVERGENCES.md 7). Ported as-is.
-//   - The path is a glob PATTERN, not a directory name. The scenario's
-//     filesystem is rooted at it literally, but the devices come from
-//     `glob("<path>/*/")`, so a `[`, `]`, `*` or `?` anywhere in it selects
-//     somewhere else entirely — see [machineFolders]. Ported as-is.
-//
-// PORT DIVERGENCE (RULINGS.md OQ-15a, PROPOSED-DIVERGENCES.md): the devices are
-// created in SORTED name order. Python's `glob` does not sort — the order is
-// `os.scandir`'s, i.e. the filesystem's — and that order decides machine
-// insertion order and therefore deploy order for a conf-less scenario. Sorting
-// is the only way to make it reproducible.
 func ParseFolder(path string, defaults model.Defaults) (*model.Lab, error) {
 	lab, err := model.NewLabFromPath(path, defaults)
 	if err != nil {
@@ -58,29 +34,6 @@ func ParseFolder(path string, defaults model.Defaults) (*model.Lab, error) {
 
 // machineFolders is `glob("%s/*/" % path)` reduced to the directory names, in
 // sorted order.
-//
-// The trailing slash of the pattern is what limits it to directories, and it
-// admits a symlink to one — `glob` filters with `entry.is_dir()` and then again
-// with `os.path.isdir`, both of which follow symlinks. The `*` does not match a
-// leading dot, so `.git` and `.vscode` are never devices, and the pattern has a
-// single level, so a directory inside a device folder is not one either.
-//
-// `glob` swallows the errors of listing a directory it cannot read and yields
-// nothing, so a failure here is not an error: it is an empty scenario.
-//
-// The pattern is built by string concatenation, which has two consequences the
-// port carries rather than tidies:
-//
-//   - an EMPTY path globs the filesystem root rather than the working
-//     directory, because `"" + "/*/"` is `/*/`. [filepath.Join] would have
-//     quietly repaired it, though no CLI path can reach it: `lstart -d`
-//     realpaths its argument first.
-//   - the scenario path is itself PART OF THE PATTERN, so a `*`, `?` or `[` in
-//     it is matched instead of looked up. With `lab1/` next to `lab[1]/`,
-//     `glob(".../lab[1]/*/")` lists the subdirectories of the SIBLING `lab1`
-//     and never opens the bracketed directory at all (oracle-verified), while
-//     the scenario's filesystem — `Lab`'s — is still rooted at the literal
-//     path. [globDirs] reproduces that expansion.
 func machineFolders(path string) []string {
 	names := []string{}
 
@@ -111,20 +64,6 @@ func machineFolders(path string) []string {
 // globDirs is CPython's `glob._iglob(pattern, "", None, False, dironly=True)`:
 // the directories a pattern expands to, each level filtered to directories
 // because the caller is going to descend into it.
-//
-// It is only ever called with a pattern that contains a metacharacter — the
-// top-level caller appends the literal `*` and the recursion below only enters
-// a dirname that has one — which is why `_iglob`'s no-magic arm, the one
-// CPython guards with `assert not dironly`, has no counterpart here.
-//
-// Errors are not errors: `_iterdir` wraps its `scandir` in `except OSError:
-// return`, so an unreadable directory contributes nothing and the walk goes on.
-//
-// The recursion is one frame per path component and stops at the first prefix
-// without magic, so telling it apart from CPython's — which raises
-// RecursionError past its frame limit where Go grows the stack — would take a
-// path hundreds of components deep whose FIRST component carries a
-// metacharacter.
 func globDirs(pattern string) []string {
 	dirname, basename := pySplitPath(pattern)
 
@@ -157,7 +96,6 @@ func globDirs(pattern string) []string {
 		// `lexists`, which does not follow symlinks and does not ask for a
 		// directory, so a file survives this level and is dropped by the next
 		// one, whose listing of it fails and is swallowed.
-		//
 		// The empty-basename arm of `_glob0` is unreachable from here: a pattern
 		// ending in a separator would be needed, and `split` only produces one
 		// as a dirname made entirely of separators, which has no magic and so is
@@ -175,9 +113,6 @@ func globDirs(pattern string) []string {
 
 // globListDirs is `glob._listdir(dirname, None, dironly=True)`: the entries of
 // a directory that are themselves directories, symlinks to one included.
-//
-// An empty dirname means the working directory (`os.curdir`), and a listing
-// failure means no entries at all.
 func globListDirs(dir string) []string {
 	target := dir
 	if target == "" {
@@ -202,10 +137,6 @@ func globListDirs(dir string) []string {
 
 // globMatchNames is the second half of `glob._glob1`: drop the hidden entries
 // unless the pattern is itself hidden, then `fnmatch.filter`.
-//
-// The leading-dot rule is `glob`'s, not `fnmatch`'s — it is why `*` never
-// matches `.git` — and it is keyed on the PATTERN, so a `.lab*` component does
-// see dot directories.
 func globMatchNames(names []string, pattern string) []string {
 	hiddenPattern := strings.HasPrefix(pattern, ".")
 	match := newGlobMatcher(pattern)
@@ -224,12 +155,6 @@ func globMatchNames(names []string, pattern string) []string {
 
 // newGlobMatcher is `fnmatch._compile_pattern` plus `fnmatch.filter`'s
 // `os.path.normcase` on both sides of the comparison.
-//
-// A pattern that cannot match anything — CPython's `(?!)`, see [fnTranslate] —
-// and one whose translation RE2 refuses (no input is known to produce one)
-// match nothing rather than failing: `FolderParser` has nowhere to put an
-// error, and an empty expansion is a shape `glob` already produces for an
-// unreadable directory.
 func newGlobMatcher(pattern string) func(string) bool {
 	expr, ok := fnTranslate(pyNormcase(pattern))
 	if !ok {
@@ -245,21 +170,6 @@ func newGlobMatcher(pattern string) func(string) bool {
 // fnTranslate is `fnmatch.translate` (CPython 3.13, the interpreter the vector
 // corpus is recorded against), emitting an RE2 source instead of a CPython one.
 // The second result is false for a pattern that can never match.
-//
-// Three differences between the engines are bridged here, none of which changes
-// which names match:
-//
-//   - CPython emits `(?!)` for an empty character range, and RE2 has no
-//     lookaround. A `(?!)` anywhere makes the whole expression unmatchable, so
-//     it is reported as `false` instead of being spelled.
-//   - A `]` is a literal as the first member of a CPython class and closes an
-//     RE2 one; a `[` is a literal in a CPython class and can open an RE2 POSIX
-//     class. Both are escaped, which they already are in the other engine.
-//   - `_join_translated_parts` wraps each interior `*` in an atomic group to
-//     bound backtracking. RE2 needs no such bound and cannot express one, and
-//     plain `.*` accepts exactly the same strings: every atomic group there is
-//     followed by another `.*`, so committing to the leftmost match of the
-//     fixed text between two stars never loses a match.
 func fnTranslate(pattern string) (string, bool) {
 	pat := []rune(pattern)
 	n := len(pat)
@@ -441,12 +351,6 @@ func hasMagic(s string) bool { return strings.ContainsAny(s, "*?[") }
 // pySplitPath is `os.path.split`: everything up to the last separator, with the
 // trailing separators removed unless the head is nothing but separators, and
 // everything after it.
-//
-// It differs from [filepath.Split] in exactly that trimming, which is what lets
-// `glob` compare a dirname with the pattern it came from. The volume is peeled
-// off first, as `ntpath.split` does, so a Windows drive stays attached to the
-// head; the UNC and `\\?\` spellings beyond what [filepath.VolumeName] knows are
-// not chased.
 func pySplitPath(p string) (head, tail string) {
 	volume := filepath.VolumeName(p)
 	rest := p[len(volume):]

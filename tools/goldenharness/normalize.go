@@ -119,15 +119,6 @@ func NewNormalizer() *Normalizer {
 
 // macToken returns the keyed token for a scrubbed MAC, assigning the next
 // ordinal the first time the scenario sees that address.
-//
-// Ordinals are assigned in observation order, which the harness makes
-// deterministic by construction: containers are inspected before any probe
-// runs, devices are probed in sorted name order, and within a device the `ip
-// -br link` probe — a full dump of the namespace in ifindex order, i.e. in the
-// order Kathara created the interfaces — runs before every other probe that can
-// carry a MAC. Two recordings of the same scenario therefore number the same
-// addresses the same way; the record-twice byte-diff in README.md is what
-// proves it.
 func (n *Normalizer) macToken(low string) string {
 	if t, ok := n.macTokens[low]; ok {
 		return t
@@ -256,15 +247,6 @@ func (n *Normalizer) scrubLinkLocal6(s string) string {
 // progress dropped, trailing whitespace trimmed, trailing blank lines removed.
 // Unwrapping runs before token substitution: a host path wrapped across lines
 // by rich could otherwise never match its literal.
-//
-// The *completed* progress line is kept. `rich.live.Live` suppresses every
-// intermediate refresh on a non-terminal and prints the final render exactly
-// once at stop, and `HandleProgressBar`'s column set — description, spinner,
-// `BarColumn(bar_width=None)`, `MofNCompleteColumn`, `expand=True` — carries no
-// clock: at `COLUMNS=80` the row is a pure function of the description, the
-// counts and the console width. `[Deploying devices]   ━…━ 3/3` is therefore a
-// byte-exact assertion that the deploy ran to completion, and dropping it was
-// deleting one.
 func (n *Normalizer) Lines(s string) []string {
 	s = StripANSI(s)
 	s = strings.ReplaceAll(s, "\r\n", "\n")
@@ -310,18 +292,6 @@ var (
 // the rendered length of everything in it — including host paths, which are
 // only tokenized later — so the wrapped form is host-specific even though the
 // message is not.
-//
-// The separator at each break is decided by how rich wraps: it folds at
-// spaces, and hard-chops only a word that cannot fit within the fold width
-// (console width minus the 9-column level gutter) on a row of its own. A break
-// is therefore a chop — rejoined with no separator — only when the previous
-// row is filled to the console width exactly *and* the fragments on either
-// side of the break form a single word longer than the fold width. Every other
-// break is a fold or an embedded newline, rejoined with a single space. The
-// one remaining ambiguity is a fold that lands exactly on the console width
-// with a next word longer than the fold width minus the row's last word: not
-// observed in any Kathara message, and a misjoin there would surface as a
-// visible golden diff, not as a silently deleted assertion.
 func UnwrapLogRecords(s string, width int) string {
 	foldWidth := width - 9
 	lines := strings.Split(s, "\n")
@@ -406,15 +376,6 @@ func StripANSI(s string) string {
 
 // volatileAddrKeys are dropped from `ip -j addr` output. Every one of them is
 // either host-global (interface indices), namespace-scoped or time-derived.
-//
-// `valid_life_time` and `preferred_life_time` are deliberately **not** here.
-// They were dropped as "time-derived", which is only true of an address the
-// kernel learned: every entry that survives the `kernel_ra` filter below is
-// either statically configured by the lab or the kernel's own link-local, and
-// both carry the constant 4294967295 ("forever"). Verified on the corpus —
-// every surviving entry in the 47 recordings reports 4294967295 for both keys —
-// so keeping them asserts that a port does not accidentally hand Docker or the
-// kernel a lease where the lab asked for a permanent address.
 var volatileAddrKeys = map[string]bool{
 	"ifindex":      true,
 	"link_index":   true,
@@ -437,20 +398,6 @@ var volatileAddrKeys = map[string]bool{
 // raLearnedProtocols names the `ip -j addr` `protocol` values that mark an
 // address the kernel *learned* rather than one the lab configured. An
 // addr_info entry carrying one is dropped whole.
-//
-// `kernel_ra` is SLAAC: the address exists only once a Router Advertisement
-// has been received. 06-basic-ipv6's pc1..pc3 have no .startup at all and are
-// addressed entirely by radvd on r1/r2 (MinRtrAdvInterval 3, MaxRtrAdvInterval
-// 9), and the kernel's own Router Solicitation is sent after a random delay of
-// up to 1 s (RFC 4861). Two recordings therefore disagree on whether
-// `2001::3:200:ff:fe00:3` is present yet — observed directly. This is the same
-// class as a BGP/OSPF-learned route (GOLDEN_CANDIDATES.md's determinism
-// caveat), and it is removed for the same reason: daemon-learned state is not
-// a golden. What survives is every statically configured address, including
-// basic-ipv6's fe80::1 / fe80::2 and every EUI-64 link-local derived from an
-// explicitly pinned MAC — i.e. the assertion that Kathara applied
-// `sysctl net.ipv6.conf.eth0.accept_ra=2` and the `cd/mac` syntax is still
-// carried by containers.json and by `ip -br link`.
 var raLearnedProtocols = map[string]bool{"kernel_ra": true}
 
 // ScrubAddrJSON normalizes the decoded `ip -j addr` document: volatile keys
@@ -499,18 +446,7 @@ func isRALearnedAddr(e any) bool {
 	return raLearnedProtocols[proto]
 }
 
-// SplitSortCSV splits a comma-joined driver-opt value and sorts it. Kathara
-// builds com.docker.network.endpoint.sysctls by joining a Python set, whose
-// iteration order is hash-randomized per process (ORDERING.tsv, "!!" row
-// DockerMachine.py:470).
-//
-// Split and sort is the whole sanctioned transform. Elements are **not**
-// trimmed and empty ones are **not** dropped: `",".join(set)` over a set of
-// `k=v` strings can only produce an empty element from an empty member or a
-// stray separator, both of which would be a real defect in the value Kathara
-// put on the wire, and surrounding whitespace in a sysctl name is likewise a
-// defect rather than noise. Removing either would have silently repaired the
-// recording of a port that emitted `a=1,,b=2`.
+// SplitSortCSV splits a comma-joined driver-opt value and sorts it.
 func SplitSortCSV(s string) []string {
 	if s == "" {
 		return []string{}
@@ -526,20 +462,6 @@ const allCapabilities = "ALL"
 
 // NormalizeCapabilities canonicalizes a CapAdd/CapDrop list the way the Go
 // Docker SDK does client-side, and additionally de-duplicates and sorts it.
-//
-// The Go SDK rewrites both lists unconditionally before POSTing
-// /containers/create (docker@v28.5.2/client/container_create.go:72-73 calling
-// normalizeCapabilities at :139 and normalizeCap at :159): upper-case, prefix
-// with "CAP_" unless the value is the "ALL" magic value, de-duplicate, sort.
-// docker-py performs no such rewrite: it sends whatever Kathara's
-// MACHINE_CAPABILITIES literal contains — bare, unsorted names — and the daemon
-// stores each list verbatim as sent. The kernel bounding set that results is
-// identical either way (the daemon resolves both spellings to the same
-// capability), but `docker inspect` echoes the stored representation, so a
-// byte-exact golden would fail on a difference no Kathara code can control.
-//
-// The harness therefore asserts the capability *set* in canonical form on both
-// sides. See NORMALIZATION.md section 10 and DIVERGENCES.md.
 func NormalizeCapabilities(caps []string) []string {
 	if caps == nil {
 		return nil

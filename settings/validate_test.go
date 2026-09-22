@@ -27,9 +27,6 @@ func (c *stubImageChecker) CheckImage(_ context.Context, image string) error {
 	return c.err
 }
 
-// TestCheckImageDefaultsToConfiguredImage is `if not image` (NILABILITY.tsv:44):
-// the empty string means "the configured one", not "an image whose name is the
-// empty string".
 func TestCheckImageDefaultsToConfiguredImage(t *testing.T) {
 	s := Defaults()
 	s.Image = "kathara/frr"

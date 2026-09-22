@@ -10,10 +10,6 @@ import (
 	"github.com/KatharaFramework/kathara-go/model"
 )
 
-// commandVectors is testdata/commands.json: the joined-and-formatted command
-// strings, taken from the 3.8.3 oracle. They are the container contract
-// (PORT_SPEC §0.4) and a single changed character is a device that boots
-// differently.
 func commandVectors(t *testing.T) map[string]string {
 	t.Helper()
 	raw, err := os.ReadFile(filepath.Join("testdata", "commands.json"))
@@ -100,8 +96,6 @@ func TestShutdownCommandsString(t *testing.T) {
 	}
 }
 
-// TestSysctlCommands is `"; ".join(["sysctl -w -q %s=%d" % item …])`, including
-// the `%d`-on-a-string TypeError a lab.conf can produce (k8s-backend.md G9).
 func TestSysctlCommands(t *testing.T) {
 	tests := []struct {
 		name    string

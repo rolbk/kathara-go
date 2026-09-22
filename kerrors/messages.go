@@ -5,19 +5,6 @@ import (
 	"strings"
 )
 
-// The message catalog of docs/port/ERROR_CODES.md §2, in the order of that
-// section. Every string is the Python format string byte-for-byte, with the
-// raise site of kathara-python/src/Kathara cited above it. Messages that never
-// vary are package-level errors; the rest are constructors.
-//
-// Templates deliberately absent, each unreachable in Go 1.0:
-//   - the lab.ext and external-collision-domain variants, superseded by
-//     FeatureNotAvailable (§5);
-//   - the reserved-name and "In {conf} - Line {n}" file variants, which
-//     labfile.ParseError renders (§0.3);
-//   - OptionsHandler.py:17, whose menu machinery the bubbletea rebuild deletes;
-//   - utils.py:441, whose site takes bytes in Go (DIVERGENCES.md 9).
-
 // ---------------------------------------------------------------------------
 // Invocation
 // ---------------------------------------------------------------------------
@@ -51,9 +38,6 @@ var (
 	// vfs.ErrNoFilesystemCreate.
 	ErrNoFilesystemCreate = New(ErrInvocation, "Cannot create a file if the filesystem is not set.")
 
-	// ErrStreamReadPermissions is FilesystemMixin.py:178, where Python raises
-	// io.UnsupportedOperation; the frozen mapping is Invocation
-	// (ERROR_CODES.md §8.8).
 	ErrStreamReadPermissions = New(ErrInvocation,
 		"To create a file from stream, you must open it with read permissions.")
 )
@@ -101,8 +85,6 @@ var (
 	ErrSettingsManagerType error = &SettingsInvalidError{Reason: "Manager Type not allowed."}
 )
 
-// NewSettingsTerminal is setting/Setting.py:294, also the macOS
-// ApplicationNotFoundError translation (ERROR_CODES.md §3).
 func NewSettingsTerminal(terminal string) error {
 	return &SettingsInvalidError{
 		Reason: "Terminal Emulator `" + terminal + "` not valid! Install it before using it.",
@@ -110,8 +92,6 @@ func NewSettingsTerminal(terminal string) error {
 }
 
 // NewSettingsInvalid wraps a check failure in the exceptions.py:21 sentence.
-// Prefer the frozen reasons above; this exists for the settings rebuild's own
-// checks (PORT_SPEC §3.2), which share the wrapper.
 func NewSettingsInvalid(reason string) error {
 	return &SettingsInvalidError{Reason: reason}
 }
@@ -311,9 +291,7 @@ func NewOptionEnv(machine, value string) error {
 	}
 }
 
-// NewOptionUlimitRange is model/Machine.py:221. The message names the option,
-// not the device: add_meta interpolates its own name parameter
-// (DIVERGENCES.md 2, ERROR_CODES.md §0.2).
+// NewOptionUlimitRange is model/Machine.py:221.
 func NewOptionUlimitRange(machine, value string) error {
 	return &OptionError{
 		Machine: machine,
@@ -324,15 +302,6 @@ func NewOptionUlimitRange(machine, value string) error {
 
 // NewOptionUlimitSoftHard is model/Machine.py:224. The soft limit is literally
 // -1 there: the branch is reached only when soft == -1 and hard != -1.
-//
-// hard is the already-rendered hard limit, i.e. Python's str(int(group)) for
-// the (?P<hard>-?\d+) group, and the caller owns that parse: Python's int is
-// arbitrary precision and its re \d matches every Unicode decimal digit, so
-// `nofile=-1:99999999999999999999999999` renders the full 26-digit number,
-// `-1:007` renders 7 and `-1:٣` renders 3 (oracle-verified). A Go int cannot
-// hold the first, and no fixed-width conversion can render the value the way
-// Python does, so the type here is a string and the model port must normalise
-// (e.g. math/big) before calling.
 func NewOptionUlimitSoftHard(machine, value, hard string) error {
 	return &OptionError{
 		Machine: machine,
@@ -379,9 +348,7 @@ func NewOptionVolumeFormat(machine, value string) error {
 	}
 }
 
-// NewOptionVolumeMode is model/Machine.py:279. The allowed modes are
-// ALLOWED_VOLUME_MODES (model/Machine.py:28) joined with ", ", and the message
-// ends with a trailing space (DIVERGENCES.md 8, ERROR_CODES.md §0.2).
+// NewOptionVolumeMode is model/Machine.py:279.
 func NewOptionVolumeMode(machine, mode, hostPath string) error {
 	return &OptionError{
 		Machine: machine,
@@ -478,10 +445,6 @@ func NewMachineNotFoundInScenario(machine string) error {
 		New(ErrMachineNotFound, "Device "+machine+" not in the network scenario."))
 }
 
-// NewMachineNotFoundSet is DockerManager.py:151,155;
-// KubernetesManager.py:111,115, where Python interpolates a set. The names are
-// rendered in the Python set repr, sorted bytewise ascending, and the sorted
-// list is the JSON "machines" array (ERROR_CODES.md §0.2).
 func NewMachineNotFoundSet(machines []string) error {
 	return &MachineSetError{Machines: sortedCopy(machines)}
 }
@@ -555,8 +518,7 @@ func NewLinkNotFoundUnquoted(link string) error {
 	return WrapLink(link, "", New(ErrLinkNotFound, "Collision Domain "+link+" not found."))
 }
 
-// NewLinkAlreadyExists is model/Lab.py:378. The missing "in" is Python's typo,
-// preserved (ERROR_CODES.md §0.2).
+// NewLinkAlreadyExists is model/Lab.py:378.
 func NewLinkAlreadyExists(link string) error {
 	return WrapLink(link, "",
 		New(ErrLinkAlreadyExists, "Collision domain "+link+" is already the network scenario."))
@@ -566,9 +528,6 @@ func NewLinkAlreadyExists(link string) error {
 // InvalidImageArchitecture / DockerImageNotFound / DockerPlugin
 // ---------------------------------------------------------------------------
 
-// NewInvalidImageArchitecture is exceptions.py:160, raised at
-// DockerImage.py:207. The Python class is-a ValueError, which the Python client
-// reproduces (ERROR_CODES.md §4).
 func NewInvalidImageArchitecture(image, arch string) error {
 	return &ImageArchError{Image: image, Arch: arch}
 }
@@ -628,8 +587,6 @@ func NewSyntaxEthNumber(ifaceNumber, s string) error {
 	return New(ErrSyntax, "Interface number in `--eth "+ifaceNumber+":"+s+"` is not a number.")
 }
 
-// NewSyntax renders msg under the Syntax code, for sites that build their own
-// text (labfile.ParseError is the file-scoped form, ERROR_CODES.md §0.3).
 func NewSyntax(msg string) error {
 	return New(ErrSyntax, msg)
 }
@@ -654,9 +611,6 @@ var (
 	ErrInvalidWaitValue = New(ErrValue, "Invalid `wait` value.")
 )
 
-// NewValueOptionParameter is parser/netkit/OptionParser.py:29, where inner is
-// str(e) of the underlying Python exception. Only the outer sentence is
-// portable (DIVERGENCES.md 8).
 func NewValueOptionParameter(inner string) error {
 	return New(ErrValue, "Option parameter not valid: "+inner+".")
 }
@@ -717,8 +671,6 @@ func WrapOS(cause error, msg string) error {
 // and the Kathara executable cannot be located.
 var ErrKatharaNotFound = Wrap(ErrFileNotFound, fs.ErrNotExist, "Unable to find Kathara.")
 
-// ErrIptablesNotFound is os/Networking.py:209, live in 1.0 through the
-// get_iptables_version carve-out into backend/docker (ERROR_CODES.md §8.4).
 var ErrIptablesNotFound = Wrap(ErrFileNotFound, fs.ErrNotExist, "Cannot find `iptables` in the host.")
 
 // NewHostTmpNotFound is DockerPlugin.py:140, where key is HOSTTMP_KEY
@@ -731,9 +683,6 @@ func NewHostTmpNotFound(key string) error {
 // FileExists / NotADirectory / Permission
 // ---------------------------------------------------------------------------
 
-// NewPathNotExist is utils.py:282,303, Python's inverted FileExistsError: it is
-// raised when the path does NOT exist, so the Go error wraps fs.ErrNotExist
-// (ERROR_CODES.md §0.2).
 func NewPathNotExist(path string) error {
 	return WrapPath(path, Wrap(ErrFileExists, fs.ErrNotExist, "Path `"+path+"` does not exist."))
 }
@@ -766,10 +715,6 @@ func NewConnectionImagePull(image string) error {
 // ErrKubeConfigUnreadable is KubernetesConfig.py:41.
 var ErrKubeConfigUnreadable = New(ErrConnection, "Cannot read Kubernetes configuration.")
 
-// ---------------------------------------------------------------------------
-// Third-party passthrough (ERROR_CODES.md §1.3)
-// ---------------------------------------------------------------------------
-
 // NewDockerAPI is the untranslated docker error Python re-raises at
 // DockerMachine.py:386,427,520,876 and DockerImage.py:152. The message is the
 // daemon error text, as in Python's "(APIError) ..." line.
@@ -783,18 +728,11 @@ func NewKubernetesAPI(cause error) error {
 	return Wrap(ErrKubernetesAPI, cause, causeText(cause))
 }
 
-// ---------------------------------------------------------------------------
-// Port-new codes (ERROR_CODES.md §1.4)
-// ---------------------------------------------------------------------------
-
 // NewFeatureNotAvailable reports feature as deferred to a later release. Use
 // the Feature* tokens: they are the closed set of 1.0.
 func NewFeatureNotAvailable(feature string) error {
 	return &FeatureNotAvailableError{Feature: feature}
 }
 
-// ErrWipeConfirmationRequired is the json/jsonl refusal to wipe without
-// --force (JSON_CLI_CONTRACT.md §1.5). Human mode prompts instead and can
-// never raise it.
 var ErrWipeConfirmationRequired = New(ErrConfirmationRequired,
 	"Confirmation required: re-run with `--force` to wipe Kathara.")

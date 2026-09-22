@@ -12,14 +12,6 @@ import (
 
 // SchemaVersion is stamped into every snapshot. Bump it whenever the recorded
 // shape changes in a way that invalidates stored goldens.
-//
-// 2: the blind-spot pass. Adds Config.Tty / Config.OpenStdin, HostConfig.Binds,
-// network enable_ipv6 / ipam_config / options and fs-tree mode/uid/gid to the
-// recorded subset; stops sorting HostConfig.Ulimits and `ip -j addr`'s
-// addr_info; keeps valid_life_time / preferred_life_time and the completed
-// progress line; replaces the blanket `<MAC>` with keyed `<MAC1>`, `<MAC2>`, …
-// tokens; drops the /etc/hosts RFC1918 rewrite. All 47 goldens were
-// re-recorded from the Python oracle.
 const SchemaVersion = 2
 
 // Scenario kinds.
@@ -33,10 +25,7 @@ const (
 const (
 	// StatusGolden means verify treats any diff as a failure.
 	StatusGolden = "golden"
-	// StatusReference means the snapshot is recorded from the Python oracle for
-	// documentation only; verify reports diffs but does not fail on them. Used
-	// for behaviour the Go port is specified to diverge on (e.g. lab.ext, which
-	// PORT_SPEC §0.3 defers to post-1.0).
+
 	StatusReference = "reference"
 )
 
@@ -146,7 +135,6 @@ type Scenario struct {
 	// Kathara dispatches the startup commands with detach=True
 	// (DockerMachine.py:555), so lstart returning says nothing about them
 	// having finished, let alone about the kernel having settled.
-	//
 	// This is deliberately opt-in per scenario rather than a global default:
 	// a blanket delay would change what every existing golden records, and the
 	// scenarios that need it are the ones whose note says why.

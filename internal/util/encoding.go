@@ -1,17 +1,3 @@
-// This file covers the encoding half of utils.py: utils.convert_win_2_linux
-// and the binaryornot `is_binary` heuristic it gates on. Together they decide
-// which lab files get their UTF-8 BOM stripped and their line endings
-// collapsed on the way into a device, and which are shipped through byte for
-// byte. A misclassification here silently corrupts a startup script, so the
-// Python behaviour is reproduced exactly rather than approximated; see
-// docs/port/SPIKES/encoding.md for the parity analysis and the open items.
-//
-// The oracle is binaryornot 0.6.0, the release `pip install kathara==3.8.3`
-// resolves today (its dependency is `binaryornot>=0.4.4`). That release
-// classifies by file extension, magic prefix and a trained decision tree over
-// byte statistics. It is NOT the 1024-byte translate-table heuristic of
-// binaryornot 0.4.4, which src/requirements.txt pins and which cannot be
-// ported at all because its verdict depends on chardet's confidence score.
 package util
 
 import (
@@ -56,18 +42,6 @@ func inRanges(rs []byteRange, b byte) bool {
 // ---------------------------------------------------------------------------
 
 // ConvertWin2Linux is utils.convert_win_2_linux(filename) — the read-mode half.
-//
-// A file the binary sniff calls text is decoded as UTF-8 with the BOM stripped
-// and its line endings normalised to LF, then re-encoded; anything else (a
-// binary file, or a text-looking file that is not valid UTF-8, e.g. latin-1 or
-// UTF-16) is returned verbatim. Python distinguishes "no result" (write mode)
-// from "empty result" via Optional[bytes]; in read mode a result is always
-// produced, so this returns []byte and never nil without an error — an empty
-// file yields an empty, non-nil slice (NILABILITY.tsv, convert_win_2_linux).
-//
-// Errors mirror Python's: the stat/read behind the binary sniff propagates,
-// and so does a failure of the verbatim fallback read. A UTF-8 decode failure
-// is not an error — it is the fallback trigger.
 func ConvertWin2Linux(path string) ([]byte, error) {
 	binary, err := IsBinary(path)
 	if err != nil {
@@ -94,16 +68,6 @@ func ConvertWin2Linux(path string) ([]byte, error) {
 // ConvertWin2LinuxInPlace is utils.convert_win_2_linux(filename, write=True) —
 // the mutating half, used by Machine.pack_data on every file copied into the
 // hostlab tar.
-//
-// Only a file the sniff calls text AND that decodes as UTF-8 is rewritten
-// (BOM-less, LF-only, UTF-8). For every other file this is a silent no-op:
-// Python returns a bare None and leaves the bytes alone.
-//
-// PARITY WART: Python performs the rewrite inside the same blanket
-// `except Exception`, so a failed write — read-only file, full disk — is
-// swallowed too and the caller packs the un-normalised file without ever
-// learning. That is reproduced here (the error is deliberately dropped at the
-// marked line). SPIKES/encoding.md OQ-E4 proposes diverging.
 func ConvertWin2LinuxInPlace(path string) error {
 	binary, err := IsBinary(path)
 	if err != nil {
@@ -127,21 +91,6 @@ func ConvertWin2LinuxInPlace(path string) error {
 // "utf-8-sig" codec in universal-newline text mode, read it, and re-encode as
 // UTF-8. ok is false when that would have raised UnicodeDecodeError, i.e. when
 // the file is not valid UTF-8 and Python would fall through to the raw read.
-//
-// Two Python details are load-bearing:
-//
-//   - "utf-8-sig" strips exactly one leading BOM. A BOM anywhere else, and a
-//     second consecutive BOM, survive as U+FEFF.
-//   - text mode defaults to newline=None, i.e. universal newlines, so the
-//     decoder has already turned every CRLF *and every lone CR* into LF before
-//     Python's own `.replace("\n\r", "\n").replace("\r\n", "\n")` runs. That
-//     replace chain is therefore dead code — no CR can reach it — and lone CRs
-//     are normalised despite root-utils.md line 475 claiming they survive.
-//     TestReplaceChainIsDeadCode pins this.
-//
-// Because the decoded text is re-encoded straight back to UTF-8 and the only
-// edit is an ASCII-range newline rewrite, the whole round trip is expressible
-// on the bytes; no decode step is needed.
 func normalizeText(path string) ([]byte, bool, error) {
 	raw, err := os.ReadFile(path)
 	if err != nil {
@@ -182,10 +131,6 @@ func normalizeNewlines(b []byte) []byte {
 
 // IsBinary is binaryornot.check.is_binary(filename), extension check included
 // (Kathara calls it with the default check_extensions=True).
-//
-// Order matters and is surprising: the extension is consulted *before* the
-// file is opened, so an empty file called "x.bin" is binary while an empty
-// file called "x.txt" is text.
 func IsBinary(path string) (bool, error) {
 	if HasBinaryExtension(path) {
 		return true, nil
@@ -207,10 +152,6 @@ func IsBinary(path string) (bool, error) {
 }
 
 // HasBinaryExtension is binaryornot.helpers.has_binary_extension.
-//
-// The extension is taken with pathlib's `Path.suffix` semantics, which are not
-// filepath.Ext's: a dotfile such as ".bashrc" has no suffix in pathlib, and a
-// trailing-dot name such as "dump." has none either.
 func HasBinaryExtension(path string) bool {
 	ext := strings.TrimLeft(strings.ToLower(pathlibSuffix(path)), ".")
 	_, ok := binaryExtensions[ext]
@@ -218,9 +159,6 @@ func HasBinaryExtension(path string) bool {
 }
 
 // pathlibSuffix reproduces pathlib.PurePath.suffix:
-//
-//	name = self.name; i = name.rfind('.')
-//	return name[i:] if 0 < i < len(name) - 1 else ''
 func pathlibSuffix(path string) string {
 	name := filepath.Base(path)
 	if name == "." || name == string(filepath.Separator) {
@@ -234,11 +172,6 @@ func pathlibSuffix(path string) string {
 }
 
 // IsBinaryString is binaryornot.helpers.is_binary_string.
-//
-// Three stages, in this order: empty is text, a known magic prefix is binary,
-// otherwise the trained decision tree decides. Note that several of the magic
-// prefixes are two bytes ("BM" for bmp, "MZ" for dos exe), so ordinary English
-// prose starting with those letters is classified binary.
 func IsBinaryString(chunk []byte) bool {
 	if len(chunk) == 0 {
 		return false
@@ -261,10 +194,7 @@ func hasKnownBinarySignature(chunk []byte) bool {
 
 // computeBinaryFeatures is binaryornot.helpers._compute_features. The index
 // comments are that function's docstring; the tree in encoding_tree.go
-// addresses these slots positionally, so the order is a hard contract.
-//
-// Callers must not pass an empty chunk: Python divides by len(chunk) here and
-// relies on is_binary_string having already short-circuited.
+// addresses these slots positionally, so the order is significant.
 func computeBinaryFeatures(chunk []byte) [binaryFeatureCount]float64 {
 	var f [binaryFeatureCount]float64
 	n := len(chunk)
@@ -474,11 +404,6 @@ func utf32Decodes(chunk []byte, little bool) bool {
 // cjkDecodes answers chunk.decode(<one of gb2312/big5/shift_jis/euc-jp/euc-kr>)
 // without raising, using the accept tables lifted from CPython's own codecs by
 // tools/vectorcheck/gen_encoding_tables.py.
-//
-// CPython's multibyte decoders are single-pass and never backtrack: the lead
-// byte commits to a sequence length, and the sequence then either maps to a
-// character or raises. A truncated trailing sequence raises too, so running
-// off the end is a reject.
 func cjkDecodes(chunk []byte, lead *[256]uint8, trail map[byte][]byteRange, trail3 map[byte]map[byte][]byteRange) bool {
 	for i := 0; i < len(chunk); {
 		b := chunk[i]

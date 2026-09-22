@@ -3,7 +3,7 @@
   "name": "err-lab-ext",
   "kind": "dry",
   "status": "reference",
-  "note": "lab.ext fixture. Recorded in dry mode so lab.ext is parsed but no host bridge or VLAN interface is created. ExternalLink is DEFERRED post-1.0 (PORT_SPEC 0.3): the Go build is expected to fail here with FeatureNotAvailable, so drift against this snapshot is reported, not fatal.",
+  "note": "lab.ext fixture. Recorded in dry mode so lab.ext is parsed but no host bridge or VLAN interface is created. The Go build does not support ExternalLink and is expected to fail with FeatureNotAvailable, so drift against this snapshot is reported, not fatal.",
   "lab_dir": "<LABDIR>",
   "flags": [],
   "probes": [],

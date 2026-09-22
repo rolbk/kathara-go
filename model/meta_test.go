@@ -9,8 +9,6 @@ import (
 	"github.com/KatharaFramework/kathara-go/kerrors"
 )
 
-// TestAddMetaSysctl is EXPECTATIONS-core.md §1 "add_meta — sysctl (8)" plus the
-// int-coercion corners the oracle turned up.
 func TestAddMetaSysctl(t *testing.T) {
 	t.Parallel()
 
@@ -57,9 +55,6 @@ func TestAddMetaSysctl(t *testing.T) {
 		{name: "shallow key", in: "net.foo=1", wantErr: true},
 		{name: "space before equals", in: "net.a.b =5", wantErr: true},
 
-		// DIVERGENCES: isnumeric accepts these and int() rejects them, so
-		// Python dies with an uncaught ValueError (vector
-		// labconf/sysctl_double_dash_crash).
 		{name: "double dash", in: "net.a.b=--5", wantValueErr: `invalid literal for int() with base 10: '--5'`},
 		{name: "superscript", in: "net.a.b=²", wantValueErr: `invalid literal for int() with base 10: '²'`},
 		{name: "vulgar fraction", in: "net.a.b=½", wantValueErr: `invalid literal for int() with base 10: '½'`},
@@ -104,7 +99,6 @@ func TestAddMetaSysctl(t *testing.T) {
 	}
 }
 
-// TestAddMetaEnv is EXPECTATIONS-core.md §1 "add_meta — env (5)".
 func TestAddMetaEnv(t *testing.T) {
 	t.Parallel()
 
@@ -158,8 +152,6 @@ func TestAddMetaEnv(t *testing.T) {
 	}
 }
 
-// TestAddMetaPort is EXPECTATIONS-core.md §1 "add_meta — port (6)" plus the two
-// uncaught unpack crashes (vectors labconf/port_two_slashes, port_two_colons).
 func TestAddMetaPort(t *testing.T) {
 	t.Parallel()
 
@@ -225,11 +217,6 @@ func TestAddMetaPort(t *testing.T) {
 	}
 }
 
-// TestAddMetaUlimit is EXPECTATIONS-core.md §1 "add_meta — ulimit (10)".
-//
-// All three failure messages name the OPTION and not the device: they end in
-// "on `ulimit`." whatever the device is called, which is DIVERGENCES.md 2, a
-// Python bug ported verbatim.
 func TestAddMetaUlimit(t *testing.T) {
 	t.Parallel()
 
@@ -301,9 +288,6 @@ func TestAddMetaUlimit(t *testing.T) {
 	}
 }
 
-// TestAddMetaVolume is EXPECTATIONS-core.md §1 "add_meta — volume (6)". The key
-// is os.path.abspath of the host path, so the test pins it against a known
-// working directory.
 func TestAddMetaVolume(t *testing.T) {
 	if runtime.GOOS == "windows" {
 		// Volume host paths go through the platform abspath, exactly as
@@ -325,8 +309,7 @@ func TestAddMetaVolume(t *testing.T) {
 		{name: "relative host path", in: ".|/test", key: dir, want: Volume{"/test", "ro"}},
 		{name: "rw mode", in: "/h|/test|rw", key: "/h", want: Volume{"/test", "rw"}},
 		{name: "ro mode", in: "/h|/test|ro", key: "/h", want: Volume{"/test", "ro"}},
-		// SYNTHESIS C-6: rx is accepted by the code even though no test in
-		// 3.8.3 exercises it.
+
 		{name: "rx mode", in: "/h|/test|rx", key: "/h", want: Volume{"/test", "rx"}},
 		// Empty segments are filtered out before the count is taken.
 		{name: "empty middle segment", in: "a||b", key: filepath.Join(dir, "a"), want: Volume{"b", "ro"}},
@@ -358,7 +341,7 @@ func TestAddMetaVolume(t *testing.T) {
 			wantMsg: "The volume specified `/h|/g|rw|extra` is not in a valid format: <host_path>|<guest_path>|[<mode>]",
 		},
 		{
-			// Note the trailing space, which ERROR_CODES.md §0.2 freezes.
+
 			name: "invalid mode", in: "/h|/g|xx",
 			wantMsg: "Invalid volume mode `xx` on `/h` mount. Allowed values are ro, rw, rx. ",
 		},
@@ -431,10 +414,6 @@ func TestAddMetaBool(t *testing.T) {
 	}
 }
 
-// TestAddMetaReturnsPreviousValue is EXPECTATIONS-core.md §1 "add_meta —
-// overwrite return value (4)". LabParser warns about a duplicate meta only when
-// this reports one, so the presence flag — not the value — is what matters
-// (NILABILITY.tsv:8). Values are the oracle's P2 run.
 func TestAddMetaReturnsPreviousValue(t *testing.T) {
 	t.Parallel()
 
@@ -522,15 +501,13 @@ func TestAddMetaReturnsPreviousValue(t *testing.T) {
 				t.Errorf("AddMeta(exec, %q) = %v, %v, %v", cmd, prev, existed, err)
 			}
 		}
-		// Append order is boot order (ORDERING.tsv model/Machine.py:163).
+
 		if got := machine.ExecCommands(); len(got) != 2 || got[0] != "echo one" || got[1] != "echo two" {
 			t.Errorf("ExecCommands() = %v", got)
 		}
 	})
 }
 
-// TestAddMetaKeepsInsertionPosition pins Python's dict semantics: overwriting a
-// key does not move it (ORDERING.tsv model/Machine.py:182,200,261,286).
 func TestAddMetaKeepsInsertionPosition(t *testing.T) {
 	t.Parallel()
 	_, machine := newTestMachine(t)
@@ -550,8 +527,6 @@ func TestAddMetaKeepsInsertionPosition(t *testing.T) {
 	}
 }
 
-// TestAddMetaUnknownGoesToExtras pins the accepted ruling: an unknown meta name
-// is stored, not rejected (`model/Machine.py:289`, PACKAGE_GRAPH.md §0).
 func TestAddMetaUnknownGoesToExtras(t *testing.T) {
 	t.Parallel()
 	_, machine := newTestMachine(t)
@@ -570,14 +545,6 @@ func TestAddMetaUnknownGoesToExtras(t *testing.T) {
 	}
 }
 
-// TestAddMetaContainerNames pins the choice DIVERGENCES.md 42 records. The six
-// plural container names have no case in `add_meta`, so 3.8.3 falls into the
-// generic branch and OVERWRITES the container with the string — poisoning the
-// device — while returning the container as the previous value.
-//
-// `LabParser` passes `pc1[sysctls]=x` straight through (its `arg` class is
-// `\w+`), so the return matters: the first such line must report "there was a
-// previous value" and make the parser warn.
 func TestAddMetaContainerNames(t *testing.T) {
 	t.Parallel()
 
@@ -659,8 +626,6 @@ func TestMetaScalars(t *testing.T) {
 	}
 }
 
-// TestUpdateMeta is EXPECTATIONS-core.md §1 "update_meta (8)" plus the gates
-// that differ per key (oracle P19).
 func TestUpdateMeta(t *testing.T) {
 	t.Parallel()
 

@@ -3,7 +3,6 @@
 // them — `filepath.Join` runs Clean, so it turns ntpath's `join("C:", "")` =
 // "C:" into "C:." and collapses the `..` segments ntpath leaves alone, and
 // `filepath.Split` keeps the separator on the head that ntpath strips.
-//
 // They are compiled on every platform, not only on Windows, so the vectors
 // recorded from the oracle's `ntpath` (a pure-Python module that imports
 // anywhere) can be checked by the test suite on the host that runs it.

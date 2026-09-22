@@ -40,7 +40,7 @@ func whichTree(t *testing.T) string {
 }
 
 // TestPyWhich is the shutil.which port against the oracle. Four of the rows
-// are the reason the port exists rather than a call to exec.LookPath: a "."
+// are the reason this implementation exists rather than a call to exec.LookPath: a "."
 // PATH entry answers "./tool" and not "tool", a doubled separator survives
 // into the answer, and a `..` through a missing directory fails the access
 // check instead of being folded away — all three because posixpath.join does

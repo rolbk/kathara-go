@@ -1,5 +1,8 @@
 /dist/
 /bin/
+# Local recordings from the maintainer parity tool are useful while diagnosing
+# a change, but are not source artifacts.
+/tools/cmdparity/recordings/
 *.test
 # `go build ./...` drops main-package binaries in the repository root.
 /kathara
@@ -14,8 +17,8 @@ __pycache__/
 # harness here, and a cross-compiled one is worse than none: it is either the
 # wrong platform for the recording host (`Exec format error`) or a stale build
 # whose normalization rules predate the goldens it would re-record. The harness
-# is always run from source — `go run ./tools/goldenharness` (README), or CI's
-# `go build -o bin/goldenharness` — so nothing should ship a prebuilt one.
+# is always built from its module directory into `bin/` (see its README), so
+# nothing should ship a prebuilt copy from the source directory.
 tools/goldenharness/goldenharness
 tools/goldenharness/goldenharness.exe
 

@@ -44,13 +44,6 @@ func kubernetesApp(t *testing.T) *testApp {
 	return a
 }
 
-// TestConfigSetEveryKeyRoundTrips is PORT_SPEC §3.2 item 2 over the whole
-// schema: every key of both addons, written by `config set`, read back off the
-// file, and reported in the E12 `set` envelope (JSON_CLI_CONTRACT.md §3.12).
-//
-// `terminal` is exercised with TMUX because that is the one value
-// `Setting.check_terminal` short-circuits (Setting.py:288); any other answer
-// depends on which emulators the host has installed, which a unit test may not.
 func TestConfigSetEveryKeyRoundTrips(t *testing.T) {
 	cases := []struct {
 		key        string
@@ -157,13 +150,6 @@ func TestConfigGetEveryKey(t *testing.T) {
 	}
 }
 
-// TestConfigValidationFailures is the whole of §3.2 item 4 seen from the
-// scriptable side: every restriction `settings/` carries, rejected here with
-// its own message, exit 1, and the frozen `Settings` code of
-// JSON_CLI_CONTRACT.md §3.12.
-//
-// Nothing in this table is a check `cmd/kathara` implements; each row fails
-// inside `settings`, which is the point.
 func TestConfigValidationFailures(t *testing.T) {
 	cases := []struct {
 		name          string
@@ -259,8 +245,6 @@ func TestConfigGetUnknownKey(t *testing.T) {
 	}
 }
 
-// TestConfigListEnvelope pins the §3.12 `list` shape: the twelve base keys in
-// `_to_dict` order, then the active addon's, which is the file's own order.
 func TestConfigListEnvelope(t *testing.T) {
 	a := kubernetesApp(t)
 	code, out := runConfigJSON(t, a, "list")
@@ -417,7 +401,7 @@ func TestConfigResetManagerType(t *testing.T) {
 	}
 }
 
-// TestConfigResetUnknownKey keeps `reset` on the same error contract as the
+// TestConfigResetUnknownKey keeps `reset` on the same error path as the
 // other two key-taking operations.
 func TestConfigResetUnknownKey(t *testing.T) {
 	a := newTestApp(t)
@@ -458,7 +442,7 @@ func TestConfigSetManagerTypeResetsTheAddon(t *testing.T) {
 	}
 }
 
-// TestConfigSetDockerConfigJSONTakesAPath is the OQ-12c ruling: the word after
+// TestConfigSetDockerConfigJSONTakesAPath is the docker_config_json path behavior: the word after
 // the key is a *path*, and what is stored is the base64 of CPython's
 // re-serialization of that file — which is what the settings screen's
 // `store_b64_docker_json_callback` produced.
@@ -484,9 +468,6 @@ func TestConfigSetDockerConfigJSONTakesAPath(t *testing.T) {
 	}
 }
 
-// TestConfigUsageErrors is the argparse contract of JSON_CLI_CONTRACT.md §5.5:
-// a usage failure is exit 2 with the text on stderr and nothing on stdout, in
-// every format.
 func TestConfigUsageErrors(t *testing.T) {
 	cases := [][]string{
 		{},
@@ -544,8 +525,6 @@ func TestConfigHumanOutput(t *testing.T) {
 	}
 }
 
-// TestConfigHumanErrorLine is ERROR_CODES.md §0.1's human rendering, which is
-// the same `CRITICAL (SettingsError) …` line the rest of the CLI produces.
 func TestConfigHumanErrorLine(t *testing.T) {
 	a := newTestApp(t)
 	spec := commandTable(a.app)["config"]
@@ -561,8 +540,6 @@ func TestConfigHumanErrorLine(t *testing.T) {
 	}
 }
 
-// TestConfigRejectsJSONL keeps `config` off the streaming format
-// (JSON_CLI_CONTRACT.md §1.1: json only).
 func TestConfigRejectsJSONL(t *testing.T) {
 	a := newTestApp(t)
 	spec := commandTable(a.app)["config"]
@@ -597,9 +574,6 @@ func TestConfigSetSavesTheWholeFile(t *testing.T) {
 	}
 }
 
-// TestSettingsCheckIsSkippedForConfig is the PROPOSED-DIVERGENCES entry
-// "`kathara config` is exempt from the startup settings check": `config` is how
-// a broken file gets repaired, so the check may not run in front of it.
 func TestSettingsCheckIsSkippedForConfig(t *testing.T) {
 	a := newTestApp(t)
 	a.checkSettings = func() error { return kerrors.ErrSettingsManagerType }

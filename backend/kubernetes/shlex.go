@@ -4,14 +4,6 @@
 // the entrypoint (`:463`), the `args` meta (`:466`) and a string `command`
 // handed to `exec` (`:815`); `join` for the `binary` field of
 // `MachineBinaryError` (`:917`).
-//
-// The `split` half is character-for-character the copy `backend/docker` carries
-// (PACKAGE_GRAPH.md §1.2 gives neither backend an edge to the other, so the two
-// are pinned separately against the same CPython source; shlex_test.go here
-// runs the same vectors). The `join` half has no Docker counterpart: the Docker
-// backend reads the missing binary out of the OCI regexp's capture groups,
-// while Megalos never sees the binary name and quotes the whole command
-// instead.
 
 package kubernetes
 
@@ -42,23 +34,6 @@ const (
 
 // ShlexSplit is `shlex.split(s)`: POSIX word splitting with quote and escape
 // handling, comments off.
-//
-// The rules, each of which is observable through `kathara exec pc1 "…"`:
-//
-//   - Runs of `shlex.whitespace` separate words and are otherwise discarded.
-//   - `'…'` is literal: no escape has any meaning inside it, so `'a\b'` is the
-//     four characters `a\b`.
-//   - `"…"` honours the backslash, but only in front of a `"` or another `\`
-//     ([shlexEscapedQuotes] + [shlexEscape]); `"a\b"` keeps both characters.
-//   - Outside quotes, `\` takes the next character literally, whatever it is,
-//     including a newline — CPython does NOT do line continuation here.
-//   - An empty quoted string is a real, empty word.
-//   - `#` is not a comment: `shlex.split` passes `comments=False`.
-//
-// Errors are the two ValueErrors CPython raises, with its exact messages:
-// "No closing quotation" for an unterminated quote and "No escaped character"
-// for a trailing backslash. Both carry [kerrors.ErrValue], which is where
-// ERROR_CODES.md §1.2 buckets a bare ValueError.
 func ShlexSplit(s string) ([]string, error) {
 	var (
 		tokens  []string
@@ -134,13 +109,6 @@ func ShlexSplit(s string) ([]string, error) {
 
 // ShlexJoin is `shlex.join(argv)`:
 // `' '.join(shlex.quote(arg) for arg in argv)`.
-//
-// It is what fills `MachineBinaryError.binary` on this backend
-// (`KubernetesMachine.py:917`), which is a field the JSON envelope names and
-// kathara-lab-checker reads (PORT_SPEC §4.3) — so the whole command, quoted,
-// lands where the Docker backend puts a bare executable name. That asymmetry is
-// Python's: Megalos learns only that the exec failed, never which word of it
-// was missing.
 func ShlexJoin(argv []string) string {
 	quoted := make([]string, 0, len(argv))
 	for _, arg := range argv {
@@ -150,15 +118,6 @@ func ShlexJoin(argv []string) string {
 }
 
 // shlexQuote is `shlex.quote(s)` (CPython `Lib/shlex.py`):
-//
-//	if not s: return "''"
-//	if _find_unsafe(s) is None: return s
-//	return "'" + s.replace("'", "'\"'\"'") + "'"
-//
-// where `_find_unsafe` is `re.compile(r'[^\w@%+=:,./-]', re.ASCII).search`. The
-// `re.ASCII` flag is the detail worth spelling out: `\w` is `[A-Za-z0-9_]` and
-// nothing else, so a non-ASCII letter is UNSAFE and gets quoted — `é` comes
-// back as `'é'` (oracle-verified).
 func shlexQuote(s string) string {
 	if s == "" {
 		return "''"
@@ -184,9 +143,6 @@ func shlexUnsafe(r rune) bool {
 // commandWords resolves a [kathara.Command] to the argv the API server gets:
 // the words as given for the list form, and [ShlexSplit] of the line for the
 // string form.
-//
-// This is `command = shlex.split(command) if type(command) is str else command`
-// (`KubernetesMachine.py:815`) — Kathará splits, the SDK never does.
 func commandWords(command kathara.Command) ([]string, error) {
 	if argv, isList := command.Argv(); isList {
 		return argv, nil

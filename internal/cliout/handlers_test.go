@@ -37,14 +37,14 @@ func TestProgressBarFinalRowMatchesRich(t *testing.T) {
 	}
 }
 
-// TestProgressBarUnfinishedRowCarriesSpinner is the parity bug the Layer A
-// blind-spot pass exposed. `SpinnerColumn` blanks its cell on a *finished*
+// TestProgressBarUnfinishedRowCarriesSpinner covers a compatibility case found
+// during Layer A review. `SpinnerColumn` blanks its cell on a *finished*
 // task — rich's `task.finished` is `completed >= total` — not on the last
 // render, so a display torn down with items still outstanding prints a braille
 // frame even at stop. This renderer blanked the cell whenever the render was
 // the final one, which emitted a spinner-free row exactly where Python emits a
 // time-derived one: NORMALIZATION.md §6.6 drops Python's row and would have
-// kept this port's, so a failure part-way through a deploy diffed against a
+// kept the Go row, so a failure part-way through a deploy diffed against a
 // golden that has no such line.
 func TestProgressBarUnfinishedRowCarriesSpinner(t *testing.T) {
 	var buf bytes.Buffer

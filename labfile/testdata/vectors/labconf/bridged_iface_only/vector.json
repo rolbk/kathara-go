@@ -1,5 +1,5 @@
 {
   "description": "bridged_iface is stored as a STRING, so check() compares '1' against the integer position.",
-  "notes": "EXPECTATIONS-core said bridged_iface can legally fill an interface hole; it cannot.",
+  "notes": "bridged_iface cannot fill an interface hole.",
   "parser": "lab"
 }

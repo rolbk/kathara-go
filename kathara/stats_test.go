@@ -10,12 +10,6 @@ import (
 	"github.com/KatharaFramework/kathara-go/kerrors"
 )
 
-// TestStatsSamplingIsDeferred is PORT_SPEC §0.3 plus §0.4's rule that a
-// deferred feature says so instead of quietly doing nothing.
-//
-// `update()` is the resource-sampling half of both stats interfaces; the
-// inventory half is the partial exception that stays, and it is refreshed by
-// taking another step on the stream rather than by calling this.
 func TestStatsSamplingIsDeferred(t *testing.T) {
 	t.Parallel()
 
@@ -46,9 +40,7 @@ func TestStatsSamplingIsDeferred(t *testing.T) {
 			if feature.Feature != FeatureStatsSampling {
 				t.Errorf("feature = %q, want %q", feature.Feature, FeatureStatsSampling)
 			}
-			// ERROR_CODES.md §1.4 makes the Python client raise
-			// NotSupportedError for this code, which is the class the error
-			// wraps.
+
 			if !errors.Is(err, kerrors.ErrNotSupported) {
 				t.Errorf("Update() = %v, want it to wrap ErrNotSupported", err)
 			}
@@ -59,13 +51,6 @@ func TestStatsSamplingIsDeferred(t *testing.T) {
 	}
 }
 
-// TestMachineStatsJSONShape is JSON_CLI_CONTRACT.md §3.0.2: the machine
-// inventory object, six canonical keys, order pinned to Python's `to_dict()`
-// source order restricted to the inventory fields, with `assigned_node` as the
-// one additive Kubernetes key after `image`.
-//
-// encoding/json emits struct fields in declaration order, so this test is what
-// stops a field being moved.
 func TestMachineStatsJSONShape(t *testing.T) {
 	t.Parallel()
 
@@ -116,10 +101,6 @@ func TestMachineStatsJSONShape(t *testing.T) {
 		t.Errorf("Kubernetes inventory =\n%s\nwant\n%s", got, want)
 	}
 
-	// A Pending pod: `spec.node_name` is None, nothing filters the listing by
-	// phase (`KubernetesMachine.py:983-1007`), so `"assigned_node":null` is
-	// real Python output and §3.0.2 pins the key as "(string|null)". This is
-	// the case an `omitempty` pointer could not spell.
 	pending := k8s
 	pending.Status = nil
 	pending.Image = "N/A"
@@ -213,9 +194,6 @@ func TestOptionalString(t *testing.T) {
 	})
 }
 
-// TestMachineStatsOmitsDeferredFields is the other half of §3.0.2: the
-// resource-sampling keys are *absent* in 1.0, not null and not zero. A client
-// that sees `"cpu_usage":"-"` would think sampling shipped.
 func TestMachineStatsOmitsDeferredFields(t *testing.T) {
 	t.Parallel()
 
@@ -245,11 +223,6 @@ func TestMachineStatsOmitsDeferredFields(t *testing.T) {
 // `to_dict()` keys in `to_dict()` order, with the two backends' disjoint tails
 // omitted rather than nulled. Nothing in 1.0 renders it — no CLI command reads
 // `get_links_stats` — so this is the shape the API hands an embedder.
-//
-// One key is the port's: `KubernetesLinkStats.to_dict()` has no `user` at all
-// (`KubernetesLinkStats.py:40-45`) and this type emits a null one before
-// `vxlan_id`, because one Go struct stands in for two Python classes.
-// DIVERGENCES.md #53; the assertion below is what pins it.
 func TestLinkStatsJSONShape(t *testing.T) {
 	t.Parallel()
 

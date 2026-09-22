@@ -1,18 +1,4 @@
-"""Layer B conformance vectors, run against **this** parser.
-
-`PORT_SPEC.md` §7.1: "The Layer B conformance vectors (§9) run against both
-implementations in the same CI job and are what keeps them honest." This module
-is the client's half of that, wired into the ordinary unit-test run so
-``pytest python/tests`` (what `.github/workflows/golden.yml` invokes) covers it.
-
-The vectors and the serialiser are **not** reimplemented here: the corpus is
-``labfile/testdata/vectors`` and the serialiser is
-``tools/vectorcheck/check_python.py``, the same module the v3.8.3 authority run
-uses. Only the `Kathara` import resolution differs, which is the entire point.
-
-``tools/vectorcheck/check_client.py`` is the standalone form of this, for
-running the corpus by hand with a `--filter`.
-"""
+"""Layer B conformance vectors, run against **this** parser."""
 
 import os
 import sys
@@ -52,9 +38,8 @@ class VectorConformanceTest(unittest.TestCase):
         resolved = os.path.abspath(os.path.dirname(Kathara.__file__))
         expected = os.path.join(_support.PACKAGE_ROOT, "Kathara")
         if resolved != expected:
-            # Not a skip: a misconfigured environment that silently drops the
-            # whole Layer B suite is exactly the failure the merge gate ("zero
-            # tests skipped or deleted", `PORT_SPEC.md` §11) is written against.
+            # Resolving another installation would silently test the wrong
+            # package, so treat it as a failure rather than a skip.
             raise AssertionError(
                 "Kathara resolves to %s, not the client at %s; the run would not test this package"
                 % (resolved, expected)

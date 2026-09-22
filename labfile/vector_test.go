@@ -19,20 +19,17 @@ import (
 	"github.com/KatharaFramework/kathara-go/model"
 )
 
-// The Layer B parser conformance corpus (PORT_SPEC §9 Layer B).
-//
 // `testdata/vectors` is the shared truth of the Go parsers and the Python
 // client's: `tools/vectorcheck/check_python.py` replays every vector against
 // real Kathará 3.8.3 and this replays the same vectors, through the same
 // serialisation, against `labfile`. Neither implementation gets to win an
-// argument with a vector — the schema and the recorded surprises are in
+// argument with a vector — the schema and compatibility notes are in
 // `testdata/vectors/README.md`.
-//
 // The corpus is the proof of this package. A behaviour that is not pinned here
-// is not ported.
+// is not implemented.
 
 // vectorCount is the size of the frozen corpus. Asserting it stops a vector
-// from being silently skipped by a discovery bug or a stray rename.
+// from being silently skipped by a discovery regression or a stray rename.
 const vectorCount = 142
 
 // vectorsRoot is where the corpus lives, relative to this package.
@@ -40,14 +37,6 @@ const vectorsRoot = "testdata/vectors"
 
 // metadataFields are the five `LAB_*` scalars whose Python `None` and `""` the
 // port cannot tell apart.
-//
-// NILABILITY.tsv:25 freezes `Lab.description/version/author/email/web` as plain
-// Go strings with `"" = absent`, because every Python reader tests them for
-// truthiness. `LAB_DESCRIPTION=` therefore stores `""` where an omitted line
-// stores `None`, and the two are one value here. Both sides of the comparison
-// are folded onto `""` so the vectors keep asserting everything else about
-// them. `name` is NOT in this list: `Lab.HasName` keeps that tri-state, because
-// the scenario hash depends on it.
 var metadataFields = []string{"description", "version", "author", "email", "web"}
 
 // vectorSpec is `vector.json`.
@@ -69,8 +58,8 @@ func (v vectorSpec) confName() string {
 }
 
 // orderSensitive defaults to true; only the FolderParser glob-order cases,
-// whose order Python leaves to the filesystem, turn it off (README SURPRISE
-// 21).
+// whose order Python leaves to the filesystem, turn it off (compatibility note
+// 21 in the vector README).
 func (v vectorSpec) orderSensitive() bool { return v.OrderSensitive == nil || *v.OrderSensitive }
 
 func TestVectors(t *testing.T) {
@@ -92,7 +81,7 @@ func TestVectors(t *testing.T) {
 			// CPython itself behaves differently: directory-open error shapes
 			// differ, and volume host paths pass through ntpath.abspath
 			// ("/h" -> "C:\h") in both implementations. Windows runtime is
-			// out of 1.0 scope; a Windows oracle recording is queued post-1.0.
+			// not covered until a Windows oracle recording is available.
 			if runtime.GOOS == "windows" {
 				for _, linuxShaped := range []string{
 					"conf_name_is_directory",
@@ -132,10 +121,6 @@ func TestVectors(t *testing.T) {
 // runVector materialises the vector's lab directory into a fresh temporary
 // one, drives the entry point the vector names and returns the result in the
 // vector JSON shape.
-//
-// Any failure replaces the whole document with an `error` object, which is what
-// the Python runner's `except Exception` does — a vector never reports a
-// partial success next to an error.
 func runVector(t *testing.T, dir string, spec vectorSpec, warnings *warningCollector) map[string]any {
 	t.Helper()
 
@@ -248,11 +233,6 @@ func materialize(t *testing.T, dir string, spec vectorSpec, dest string) {
 
 // pythonClass is the vector's `error.class`, i.e. Python's
 // `type(e).__name__`.
-//
-// The ported crashes carry it explicitly — [model.PyRuntimeError] for the
-// TypeError a lab.conf `bridged_iface` raises, [UnicodeDecodeError] for a line
-// that is not UTF-8 — and everything else is a taxonomy error, whose class is
-// the human label of its code (ERROR_CODES.md §0.1).
 func pythonClass(err error) string {
 	var runtime *model.PyRuntimeError
 	if errors.As(err, &runtime) {
@@ -381,7 +361,8 @@ func serializeMeta(meta *model.Meta) map[string]any {
 	// Everything that is not one of the six containers, in its parsed type:
 	// `privileged` and `bridged` are real bools because add_meta runs them
 	// through strtobool, and every other lab.conf meta is a string — `ipv6`,
-	// `mem`, `cpus` and `num_terms` included (README SURPRISE 7).
+	// `mem`, `cpus` and `num_terms` included (compatibility note 7 in the
+	// vector README).
 	extra := map[string]any{}
 	for _, e := range meta.Scalars() {
 		extra[e.Name] = e.Value.Value()

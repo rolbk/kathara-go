@@ -1,7 +1,3 @@
-// This file is `cli/command/WipeCommand.py` and `cli/command/CheckCommand.py`
-// (CLI_SURFACE.md §12): the two commands that talk to the backend without a
-// scenario.
-
 package main
 
 import (
@@ -49,9 +45,6 @@ func newWipeCmd(a *app) *commandSpec {
 func runWipe(ctx context.Context, a *app, f *wipeFlags) (int, error) {
 	if !f.force {
 		if a.console.Format.Machine() {
-			// §1.5: destruction is the one action that must be explicit, and
-			// `--force` already exists as the explicit form, so json mode
-			// requires it rather than guessing.
 			return 1, kerrors.ErrWipeConfirmationRequired
 		}
 		ok, err := a.prompter.Confirm("Are you sure to wipe Kathara?")
@@ -93,7 +86,7 @@ func runWipe(ctx context.Context, a *app, f *wipeFlags) (int, error) {
 	if a.console.Format.Machine() {
 		// `-a` is what `Manager.wipe` is about to act on, so it is what the
 		// inventory has to be read with: a current-user-only listing would
-		// under-report E4's `machines` for exactly the invocation that removes
+		// under-report `machines` for exactly the invocation that removes
 		// everyone's devices.
 		running, err := snapshotMachines(ctx, mgr, kathara.LabRef{}, f.all)
 		if err != nil {
@@ -131,11 +124,6 @@ func newCheckCmd(a *app) *commandSpec {
 }
 
 // runCheck is `CheckCommand.run`.
-//
-// Its exit contract is the one exception JSON_CLI_CONTRACT.md §3.7 pins: a
-// failed container test emits the **report** envelope with `ok:false` and exits
-// 1, not an error envelope, because Python prints its report and `return 1`
-// without raising.
 func runCheck(ctx context.Context, a *app) (int, error) {
 	a.console.PrintPanel("System Check", cliout.PanelOptions{Justify: cliout.JustifyCenter})
 
@@ -161,9 +149,7 @@ func runCheck(ctx context.Context, a *app) (int, error) {
 		return 1, err
 	}
 	a.console.Print(expandTabs(fmt.Sprintf("Manager version is:\t\t%s", report.ManagerVersion)))
-	// Python prints "Python version is:" here. The Go binary has no
-	// interpreter to name; JSON_CLI_CONTRACT.md §3.7 calls the key
-	// `runtime_version` and asks human mode for "the analogous Go line".
+	// Python prints "Python version is:" here.
 	a.console.Print(expandTabs(fmt.Sprintf("Go version is:\t\t\t%s", report.RuntimeVersion)))
 	a.console.Print(expandTabs(fmt.Sprintf("Kathara version is:\t\t%s", report.KatharaVersion)))
 	a.console.Print(expandTabs(fmt.Sprintf("Operating System version is:\t%s", report.OSVersion)))
@@ -204,14 +190,6 @@ const checkTabSize = 8
 // (`rich/text.py`, called from `Console.render_str`). Python therefore never
 // emits a tab, and neither does this — the labels are 14, 19 and 28 columns
 // wide, and every value starts at column 32.
-//
-// Writing the raw tab, as an earlier build did, is not the same output: a
-// terminal with tab stops other than eight lays the report out differently,
-// and `kathara check > file` leaves a control character in the file where the
-// oracle leaves spaces.
-//
-// Only the ASCII labels of `runCheck` reach this, so a column is a byte; rich
-// measures in cells, which would differ only for a wide or combining rune.
 func expandTabs(s string) string {
 	if !strings.ContainsRune(s, '\t') {
 		return s

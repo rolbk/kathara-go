@@ -57,8 +57,6 @@ func TestShlexSplit(t *testing.T) {
 	}
 }
 
-// TestShlexSplitErrors pins CPython's two ValueError messages, which
-// ERROR_CODES.md §1.2 buckets to `Value`.
 func TestShlexSplitErrors(t *testing.T) {
 	for _, vector := range loadShlexVectors(t).SplitErrors {
 		t.Run(vector.Input, func(t *testing.T) {

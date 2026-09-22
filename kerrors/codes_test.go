@@ -10,8 +10,6 @@ import (
 	kerr "github.com/KatharaFramework/kathara-go/kerrors"
 )
 
-// TestRegistrySize pins the size of the frozen registry: 33 Python-class codes,
-// 8 builtin codes, 2 passthrough codes and 3 port-new codes (ERROR_CODES.md §1).
 func TestRegistrySize(t *testing.T) {
 	if len(kerr.AllCodes) != 46 {
 		t.Errorf("len(AllCodes) = %d, want 46", len(kerr.AllCodes))
@@ -135,20 +133,16 @@ func TestHumanLabels(t *testing.T) {
 		kerr.CodeKubernetesConfigMap:       "KubernetesConfigMapError",
 		kerr.CodeSyntax:                    "SyntaxError",
 		kerr.CodeValue:                     "ValueError",
-		// IOError is an alias of OSError in Python 3, so both parser sites
-		// observe OSError (ERROR_CODES.md §8.1).
+
 		kerr.CodeOS:            "OSError",
 		kerr.CodeFileNotFound:  "FileNotFoundError",
 		kerr.CodeFileExists:    "FileExistsError",
 		kerr.CodeNotADirectory: "NotADirectoryError",
 		kerr.CodePermission:    "PermissionError",
 		kerr.CodeConnection:    "ConnectionError",
-		// Python re-raises the SDK exceptions untranslated (§1.3).
 		kerr.CodeDockerAPI:     "APIError",
 		kerr.CodeKubernetesAPI: "ApiException",
-		// Port-new codes (§1.4): the label is spelled out per row, without the
-		// Error suffix. FeatureNotAvailable follows the §1.4 row rather than
-		// the passing mention in JSON_CLI_CONTRACT.md §5.6 (see RULINGS.md).
+
 		kerr.CodeFeatureNotAvailable:  "FeatureNotAvailable",
 		kerr.CodeInternalError:        "InternalError",
 		kerr.CodeConfirmationRequired: "ConfirmationRequired",
@@ -182,9 +176,6 @@ func TestHumanLabels(t *testing.T) {
 	}
 }
 
-// TestHumanLabelsAreInjective pins the ERROR_CODES.md §4 requirement that the
-// JSON code maps 1:1 onto a Python exception class: the Python client resolves
-// the class from the code, so two codes may never share a human label.
 func TestHumanLabelsAreInjective(t *testing.T) {
 	byLabel := make(map[string]string, len(kerr.AllCodes))
 	for _, code := range kerr.AllCodes {
@@ -196,8 +187,6 @@ func TestHumanLabelsAreInjective(t *testing.T) {
 	}
 }
 
-// TestCodeFallback checks the exhaustive fallback of §1.4: anything the
-// registry does not map is InternalError, and a nil error has no code.
 func TestCodeFallback(t *testing.T) {
 	if got := kerr.Code(nil); got != "" {
 		t.Errorf("Code(nil) = %q, want empty", got)
@@ -224,9 +213,6 @@ func TestCodeThroughWrapping(t *testing.T) {
 	}
 }
 
-// TestCodeThroughJoin checks the §6 rule the JSON envelope relies on: the code
-// of a joined batch is the code of its first coded element, which for a
-// canonically ordered batch is the primary error.
 func TestCodeThroughJoin(t *testing.T) {
 	primary := kerr.NewMachineBinary("frr", "pc1")
 	sibling := kerr.NewDockerAPI(errCause)
@@ -257,9 +243,6 @@ func TestCodeDoesNotSeeCauseFirst(t *testing.T) {
 	}
 }
 
-// parseError stands in for labfile.ParseError, which reports its own code so
-// that the parser package can join the registry without kerrors importing it
-// (ERROR_CODES.md §0.3).
 type parseError struct {
 	File string
 	Line int

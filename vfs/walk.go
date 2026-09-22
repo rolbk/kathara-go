@@ -10,11 +10,6 @@ import (
 // Walk is fs.WalkDir over an FS, rooted at root.
 // Both OSDir and Memory implement fs.ReadDirFS with name-sorted output, so the
 // traversal order is deterministic on both.
-//
-// It classifies every entry by its DIRECTORY-ENTRY TYPE, which does not follow
-// symlinks — so a link to a directory is reported as a plain, non-directory
-// entry and is not descended into. That is NOT what pyfilesystem's walker
-// does; anything porting an `fs.walk` / `copy_fs` call wants [WalkFollow].
 func Walk(fsys FS, root string, fn fs.WalkDirFunc) error {
 	if fsys == nil {
 		return ErrNoFilesystem
@@ -29,38 +24,6 @@ func Walk(fsys FS, root string, fn fs.WalkDirFunc) error {
 // WalkFollow is [Walk] with pyfilesystem's classification: every entry is
 // typed by a STAT, which follows symlinks, instead of by its directory-entry
 // type, which does not.
-//
-// This is what `fs.walk` actually does. `OSFS._scandir` builds each Info from
-// `os.DirEntry.is_dir()`, and that follows by default, so a symlink to a
-// directory is a directory to the walker and its target is descended into.
-// Oracle-verified on a tree holding `linkdir -> real/` and `linkfile ->
-// plain.txt`: `Walker().dirs()` returns `['/linkdir', '/real']` and
-// `copy_fs` writes `/linkdir/f.txt` alongside `/real/f.txt`.
-//
-// [Walk] cannot express that: a symlink's DirEntry reports `ModeSymlink`, so
-// `IsDir()` is false and a caller that splits entries into "directories" and
-// "files" hands the link to its file path, where reading it fails with
-// [ErrFileExpected] partway through the tree. It is the same asymmetry
-// [CopyDirectory] documents on the host side.
-//
-// The stat failures are split the way CPython's `DirEntry.is_dir()` splits
-// them, and the difference is oracle-visible:
-//
-//   - "does not exist" is swallowed and the entry stays a non-directory, which
-//     is how a BROKEN symlink behaves — `is_dir()` is False for it, the walker
-//     lists it among the files, and the failure surfaces later when the copy
-//     opens it (`ResourceNotFound`). ENOTDIR arrives here as [fs.ErrNotExist]
-//     too, since osDir maps it that way for the file operations.
-//   - every other error propagates, which is how a symlink LOOP behaves:
-//     `is_dir()` raises `OSError: [Errno 40] Too many levels of symbolic
-//     links` and pyfilesystem re-raises it as `fs.errors.OperationFailed`,
-//     aborting the walk. Verified live with a mutual `a -> b -> a` pair.
-//
-// A self-referencing link (`self -> .`) therefore terminates without any cycle
-// detection — which Python has none of either: the path grows one component
-// per level until the kernel refuses it with ELOOP. Go hits that on the stat
-// where Python hits it on the following scandir, so the erroring path can
-// differ by one component; the errno, and the abort, are the same.
 func WalkFollow(fsys FS, root string, fn fs.WalkDirFunc) error {
 	if fsys == nil {
 		return ErrNoFilesystem

@@ -1,20 +1,4 @@
-"""Locate the bundled Kathará Go binary.
-
-`PORT_SPEC.md` §7.3: the wheels ship the binary in the wheel's
-``.data/scripts/`` directory, so ``pip install kathara`` drops it straight onto
-``PATH`` next to the interpreter (the ``ruff``/``uv`` pattern). Resolution
-order, first hit wins:
-
-1. ``$KATHARA_BIN`` — an explicit override, also what the test-suite uses to
-   point the client at a fake binary;
-2. the scripts directory of the running interpreter (``sysconfig`` schemes),
-   which is where the wheel put it — checked before ``PATH`` so a venv install
-   is never shadowed by a system-wide Kathará;
-3. ``PATH`` (``shutil.which``), which covers editable installs, distro packages
-   and developers running the client against a hand-built binary;
-4. ``Kathara/bin/kathara`` inside the installed package, the layout sketched in
-   spec §7.1, kept as a fallback for anyone repackaging that way.
-"""
+"""Locate the bundled Kathará Go binary."""
 
 import os
 import shutil
@@ -103,16 +87,7 @@ def find_binary() -> Optional[str]:
 
 
 def binary_path() -> str:
-    """Return the absolute path of the Kathará binary.
-
-    Returns:
-        str: The absolute path of the binary.
-
-    Raises:
-        FileNotFoundError: If the binary cannot be found. The message is the one
-            Kathará v3.8.3 used when it could not locate itself
-            (`ERROR_CODES.md` §2, code `FileNotFound`).
-    """
+    """Return the absolute path of the Kathará binary."""
     global _cached
 
     # The override is re-read every call: tests flip it between invocations.

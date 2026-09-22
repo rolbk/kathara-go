@@ -57,12 +57,6 @@ func decodeFixture(t *testing.T, s string) []rawContainer {
 	return raw
 }
 
-// TestBuildContainerRecordsUlimitOrder pins ORDERING.tsv's ruling that
-// HostConfig.Ulimits is deterministic in Python and golden-visible: it comes out
-// of `meta['ulimits']`, a dict fed in lab.conf line order
-// (`Machine.py:236` -> `DockerMachine.py:229`). Sorting the array by name — what
-// the harness used to do — deleted that assertion: a port that emitted the two
-// entries in the wrong order still passed.
 func TestBuildContainerRecordsUlimitOrder(t *testing.T) {
 	n := NewNormalizer()
 	recs, failures := buildContainerRecords(decodeFixture(t, inspectFixture),

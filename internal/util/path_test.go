@@ -15,11 +15,6 @@ import (
 // build_tree). The layout matters — dangling links, a two-node loop, a
 // self-link, relative and absolute targets, a link to a link — because each
 // one exercises a different branch of posixpath.realpath.
-//
-// The root is created directly under /tmp rather than with t.TempDir because
-// two of the recorded cases are sensitive to how deep it is: `{ROOT}/../..`
-// resolved to "/" for the oracle, and `..` resolved to the root's parent. A
-// t.TempDir root sits one level deeper and both would move.
 func probeTree(t *testing.T) (root string, parent string) {
 	t.Helper()
 
@@ -120,7 +115,7 @@ func TestRealPathAndGetAbsolutePath(t *testing.T) {
 	}
 }
 
-// TestGetAbsolutePathSymlinkLoopReturnsRelative pins the ported bug named in
+// TestGetAbsolutePathSymlinkLoopReturnsRelative pins compatibility behavior for
 // [GetAbsolutePath]: for a symlink loop the function returns the link's raw
 // target, which for a relative target is not an absolute path at all. Every
 // other input class returns an absolute one.

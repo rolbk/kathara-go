@@ -22,14 +22,6 @@ type shlexVector struct {
 
 // TestShlexSplitMatchesCPython is the whole of [ShlexSplit]'s contract: 55
 // inputs run against the oracle and compared token for token.
-//
-// The corpus is chosen to cover every branch of CPython's state machine and the
-// four call sites' real shapes — `/bin/bash -c 'echo hi'` is the shell label,
-// `cat /tmp/EOS` is the startup probe, `sh -c "cd /x && tar c ."` is the shape
-// of the startup script — plus the traps a hand-written splitter falls into:
-// escapes inside single quotes (literal), escapes inside double quotes (only in
-// front of `"` and `\`), an empty quoted string as a real token, `#` not being
-// a comment, and the two ValueErrors.
 func TestShlexSplitMatchesCPython(t *testing.T) {
 	raw, err := os.ReadFile("testdata/shlex.json")
 	if err != nil {

@@ -73,11 +73,7 @@ class Lab(LabFilesystemMixin):
 
         self.shared_path: Optional[str] = None
 
-        # The string the hash was derived from. Port-new and read-only: the Go
-        # binary can only be told a *name* (`lstart --from-archive --name`,
-        # JSON_CLI_CONTRACT.md §7.2), and it recomputes the hash from it, so the
-        # client has to hand back the exact string that was hashed here or a
-        # path-derived scenario would be deployed under a different identity.
+        # Keep the original hash input so an archived lab preserves its identity.
         self._hash_seed: str = path if self._name is None else self._name
 
         self.hash: str = utils.generate_urlsafe_hash(self._hash_seed)
@@ -101,7 +97,7 @@ class Lab(LabFilesystemMixin):
     def hash_seed(self) -> Optional[str]:
         """The string `hash` was derived from: the name, or the constructor path.
 
-        Port-new (see `__init__`). Read-only.
+        Added by the Go-backed client (see `__init__`). Read-only.
         """
         return self._hash_seed
 

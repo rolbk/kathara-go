@@ -5,11 +5,6 @@
 // (`:803`). docker-py applies it again to the string form of an exec command
 // (`utils.split_command`), which is why `_wait_startup_execution`'s literal
 // `"cat /tmp/EOS"` becomes two words.
-//
-// It is 20 lines of state machine and one behaviour that a naive splitter gets
-// wrong in a way users notice, so it is spelled out rather than approximated:
-// `strings.Fields` would leave the quotes in and split inside them
-// (docker-backend.md gotcha 22).
 
 package docker
 
@@ -40,26 +35,6 @@ const (
 
 // ShlexSplit is `shlex.split(s)`: POSIX word splitting with quote and escape
 // handling, comments off.
-//
-// The rules, each of which is observable through `kathara exec pc1 "…"`:
-//
-//   - Runs of `shlex.whitespace` separate words and are otherwise discarded.
-//   - `'…'` is literal: no escape has any meaning inside it, so `'a\b'` is the
-//     four characters `a\b`.
-//   - `"…"` honours the backslash, but only in front of a `"` or another `\`
-//     ([shlexEscapedQuotes] + [shlexEscape]); `"a\b"` keeps both characters.
-//   - Outside quotes, `\` takes the next character literally, whatever it is,
-//     including a newline — CPython does NOT do line continuation here.
-//   - An empty quoted string is a real, empty word: a bare pair of single
-//     quotes splits to one token, the empty string, which is why passing that
-//     pair to `exec` runs a program with an empty name.
-//   - `#` is not a comment: `shlex.split` passes `comments=False`.
-//
-// Errors are the two ValueErrors CPython raises, with its exact messages
-// (oracle-verified): "No closing quotation" for an unterminated quote and
-// "No escaped character" for a trailing backslash. Both carry
-// [kerrors.ErrValue], which is where ERROR_CODES.md §1.2 buckets a bare
-// ValueError.
 func ShlexSplit(s string) ([]string, error) {
 	var (
 		tokens  []string
@@ -137,11 +112,6 @@ func ShlexSplit(s string) ([]string, error) {
 // commandWords resolves a [kathara.Command] to the argv the daemon gets:
 // the words as given for the list form, and [ShlexSplit] of the line for the
 // string form.
-//
-// This is `command = shlex.split(command) if type(command) is str else command`
-// (`DockerMachine.py:803`) — Kathará splits, the SDK never does. The
-// distinction is observable and `kathara.Command` keeps the union alive for
-// exactly this call.
 func commandWords(command kathara.Command) ([]string, error) {
 	if argv, isList := command.Argv(); isList {
 		return argv, nil

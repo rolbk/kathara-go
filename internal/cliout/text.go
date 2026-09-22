@@ -38,13 +38,6 @@ const (
 
 // CellLen is `rich.cells.cell_len`: the number of terminal columns a string
 // occupies.
-//
-// rich consults a generated table of East Asian widths; this consults
-// `golang.org/x/text/width`, which is generated from the same Unicode data
-// file. The two disagree only on codepoints rich's table calls -1 (control
-// characters), which cannot appear in a Kathará scenario name, a lab.conf
-// value or an exception message — every one of those is either ASCII text or a
-// UTF-8 identifier the parsers already validated.
 func CellLen(s string) int {
 	n := 0
 	for _, r := range s {
@@ -139,8 +132,6 @@ func rstripRunes(r []rune) []rune {
 // divideLine is `rich._wrap.divide_line` with `fold=True`, which is the only
 // value the CLI reaches (`overflow` is never set on a panel's Text, so it is
 // rich's DEFAULT_OVERFLOW, "fold").
-//
-// The returned offsets are rune indices to break the line at.
 func divideLine(text []rune, w int) []int {
 	var breaks []int
 	cellOffset := 0
@@ -210,12 +201,6 @@ func padTo(s string, w int) string {
 // `Segment.set_shape` padding that `Console.render_lines` applies: the result
 // is the block of lines a renderable contributes, each measuring exactly width
 // cells.
-//
-// The three steps, in rich's order (`rich/text.py:1229-1250`):
-//
-//  1. split on newlines, blanks kept;
-//  2. per line, break at [divideLine]'s offsets and `rstrip_end` each piece;
-//  3. justify, then pad to width.
 func Wrap(text string, w int, justify Justify) []string {
 	if w <= 0 {
 		return nil

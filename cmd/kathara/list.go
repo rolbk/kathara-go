@@ -1,7 +1,3 @@
-// This file is `cli/command/ListCommand.py` (CLI_SURFACE.md §11) and
-// `cli/command/LinfoCommand.py` (§4), the latter as the deferred-feature stub
-// PORT_SPEC §0.3 and ERROR_CODES.md §5 require.
-
 package main
 
 import (
@@ -40,8 +36,6 @@ func newListCmd(a *app) *commandSpec {
 	cmd.meta("name", "DEVICE_NAME")
 	registerFormat(cmd, false)
 
-	// Note: NO mutually-exclusive groups here. Unlike `linfo`, `-w` and `-n`
-	// combine freely (CLI_SURFACE.md §11).
 	return &commandSpec{
 		Name: "list",
 		Cmd:  cmd,
@@ -63,8 +57,7 @@ func runList(ctx context.Context, a *app, f *listFlags) (int, error) {
 		}
 	}
 	if f.watch && a.console.Format.Machine() {
-		// Streaming inventory is reserved for the post-1.0 stats envelope
-		// (JSON_CLI_CONTRACT.md §1.1, A13).
+
 		return 2, errUsage("argument -w/--watch: not allowed with --format %s", a.console.Format)
 	}
 
@@ -84,10 +77,6 @@ func runList(ctx context.Context, a *app, f *listFlags) (int, error) {
 
 	entries, err := stream.Next(ctx)
 	if errors.Is(err, io.EOF) {
-		// `create_lab_table` answers `StopIteration` with `None` and
-		// `ListCommand.run` still returns 0 (CLI_SURFACE.md §13). The human
-		// table is skipped; json still owes its one object, which is the empty
-		// inventory.
 		a.console.Emit(cliout.ListResult{})
 		return 0, nil
 	}
@@ -102,15 +91,6 @@ func runList(ctx context.Context, a *app, f *listFlags) (int, error) {
 // runListWatch is `ListCommand._get_live_info`: redraw the table until the
 // stream ends, which is Python's `while True` around `create_lab_table` broken
 // by the `if not table` guard.
-//
-// That guard fires on `StopIteration` and on nothing else — an empty snapshot
-// still renders the "No Devices Found" block — so the loop's only clean exit is
-// the end of the stream, io.EOF here, and it exits 0.
-//
-// The alternate-screen `rich.live.Live` is not reproduced. A live screen that
-// hides the scrollback is the class of UI PORT_SPEC §3.3 is rebuilding, the
-// mode has no golden, and redrawing in place keeps the output usable when
-// stdout is a pipe. DIVERGENCES.md records it.
 func runListWatch(ctx context.Context, a *app, stream kathara.MachinesStatsStream) (int, error) {
 	for {
 		entries, err := stream.Next(ctx)
@@ -135,13 +115,6 @@ func runListWatch(ctx context.Context, a *app, stream kathara.MachinesStatsStrea
 }
 
 // newLinfoCmd is the `linfo` stub.
-//
-// The command stays in the table and in the help for parity — the whitelist of
-// `src/kathara.py:97` names it, so removing it would change the Ctrl-C
-// behaviour of a command that no longer exists — and its full flag surface is
-// declared so that a script's `linfo -c -n pc1` still fails on the *feature*
-// and not on an unknown flag. It answers `FeatureNotAvailable`, exit 1
-// (ERROR_CODES.md §5).
 func newLinfoCmd(a *app) *commandSpec {
 	cmd := newParser("linfo")
 	flags := cmd.Flags()
@@ -171,10 +144,7 @@ func newLinfoCmd(a *app) *commandSpec {
 	cmd.meta("name", "DEVICE_NAME")
 	flags.BoolVarP(&topology, "topology", "t", false, "Get running topology info")
 	cmd.exclusiveGroup("name", "topology")
-	// `--format` is declared even though every invocation fails: JSON_CLI_CONTRACT.md
-	// §1.1 pins linfo as "errors in every mode", and §5.6 registers `linfo` as a
-	// `feature` token of the JSON error envelope — which only exists in the machine
-	// formats. Without the flag that registration could never be reached.
+
 	registerFormat(cmd, false)
 
 	return &commandSpec{

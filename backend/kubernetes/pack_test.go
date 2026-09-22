@@ -35,11 +35,6 @@ func TestPackDataEmptyDevice(t *testing.T) {
 
 // TestPackDataRoundTrip is the archive's content: the device's own files under
 // `hostlab/<name>/` and the four scenario files under `hostlab/`.
-//
-// The BYTES are not compared against Python's — its archive carries
-// `time.time()` mtimes and a gzip header that differ run to run (SYNTHESIS
-// §1.4, "goldens compare extracted content") — so what is checked is what comes
-// out of the untar.
 func TestPackDataRoundTrip(t *testing.T) {
 	s := testSettings()
 	lab := newTestLab(t, s)
@@ -171,13 +166,9 @@ func untarContents(t *testing.T, data []byte) map[string]string {
 // which follows symlinks, so a device folder holding `linkdir -> real/` ships
 // the target's contents at `linkdir/`. Oracle-verified: `copy_fs` writes
 // `/linkdir/f.txt` next to `/real/f.txt`.
-//
-// With the non-following walk the link was classified as a plain file and the
-// read failed with `path should be a file`, aborting the deploy.
 func TestPackDataFollowsSymlinkedDirectory(t *testing.T) {
 	if runtime.GOOS == "windows" {
-		// Symlink creation needs a privilege there, and Windows runtime is
-		// out of 1.0 scope (PORT_SPEC §0.3).
+
 		t.Skip("symlinks are not creatable unprivileged on Windows")
 	}
 	root := t.TempDir()

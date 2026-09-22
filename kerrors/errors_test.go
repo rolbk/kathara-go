@@ -11,9 +11,6 @@ import (
 	kerr "github.com/KatharaFramework/kathara-go/kerrors"
 )
 
-// TestIsClassSentinel checks that every catalog error answers errors.Is for its
-// class sentinel: the Go API surface of PORT_SPEC §4.3 is matched that way, and
-// kathara-lab-checker's Python classes map onto the same identities.
 func TestIsClassSentinel(t *testing.T) {
 	cases := []struct {
 		name  string
@@ -59,8 +56,7 @@ func TestIsClassSentinel(t *testing.T) {
 		{"connection", kerr.ErrKubeConfigUnreadable, kerr.ErrConnection},
 		{"docker-api", kerr.NewDockerAPI(errCause), kerr.ErrDockerAPI},
 		{"kubernetes-api", kerr.NewKubernetesAPI(errCause), kerr.ErrKubernetesAPI},
-		// FeatureNotAvailable wraps NotSupported: the Python client raises
-		// NotSupportedError for it (ERROR_CODES.md §1.4).
+
 		{"feature-not-available", kerr.NewFeatureNotAvailable(kerr.FeatureLinfo), kerr.ErrNotSupported},
 		{"confirmation-required", kerr.ErrWipeConfirmationRequired, kerr.ErrConfirmationRequired},
 	}
@@ -77,9 +73,6 @@ func TestIsClassSentinel(t *testing.T) {
 	}
 }
 
-// TestAsDataBearingTypes checks the errors.As half of the ERROR_CODES.md §0.1
-// contract: the same value answers both spellings, and the JSON fields are
-// readable from the struct.
 func TestAsDataBearingTypes(t *testing.T) {
 	t.Run("binary", func(t *testing.T) {
 		var e *kerr.BinaryError
@@ -149,7 +142,7 @@ func TestAsDataBearingTypes(t *testing.T) {
 		if !errors.As(kerr.NewOptionUlimitRange("pc1", "nofile=-2"), &e) {
 			t.Fatal("errors.As = false")
 		}
-		// DIVERGENCES.md 2: the message names the meta, the field names the device.
+
 		if e.Machine != "pc1" || e.Option != "ulimit" {
 			t.Errorf("fields = %q/%q", e.Machine, e.Option)
 		}
@@ -196,9 +189,6 @@ func TestAsDataBearingTypes(t *testing.T) {
 	})
 }
 
-// TestAsContextWrappers checks the JSON fields the context wrappers attach
-// (ERROR_CODES.md §1.1 "JSON fields" column) and that they leave the message
-// of the wrapped error untouched.
 func TestAsContextWrappers(t *testing.T) {
 	t.Run("machine", func(t *testing.T) {
 		var e *kerr.MachineError
@@ -279,9 +269,6 @@ func TestWrapNil(t *testing.T) {
 	}
 }
 
-// TestZeroValueWrappersRender checks that a hand-built wrapper with no inner
-// error still renders instead of panicking: nothing on a Python-reachable path
-// may panic (PORT_SPEC §10).
 func TestZeroValueWrappersRender(t *testing.T) {
 	cases := []struct {
 		name string
@@ -305,8 +292,6 @@ func TestZeroValueWrappersRender(t *testing.T) {
 	}
 }
 
-// TestStdlibSentinels pins the ERROR_CODES.md §1.2 / §0.2 wrapping of the
-// stdlib filesystem errors, including the deliberately inverted FileExists.
 func TestStdlibSentinels(t *testing.T) {
 	cases := []struct {
 		name   string
@@ -362,8 +347,6 @@ func TestCauseStaysReachable(t *testing.T) {
 	}
 }
 
-// TestIsThroughJoinAndWrapping is the PORT_SPEC §4.3 promise that errors.Is
-// still matches through errors.Join and through fmt.Errorf.
 func TestIsThroughJoinAndWrapping(t *testing.T) {
 	binary := kerr.NewMachineBinary("frr", "pc1")
 	notRunning := kerr.NewMachineNotRunning("pc2")
@@ -423,10 +406,6 @@ func TestJoined(t *testing.T) {
 	}
 }
 
-// TestJoinedDoesNotAliasTheJoin is the regression for the §6.2 workflow: the
-// caller sorts the batch into canonical order, and that must not reorder the
-// join itself — Code reads the join's first element to pick the primary error
-// of §6.3, i.e. the `code` of the JSON envelope.
 func TestJoinedDoesNotAliasTheJoin(t *testing.T) {
 	primary := kerr.NewMachineBinary("frr", "pc1")
 	sibling := kerr.NewMachineNotRunning("pc2")
@@ -443,13 +422,6 @@ func TestJoinedDoesNotAliasTheJoin(t *testing.T) {
 	}
 }
 
-// TestOwnMultiUnwrapTypesAreMarked is the invariant Joined depends on: a type
-// of this package that carries its class through Unwrap() []error must be
-// marked so Joined refuses it. Were one to slip through, the ERROR_CODES.md
-// §6.5 `errors` array would gain a phantom entry — the class sentinel, whose
-// text is internal identity, rendered as a sibling error. Go cannot enumerate a
-// package's types, so this walks every value the package can hand out: the
-// whole §2 catalog plus one instance of every exported struct type.
 func TestOwnMultiUnwrapTypesAreMarked(t *testing.T) {
 	values := []error{
 		&kerr.MachineError{Machine: "pc1", Op: "deploy", Err: errCause},
@@ -491,13 +463,6 @@ func TestOwnMultiUnwrapTypesAreMarked(t *testing.T) {
 	}
 }
 
-// TestJoinedTreatsMultiWrapAsBatch pins the one shape that is not errors.Join
-// yet reaches Joined as a batch: since Go 1.20 an fmt.Errorf with more than one
-// %w also implements Unwrap() []error, and the stdlib makes the two
-// indistinguishable. The port builds batches only with errors.Join
-// (ERROR_CODES.md §6.2); this test records what a multi-%w would do — the
-// formatted text is dropped and the elements become the §6.5 `errors` array —
-// so the CLI layer cannot trip on it unknowingly.
 func TestJoinedTreatsMultiWrapAsBatch(t *testing.T) {
 	first := kerr.NewMachineBinary("frr", "pc1")
 	second := kerr.NewMachineNotRunning("pc2")
@@ -546,9 +511,6 @@ func TestGenericBuilders(t *testing.T) {
 	}
 }
 
-// TestSentinelTextIsIdentityOnly pins the ERROR_CODES.md §0.3 rule: a sentinel
-// renders an internal identity string, never a Python message. Anything user
-// visible starts with a capital letter and ends in punctuation; these do not.
 func TestSentinelTextIsIdentityOnly(t *testing.T) {
 	sentinels := []error{
 		kerr.ErrInvocation, kerr.ErrSettings, kerr.ErrDaemonConnection, kerr.ErrMachineNotFound,
@@ -570,8 +532,6 @@ func TestSentinelTextIsIdentityOnly(t *testing.T) {
 	}
 }
 
-// TestUnwrapReachesClassSentinel documents the shape ERROR_CODES.md §0.1
-// freezes: a data-bearing type unwraps to its class sentinel.
 func TestUnwrapReachesClassSentinel(t *testing.T) {
 	if got := errors.Unwrap(kerr.NewMachineBinary("frr", "pc1")); got != kerr.ErrMachineBinary {
 		t.Errorf("Unwrap = %v, want ErrMachineBinary", got)

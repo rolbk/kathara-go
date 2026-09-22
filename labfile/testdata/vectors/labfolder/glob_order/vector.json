@@ -1,5 +1,5 @@
 {
-  "description": "OQ-15a: glob order is filesystem-dependent. Devices are compared as a set, not a sequence.",
+  "description": "Glob order is filesystem-dependent. Devices are compared as a set, not a sequence.",
   "dirs": [
     "m_delta",
     "m_alpha",

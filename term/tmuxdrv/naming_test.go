@@ -11,7 +11,7 @@ import (
 func TestSessionName(t *testing.T) {
 	t.Parallel()
 
-	// The OQ-9 ruling, pinned: named scenarios by name, unnamed by hash,
+	// The session naming behavior, pinned: named scenarios by name, unnamed by hash,
 	// everything prefixed, everything sanitized the way tmux would sanitize it.
 	tests := []struct {
 		name    string
@@ -45,7 +45,7 @@ func TestSessionNameIsAlwaysAcceptable(t *testing.T) {
 	t.Parallel()
 
 	// Whatever SessionName emits must survive checkSessionName, otherwise
-	// EnsureSession would reject names the port itself produced.
+	// EnsureSession would reject names this implementation itself produced.
 	inputs := []string{"", "lab", "a.b:c", "  ", "-x", "\t\n", "ünïcode"}
 	for _, in := range inputs {
 		name := SessionName(in, "fallbackhash")

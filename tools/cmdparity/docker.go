@@ -354,11 +354,6 @@ func normSlice(n *Normalizer, s []string) []string {
 	return out
 }
 
-// normalizeCaps strips the `CAP_` prefix the Go Docker SDK prepends
-// client-side inside ContainerCreate. docker-py sends the bare names, so the
-// daemon stores two different spellings of the same capability set for the two
-// implementations. DIVERGENCES.md #106 records it as an SDK-forced divergence
-// that port code cannot reach, so it is normalized away rather than reported.
 func normalizeCaps(s []string) []string {
 	if len(s) == 0 {
 		return nil

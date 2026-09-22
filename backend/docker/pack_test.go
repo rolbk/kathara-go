@@ -291,7 +291,7 @@ func TestPackDataEmptinessIgnoresTheExclusion(t *testing.T) {
 
 // TestPackDataIsDeterministic is what the fixed epoch buys: Python's archive
 // carries `time.time()` in every header and a random temp-file name in the gzip
-// header, so two of its runs already differ; the port's do not.
+// header, so two of its runs already differ; this implementation's do not.
 func TestPackDataIsDeterministic(t *testing.T) {
 	lab := newLabOnDisk(t)
 	writeLabFile(t, lab, "pc1/a.txt", "a")
@@ -383,9 +383,6 @@ func TestExtractTar(t *testing.T) {
 // Creating the file with the mode instead leaves it umask-masked — a 0o666
 // member comes out 0o644 under the usual 022 — and never touching the mtime
 // stamps every retrieved file with now.
-//
-// The directory pass runs LAST and in reverse name order, so a nested member
-// cannot leave its parent at the safe 0o700 `makedir` created it with.
 func TestExtractTarRestoresModesAndTimes(t *testing.T) {
 	if runtime.GOOS == "windows" {
 		// Asserts unix mode bits round-tripping through extraction; NTFS has
@@ -475,14 +472,9 @@ func symlinkInLab(t *testing.T, lab *model.Lab, target, linkName string) {
 // holding `linkdir -> real/` therefore ships the target's contents at
 // `linkdir/`, oracle-verified: `copy_fs` writes `/linkdir/f.txt` next to
 // `/real/f.txt` and `Walker().dirs()` reports `['/linkdir', '/real']`.
-//
-// With the non-following walk the link was classified as a plain file, the read
-// failed with `path should be a file`, and `lstart` aborted with a CRITICAL
-// InternalError after the container had already been created.
 func TestPackDataFollowsSymlinkedDirectory(t *testing.T) {
 	if runtime.GOOS == "windows" {
-		// Symlink creation needs a privilege there, and Windows runtime is
-		// out of 1.0 scope (PORT_SPEC §0.3).
+
 		t.Skip("symlinks are not creatable unprivileged on Windows")
 	}
 	lab := newLabOnDisk(t)

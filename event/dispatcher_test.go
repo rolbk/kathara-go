@@ -40,10 +40,6 @@ func noteOf[E Payload](r *recorder, tag string) func(E) error {
 // Ordering
 // ---------------------------------------------------------------------------
 
-// TestSubscribersRunInRegistrationOrder is ORDERING.tsv row 97: the callback
-// order is the append order of `self.events[event]`
-// (`event/EventDispatcher.py:85-86`). The oracle traces pin three subscribers;
-// this widens it to a count no hand-written trace would cover.
 func TestSubscribersRunInRegistrationOrder(t *testing.T) {
 	for _, n := range []int{1, 2, 3, 17, 200} {
 		t.Run(fmt.Sprintf("n=%d", n), func(t *testing.T) {
@@ -66,11 +62,6 @@ func TestSubscribersRunInRegistrationOrder(t *testing.T) {
 	}
 }
 
-// TestProgressBarThenTerminalOnMachineDeployed is ORDERING.tsv row 96 in the
-// shape this package owns: `machine_deployed` carries two subscribers in the
-// stock CLI — `HandleProgressBar.update` registered at `register.py:72`, then
-// `HandleMachineTerminal.run` at `register.py:81` — and the bar must advance
-// before the terminal window opens.
 func TestProgressBarThenTerminalOnMachineDeployed(t *testing.T) {
 	d := New()
 	rec := &recorder{}
@@ -127,9 +118,6 @@ func TestUnsubscribeFiresHooksInRegistrationOrder(t *testing.T) {
 
 var errBoom = errors.New("subscriber failed")
 
-// TestDispatchReturnsFirstErrorAndStops mirrors the exception that unwinds out
-// of `dispatch` with no try block around the loop (CONCURRENCY.tsv row 39):
-// later subscribers never run and the subscriber list is left alone.
 func TestDispatchReturnsFirstErrorAndStops(t *testing.T) {
 	d := New()
 	rec := &recorder{}
@@ -197,16 +185,6 @@ func TestUnsubscribeHookErrorKeepsTheEvent(t *testing.T) {
 // loop still finishes its hooks off the list it is holding, and then the outer
 // `del` raises. Go's `delete` is a silent no-op on a missing key, so the check
 // has to be written out.
-//
-// Oracle-probed on 3.8.3 with a subscriber whose `unregister` calls
-// `dispatcher.unregister("link_deployed")` once:
-//
-//	log        : ['hook:a', 'hook:a', 'hook:b', 'hook:b', "err:KeyError:'link_deployed'"]
-//	keys after : []
-//
-// Out of reach of the stock CLI — `register.py`'s hooks are all
-// `HandleProgressBar.finish`, which never touches the dispatcher — but not out
-// of reach of a library subscriber that cleans up after itself.
 func TestReentrantUnsubscribeFromAHookIsAKeyError(t *testing.T) {
 	d := New()
 	rec := &recorder{}
@@ -251,11 +229,6 @@ func TestReentrantUnsubscribeFromAHookIsAKeyError(t *testing.T) {
 // it was holding. A hook that unsubscribes and then subscribes again leaves a
 // fresh list under the key, the outer `del` finds it and removes it — taking
 // the new subscriber with it and raising nothing.
-//
-// Oracle-probed on 3.8.3:
-//
-//	log2       : ['hook:c', 'hook:c', 'no-error']
-//	keys after2: []
 func TestHookThatUnsubscribesAndSubscribesAgainDeletesTheFreshList(t *testing.T) {
 	d := New()
 	rec := &recorder{}
@@ -371,9 +344,6 @@ func TestZeroValueDispatcherWorks(t *testing.T) {
 	}
 }
 
-// TestNilDispatcherIsInert: a backend handed no dispatcher behaves like a
-// Python process that never called `register_cli_events()` — events go
-// nowhere — and above all never panics (PORT_SPEC §10).
 func TestNilDispatcherIsInert(t *testing.T) {
 	var d *Dispatcher
 	rec := &recorder{}
@@ -431,10 +401,6 @@ func TestDefaultIsTheSameDispatcher(t *testing.T) {
 // Concurrency
 // ---------------------------------------------------------------------------
 
-// TestConcurrentDispatchAndSubscribe is CONCURRENCY.tsv row 39: the per-item
-// events fire from deploy and undeploy workers and from the Kubernetes
-// watcher, while the `_started`/`_ended` events fire on the caller's
-// goroutine. Python leans on the GIL here; this must hold under -race.
 func TestConcurrentDispatchAndSubscribe(t *testing.T) {
 	d := New()
 	rec := &recorder{}

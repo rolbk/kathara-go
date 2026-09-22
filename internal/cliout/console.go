@@ -1,9 +1,3 @@
-// This file is the pair `foundation/cli/command/Command.console` (a
-// `rich.console.Console` over stdout) and the `RichHandler`
-// `logging.basicConfig` installs in `src/kathara.py:123-126`, joined into one
-// value because the port has to decide *per format* which of the two streams
-// each of them writes to (JSON_CLI_CONTRACT.md §1.2-§1.3).
-
 package cliout
 
 import (
@@ -22,7 +16,6 @@ import (
 // `COLUMNS=80` (NORMALIZATION.md §1).
 const DefaultWidth = 80
 
-// Format is the value of `--format` (JSON_CLI_CONTRACT.md §1.1).
 type Format string
 
 const (
@@ -93,18 +86,10 @@ func ParseLevel(name string) Level {
 
 // Console is where the CLI writes: `Command.console` and the logging handler at
 // once.
-//
-// The zero value is not usable; build one with [New]. It is not safe for
-// concurrent use on its own — the event subscribers that write through it run
-// on backend worker goroutines, so [Console.mu] guards every write.
 type Console struct {
 	// Out is stdout. In human mode it takes everything; in json/jsonl it
 	// takes the envelope and nothing else.
 	Out io.Writer
-	// Err is stderr. In human mode nothing this package writes goes here (the
-	// only Python writers of stderr are `exec`'s passthrough and argparse's
-	// usage errors, CLI_SURFACE.md §0.4); in json/jsonl it takes every log
-	// record and notice.
 	Err io.Writer
 	// Width is the console width panels and tables expand to.
 	Width int
@@ -115,14 +100,9 @@ type Console struct {
 	Format Format
 	// Level is the logging threshold.
 	Level Level
-	// Traceback is `debug_level == "EXCEPTION"`: the catch-all appends the
-	// error chain to the CRITICAL line (ERROR_CODES.md §0.1).
+
 	Traceback bool
 
-	// mu serializes writes. The progress subscribers are called from backend
-	// worker goroutines while the command's own goroutine prints panels
-	// (CONCURRENCY.tsv row 39), and Python got away without a lock only
-	// because of the GIL.
 	mu sync.Mutex
 }
 
@@ -190,23 +170,6 @@ func (c *Console) PrintPanel(message string, opts PanelOptions) {
 }
 
 // Log emits one `logging` record.
-//
-// Human mode reproduces `RichHandler`'s layout minus the *word* fold: the level
-// name left-aligned in eight columns, one space, then the message, with each
-// embedded newline starting a continuation row indented by the same nine
-// columns. Python additionally folds a long message into the remaining width;
-// the Layer A harness undoes exactly that (NORMALIZATION.md §6.3) because the
-// fold column depends on host paths inside the message, so an unfolded row is
-// the same recording and cannot drift with the console width.
-//
-// The nine-space indent on continuation rows is NOT optional: the harness
-// recognises a continuation by that exact gutter (`^ {9}\S`), so a message
-// carrying a newline — `LabParser`'s syntax error interpolates the raw line,
-// terminator included — would otherwise be recorded as two unrelated lines.
-//
-// json/jsonl mode sends the record to stderr with no gutter and no markup
-// (§1.3): a scripted client reads stdout for protocol and stderr for
-// diagnostics, and a level column is UI.
 func (c *Console) Log(level Level, format string, args ...any) {
 	if level < c.Level {
 		return

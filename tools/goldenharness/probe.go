@@ -13,14 +13,6 @@ import (
 // and either a sha256 (files) or a link target (symlinks). find output is
 // sorted in the C locale inside the container so the listing never depends on
 // readdir order.
-//
-// The mode/uid/gid triple is what `pack_data` actually shipped, not just the
-// bytes: `Machine.py:392`'s tar is built from the host tree and the bind mount
-// carries the host's ownership through, so a port that rewrote a mode or
-// dropped the setuid bit while producing identical content would otherwise be
-// invisible. `stat` is not given `-L`, so a symlink reports its own mode
-// rather than its target's. A `stat` that is missing or refuses the format
-// yields an empty triple rather than failing the walk.
 const fsTreeScript = `root="$1"
 [ -d "$root" ] || { echo "__MISSING__"; exit 0; }
 cd "$root" || exit 3
@@ -171,10 +163,6 @@ func (p *Prober) Probe(ctx context.Context, device, containerID string, sc *Scen
 // pinned by the lab, tokenizes the veth peer-ifindex suffix, then sorts the
 // lines. Interface order in the kernel dump follows ifindex, which is
 // host-global, and so is the peer index rendered as `eth1@if451`.
-//
-// An interface in `derived` has its address replaced *before* the generic
-// scrub, so the value never claims a keyed `<MACn>` ordinal — which also keeps
-// the ordinals of the other interfaces stable however the kernel's copy landed.
 func (p *Prober) normalizeBrLink(s string, derived map[string]bool) []string {
 	raw := strings.Split(strings.ReplaceAll(s, "\r\n", "\n"), "\n")
 	for i, l := range raw {

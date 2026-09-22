@@ -1,16 +1,3 @@
-// Package vfs is the filesystem abstraction that replaces pyfilesystem2
-// (PORT_SPEC §6, PACKAGE_GRAPH §0.2 #9).
-//
-// The package has no intra-project imports: it is a stdlib-only leaf, per
-// PACKAGE_GRAPH.md §1.2. In particular it must not import kerrors, so the
-// "no filesystem set" condition is raised as a package-local sentinel that the
-// model / cmd layers map onto the Invocation error code.
-//
-// Two implementations are provided, mirroring the two open_fs() calls in
-// model/Lab.py:79-81 — OSDir(path) for `osfs://<path>` and Memory() for `mem://`.
-//
-// The FilesystemMixin convenience methods live here as free functions
-// (files.go, lines.go) instead of as methods hung on Lab and Machine.
 package vfs
 
 import (
@@ -22,19 +9,6 @@ import (
 	"strings"
 )
 
-// FS is the filesystem interface from PORT_SPEC §6, verbatim.
-//
-// Paths are slash-separated and unrooted in the io/fs sense ("a/b", never
-// "/a/b" and never "."-relative escapes).
-//
-// The free functions in this package and the write-side methods below accept
-// pyfilesystem-style rooted paths ("/a/b") and a bare "" for the root: they run
-// CleanPath first, which clamps traversal at the root the way pyfilesystem's
-// normpath does. The io/fs read side (Open, and the Stat/ReadDir of the
-// fs.StatFS / fs.ReadDirFS implementations) does NOT: it keeps the io/fs
-// contract and rejects anything fs.ValidPath rejects with fs.ErrInvalid, so a
-// generic io/fs consumer sees the standard behaviour from every implementation
-// here.
 type FS interface {
 	fs.FS
 
@@ -63,16 +37,10 @@ type Appender interface {
 	Append(name string) (io.WriteCloser, error)
 }
 
-// TypeNamer is the optional interface backing Type. It exists so that the §6
-// FS interface stays exactly as the spec froze it while FilesystemMixin.fs_type()
-// still has a home.
 type TypeNamer interface {
 	TypeName() string
 }
 
-// Python message strings for the Invocation code (ERROR_CODES.md §2 catalog).
-// They are exported as constants rather than baked into the error values so
-// that the CLI layer can reproduce them byte-exact without vfs importing kerrors.
 const (
 	MsgNoFilesystem       = "There is no filesystem associated to this object."
 	MsgNoFilesystemCreate = "Cannot create a file if the filesystem is not set."
@@ -121,22 +89,6 @@ var (
 )
 
 // CleanPath converts a pyfilesystem-style path into an io/fs path.
-//
-// Leading slashes are dropped ("/a/b" and "a/b" name the same resource, as in
-// pyfilesystem), "." and ".." are resolved, and traversal is clamped at the
-// root ("../../x" becomes "x"). The root is ".".
-//
-// DIVERGENCE (SPIKES/vfs.md §5.11, awaiting a ruling): the clamping is NOT
-// what fs.path.normpath does. pyfilesystem REFUSES a path whose ".." escapes
-// the root — normpath("/../../x") raises fs.errors.IllegalBackReference, and
-// so create_file_from_string("x", "/../../esc.txt") writes nothing on both
-// backends. This clamps instead, so the same call silently creates "esc.txt"
-// at the root. Both are contained (neither can escape the filesystem root);
-// the difference is a silent wrong-target write versus an error. Reachable
-// only through a caller-supplied path on the §7 client API.
-//
-// Backslashes are NOT translated: pyfilesystem treats "\" as an ordinary
-// filename byte on POSIX and only utils.pack_file_for_tar rewrites it.
 func CleanPath(name string) (string, error) {
 	cleaned := strings.TrimPrefix(path.Clean("/"+name), "/")
 	if cleaned == "" {
@@ -171,10 +123,6 @@ func Type(fsys FS) string {
 
 // Path is FilesystemMixin.fs_path(): the host path of the filesystem root, or
 // ("", false) when it has none.
-//
-// Divergence from pyfilesystem, deliberate: getsyspath("") returns a trailing
-// separator ("/tmp/x/"); this returns the cleaned path ("/tmp/x"). The Python
-// test itself normpaths the value before comparing.
 func Path(fsys FS) (string, bool) {
 	if fsys == nil {
 		return "", false

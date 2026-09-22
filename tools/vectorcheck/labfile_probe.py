@@ -63,7 +63,7 @@ ALPHABET = "abc019_[]='\"# \t/:.-\u00b2\u0663\u00e9\u00a0\u001c\\$"
 # How much random fuzz to add on top of the systematic corpus, and how finely to
 # sample the multi-byte UTF-8 space. `--full` multiplies the first and widens the
 # second; the committed fixture is the default, which is what keeps it a
-# reviewable size. Both settings have been run and agree with the Go port.
+# reviewable size. Both settings have been run and produce matching results.
 FUZZ = 1
 SAMPLE = [0x00, 0x41, 0x7F, 0x80, 0x9F, 0xA0, 0xBF, 0xC0, 0xFF]
 SAMPLE_FULL = [0x00, 0x41, 0x7F, 0x80, 0x8F, 0x9F, 0xA0, 0xBF, 0xC0, 0xE0, 0xFF]

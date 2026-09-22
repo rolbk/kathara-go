@@ -2,19 +2,6 @@ package model
 
 // Defaults are the four `Setting` values the model falls back to when a device
 // says nothing.
-//
-// In 3.8.3 they are read through `Setting.get_instance()` from inside
-// `get_image`, `get_shell`, `get_num_terms`'s call chain, `get_volumes` and
-// `is_ipv6_enabled` — a model → settings edge, and a process-wide singleton
-// read from pool workers. The OQ-4 resolution (PACKAGE_GRAPH.md §1.1, §1.2)
-// removes both: the caller resolves the settings and hands the result to
-// [NewLab], so this package imports no `settings` and a process can hold two
-// scenarios with different defaults.
-//
-// The zero value is usable but empty, which is not what any real caller wants:
-// `cmd` and `kathara` build it from a loaded `*settings.Settings`, and the
-// field names are the setting keys. [DefaultDefaults] is the 3.8.3 factory
-// default, for tests and for an API user with no configuration file.
 type Defaults struct {
 	// Image is `Setting.image`, the fallback of [Machine.GetImage].
 	Image string
@@ -34,12 +21,6 @@ type Defaults struct {
 // DefaultDefaults is `Setting()`'s factory state for the four keys the model
 // reads (`setting/Setting.py:22-33`): the `kathara/base` image, `/bin/bash`,
 // IPv6 off and the `Always` volume policy.
-//
-// It is what `settings.Defaults()` produces, restated here because this package
-// must not import that one. Neither side can test the other without re-creating
-// the edge OQ-4 removed, so the two are pinned separately against the same
-// Python source: [TestDefaultDefaults] here, `settings.TestDefaults` there. A
-// change to `Setting.py` has to land in both.
 func DefaultDefaults() Defaults {
 	return Defaults{
 		Image:             "kathara/base",

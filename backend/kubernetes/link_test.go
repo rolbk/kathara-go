@@ -21,9 +21,6 @@ import (
 	"github.com/KatharaFramework/kathara-go/model"
 )
 
-// TestNetworkID is EXPECTATIONS-k8s §2 "_get_network_id":
-// `(offset + int(sha256(seed + name).hex, 16)) % (2^24 - 10)`, with the offset
-// added BEFORE the modulo.
 func TestNetworkID(t *testing.T) {
 	tests := []struct {
 		name   string
@@ -59,9 +56,6 @@ func TestNetworkIDSeedIsLoadBearing(t *testing.T) {
 	}
 }
 
-// TestVNIAllocator is EXPECTATIONS-k8s §2 "_get_unique_network_id": the base id
-// when free, and a linear probe by offset when not — with the chosen id
-// reserved either way.
 func TestVNIAllocator(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -92,10 +86,6 @@ func TestVNIAllocator(t *testing.T) {
 	}
 }
 
-// TestVNIAllocatorIsRaceFree pins CONCURRENCY.tsv row
-// `KubernetesLink.py:319`: the check and the reservation are ONE critical
-// section, so two workers probing to the same free id cannot both take it —
-// the latent duplicate-VNI race the register sanctions fixing.
 func TestVNIAllocatorIsRaceFree(t *testing.T) {
 	const workers = 32
 	allocator := newVNIAllocator("user123", nil)
@@ -120,9 +110,6 @@ func TestVNIAllocatorIsRaceFree(t *testing.T) {
 	}
 }
 
-// TestDeployLinksFilters is EXPECTATIONS-k8s §2 "deploy_links": which collision
-// domains are created for each filter shape, and that an empty scenario does
-// nothing at all — not even the cluster-wide VNI listing.
 func TestDeployLinksFilters(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -193,10 +180,6 @@ func createdNetworks(client actionRecorder) []string {
 	return names
 }
 
-// TestDeployLinksSeedsFromCluster is EXPECTATIONS-k8s
-// `test_deploy_links_with_loaded_ids_and_collision`: the reservation map starts
-// from the VNIs already deployed CLUSTER-WIDE, so a collision domain whose base
-// id is taken by ANOTHER scenario is created at base+1.
 func TestDeployLinksSeedsFromCluster(t *testing.T) {
 	s := testSettings()
 
@@ -257,15 +240,6 @@ const (
 	vniCollisionOffset = 1392702
 )
 
-// TestDeployLinksReservesIDsInScenarioOrder is ORDERING.tsv row
-// `KubernetesLink.py:77`: "reserve IDs sequentially in link order BEFORE
-// parallel create; then create in parallel".
-//
-// Python allocates inside the pool worker, so for two names that probe to the
-// same id WHICH one keeps the base and which takes the offset is thread-arrival
-// nondeterminism. Here it is the scenario's order, and nothing else: the first
-// collision domain of the scenario gets the base id on every run, in both
-// orders, every time.
 func TestDeployLinksReservesIDsInScenarioOrder(t *testing.T) {
 	orders := [][2]string{
 		{vniCollisionPair[0], vniCollisionPair[1]},
@@ -354,9 +328,6 @@ func TestCreateLinkAdoptsExisting(t *testing.T) {
 	}
 }
 
-// TestUndeployLinks is EXPECTATIONS-k8s §2 "undeploy / wipe", including that
-// `selected_links` matches the KUBERNETES network name and not the
-// collision-domain label.
 func TestUndeployLinks(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -450,9 +421,6 @@ func TestUndeployLinkSwallowsAPIErrors(t *testing.T) {
 	}
 }
 
-// TestGetLinksByFilters is EXPECTATIONS-k8s §2
-// "get_links_api_objects_by_filters": the same selector and namespace
-// enumeration as the machine side.
 func TestGetLinksByFilters(t *testing.T) {
 	s := testSettings()
 	m, clientset, _, _ := newTestManager(t, s,
@@ -496,9 +464,6 @@ func TestGetLinksByFilters(t *testing.T) {
 	})
 }
 
-// TestExistingNetworkIDs is EXPECTATIONS-k8s §2 "_get_existing_network_ids",
-// plus the port's own rule that an unparseable NAD is skipped rather than
-// failing the whole deploy.
 func TestExistingNetworkIDs(t *testing.T) {
 	s := testSettings()
 	m, _, _, _ := newTestManager(t, s,

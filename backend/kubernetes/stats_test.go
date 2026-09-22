@@ -14,10 +14,6 @@ import (
 	"github.com/KatharaFramework/kathara-go/kathara"
 )
 
-// TestMachineStatsFor is the inventory `KubernetesMachineStats` carries, in the
-// shape JSON_CLI_CONTRACT.md §3.0.2 pins — including the three fields that
-// differ from Docker's: `container_name` is the POD name, `user` is always
-// null, and `assigned_node` is present-and-possibly-null rather than absent.
 func TestMachineStatsFor(t *testing.T) {
 	hash := strings.ToLower(defaultScenarioHash)
 
@@ -57,9 +53,8 @@ func TestMachineStatsFor(t *testing.T) {
 	}
 }
 
-// TestMachineStatsUnscheduledPod pins the NULL half of `assigned_node`: a pod
-// that has not been scheduled has no `spec.node_name`, and the contract says the
-// key is present and "(string|null)" there.
+// TestMachineStatsUnscheduledPod checks that an unscheduled pod has a null
+// `assigned_node` because it has no `spec.node_name`.
 func TestMachineStatsUnscheduledPod(t *testing.T) {
 	pod := newTestPod(defaultScenarioHash, "pc1")
 	pod.Spec.NodeName = ""
@@ -159,8 +154,6 @@ func TestDetailedMachineStatus(t *testing.T) {
 	}
 }
 
-// TestLinkStatsFor is `KubernetesLinkStats`: the VNI parsed out of the embedded
-// CNI config, and the `user` key that is always null here (DIVERGENCES.md #53).
 func TestLinkStatsFor(t *testing.T) {
 	network := newTestNetwork(defaultScenarioHash, "A", 1362434)
 
@@ -185,10 +178,6 @@ func TestLinkStatsFor(t *testing.T) {
 	}
 }
 
-// TestMachinesStatsStream is the inventory stream: sorted by pod name
-// (ORDERING.tsv row 79, where Python's dict is in thread-completion order), and
-// an EMPTY result is an empty batch rather than the end of the stream
-// (NILABILITY.tsv:64).
 func TestMachinesStatsStream(t *testing.T) {
 	s := testSettings()
 	hash := strings.ToLower(defaultScenarioHash)
@@ -224,9 +213,6 @@ func TestMachinesStatsStream(t *testing.T) {
 	}
 }
 
-// TestMachinesStatsStreamEmpty is EXPECTATIONS-k8s §1
-// `test_get_machines_stats_lab_hash_device_not_found`: no match yields an empty
-// batch, NOT an error and NOT the end.
 func TestMachinesStatsStreamEmpty(t *testing.T) {
 	s := testSettings()
 	m, _, _, _ := newTestManager(t, s)
@@ -322,8 +308,6 @@ func TestLinksStatsStream(t *testing.T) {
 	}
 }
 
-// TestStatsUpdateIsDeferred pins PORT_SPEC §0.3/§0.4: re-sampling is post-1.0
-// and says so rather than quietly doing nothing.
 func TestStatsUpdateIsDeferred(t *testing.T) {
 	machine := machineStatsFor(&corev1.Pod{ObjectMeta: metav1.ObjectMeta{Labels: map[string]string{}}})
 	if err := machine.Update(context.Background()); err == nil {

@@ -9,9 +9,6 @@ import "strings"
 
 // Box is one `rich.box.Box`, reduced to the seven characters a titleless,
 // columnless panel and a plain table need.
-//
-// rich stores a box as an eight-row template and slices characters out of it by
-// position; the fields below are those positions, named as rich names them.
 type Box struct {
 	TopLeft, Top, TopRight          string
 	MidLeft, MidRight               string
@@ -72,17 +69,6 @@ type PanelOptions struct {
 
 // Panel is `cli/ui/utils.create_panel` rendered: the lines of a
 // `rich.panel.Panel` over a `Text`, with `box=SQUARE` unless overridden.
-//
-// The geometry is `Panel.__rich_console__` with `expand=True`: the panel fills
-// the console width, the border takes one cell on each side, the `(0, 1)`
-// padding one more, so the body wraps to `width - 4`. For the golden 80-column
-// console that is 76, which is why "Starting Network Scenario" sits 26 columns
-// in — 25 from `Lines.justify`'s floor-halved slack, one from the padding.
-//
-// No title is drawn. `create_panel` accepts one, but the only call sites that
-// pass it are in `LinfoCommand`, and `linfo` answers `FeatureNotAvailable` in
-// 1.0 (ERROR_CODES.md §5), so the titled top rule of `panel.py:238-249` has no
-// reachable caller and is not reproduced.
 func Panel(message string, opts PanelOptions) []string {
 	box := opts.Box
 	if box == nil {

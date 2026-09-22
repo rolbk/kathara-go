@@ -1,9 +1,4 @@
-"""Model parity: the v3.8.3 behaviours consumers and the archive layer rely on.
-
-`PORT_SPEC.md` §0.1 — bugs are ported as-is. Several of the assertions below
-pin behaviour that looks wrong on purpose; each names the `DIVERGENCES.md` or
-vectors-README entry it belongs to.
-"""
+"""Model parity: the v3.8.3 behaviours consumers and the archive layer rely on."""
 
 import unittest
 
@@ -25,7 +20,7 @@ from Kathara.utils import generate_urlsafe_hash
 
 class LabIdentityTest(unittest.TestCase):
     def test_named_lab_hashes_the_name(self):
-        # Golden constants from `JSON_CLI_CONTRACT.md` §3.0.1.
+
         self.assertEqual("9pe3y6IDMwx4PfOPu5mbNg", Lab("Default scenario").hash)
         self.assertEqual("FwFaxbiuhvSWb2KpN5zw", generate_urlsafe_hash("default_scenario"))
 
@@ -50,14 +45,14 @@ class MachineApiTest(unittest.TestCase):
         self.assertEqual("Device with name `pc1` already exists.", str(caught.exception))
 
     def test_get_machine_missing_message_has_no_backticks(self):
-        # `ERROR_CODES.md` §2 MachineNotFound, `model/Lab.py:268`.
+
         lab = Lab("x")
         with self.assertRaises(MachineNotFoundError) as caught:
             lab.get_machine("pc1")
         self.assertEqual("Device pc1 not in the network scenario.", str(caught.exception))
 
     def test_new_link_twice_keeps_the_typo(self):
-        # `ERROR_CODES.md` §0.2: "is already the network scenario." (sic).
+
         lab = Lab("x")
         lab.new_link("A")
         with self.assertRaises(LinkAlreadyExistsError) as caught:
@@ -116,8 +111,7 @@ class MachineApiTest(unittest.TestCase):
 
 class MetaTest(unittest.TestCase):
     def test_ulimit_errors_name_the_meta_not_the_device(self):
-        # DIVERGENCES.md item 2 / vectors SURPRISE 5: `add_meta` interpolates
-        # its own `name` parameter, so the message says `ulimit`, not `pc1`.
+
         machine = Machine(Lab("x"), "pc1")
         with self.assertRaises(MachineOptionError) as caught:
             machine.add_meta("ulimit", "nofile=-2")
@@ -126,7 +120,7 @@ class MetaTest(unittest.TestCase):
         )
 
     def test_volume_mode_message_keeps_its_trailing_space(self):
-        # `ERROR_CODES.md` §0.2.
+
         machine = Machine(Lab("x"), "pc1")
         with self.assertRaises(MachineOptionError) as caught:
             machine.add_meta("volume", "/a|/b|zz")
@@ -135,7 +129,7 @@ class MetaTest(unittest.TestCase):
         )
 
     def test_api_ipv6_stays_a_real_bool(self):
-        # Vectors SURPRISE 7: lab.conf stores the string "false" for the same
+        # Compatibility note 7: lab.conf stores the string "false" for the same
         # key. The API path does not, and both must keep behaving that way.
         machine = Machine(Lab("x"), "pc1", **{"ipv6": False})
         self.assertIs(False, machine.meta["ipv6"])

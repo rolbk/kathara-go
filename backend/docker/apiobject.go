@@ -1,6 +1,5 @@
 // This file has no single Python original: it is docker-py's `Container` and
 // `Network` model objects, which the Go SDK does not have.
-//
 // docker-py's `client.containers.list()` returns *inspected* objects — it lists
 // ids and then calls `inspect` on each one — and every read Kathará does
 // (`container.attrs["HostConfig"]`, `container.labels`, `container.status`,
@@ -25,18 +24,6 @@ import (
 // Container is docker-py's `docker.models.containers.Container`: the handle
 // [Manager.GetMachineAPIObject] hands back and the value
 // [model.Machine.APIObject] holds.
-//
-// It is a snapshot, exactly as docker-py's is: `Attrs` is the inspect response
-// as of the last [reloadContainer], and the call sites that need fresh state
-// call it explicitly, as Python calls `container.reload()`
-// (`DockerManager.py:201,251,711,793`).
-//
-// docker-py's `container.image` has no field here. It resolves the image with a
-// SECOND API call and only two sites read it — the stats inventory's `image`
-// and the shutdown warning's — so caching it on every listed container would
-// issue one inspect per container per `kathara list`, where Python pays that
-// cost only when a tag is rendered. [Manager.imageTags] is the call, made where
-// the tag is used.
 type Container struct {
 	// ID is `container.id`.
 	ID string
@@ -46,14 +33,6 @@ type Container struct {
 }
 
 // Name is `container.name`: `attrs['Name'].lstrip('/')`.
-//
-// `lstrip` strips every leading slash, not one, which is what
-// `strings.TrimLeft` does too.
-//
-// The nil check is on the *embedded pointer*: `container.InspectResponse`
-// embeds `*ContainerJSONBase`, so a zero-value Attrs — which only a
-// hand-constructed test value has — would fault on the field read rather than
-// answer the empty string.
 func (c *Container) Name() string {
 	if c == nil || c.Attrs.ContainerJSONBase == nil {
 		return ""
@@ -131,22 +110,12 @@ func (n *Network) Labels() map[string]string {
 }
 
 // Label reads one label, empty when absent.
-//
-// Python indexes the dict, and `DockerLinkStats.__init__` therefore KeyErrors
-// on `lab_hash` and `user` for a network created in a shared mode, where
-// [NetworkLabels] deliberately omits them (SYNTHESIS §1.2). Stats sampling is
-// deferred, so the reachable readers are the inventory ones, and they take the
-// empty string.
 func (n *Network) Label(key string) string { return n.Labels()[key] }
 
 // ContainerCount is `len(network.containers)`, the only thing the undeploy and
 // wipe paths read off the attached-container map (`DockerLink.py:170,197`):
 // a collision domain is deleted when and only when the count is zero, which is
 // what makes a shared collision domain survive a partial teardown.
-//
-// docker-py's `network.containers` property builds a `Container` per key with
-// one inspect each; none of those inspects is observable here, so counting the
-// keys is the whole of it.
 func (n *Network) ContainerCount() int {
 	if n == nil {
 		return 0
@@ -156,23 +125,6 @@ func (n *Network) ContainerCount() int {
 
 // AttachedNames is the DEVICE name of every container attached to this network,
 // sorted.
-//
-// It is the inventory reduction of `DockerLinkStats.containers`
-// (kathara.LinkStats.Containers), whose Python value is a list of API objects
-// and whose `__str__` prints `container.labels['name']` for each — the device
-// name, not the container name. docker-py's `Network.containers` builds that
-// list with `client.containers.get(cid)` per key (`models/networks.py:24-27`),
-// one inspect each, so the inspects here are the ones Python already pays; the
-// endpoint's own `Name` field is `{device_prefix}_{user}_{device}_{hash}` and
-// cannot be split back apart (a device name may contain `_`).
-//
-// A container that disappears between the network inspect and this one fails
-// the call, as it does in Python: `DockerLinkStats.update` guards only the
-// `reload()` with `except NotFound`, and the list comprehension that follows is
-// outside it.
-//
-// The sort is the port's: a Go map has no order and ORDERING.tsv:51 rules stats
-// output sorted.
 func (n *Network) AttachedNames(ctx context.Context, api *client.Client) ([]string, error) {
 	if n == nil {
 		return nil, nil
@@ -209,15 +161,6 @@ func labelArgs(terms []LabelFilter) filters.Args {
 
 // listContainers is `client.containers.list(all=True, filters=…,
 // ignore_removed=True)` (`DockerMachine.py:1018`).
-//
-// docker-py's `list()` is a list-then-inspect loop, and `ignore_removed=True`
-// makes it skip a container that disappeared between the two calls
-// (docker-backend.md gotcha 29). Both halves are reproduced: `all=True` keeps
-// stopped containers, and a 404 from the inspect drops that entry instead of
-// failing the listing.
-//
-// The order is the daemon's list order, which the goldens see through the
-// undeploy progress events (ORDERING.tsv row 43).
 func listContainers(ctx context.Context, api *client.Client, terms []LabelFilter) ([]*Container, error) {
 	summaries, err := api.ContainerList(ctx, container.ListOptions{
 		All:     true,
@@ -243,12 +186,6 @@ func listContainers(ctx context.Context, api *client.Client, terms []LabelFilter
 
 // listNetworks is `client.networks.list(filters=…, greedy=True)`
 // (`DockerLink.py:248`).
-//
-// `greedy=True` is docker-py for "call reload() on every result", i.e. inspect
-// each one, which is what makes `network.attrs['Labels']` and
-// `network.attrs['Containers']` readable off a listing. There is no
-// `ignore_removed` counterpart on this path — docker-py has none — so a network
-// that vanishes mid-listing fails the call, as it does in Python.
 func listNetworks(ctx context.Context, api *client.Client, terms []LabelFilter) ([]*Network, error) {
 	summaries, err := api.NetworkList(ctx, network.ListOptions{Filters: labelArgs(terms)})
 	if err != nil {

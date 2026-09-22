@@ -10,13 +10,6 @@ import (
 // (`DockerMachine.py:777`), which interpolates the command BEFORE the
 // `shlex.split` at `:803`. So a `str` command renders bare and a `List[str]`
 // one renders as the list's repr.
-//
-// Oracle:
-//
-//	python3 -c "print('Executing command \`%s\` to device with name: %s' % ('ls -la', 'pc1'))"
-//	→ Executing command `ls -la` to device with name: pc1
-//	python3 -c "print('Executing command \`%s\` to device with name: %s' % (['ls', '-la'], 'pc1'))"
-//	→ Executing command `['ls', '-la']` to device with name: pc1
 func TestCommandRepr(t *testing.T) {
 	tests := []struct {
 		name    string

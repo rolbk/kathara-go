@@ -1,19 +1,3 @@
-// Package term hosts the rebuilt terminal integration (PORT_SPEC §0.2 #2):
-// the built-in multiplexer (default), the tmux backend (term/tmuxdrv), the
-// opt-in external-emulator adapters, the single-device connect runner, and the
-// raw-mode console + local PTY layer.
-//
-// This file defines the minimal local pseudo-terminal seam shared by the Unix
-// (creack/pty) and Windows (ConPTY) implementations. It is a Phase 2 spike
-// surface: deliberately tiny, no bubbletea, no console-mode handling — see
-// docs/port/SPIKES/windows-terminal.md for the full design and the Phase 6
-// work items that grow around it.
-//
-// A local Pty hosts a *local child process* (a multiplexer pane running the
-// connect runner, or an external-emulator helper). It is NOT the transport to
-// a device: device attach is a backend concern (docker hijacked conn on Unix,
-// npipe on Windows, K8s websocket) living in backend/*/tty*.go per
-// PACKAGE_GRAPH D-5.
 package term
 
 import (
@@ -23,19 +7,12 @@ import (
 )
 
 // Winsize is a terminal geometry in character cells.
-//
-// Cols-first, matching the Python ITerminalSession.resize(cols, rows)
-// argument order (analysis/manager-foundation.md §1.7) so the eventual
-// runner/session plumbing cannot silently swap axes.
 type Winsize struct {
 	Cols uint16
 	Rows uint16
 }
 
-// Errors returned by Pty implementations for lifecycle misuse. Kept
-// package-internal in spirit (callers should not branch on them yet); they
-// exist so tests can assert the exact failure and so the Phase 6 runner can
-// map them onto ERROR_CODES.md entries in one place.
+// Errors returned by Pty implementations for lifecycle misuse.
 var (
 	errAlreadyStarted = errors.New("term: pty already started")
 	errNotStarted     = errors.New("term: pty not started")
@@ -43,13 +20,6 @@ var (
 )
 
 // Pty is one local pseudo-terminal hosting one child process.
-//
-// Lifecycle: New → (optional Resize) → Start → concurrent Read/Write/Resize →
-// Close. Start may be called at most once. Close is idempotent and does NOT
-// kill the child on Unix (parity with creack/pty: the caller owns cmd.Process);
-// on Windows closing the pseudoconsole disconnects the child's console, which
-// normally terminates console-attached clients — a recorded platform
-// difference, see docs/port/SPIKES/windows-terminal.md §4.4.
 type Pty interface {
 	// Start launches cmd with stdin/stdout/stderr (and, on Windows, its
 	// console) attached to the pty's child side, honouring cmd.Dir and
@@ -75,7 +45,7 @@ type Pty interface {
 
 	// Close releases the pty. It unblocks pending Unix reads; on Windows a
 	// pending Read may not unblock until the child exits (spike limitation,
-	// recorded as Phase 6 work item W6-3).
+	// recorded as follow-up work).
 	io.Closer
 }
 

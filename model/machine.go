@@ -20,45 +20,24 @@ import (
 
 // machineNameRegex is `model/Machine.py:60`: lower-case ASCII letters, digits
 // and underscore, one to thirty characters.
-//
-// It is far stricter than the collision-domain name class, and deliberately
-// ASCII: `[a-z0-9_]` is a literal range, so `PC1`, `pc-1` and a 31-character
-// name are all rejected (oracle-verified). `RESERVED_MACHINE_NAMES` is NOT
-// checked here — `shared` and `_test` build fine through this constructor, and
-// only the parsers refuse them ([util.IsReservedMachineName],
-// `LabParser.py:54`, `FolderParser.py:32`).
 var machineNameRegex = regexp.MustCompile(`^[a-z0-9_]{1,30}$`)
 
 // Machine is a Kathará device (`model/Machine.py`).
 type Machine struct {
-	// Lab is the scenario the device belongs to, never nil for a device built
-	// by [Lab.NewMachine] or [Lab.GetOrNewMachine]. The managers check it and
-	// answer LabNotFound when it is missing (NILABILITY.tsv:4).
 	Lab *Lab
 
 	// Name is the validated device name, already stripped.
 	Name string
 
-	// Meta is the device's options (PORT_SPEC §4.2).
 	Meta Meta
 
-	// APIObject is the backend handle, nil until the device is deployed
-	// (NILABILITY.tsv:3).
 	APIObject any
 
 	// FS is the device's directory inside the scenario filesystem, or nil when
 	// the scenario has no directory of that name.
-	//
-	// It is set at construction only when `<lab>/<name>` already exists and is
-	// a directory; otherwise the first write through one of the file helpers
-	// below creates it (NILABILITY.tsv:2, `model/Machine.py:635-636`). An
-	// existing but empty directory is NOT nil, which is why `pack_data` tests
-	// emptiness separately.
+
 	FS vfs.FS
 
-	// interfaces is the ordered slice of PORT_SPEC §4.1, kept sorted by Number
-	// at all times. Removed interfaces leave a tombstone entry rather than
-	// disappearing; see [Machine.Interfaces].
 	interfaces []Interface
 }
 
@@ -98,16 +77,6 @@ func newMachine(lab *Lab, name string, opts *MetaOptions) (*Machine, error) {
 // ---------------------------------------------------------------------------
 
 // Interfaces returns the device's interface slots, sorted by number.
-//
-// TOMBSTONES. [Machine.RemoveInterface] does not remove the entry, it nulls the
-// link (`model/Machine.py:136-141`), so a slot whose [Interface.IsTombstone] is
-// true is a number that has been used and freed. Python spells the skip
-// `if interface:`; a caller that ranges over this slice and dereferences
-// `iface.Link` without the check is the caller that crashes, which is exactly
-// what 3.8.3 does in `get_links_from_machines` and `remove_machine`
-// ([Lab.GetLinksFromMachines], [Lab.RemoveMachine]).
-//
-// The slice is fresh; mutating it does not touch the device.
 func (m *Machine) Interfaces() []Interface { return slices.Clone(m.interfaces) }
 
 // Interface returns the live interface numbered n. A tombstone reports false:
@@ -130,11 +99,6 @@ func (m *Machine) HasInterfaceNumber(n int) bool {
 }
 
 // interfaceIndex is a binary search over the sorted slice.
-//
-// The comparison is [cmp.Compare] and not a subtraction: Python's dict takes any
-// int as a key, `add_interface(number=-1)` is a legal API call, and a difference
-// of two extreme opposite-signed numbers wraps — which would leave the slice
-// unsorted and quietly break every other method's binary search.
 func (m *Machine) interfaceIndex(n int) (int, bool) {
 	return slices.BinarySearchFunc(m.interfaces, n, func(iface Interface, target int) int {
 		return cmp.Compare(iface.Number, target)
@@ -143,22 +107,6 @@ func (m *Machine) interfaceIndex(n int) (int, bool) {
 
 // AddInterface is `Machine.add_interface` (`model/Machine.py:85`): attach the
 // device to a collision domain.
-//
-// With no number in opts the slot taken is `len(self.interfaces)` — the count
-// of existing slots, tombstones included, NOT the first free number, despite
-// what the Python docstring claims (ORDERING.tsv `model/Machine.py:102`). Three
-// consequences, all oracle-verified and all load-bearing for lab.conf
-// numbering:
-//
-//   - after `add(A)`, `remove(A)`, `add(A)`, the new interface is eth1, not
-//     eth0;
-//   - with explicit slots {0, 5} the next auto number is 2;
-//   - enough auto-numbered adds eventually collide with an explicit high slot
-//     and fail.
-//
-// Errors: [kerrors.ErrMachineCollisionDomain] when the number is taken or the
-// device is already on that collision domain, and
-// [kerrors.ErrInterfaceMacAddress] for a malformed MAC.
 func (m *Machine) AddInterface(link *Link, opts AddInterfaceOptions) (Interface, error) {
 	number := len(m.interfaces)
 	if opts.Number != nil {
@@ -185,15 +133,6 @@ func (m *Machine) AddInterface(link *Link, opts AddInterfaceOptions) (Interface,
 }
 
 // insertInterface keeps the slice ordered by Number.
-//
-// PORT SANCTION (§0.2 #4, ORDERING.tsv `model/Machine.py:67`): Python inserts
-// in call order and only `check()` sorts, so a device numbered out of order
-// through the API iterates in insertion order until then. Keeping the slice
-// sorted makes `check()`'s re-sort a no-op — which is what the register says it
-// becomes — at the price of that pre-check window, where 3.8.3 would have
-// printed `2` before `1` in `Machine.__str__`. Nothing deploys without
-// `check()` running first (`deploy_lab` calls `check_integrity`), so the window
-// is not reachable from the CLI. Recorded in DIVERGENCES.md.
 func (m *Machine) insertInterface(iface Interface) {
 	idx, _ := m.interfaceIndex(iface.Number)
 	m.interfaces = slices.Insert(m.interfaces, idx, iface)
@@ -201,11 +140,6 @@ func (m *Machine) insertInterface(iface Interface) {
 
 // RemoveInterface is `Machine.remove_interface` (`model/Machine.py:119`):
 // detach the device from a collision domain.
-//
-// It tombstones. Every slot on that collision domain has its link nulled and
-// KEEPS its number, so `len(interfaces)` — and therefore the next auto-assigned
-// number — is unchanged, and the freed number can never be reused. See
-// [Machine.Interfaces].
 func (m *Machine) RemoveInterface(link *Link) error {
 	if !link.HasMachine(m.Name) {
 		return kerrors.NewMachineNotConnected(m.Name, link.Name)
@@ -223,17 +157,6 @@ func (m *Machine) RemoveInterface(link *Link) error {
 
 // Check is `Machine.check` (`model/Machine.py:356`): the interface numbers must
 // be exactly 0..n-1.
-//
-// `bridged_iface` takes part in the count: a bridged device's host interface
-// occupies a number, so a scenario with eth0, eth2 and `bridged_iface=1` is
-// complete. That only works when the meta holds a number, which only the API can
-// produce — lab.conf stores every meta as a string, and a string here makes
-// Python's `sort()` compare a str against an int and raise
-// [ErrBridgedIfaceType]. Both branches are reproduced (DIVERGENCES.md 1).
-//
-// It is not a pure validator in Python: it also re-sorts the interfaces into
-// numeric order, which is what the managers deploy in. Here the slice is
-// already sorted, so only the validation is left (ORDERING.tsv row O2).
 func (m *Machine) Check() error {
 	slog.Debug("Checking `" + m.Name + "` integrity...")
 
@@ -247,11 +170,6 @@ func (m *Machine) Check() error {
 }
 
 // checkNumbering is the sort-and-compare loop of `check()`.
-//
-// Without a `bridged_iface` it is a walk over the slice, which is already in
-// numeric order. With one, the meta value is merged into that walk at the
-// position `list.sort()` would have given it — see [Machine.bridgedIfaceValue]
-// for how a non-int gets there.
 func (m *Machine) checkNumbering() error {
 	if !m.Meta.BridgedIface.IsSet() {
 		for i, iface := range m.interfaces {
@@ -271,7 +189,6 @@ func (m *Machine) checkNumbering() error {
 	// below it. Python's sort is stable, so among equals it would sit last
 	// instead — the two spellings cannot differ, because equal values answer
 	// the `!= i` test identically wherever they sit.
-	//
 	// A NaN is the exception: it compares false against everything, so
 	// `list.sort()` sees an already-ascending run and leaves it where it was —
 	// at the end (oracle-verified for zero, one and two interfaces).
@@ -312,19 +229,6 @@ type bridgedNumber struct {
 }
 
 // bridgedIfaceValue is the value `check()` appends to the number list.
-//
-// Python appends the meta unconverted and lets `list.sort()` decide: a number
-// sorts, anything else raises a TypeError — but only when there is something to
-// compare it against, so a device with NO interfaces and a string
-// `bridged_iface` gets past the sort and fails the sequence check instead
-// (both oracle-verified).
-//
-// The value is carried at full precision — a [big.Float] built from the stored
-// int or float, never truncated — because a truncation changes the answer: with
-// `bridged_iface = 1.5` on a device that has eth0, 3.8.3 reports interface 1 as
-// missing, while int(1.5) would have completed the sequence. An infinity sorts
-// to one end, a NaN sorts nowhere, and both reach the sequence check rather than
-// the OverflowError/ValueError `int()` would raise (oracle-verified).
 func (m *Machine) bridgedIfaceValue() (bridgedNumber, error) {
 	switch m.Meta.BridgedIface.Kind() {
 	case KindInt, KindBool:
@@ -381,10 +285,6 @@ func (m *Machine) interfacesRepr() string {
 
 // IsPrivileged is `model/Machine.py:420`: the scenario-wide value first, then
 // the device's, then false.
-//
-// A scenario-wide `privileged=False` therefore overrides a device that asked
-// for privileges — `lstart` sets the global on every run from its `--privileged`
-// flag, so this is the normal path and not an edge case.
 func (m *Machine) IsPrivileged() bool {
 	if global, ok := m.Lab.GlobalMachineMetadata("privileged"); ok {
 		return global.Truthy()
@@ -397,10 +297,6 @@ func (m *Machine) IsPrivileged() bool {
 
 // ExecCommands is `get_exec_commands` (`model/Machine.py:429`): the boot
 // commands, in the order they were added.
-//
-// Python hands out the live list and the managers join it in place; the slice
-// here aliases the same backing array for the same reason (model.md gotcha 22 —
-// do not defensively copy).
 func (m *Machine) ExecCommands() []string { return m.Meta.ExecCommands }
 
 // IsBridged is `model/Machine.py:437`. Unlike [Machine.IsPrivileged] it does
@@ -436,19 +332,6 @@ func (m *Machine) GetImage() string {
 }
 
 // GetMem is `model/Machine.py:486`: the memory limit, normalised.
-//
-// The normalisation is `int()` on the number and a lower-cased unit suffix, so
-// `064m` becomes `64m`, `+5m` becomes `5m` and a bare `100` becomes `100m` —
-// megabytes are the default unit.
-//
-// Python's guard is `if memory:`, and a falsy value is returned as the object it
-// is: `""`, but also the int `0` or `False` an API caller can store. Every
-// consumer then tests the result for truthiness, so all of them mean "no limit"
-// — which NILABILITY.tsv:14 spells `""`. Rendering the falsy non-strings
-// (`"0"`, `"False"`) would turn them into limits Docker would try to honour, so
-// they collapse to the empty string here.
-//
-// Errors: [kerrors.ErrMachineOption] when the number does not parse.
 func (m *Machine) GetMem() (string, error) {
 	memory, ok := m.Lab.GlobalMachineMetadata("mem")
 	if !ok {
@@ -487,15 +370,6 @@ func (m *Machine) GetMem() (string, error) {
 
 // GetCPU is `model/Machine.py:513`: the CPU limit scaled by multiplier, or nil
 // when no limit is set.
-//
-// The multiplier is a float even though Python types it `int`, because the
-// Docker backend passes 1e9 to get NanoCPUs. The result truncates toward zero,
-// so `cpus=0.5` with the default multiplier is 0 — and 0 is a real answer here,
-// distinct from "unset" (NILABILITY.tsv:15).
-//
-// Errors: [kerrors.ErrMachineOption] when the value does not parse as a float
-// or is a NaN. An infinity is NOT one of them: Python raises an uncaught
-// OverflowError there, and so does this ([PyRuntimeError]).
 func (m *Machine) GetCPU(multiplier float64) (*int64, error) {
 	value, ok := m.Lab.GlobalMachineMetadata("cpus")
 	if !ok {
@@ -536,9 +410,6 @@ func (m *Machine) GetShell() string {
 }
 
 // GetNumTerms is `model/Machine.py:549`: how many terminals to open, default 1.
-//
-// Zero is allowed and means "no terminal"; a negative value is a
-// MachineOptionError with its own message, and so is anything `int()` rejects.
 func (m *Machine) GetNumTerms() (int, error) {
 	value := Int(1)
 	if global, ok := m.Lab.GlobalMachineMetadata("num_terms"); ok {
@@ -564,15 +435,6 @@ func (m *Machine) GetNumTerms() (int, error) {
 
 // GetVolumes is `model/Machine.py:575`: the extra bind mounts, or a
 // MountDenied error when the scenario is not allowed to mount any.
-//
-// The policy is only consulted when there is at least one volume, so a device
-// with none never fails here whatever the setting says. The scenario's
-// `_mount_volumes` general option wins when present — that is the answer the
-// interactive prompt writes back (`cli/ui/event/MountDevicesVolumes.py:39`) —
-// and otherwise `Prompt` and `Always` allow, everything else denies.
-//
-// Both backends catch this error and downgrade it to a warning
-// (`DockerMachine.py:324`), so it normally never reaches a user.
 func (m *Machine) GetVolumes() (*OrderedMap[string, Volume], error) {
 	canMount := true
 	if m.Meta.Volumes.Len() > 0 {
@@ -592,13 +454,6 @@ func (m *Machine) GetVolumes() (*OrderedMap[string, Volume], error) {
 
 // IsIPv6Enabled is `model/Machine.py:599`: scenario-wide, then device meta,
 // then [Defaults.EnableIPv6].
-//
-// The stored value can be a real bool (the API) or a string (lab.conf), and the
-// branch is Python's `type(x) is bool`: a bool is returned as-is, a string goes
-// through `strtobool`. Anything else dies on `.lower()` with an uncaught
-// AttributeError, which is reproduced as a [PyRuntimeError].
-//
-// Errors: [kerrors.ErrMachineOption] for a string `strtobool` rejects.
 func (m *Machine) IsIPv6Enabled() (bool, error) {
 	value := Bool(m.Lab.Defaults.EnableIPv6)
 	if global, ok := m.Lab.GlobalMachineMetadata("ipv6"); ok {
@@ -622,18 +477,9 @@ func (m *Machine) IsIPv6Enabled() (bool, error) {
 	return enabled, nil
 }
 
-// ---------------------------------------------------------------------------
-// Filesystem. The bodies are `vfs` free functions (§0.2 #9); what stays here is
-// the lazy-directory behaviour, which is Machine's and not the filesystem's.
-// ---------------------------------------------------------------------------
-
 // ensureFS is the two lines every overridden file method of
 // `model/Machine.py:620-813` starts with: if the device has no directory yet,
 // create it inside the scenario filesystem and adopt it.
-//
-// It runs even for the "update" and line-editing variants, which then fail on
-// the missing file — the directory is created as a side effect anyway, exactly
-// as in Python.
 func (m *Machine) ensureFS() error {
 	if m.FS != nil {
 		return nil
@@ -751,14 +597,6 @@ func (m *Machine) DeleteLine(filePath, lineToDelete string, firstOccurrence bool
 
 // String is `Machine.__str__` (`model/Machine.py:818`), the device description
 // the CLI prints.
-//
-// Three details are Python's and are kept: the `Interfaces: ` header carries a
-// trailing space and appears whenever the device has any slot at all, tombstones
-// included; the bridged line prints Python's `True`/`False` and appears whenever
-// the meta is set, false included; and a port renders as the Python tuple it is
-// keyed by, `Host: (3000, 'tcp') -> Guest: 8080`.
-//
-// It calls [Machine.GetImage], so it reads the scenario's [Defaults].
 func (m *Machine) String() string {
 	var b strings.Builder
 	b.WriteString("Name: " + m.Name)

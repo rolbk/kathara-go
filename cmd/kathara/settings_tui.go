@@ -1,20 +1,8 @@
-// This file is the settings screen: `cli/ui/setting/{CommonOptionsHandler,
-// DockerOptionsHandler,KubernetesOptionsHandler}.py` and the 1,295 lines of
-// vendored curses they drove, rebuilt as a bubbletea model (PORT_SPEC §0.2 #1,
-// §3.2 item 3). PACKAGE_GRAPH.md D-4 pins it here rather than in `settings/`.
-//
 // The shape is consolemenu's, because that is what the screen's users know: a
 // list of items, each showing its current value, and selecting one opens its
 // own page — a menu of the legal answers, or a prompt. What is *not* carried
 // over is the vendored library, the curses dependency, and the per-item
 // re-implementation of the same three validators.
-//
-// Every value written here goes through [settings.Settings.SetString], the
-// exact call `kathara config set` makes, so the two paths cannot disagree
-// (§3.2 item 4). Not one restriction is spelled out in this file: the option
-// lists are `settings`' own exported menus, and a rejection is that package's
-// error text shown verbatim.
-//
 // The model is pure — [settingsModel.Update] is a function of the message and
 // the model — so the whole screen is testable headlessly, which is what
 // settings_tui_test.go does.
@@ -36,10 +24,6 @@ import (
 
 // settingsChoice is one `FunctionItem` of a submenu: the text the user picks
 // and the word it hands to [settings.Settings.SetString].
-//
-// Every answer is spelled as a string, including the booleans and
-// `shared_cds`, so that the form's writes and `kathara config set`'s writes are
-// literally the same conversion.
 type settingsChoice struct {
 	label string
 	value string
@@ -79,9 +63,9 @@ func (f settingsField) isPath() bool { return f.key == dockerConfigJSONKey }
 // yesNo is the `Yes`/`No` submenu every bool key had.
 var yesNo = []settingsChoice{{label: "Yes", value: "true"}, {label: "No", value: "false"}}
 
-// resetToNull is the "Reset value to Empty String" item. Its name is Python's
-// and is a lie in Python too — it stores `None`, not `""` — but it is the text
-// on the screen, so it is the text here.
+// resetToNull is the "Reset value to Empty String" item. The label says
+// "Empty String" while the stored value is `None`; preserve the visible label
+// for compatibility.
 var resetToNull = settingsChoice{label: "Reset value to Empty String", value: ""}
 
 // shellHints is `SHELLS_HINT` (`CommonOptionsHandler.py:14`).
@@ -89,12 +73,6 @@ var shellHints = []string{"/bin/bash", "/bin/sh", "/bin/ash", "/bin/ksh", "/bin/
 
 // terminalHints is the per-platform terminal submenu: xterm and
 // gnome-terminal on Linux, `TERMINALS_OSX` on macOS, and TMUX everywhere.
-//
-// Python built no terminal item at all on Windows (`exec_by_platform(linux,
-// lambda: None, osx)`), so a Windows user could not change `terminal` from the
-// screen; the form offers the row on every platform, since `kathara config set
-// terminal` accepts it on every platform and a screen that hides a writable key
-// is the bug, not the feature. PROPOSED-DIVERGENCES.md records it.
 func terminalHints() []string {
 	names := util.ExecByPlatform(
 		func() []string { return []string{"/usr/bin/xterm", "/usr/bin/gnome-terminal"} },
@@ -126,15 +104,6 @@ func labelledChoices(values []string, labels map[string]string) []settingsChoice
 	return out
 }
 
-// settingsFields is the menu, in the order the three handlers appended their
-// items — which is the screen's order and is *not* the file's: the docker addon
-// lists `network_plugin` first on screen and last on disk. The file's order is
-// frozen (§0.4) and is what `kathara config list` walks; this one is the
-// screen's and is what a user of the settings screen remembers.
-//
-// Python's two-item "Choose Kathara prefixes" submenu is flattened to its two
-// rows, and the same for the remote-Docker submenu, because a submenu holding
-// only prompts is a level of nesting with nothing in it.
 func settingsFields(s *settings.Settings, managers []settingsChoice) []settingsField {
 	fields := []settingsField{
 		{
@@ -144,15 +113,7 @@ func settingsFields(s *settings.Settings, managers []settingsChoice) []settingsF
 		},
 		{
 			key: "image", title: "Choose default image",
-			// The Docker Hub tag list the menu prefixed this with is gone with
-			// the webhooks (§0.3): `DockerHubApi.get_tagged_images()` is a
-			// network call on the way to a settings screen. The prompt the menu
-			// offered underneath it ("Choose another image") is what remains —
-			// without its `ImageValidator`, which is the same network call by
-			// another name and which `kathara config set image` does not make
-			// either, so the two paths still agree. `settings.CheckImage` and
-			// `settings.IsImageRejection` are the ported check, waiting for a
-			// caller; PROPOSED-DIVERGENCES.md records the drop.
+
 			help:     "Default Docker image when you start a network scenario or a single Kathara device.",
 			freeText: true,
 			prompt:   "Write the name of a Docker image available on Docker Hub:",
@@ -173,11 +134,7 @@ func settingsFields(s *settings.Settings, managers []settingsChoice) []settingsF
 			key: "terminal", title: "Choose terminal emulator to be used",
 			help: "Terminal emulator application to be used for device terminals. " +
 				"The application must be correctly installed in the host system!",
-			// The free-text escape is unconditional, where Python offered it on
-			// Linux only: `terminal_emulator_menu_osx` listed `Terminal`,
-			// `iTerm` and `TMUX` and stopped, so a macOS user with a fourth
-			// emulator had to leave the screen. The answer still goes through
-			// `check_terminal`. PROPOSED-DIVERGENCES.md records it.
+
 			choices: literalChoices(terminalHints()), freeText: true,
 			prompt: "Write the path of a terminal emulator:",
 		},
@@ -578,9 +535,6 @@ func (m *settingsModel) options(field settingsField) []settingsChoice {
 
 // startEditing opens the prompt, prefilled with the field's default answer or,
 // where it has none, with the value already stored.
-//
-// It returns `Focus`'s command, which is the cursor's blink loop: dropping it
-// leaves a steady block where every other bubbles prompt blinks.
 func (m *settingsModel) startEditing(field settingsField) tea.Cmd {
 	m.mode = settingsEditing
 	value := field.prefill

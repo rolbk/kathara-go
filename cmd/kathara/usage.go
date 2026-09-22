@@ -1,24 +1,20 @@
 // This file is the half of `argparse.ArgumentParser` that `pflag` has no
-// equivalent for and that `cobra` reproduces in the wrong order: which options
+// equivalent for and whose ordering differs in `cobra`: which options
 // are `required=True`, which mutually-exclusive groups exist and whether they
 // are themselves required, which positionals the parser declares, and the
 // metavars all four render with.
-//
 // It exists because `cobra.Command.ValidateFlagGroups` checks only the group
 // annotations — `MarkFlagRequired` is answered by a *different* method — and
 // because the order the three checks fire in is observable. argparse's is:
-//
 //  1. a mutually-exclusive conflict, raised from inside the parse loop the
 //     moment the second member of a group is consumed;
 //  2. the `required=True` sweep, `the following arguments are required: …`;
 //  3. the required mutually-exclusive groups,
 //     `one of the arguments --add --rm is required`;
 //  4. `parse_args`'s leftover check, `unrecognized arguments: …`.
-//
 // Oracle-verified on all four: `lconfig --add A --rm B` (no `-n`) reports the
 // conflict and not the missing name, `lconfig -n pc1` reports the group, and
 // `wipe extra` reports the leftover.
-//
 // An argparse *action* is not a pflag flag. `-w, -l, --watch, --live` is one
 // action with four spellings; pflag needs two flags to express it, and a
 // mutually-exclusive group that named only one of them would let the other slip
@@ -291,10 +287,6 @@ func (p *parser) checkLeftovers() error {
 
 // matchPositionals assigns the leftover tokens to the declared positionals,
 // reporting the ones that could not be filled and the tokens nothing claimed.
-//
-// argparse's matcher is a regex over the whole positional list; the shapes this
-// CLI declares are a run of single-token positionals followed by at most one
-// variadic, for which left-to-right consumption is the same answer.
 func (p *parser) matchPositionals() (missing, extra []string) {
 	args := p.Flags().Args()
 	i := 0
@@ -397,13 +389,6 @@ func helpWidth(consoleWidth int) int {
 // `options:` sections, and the epilog — each separated by one blank line, each
 // wrapped to the console width, with the help column at
 // `min(longest invocation + 4, 24)`.
-//
-// It is a port of `HelpFormatter.format_help` and its five helpers rather than
-// a lookalike, because every exit-2 path prints this block to stderr and
-// CLI_SURFACE.md's conventions call that "part of the observable contract".
-// `TestArgparseHelpFormatterMatchesOracle` diffs it against the captures in
-// `testdata/argparse_help/`, which are `parser.format_help()` run on the real
-// Python command objects.
 func (p *parser) usageAt(width int) string {
 	w := helpWidth(width)
 	var b strings.Builder
@@ -445,16 +430,6 @@ func (p *parser) usageAt(width int) string {
 func (p *parser) usage() string { return p.usageAt(80) }
 
 // usageBlock is `ArgumentParser.format_usage()`: the `usage:` line alone.
-//
-// It is what `parser.error()` prints — `self.print_usage(_sys.stderr)` followed
-// by the one-line message — and it is NOT `format_help()`. Conflating the two
-// is a visible difference and not a cosmetic one: `kathara vclean` with no
-// `-n` answers argparse with two lines on stderr, where printing the full help
-// answered with thirteen, description and option table and wiki epilog
-// included. `--help` keeps `format_help()` ([parser.usage]).
-//
-// The width is the same fixed 80 columns [parser.usage] renders at
-// (DIVERGENCES.md 103).
 func (p *parser) usageBlock() string { return p.formatUsage(helpWidth(80)) }
 
 // helpPosition is `min(self._action_max_length + 2, self._max_help_position)`,

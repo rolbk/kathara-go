@@ -73,7 +73,7 @@ func pinClock(t *testing.T, now float64) {
 // The frozen file format
 // ---------------------------------------------------------------------------
 
-// TestRoundTripAgainstOracle is the byte-for-byte contract with 3.8.3: load
+// TestRoundTripAgainstOracle checks byte-for-byte compatibility with 3.8.3: load
 // what Python loaded, save, and produce the same file Python produced. Every
 // row was recorded by running the real `Setting` (testdata/conf_roundtrip.json).
 func TestRoundTripAgainstOracle(t *testing.T) {
@@ -115,7 +115,7 @@ func TestRoundTripAgainstOracle(t *testing.T) {
 
 // TestRealConfIsUnchanged is the narrow, load-bearing case of the table above,
 // spelled on its own: the file an existing 3.8.3 install has on disk must come
-// back out identical, or the port silently rewrites everybody's configuration
+// back out identical, or this implementation silently rewrites everybody's configuration
 // on first run.
 func TestRealConfIsUnchanged(t *testing.T) {
 	want, err := os.ReadFile(filepath.Join("testdata", "kathara.conf.3.8.3"))
@@ -181,8 +181,6 @@ func containsSubstring(s, sub string) bool {
 	return false
 }
 
-// TestKeyOrderIsFrozen pins the schema's key order per manager, which *is* the
-// file format (ORDERING.tsv:111, :113).
 func TestKeyOrderIsFrozen(t *testing.T) {
 	base := []string{
 		"image", "manager_type", "terminal", "open_terminals", "device_shell",
@@ -223,9 +221,6 @@ func TestKeyOrderIsFrozen(t *testing.T) {
 // Nilability
 // ---------------------------------------------------------------------------
 
-// TestNullableKeysRoundTrip pins the tri-state the pointers exist for: `null`
-// is not `""`, and neither is silently promoted to the default
-// (NILABILITY.tsv:47-52).
 func TestNullableKeysRoundTrip(t *testing.T) {
 	for _, tc := range []struct {
 		name  string
@@ -318,12 +313,6 @@ func TestUnknownKeysAreDropped(t *testing.T) {
 		t.Errorf("image = %q, want kathara/frr", s.Image)
 	}
 
-	// The same key holding an *object* is where Python stops being merely
-	// wasteful: `addons` is a real slot, so the assignment replaces the addon
-	// instance with a dict, `hasattr` starts answering through `dict.get`, and
-	// the next addon key in the file dies with "'dict' object has no attribute
-	// 'hosthome_mount'" (probed against 3.8.3). The schema has no such slot to
-	// clobber, so the key is dropped and the file loads. DIVERGENCES.md 22.
 	clobber, err := Load(writeConf(t, `{"addons":{"a":1},"image":"z","hosthome_mount":true}`))
 	if err != nil {
 		t.Fatalf("Load with an addons object: %v", err)
@@ -396,8 +385,6 @@ func TestLoadFromDiskResetsAddonKeys(t *testing.T) {
 	}
 }
 
-// TestLoadErrors covers the three refusals, including the two where the Go
-// answer is not Python's traceback (DIVERGENCES.md).
 func TestLoadErrors(t *testing.T) {
 	t.Run("missing file", func(t *testing.T) {
 		dir := t.TempDir()
@@ -451,10 +438,7 @@ func TestLoadErrors(t *testing.T) {
 	})
 
 	t.Run("not UTF-8", func(t *testing.T) {
-		// Python decodes the file before parsing it, so a stray \xff is a
-		// UnicodeDecodeError — a ValueError, caught as "Not a valid JSON."
-		// (probed on the UTF-8 locale). Go's decoder would substitute U+FFFD
-		// and rewrite the user's bytes on the next save. DIVERGENCES.md 35.
+
 		_, err := Load(writeConf(t, "{\"image\": \"kat\xffhara\"}"))
 		if !errors.Is(err, kerrors.ErrSettingsInvalidJSON) {
 			t.Fatalf("err = %v, want ErrSettingsInvalidJSON", err)
@@ -466,9 +450,7 @@ func TestLoadErrors(t *testing.T) {
 	})
 
 	t.Run("unknown manager_type", func(t *testing.T) {
-		// Python raises ClassNotFoundError out of the addon factory, which
-		// has no Go representation (ERROR_CODES.md §1.1); the same value
-		// produces this message one call later in Python.
+
 		_, err := Load(writeConf(t, `{"manager_type":"podman"}`))
 		if !errors.Is(err, kerrors.ErrSettingsManagerType) {
 			t.Fatalf("err = %v, want ErrSettingsManagerType", err)
@@ -574,8 +556,6 @@ func TestSaveCreatesOneDirectoryLevel(t *testing.T) {
 	}
 }
 
-// TestSaveUsesDefaultPathForEmptyDir is NILABILITY.tsv:43 — "" is Python's
-// None.
 func TestSaveUsesDefaultPathForEmptyDir(t *testing.T) {
 	pinClock(t, 1785923124.0)
 	path := filepath.Join(t.TempDir(), "config", Filename)
@@ -614,10 +594,6 @@ func TestConfPathDoesNotClean(t *testing.T) {
 // TestJoinConfPathAgainstOSPathJoin replays `posixpath.join(dir,
 // "kathara.conf")` and `ntpath.join(dir, "kathara.conf")` on the same
 // arguments, recorded from the oracle's two path modules.
-//
-// The row that matters is the bare drive: ntpath adds no separator after
-// `C:`, because `C:kathara.conf` names the file in the *current* directory of
-// drive C, and a Windows run given `-d C:` has to look where Python looked.
 func TestJoinConfPathAgainstOSPathJoin(t *testing.T) {
 	for _, tc := range []struct{ dir, posix, nt string }{
 		{"C:", "C:/kathara.conf", "C:kathara.conf"},
@@ -740,9 +716,6 @@ func TestWipeLeavesADanglingSymlink(t *testing.T) {
 // Defaults
 // ---------------------------------------------------------------------------
 
-// TestDefaults pins DEFAULTS plus both addons' `__init__` bodies, including
-// the `now - ONE_WEEK` seeding that makes a fresh install check immediately
-// (NILABILITY.tsv:46).
 func TestDefaults(t *testing.T) {
 	pinClock(t, 2_000_000.5)
 	s := Defaults()
@@ -792,8 +765,6 @@ func TestDefaults(t *testing.T) {
 	}
 }
 
-// TestAvailableListsAreOrderedAndCopied pins the declared orders C-5 and
-// ORDERING.tsv:112 depend on, and that a caller cannot mutate them.
 func TestAvailableListsAreOrderedAndCopied(t *testing.T) {
 	managers := AvailableManagers()
 	if len(managers) != 2 || managers[0] != "docker" || managers[1] != "kubernetes" {

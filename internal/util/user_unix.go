@@ -12,25 +12,6 @@ import (
 
 // GetCurrentUserInfo is utils.get_current_user_info (utils.py:249), the passwd
 // lookup every other identity getter is built on.
-//
-// The interesting part is the sudo handling (utils.py:254-261). Running as
-// root is the normal way to use Kathará on a machine where Docker needs
-// privileges, and the passwd entry of root is the wrong identity to label
-// containers with: two different people sudo-ing on the same host would share
-// one namespace and see each other's devices. So when the real uid is 0,
-// `SUDO_UID` — which sudo sets to the *invoking* user — takes over.
-//
-// Three details are load-bearing:
-//
-//   - the override applies only when the uid is exactly 0, so a setuid
-//     install running as some service account ignores SUDO_UID entirely;
-//   - `if real_user_id:` is Python truthiness, so `SUDO_UID=""` (which is what
-//     an exported-but-empty variable gives) leaves the uid at 0 rather than
-//     failing;
-//   - `int(real_user_id)` is CPython's int(), not a strict decimal parse, so
-//     `SUDO_UID=" 1000 "` works and `SUDO_UID=abc` is an uncaught ValueError.
-//     [PyInt] keeps both, and the ValueError carries the `Value` code
-//     ERROR_CODES.md §1.2 gives every uncaught one.
 func GetCurrentUserInfo() (UserInfo, error) {
 	userID := os.Getuid()
 

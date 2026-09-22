@@ -3,9 +3,9 @@
 REAL Python Kathara parsers and compare the result with each vector's
 `expected.json`.
 
-The Python behaviour is the truth. When a vector disagrees with Python, the
-vector is wrong: inspect the diff, then re-record it with `--update` and note
-the surprise in `labfile/testdata/vectors/README.md`.
+Python is the reference for these vectors. If a vector differs, inspect the
+result, re-record it with `--update` when appropriate, and document the
+observed behaviour in `labfile/testdata/vectors/README.md`.
 
 Usage:
     /root/kathara/pyvenv/bin/python tools/vectorcheck/check_python.py [options]
@@ -165,7 +165,7 @@ def run_vector(vector_dir, vec):
                 actual["lab"] = ser_lab(lab)
             else:
                 raise SystemExit("unknown parser kind %r in %s" % (parser, vector_dir))
-        except Exception as e:  # noqa: BLE001 - the taxonomy is the contract
+        except Exception as e:  # noqa: BLE001 - record the observed exception type
             actual = {"error": {"class": type(e).__name__, "message": str(e)}}
     finally:
         root_logger.removeHandler(collector)

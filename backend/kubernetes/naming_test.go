@@ -2,11 +2,6 @@ package kubernetes
 
 import "testing"
 
-// TestResourceName is EXPECTATIONS-k8s §1 "get_deployment_name" and §2
-// "get_network_name": the same eight lines twice, so one table covers both.
-//
-// The md5-8 values are the oracle's (`test_device`→`ec84ad3b`,
-// `device_name`→`3b92d741`, `a_b`→`dbf08e00`).
 func TestResourceName(t *testing.T) {
 	tests := []struct {
 		name   string
@@ -95,9 +90,6 @@ func TestConfigMapName(t *testing.T) {
 	}
 }
 
-// TestObjectSelector is the exact label-selector string both listing functions
-// build (EXPECTATIONS-k8s
-// `test_get_machines_api_objects_by_filter_machine_name`).
 func TestObjectSelector(t *testing.T) {
 	tests := []struct {
 		name  string

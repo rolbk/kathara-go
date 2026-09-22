@@ -9,26 +9,13 @@ import (
 
 // macAddressRegex is `MAC_ADDRESS_REGEX` (`model/Interface.py:7`): exactly six
 // colon-separated hex octets, no dashes and no dots.
-//
-// The `\n?$` tail is not decoration. Python's `$` also matches immediately
-// before a trailing newline, so `re.match(MAC_ADDRESS_REGEX,
-// "00:00:00:00:00:01\n")` succeeds on the oracle; Go's `$` is end-of-text only,
-// and without the tail a MAC carrying a trailing newline — reachable through
-// the API, which never strips — would be rejected here and accepted there.
 var macAddressRegex = regexp.MustCompile(`^([0-9a-fA-F]{2}:){5}[0-9a-fA-F]{2}\n?$`)
 
-// Interface is one device network interface: the edge between a [Machine] and a
-// [Link] (`model/Interface.py`), in the shape PORT_SPEC §4.1 froze.
-//
-// A zero Link marks a tombstone rather than an interface; see
-// [Machine.Interfaces].
 type Interface struct {
 	// Machine is the device the interface belongs to. It is `Interface.machine`
 	// in Python, a public attribute the error messages read.
 	Machine *Machine
 
-	// Link is the attached collision domain — and nil in a tombstone slot, the
-	// entry [Machine.RemoveInterface] leaves behind (NILABILITY.tsv:7).
 	Link *Link
 
 	// Number is the interface number, i.e. the `N` of `pc1[N]=A` and the `N` of
@@ -36,11 +23,7 @@ type Interface struct {
 	Number int
 
 	// MAC is the hardware address, empty when the backend derives one.
-	//
-	// Python's guard is `if self.mac_address and not …match`, so an empty
-	// string skips validation and is stored (NILABILITY.tsv:20,
-	// `model/Interface.py:30`). "" and None are therefore the same thing here,
-	// and both mean "generate".
+
 	MAC string
 }
 
@@ -75,15 +58,9 @@ func (i Interface) String() string {
 	return "Interface(" + name + ", " + strconv.Itoa(i.Number) + ", " + mac + ")"
 }
 
-// AddInterfaceOptions carries the two optional arguments of
-// [Machine.AddInterface] (PORT_SPEC §4.1).
 type AddInterfaceOptions struct {
-	// Number is the interface number to claim. nil auto-assigns, and 0 is a
-	// real number that must not be conflated with it (NILABILITY.tsv:5).
-	//
-	// Auto-assignment is `len(self.interfaces)` — the count of slots, tombstones
-	// included — and not "the first free number", despite the docstring saying
-	// so (ORDERING.tsv `model/Machine.py:102`).
+	// Number is the interface number to claim.
+
 	Number *int
 
 	// MAC is the hardware address; empty derives one at deploy time.

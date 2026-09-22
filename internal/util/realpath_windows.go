@@ -8,21 +8,6 @@ import (
 // realPath is `os.path.realpath(filename)` with `strict=False` on Windows,
 // i.e. ntpath.realpath, which is a different algorithm from the POSIX one
 // rather than the same one with different separators.
-//
-// Windows resolves a path by opening it and asking the kernel for the
-// canonical name (`GetFinalPathNameByHandle`), so there is no component walk
-// and no symlink stack. What ntpath adds on top is the non-strict fallback
-// (`_getfinalpathname_nonstrict`): when the open fails, it drops the last
-// component and retries, until either something resolves — in which case the
-// dropped tail is appended to it — or the path runs out. A missing directory
-// therefore resolves as far as its existing ancestors and keeps the rest
-// verbatim, which is the behaviour the Unix build reaches by ignoring lstat
-// errors.
-//
-// [path/filepath.EvalSymlinks] is the `GetFinalPathNameByHandle` step: it
-// opens the path, resolves reparse points, and strips the `\\?\` prefix the
-// API returns, which is the same normalisation ntpath does on its own result.
-// The walk-up loop around it is this function.
 func realPath(filename string) (string, error) {
 	// `if not had_prefix and not isabs(path): path = join(cwd, path)` — Abs
 	// also applies the normpath ntpath.realpath opens with.

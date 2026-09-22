@@ -56,9 +56,6 @@ func TestEncodeNetworkAttachments(t *testing.T) {
 	}
 }
 
-// TestNetworkDefinitionGolden is EXPECTATIONS-k8s §2 "_build_definition →
-// NetworkAttachmentDefinition", including the `spec.config` string whose source
-// indentation is part of the stored value (k8s-backend.md G24).
 func TestNetworkDefinitionGolden(t *testing.T) {
 	tests := []struct {
 		name      string
@@ -166,11 +163,6 @@ func TestNetworkConfigAccessors(t *testing.T) {
 	})
 }
 
-// TestEnvVarValueFromPod is `get_env_var_value_from_pod`, including the three
-// shapes that answer "" — no containers, no env list, and a name that is not
-// there — and the one property that deliberately does NOT survive: Python's
-// `containers.pop()` empties the pod, so a second call answers None
-// (k8s-backend.md G7). Here the second call answers the same value.
 func TestEnvVarValueFromPod(t *testing.T) {
 	pod := &corev1.Pod{Spec: corev1.PodSpec{Containers: []corev1.Container{{
 		Env: []corev1.EnvVar{{Name: megalosShellEnv, Value: "/bin/zsh"}},
@@ -222,8 +214,6 @@ func TestPodNetworkAttachments(t *testing.T) {
 	})
 }
 
-// TestListOptions pins the `timeout_seconds=9999` every pod and network listing
-// carries (k8s-backend.md G21).
 func TestListOptions(t *testing.T) {
 	options := listOptions(ObjectSelector("pc1"))
 	if options.LabelSelector != "app=kathara,name=pc1" {

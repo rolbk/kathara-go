@@ -31,11 +31,6 @@ func TestCleanPath(t *testing.T) {
 		{"trailing separator dropped", "/a/b/", "a/b"},
 		{"dot segments resolved", "/a/./b", "a/b"},
 		{"parent segments resolved", "/a/b/../c", "a/c"},
-		// Traversal is clamped at the filesystem root rather than letting a
-		// path escape it. NOTE this is a DIVERGENCE, not a reproduction:
-		// pyfilesystem REFUSES these two paths outright with
-		// fs.errors.IllegalBackReference. See TestBackReferenceIsClampedNotRefused
-		// and SPIKES/vfs.md §5.11.
 		{"escape clamped at the root", "../../x", "x"},
 		{"escape clamped from an unrooted path", "a/../../x", "x"},
 		{"backslash is an ordinary byte", `a\b`, `a\b`},
@@ -54,7 +49,7 @@ func TestCleanPath(t *testing.T) {
 }
 
 func TestTypeAndPath(t *testing.T) {
-	// FilesystemMixin.fs_type / fs_path (EXPECTATIONS-core.md §5, 6 rows).
+
 	t.Run("nil fs", func(t *testing.T) {
 		if got := Type(nil); got != "" {
 			t.Errorf("Type(nil) = %q, want empty", got)
@@ -305,7 +300,7 @@ func TestSub(t *testing.T) {
 }
 
 func TestNoFilesystemMessages(t *testing.T) {
-	// ERROR_CODES.md §2 pins both strings under the Invocation code.
+
 	if ErrNoFilesystem.Error() != "There is no filesystem associated to this object." {
 		t.Errorf("ErrNoFilesystem = %q", ErrNoFilesystem.Error())
 	}

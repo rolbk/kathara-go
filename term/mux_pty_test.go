@@ -14,22 +14,8 @@ import (
 	"go.uber.org/goleak"
 )
 
-// This is the integration test PORT_SPEC §9's test-infrastructure section asks
-// for and the one the headless model tests cannot give: a real pseudo-terminal
-// with a real child process on it, driven through the multiplexer model.
-//
-// The chain it exercises end to end is the whole of §3.3 item 1:
-//
 //	tea.KeyMsg → encodeKey → Session.Write → pty master → shell
 //	shell → pty master → pump goroutine → paneOutputMsg → Screen → View
-//
-// A [PtySession] is used rather than a backend transport because `term` must
-// not import a backend (PACKAGE_GRAPH.md D-5) — and because it is the exact
-// shape the Windows leg needs, where a pane hosts a local `kathara connect`
-// child on a ConPTY (SPIKES/windows-terminal.md §1).
-//
-// `goleak` is the merge gate PORT_SPEC §9 names: a multiplexer that leaked one
-// goroutine per pane would leak one per device per scenario.
 
 // ptyHarness is [harness] with a real session behind the single pane.
 func newPtyHarness(t *testing.T, sess Session) *harness {
@@ -199,11 +185,6 @@ func TestMultiplexerOverRealPty(t *testing.T) {
 }
 
 // TestPaneStaleEOFDoesNotCloseAReattachedSession pins the generation guard.
-//
-// Without it, the EOF the *previous* session's pump reports arrives a moment
-// after `ctrl+b r` has opened a new one, and closes the pane the user has just
-// re-attached — a bug that only shows up under real timing, which is why it is
-// pinned with a real pty rather than a fake.
 func TestPaneStaleEOFDoesNotCloseAReattachedSession(t *testing.T) {
 	defer goleak.VerifyNone(t)
 

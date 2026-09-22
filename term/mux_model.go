@@ -1,12 +1,6 @@
-// The bubbletea model behind the built-in multiplexer (PORT_SPEC §3.3 item 1).
-// See mux.go for the shape and the detach contract.
-//
-// # Key bindings (the "documented keybinding" §3.3 item 1 asks for)
-//
 // Everything the user types goes to the device except a prefix key, exactly as
 // tmux does it — a multiplexer that stole plain keys would make `Ctrl-C` in a
 // router CLI unreachable.
-//
 //	ctrl+b          prefix
 //	ctrl+b ctrl+b   send a literal ctrl+b to the device
 //	ctrl+b d,q      detach (containers keep running)
@@ -15,9 +9,7 @@
 //	ctrl+b r        re-attach a device whose session ended
 //	ctrl+b [        scrollback / copy mode
 //	ctrl+b ?        help
-//
 // In scrollback mode:
-//
 //	up/down k/j     move            pgup/pgdn   page (ctrl+b also pages up)
 //	home/end g/G    ends            v           start / clear a line selection
 //	y               copy selection (or the whole visible pane) and leave
@@ -43,7 +35,7 @@ var (
 	inactiveTabStyle = lipgloss.NewStyle().Faint(true)
 	closedTabStyle   = lipgloss.NewStyle().Faint(true).Strikethrough(true)
 	statusStyle      = lipgloss.NewStyle().Faint(true)
-	// Styling is bold/faint/reverse only, never a colour: the port pins
+	// Styling is bold/faint/reverse only, never a colour: this implementation pins
 	// lipgloss's background detection off (`internal/charmguard`), so an
 	// adaptive colour would be picked against a guessed background.
 	selectedLineStyle = lipgloss.NewStyle().Reverse(true)
@@ -89,7 +81,6 @@ func (m *muxModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			// lines from the bottom of the coordinate space, so it has to grow
 			// by exactly what the write added to that space — otherwise a
 			// chatty device drags the view out from under someone reading it.
-			//
 			// A saturated scrollback adds nothing (the oldest line drops as
 			// the newest arrives), so the delta is zero and the view slides,
 			// which is unavoidable: the lines it was showing no longer exist.
@@ -158,13 +149,6 @@ func (m *muxModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 // everySessionEndedCleanly reports whether there is nothing left to look at:
 // every tab has been attached and every one of those sessions has since ended
 // without an error.
-//
-// It is what closes a one-tab multiplexer when the user types `exit` in the
-// shell, which is the behaviour `kathara connect` had before the multiplexer
-// became its renderer (PORT_SPEC §3.3 item 4, "unchanged behaviour"). Two
-// deliberate exclusions: a tab that was never activated (its device is still
-// there to be looked at, so the window stays) and a tab that ended with an
-// error (the user has to be able to read it — `TestMuxOpenFailureIsReportedInThePane`).
 func (m *muxModel) everySessionEndedCleanly() bool {
 	for _, p := range m.panes {
 		if p.state != paneClosed || p.err != nil {
@@ -176,11 +160,6 @@ func (m *muxModel) everySessionEndedCleanly() bool {
 
 // resize propagates a window size to every pane and, for the live ones, to the
 // device behind it.
-//
-// Every pane is resized, not only the visible one: a device whose tab is in
-// the background must not discover a stale geometry the moment it is shown,
-// which is the same "size before I/O" property the Unix console adapter has
-// always had (SPIKES/windows-terminal.md §7, OQ-18).
 func (m *muxModel) resize(width, height int) tea.Cmd {
 	if width < 1 || height < 1 {
 		return nil

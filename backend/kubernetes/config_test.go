@@ -33,11 +33,6 @@ users:
 
 // TestLoadKubeConfigFromKubeconfig is `KubernetesConfig.load_kube_config`'s
 // first branch fused with `get_cluster_user`'s fallback.
-//
-// The seed is the CONTEXT NAME and not the token, even though the kubeconfig
-// carries one: the Python client stores a kubeconfig bearer token under
-// `api_key['BearerToken']`, while `get_cluster_user` reads
-// `api_key['authorization']` and takes the KeyError branch.
 func TestLoadKubeConfigFromKubeconfig(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "config")
@@ -88,10 +83,6 @@ func TestLoadKubeConfigFromSettings(t *testing.T) {
 	}
 }
 
-// TestLoadKubeConfigUnreadable is
-// `ConnectionError("Cannot read Kubernetes configuration.")`: no kubeconfig and
-// an incomplete settings pair. Both halves are required, and nil and "" are the
-// same thing (NILABILITY.tsv:50-51).
 func TestLoadKubeConfigUnreadable(t *testing.T) {
 	tests := []struct {
 		name  string

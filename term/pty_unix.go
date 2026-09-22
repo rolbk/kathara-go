@@ -13,10 +13,6 @@ import (
 	"github.com/creack/pty"
 )
 
-// unixPty implements Pty over creack/pty (PACKAGE_GRAPH: term → creack/pty
-// v1.1.24). The per-OS constructors in pty_linux.go / pty_darwin.go both land
-// here; they exist as the seam where genuinely divergent per-OS behaviour
-// (e.g. external-emulator spawning) attaches in Phase 6.
 type unixPty struct {
 	mu      sync.Mutex
 	ws      Winsize

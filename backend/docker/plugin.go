@@ -1,9 +1,8 @@
 // This file is `DockerPlugin.py`: making sure the Kathará network plugin is
 // installed, enabled and — for the iptables flavour — pointed at the right
 // `xtables.lock`.
-//
 // It runs from the constructor, on every launch, before anything else touches
-// the daemon (OQ-16, `DockerManager.py:75-76`).
+// the daemon (`DockerManager.py:75-76`).
 
 package docker
 
@@ -77,36 +76,6 @@ func (p *pluginService) isBridge() bool {
 
 // CheckAndDownload is `check_and_download_plugin` (`DockerPlugin.py:32`), the
 // whole plugin lifecycle in one method.
-//
-// The shape, with the remote/local fork spelled out because it is not
-// symmetrical:
-//
-//	get the plugin
-//	  found     → "upgrade" it (see below)
-//	  not found → local: install it; remote: DockerPluginError "not found"
-//	local  → VDE:    enable if disabled
-//	         bridge: resolve the xtables mount, then
-//	                   disabled → configure, enable
-//	                   enabled  → compare the configured source with the
-//	                              computed one; if they differ, DISABLE,
-//	                              reconfigure, re-enable
-//	remote → error unless already enabled
-//
-// # The upgrade that is not an upgrade (OQ-16)
-//
-// `plugin.upgrade()` at `:47` looks like an every-launch network round trip,
-// and it is not one. docker-py's `Plugin.upgrade` is a GENERATOR FUNCTION — its
-// body holds `yield from` — so calling it and discarding the result constructs
-// a generator and runs nothing at all: no privileges query, no pull, no
-// `reload`, and not even the `DockerError('Plugin must be disabled before
-// upgrading.')` its first line would raise for the enabled plugin that is the
-// normal case. Oracle-verified against docker-py 7.2.0:
-// `inspect.isgeneratorfunction(Plugin.upgrade)` is True.
-//
-// So the faithful port of that line is nothing, and doing a real
-// `PluginUpgrade` here would be a behaviour change — it would pull on every
-// launch and fail on every enabled plugin. The line is preserved as this
-// comment, which is where its whole observable effect lives.
 func (p *pluginService) CheckAndDownload(ctx context.Context) error {
 	// `"Checking plugin `%s`..." % self.current_name` (`DockerPlugin.py:43`).
 	slog.Debug("Checking plugin `" + p.currentName + "`...")
@@ -158,9 +127,6 @@ func (p *pluginService) CheckAndDownload(ctx context.Context) error {
 			return p.manager.api.PluginEnable(ctx, p.currentName, types.PluginEnableOptions{Timeout: 0})
 		}
 
-		// `list(filter(...)).pop()` over `Settings.Mounts`: the LAST mount
-		// named `xtables_lock`, and an IndexError when there is none — a
-		// plugin without that mount is not this plugin (ORDERING.tsv row 120).
 		source, ok := lastMountSource(plugin.Settings.Mounts, xtablesConfigurationKey)
 		if !ok {
 			// `.pop()` on the empty filter result — Python's IndexError, with
@@ -196,25 +162,6 @@ func (p *pluginService) CheckAndDownload(ctx context.Context) error {
 }
 
 // install is `client.plugins.install(name)` (`DockerPlugin.py:51`).
-//
-// docker-py's collection method queries the plugin's privileges, pulls with
-// them, DRAINS the progress stream, and then re-fetches the plugin
-// (`models/plugins.py:188-192`). It does NOT enable: the plugin comes back
-// disabled and the caller decides.
-//
-// The Go SDK's `PluginInstall` does the same work behind one call, but its
-// goroutine ends the progress stream with `PluginEnable` unless
-// `options.Disabled` is set (`docker@v28.5.2 client/plugin_install.go:210`).
-// `Disabled: true` is therefore not an option here, it is the port: without it
-// the plugin is enabled with its MANIFEST default `xtables_lock` source, before
-// `_configure_xtables_mount` has had a chance to blank it — which on a pure
-// nf_tables host (computed mount "") can fail the enable outright and make
-// `New()` error where Python's first run succeeds, and when it does succeed
-// turns Python's install → configure → enable into install → enable → disable
-// → configure → enable.
-//
-// Draining the stream is still not optional: the SDK's goroutine writes into a
-// pipe and only the `PluginSet`/close steps at its end release it.
 func (p *pluginService) install(ctx context.Context) (*types.Plugin, error) {
 	body, err := p.manager.api.PluginInstall(ctx, p.currentName, types.PluginInstallOptions{
 		RemoteRef:            p.currentName,
@@ -241,17 +188,6 @@ func (p *pluginService) install(ctx context.Context) (*types.Plugin, error) {
 
 // lastMountSource is `list(filter(lambda x: x["Name"] == key, mounts)).pop()`
 // followed by `mount_obj["Source"]` (`DockerPlugin.py:68-72`).
-//
-// `.pop()` takes the LAST match and raises IndexError on none. The key is
-// unique in practice so first-versus-last does not matter (ORDERING.tsv row
-// 120 says as much), but the last is what Python takes and the emptiness is
-// reported rather than panicked.
-//
-// `Source` is a `*string` in the SDK because the plugin manifest allows null,
-// and the pointer is handed BACK rather than flattened: Python's comparison is
-// against `None`, which differs from every string INCLUDING the empty one that
-// [pluginService.xtablesLockMount] computes on an nf_tables host. The second
-// result is the `.pop()`'s emptiness, not the source's nullness.
 func lastMountSource(mounts []types.PluginMount, key string) (*string, bool) {
 	var source *string
 	found := false
@@ -268,10 +204,6 @@ func lastMountSource(mounts []types.PluginMount, key string) (*string, bool) {
 // configureXtablesMount is `_configure_xtables_mount`
 // (`DockerPlugin.py:172`): `plugin.configure({XTABLES_CONFIGURATION_KEY +
 // '.source': xtables_lock_mount})`.
-//
-// docker-py turns that dict into the list `["xtables_lock.source=<value>"]`
-// before posting it (`APIClient.configure_plugin`), which is exactly the
-// `[]string` the Go SDK's `PluginSet` takes.
 func (p *pluginService) configureXtablesMount(ctx context.Context, mount string) error {
 	// `"Configuring xtables.lock source to `%s`..." % xtables_lock_mount`
 	// (`DockerPlugin.py:179`).
@@ -281,17 +213,6 @@ func (p *pluginService) configureXtablesMount(ctx context.Context, mount string)
 
 // xtablesLockMount is `_xtables_lock_mount` (`DockerPlugin.py:155`), the one
 // three-way platform branch in this file:
-//
-//	Linux   → mount the lock unless iptables is the nf_tables backend
-//	Windows → mount it only under a WSL2 (`microsoft`) kernel
-//	macOS   → never
-//
-// "Mount it" is the path; "do not" is the empty string, which `plugin.configure`
-// writes as an empty source and the plugin reads as "no bind mount".
-//
-// The Linux arm is why `os/Networking.get_iptables_version` had to be carved
-// out of the §0.3 deferral (SYNTHESIS C-3, PACKAGE_GRAPH.md D-6): it is on the
-// 1.0 path.
 func (p *pluginService) xtablesLockMount(ctx context.Context) (string, error) {
 	switch runtime.GOOS {
 	case "linux":
@@ -321,15 +242,6 @@ func (p *pluginService) xtablesLockMount(ctx context.Context) (string, error) {
 
 // StorePath is `plugin_store_path` (`DockerPlugin.py:119`): the directory the
 // VDE plugin keeps its switch sockets in, `<tmp mount destination>/katharanp`.
-//
-// Its only caller is the external-interface attach, which is DEFERRED
-// (PORT_SPEC §0.3), so nothing in 1.0 reaches it. It is ported because the
-// error it raises for a plugin without a `tmp` mount is a live row of
-// ERROR_CODES.md (`Unable to find \`tmp\` in plugin mounts.`) and because the
-// deferred feature will want it unchanged.
-//
-// Python scans for the FIRST mount named `tmp` and breaks, which is the
-// opposite of the `.pop()` at the xtables site; both are reproduced as written.
 func (p *pluginService) StorePath(ctx context.Context) (string, error) {
 	plugin, _, err := p.manager.api.PluginInspectWithRaw(ctx, p.currentName)
 	if err != nil {
@@ -346,11 +258,6 @@ func (p *pluginService) StorePath(ctx context.Context) (string, error) {
 
 // PID is `plugin_pid` (`DockerPlugin.py:110`): the plugin's init process, read
 // out of the runc state file.
-//
-// Deferred with [pluginService.StorePath]; ported for the same reason. Python's
-// `_get_plugin_state` returns `{}` when the file does not exist and
-// `state['init_process_pid']` then KeyErrors, which is reproduced as a
-// [model.PyRuntimeError] rather than a panic (PORT_SPEC §10).
 func (p *pluginService) PID(ctx context.Context) (int, error) {
 	plugin, _, err := p.manager.api.PluginInspectWithRaw(ctx, p.currentName)
 	if err != nil {

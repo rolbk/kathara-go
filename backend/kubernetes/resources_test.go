@@ -50,11 +50,6 @@ func TestConfigMapForDeviceWithNoFiles(t *testing.T) {
 // TestConfigMapGolden is `_build_for_machine`'s object: the name, the
 // `deletionGracePeriodSeconds: 0` that has no effect on a ConfigMap but is in
 // the submitted object, and the single `hostlab.b64` key.
-//
-// The tar bytes themselves are not compared — Python's archive carries
-// `time.time()` mtimes and a gzip header that differ run to run (SYNTHESIS
-// §1.4) — so the golden masks them and [TestPackDataRoundTrip] checks the
-// content instead.
 func TestConfigMapGolden(t *testing.T) {
 	s := testSettings()
 	m, _, _, _ := newTestManager(t, s)
@@ -104,8 +99,7 @@ func TestConfigMapTooLarge(t *testing.T) {
 	if !errors.Is(err, kerrors.ErrKubernetesConfigMap) {
 		t.Fatalf("error = %v, want a KubernetesConfigMap error", err)
 	}
-	// `utils.human_readable_bytes(3145728)` is "3.0 MB" (oracle-probed), and
-	// ERROR_CODES.md freezes the sentence around it.
+
 	if !strings.Contains(err.Error(), "Maximum supported size: 3.0 MB.") {
 		t.Errorf("message = %q, want it to name the 3.0 MB ceiling", err.Error())
 	}
@@ -130,9 +124,6 @@ func TestConfigMapDeleteSwallowsErrors(t *testing.T) {
 // Secret
 // ---------------------------------------------------------------------------
 
-// TestSecretNoDockerConfig is EXPECTATIONS-k8s §3
-// `test_create_no_docker_config`: with the setting unset, `create` returns an
-// empty list and makes NO API call.
 func TestSecretNoDockerConfig(t *testing.T) {
 	s := testSettings()
 	m, clientset, _, _ := newTestManager(t, s)
@@ -152,15 +143,6 @@ func TestSecretNoDockerConfig(t *testing.T) {
 	}
 }
 
-// TestSecretGolden is EXPECTATIONS-k8s §3 `test_create_with_docker_config`: the
-// exact Secret submitted, in namespace `9pe3y6IDMwx4PfOPu5mbNg` — the hash of
-// "Default scenario".
-//
-// The `data` value is the setting VERBATIM: the settings screen stores the
-// base64 of a config.json and nothing re-encodes it. client-go's `Data` is
-// `map[string][]byte` and its codec base64s on the way out, so the value is
-// decoded here and re-encoded there; the golden proves the round trip is the
-// identity.
 func TestSecretGolden(t *testing.T) {
 	s := testSettings()
 	s.DockerConfigJSON = ptr("eyJhdXRocyI6IHt9fQ==")
@@ -194,10 +176,6 @@ func injectSecretAdded(clientset *fakeClientset, namespace, name string) {
 	clientset.PrependWatchReactor("secrets", k8stesting.DefaultWatchReactor(watcher, nil))
 }
 
-// TestSecretSwallowsAPIErrors is EXPECTATIONS-k8s §3 `test_create_exception`
-// and `test_create_secret_exception`: a creation failure answers an EMPTY list
-// and skips the wait — a misconfigured registry credential is silent here and
-// surfaces as an ImagePullBackOff later (k8s-backend.md G25).
 func TestSecretSwallowsAPIErrors(t *testing.T) {
 	s := testSettings()
 	s.DockerConfigJSON = ptr("eyJhdXRocyI6IHt9fQ==")
@@ -220,11 +198,6 @@ func TestSecretSwallowsAPIErrors(t *testing.T) {
 	}
 }
 
-// TestSecretUndecodableConfigIsSilent pins the port's own exit for a
-// `docker_config_json` that is not valid base64: Python sends it, the API
-// server answers 400, and the exception is swallowed. The observable outcome —
-// no Secret, no error — is the same, so the decode failure takes the same exit
-// (DIVERGENCES.md).
 func TestSecretUndecodableConfigIsSilent(t *testing.T) {
 	s := testSettings()
 	s.DockerConfigJSON = ptr("not base64!!")
@@ -332,7 +305,8 @@ func TestNamespaceGetAll(t *testing.T) {
 
 // TestNamespaceGetNamespace is `get_namespace`: a LIST with the
 // `kubernetes.io/metadata.name` selector, so a missing namespace is nil rather
-// than a 404. It is dead code in Python too and ported as public surface.
+// than a 404. It is not reached by the current Python path but remains public
+// surface.
 func TestNamespaceGetNamespace(t *testing.T) {
 	s := testSettings()
 	m, _, _, _ := newTestManager(t, s,

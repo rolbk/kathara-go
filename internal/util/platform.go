@@ -44,20 +44,6 @@ func IsReservedMachineName(name string) bool {
 }
 
 // ExecByPlatform is utils.exec_by_platform (utils.py:138).
-//
-// The argument order is (linux, windows, mac), the same as Python's, because
-// half the call sites are asymmetric in ways that reading the order wrong would
-// silently invert: `get_current_user_home` gives macOS the *Windows* branch,
-// and `Setting.py:293` deliberately passes `lambda: True` on Windows where the
-// other two slots return a real check.
-//
-// Python falls off the end and returns None for a `sys.platform` that is none
-// of the four constants; Go returns the zero value of T for any other
-// [runtime.GOOS] (NILABILITY.tsv: "implicit None on unknown platform").
-//
-// Most platform branches in this port are build-tagged files instead, which is
-// both cheaper and checked by the compiler. Use this only where the branch is
-// genuinely a value chosen at one call site.
 func ExecByPlatform[T any](funLinux, funWindows, funMac func() T) T {
 	switch runtime.GOOS {
 	case Linux:
@@ -73,10 +59,4 @@ func ExecByPlatform[T any](funLinux, funWindows, funMac func() T) T {
 
 // PoolSize is utils.get_pool_size (utils.py:106), the fan-out width of every
 // parallel section and the Docker client's `max_pool_size`.
-//
-// Python reads `multiprocessing.cpu_count()`, i.e. every online CPU;
-// [runtime.NumCPU] reads the CPUs this process may actually run on, so under
-// `taskset` or a cpuset the Go value is the smaller, more useful one. Pool
-// width is not observable in any output, so this is a tuning difference, not a
-// behavioural one.
 func PoolSize() int { return runtime.NumCPU() }

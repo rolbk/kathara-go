@@ -245,11 +245,6 @@ func keyMsg(s string) tea.KeyMsg {
 }
 
 // isQuit reports whether the command an Update returned is tea.Quit.
-//
-// It cannot simply call the command: anything that is not a quit is the model's
-// own [muxModel.nextEvent], which blocks until a message arrives. A sentinel is
-// queued first so that the non-quit case returns at once, and taken back when
-// the quit case leaves it untouched.
 func (h *harness) isQuit(cmd tea.Cmd) bool {
 	h.t.Helper()
 	if cmd == nil {
@@ -592,9 +587,6 @@ func TestMuxPaneClosedAndReattach(t *testing.T) {
 	}
 }
 
-// TestMuxQuitsWhenEverySessionHasEndedCleanly is what makes `kathara connect`
-// under the multiplexer end where the raw attach ended: type `exit` and the
-// window goes with the shell (PORT_SPEC §3.3 item 4).
 func TestMuxQuitsWhenEverySessionHasEndedCleanly(t *testing.T) {
 	t.Run("the only session ends", func(t *testing.T) {
 		h := newHarness(t, "pc1")
@@ -709,8 +701,6 @@ func TestEncodeKey(t *testing.T) {
 		{"page up", tea.KeyMsg{Type: tea.KeyPgUp}, "\x1b[5~"},
 		{"delete", tea.KeyMsg{Type: tea.KeyDelete}, "\x1b[3~"},
 		{"shift+tab", tea.KeyMsg{Type: tea.KeyShiftTab}, "\x1b[Z"},
-		// SPIKES/windows-terminal.md §9 row 4: modern xterm SS3, not Python's
-		// legacy ESC[11~ KEYCODES table.
 		{"F1 is SS3", tea.KeyMsg{Type: tea.KeyF1}, "\x1bOP"},
 		{"F4 is SS3", tea.KeyMsg{Type: tea.KeyF4}, "\x1bOS"},
 		{"F5 is CSI", tea.KeyMsg{Type: tea.KeyF5}, "\x1b[15~"},
@@ -739,12 +729,6 @@ func discard(tea.Cmd) {}
 
 // TestShutdownAbandonsAnAttachStillInFlight: detaching while a tab is still
 // "opening…" must not hold the process behind the backend call.
-//
-// A pane's Open is `ConnectTTYObj`, which runs the startup-execution wait, and
-// that wait has no deadline of its own (RULINGS.md:96 removed the ENTER
-// override). Without the multiplexer cancelling its own context, `ctrl+b d`
-// would leave the user staring at a restored shell while `Run` sat in
-// `wg.Wait` until the daemon answered — or forever.
 func TestShutdownAbandonsAnAttachStillInFlight(t *testing.T) {
 	defer goleak.VerifyNone(t)
 
@@ -810,10 +794,6 @@ func TestShutdownClosesASessionTheProgramNeverSaw(t *testing.T) {
 // just the model: input arrives as bytes on a pipe, the view is rendered to a
 // buffer, and `ctrl+b d` has to come back out the other side as a clean return
 // with every session closed and every goroutine finished.
-//
-// It is the one test that covers [Run] itself — the alt-screen setup, the
-// renderer, and the shutdown ordering that makes detach leave containers
-// running.
 func TestRunDetachesAndClosesEverything(t *testing.T) {
 	defer goleak.VerifyNone(t)
 

@@ -4,17 +4,6 @@ import "slices"
 
 // OrderedMap is a Python dict: insertion-ordered, with re-assignment of an
 // existing key keeping that key's original position.
-//
-// Every Python dict in this subsystem is order-bearing (ORDERING.tsv rows
-// `model/Machine.py:182,200,236,261,286` and `model/Lab.py:65,66`,
-// `model/Link.py:28`): sysctls are applied to a container in iteration order,
-// volumes are indexed `volume0..N` by position, `Lab.machines` is the
-// sequential deploy order and `Link.machines` is the wiring order. A Go map
-// would randomise all of it, so none of them is a Go map.
-//
-// The zero value is not usable; construct with [NewOrderedMap]. A nil receiver
-// answers the read methods (empty), which keeps the accessors on a partially
-// built [Meta] from panicking.
 type OrderedMap[K comparable, V any] struct {
 	keys   []K
 	values map[K]V
@@ -57,11 +46,6 @@ func (o *OrderedMap[K, V]) Has(key K) bool {
 
 // Set is d[key] = value. It returns the previous value and whether there was
 // one, which is what `Machine.add_meta` returns to its caller.
-//
-// An existing key keeps its position: Python's dict assignment does not move a
-// key that is already there, and the sysctl/env/port/volume metas rely on it
-// (a lab.conf that sets `pc1[port]=8080` twice leaves one entry, in the
-// position of the first).
 func (o *OrderedMap[K, V]) Set(key K, value V) (V, bool) {
 	prev, existed := o.values[key]
 	if !existed {

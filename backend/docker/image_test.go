@@ -13,13 +13,6 @@ import (
 	"github.com/KatharaFramework/kathara-go/kerrors"
 )
 
-// TestNormalizeImageTag is EXPECTATIONS-docker.md §4.1, bug included.
-//
-// Python's guard is `if (':' or '@') not in image_name`, and `(':' or '@')`
-// evaluates to `':'` before the `in` runs — so only the colon is ever tested
-// and the `@` never participates (docker-backend.md gotcha 4). It happens not
-// to matter, because a digest reference contains `sha256:`, but the port must
-// not "fix" it: the string that reaches the daemon would change.
 func TestNormalizeImageTag(t *testing.T) {
 	tests := []struct {
 		in, want string
@@ -27,11 +20,11 @@ func TestNormalizeImageTag(t *testing.T) {
 		{"kathara/test", "kathara/test:latest"},
 		{"kathara/test:latest", "kathara/test:latest"},
 		{"kathara/test:tag", "kathara/test:tag"},
-		// A digest reference is left alone — by the colon in `sha256:`, not by
-		// the `@` the author meant to test.
+		// A digest reference is left alone because of the colon in `sha256:`,
+		// rather than because of the `@`.
 		{"kathara/test@sha256:abc", "kathara/test@sha256:abc"},
 		// And a registry host with a port is left alone too, for the same
-		// accidental reason.
+		// reason.
 		{"localhost:5000/img", "localhost:5000/img"},
 	}
 
@@ -44,27 +37,14 @@ func TestNormalizeImageTag(t *testing.T) {
 	}
 }
 
-// TestNormalizeImageTagIgnoresTheAtSign is the bug stated on its own, so that a
-// future "cleanup" trips a named test rather than a golden: a name carrying an
-// `@` but NO colon is tagged `:latest`, which is not what the code reads like
-// it intends.
+// TestNormalizeImageTagIgnoresTheAtSign records the edge case on its own: a
+// name carrying an `@` but no colon is tagged `:latest`.
 func TestNormalizeImageTagIgnoresTheAtSign(t *testing.T) {
 	if got := normalizeImageTag("img@digest"); got != "img@digest:latest" {
 		t.Errorf("normalizeImageTag = %q; the `@` must not suppress the tag", got)
 	}
 }
 
-// TestImageArchitectureCompatibility is EXPECTATIONS-docker.md §4.3's twelve-way
-// matrix, reduced to the two rules it encodes:
-//
-//   - a LOCAL image has one architecture and it must be in the compatible set;
-//   - a REMOTE manifest list has many and ONE compatible entry is enough.
-//
-// The host architecture is `utils.get_architecture()` — the KERNEL's, not
-// `runtime.GOARCH` (OQ-20) — so the test asks the same function the code does
-// rather than hard-coding a value that would only hold on one machine. The
-// macOS Rosetta row is covered separately by
-// [TestImageArchitectureRosettaIsMacOnly].
 func TestImageArchitectureCompatibility(t *testing.T) {
 	host, err := util.GetArchitecture()
 	if err != nil {

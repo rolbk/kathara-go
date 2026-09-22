@@ -1,22 +1,15 @@
 // This file is the one place a `docker_config_json` *path* becomes a
 // `docker_config_json` *value*.
-//
 // The settings screen never stored what the user typed. It validated the path
 // with `DockerConfigJsonValidator` and then ran
 // `store_b64_docker_json_callback` (`KubernetesOptionsHandler.py:170-172`):
-//
 //	base64.b64encode(json.dumps(json.load(f)).encode()).decode()
-//
 // So the stored value is the base64 of CPython's *re-serialization* of the
 // file, not of the file's own bytes: whitespace collapses to `", "`/`": "`,
 // non-ASCII becomes `\uXXXX`, `1.50` becomes `1.5`. A Kubernetes secret built
 // from either spelling works, but the two are not the same string, and the
 // value lands in a config file that a 3.8.3 install reads back — so the
 // re-serialization is reproduced rather than approximated.
-//
-// It lives in `settings/` and not in `cmd/kathara` because §3.2 item 4 puts the
-// conversion where both entry paths can reach it: `kathara config set
-// docker_config_json <path>` and the settings form call this same function.
 
 package settings
 
@@ -35,12 +28,6 @@ import (
 // `DockerConfigJsonValidator` in front of it: read the file at path, require
 // that it parses as JSON, and answer the base64 of CPython's `json.dumps` of
 // what was parsed.
-//
-// `~` is expanded the way `os.path.expanduser` expands it, because
-// [DefaultDockerConfigJSONPath] is the pre-filled answer the screen offered.
-//
-// The two failure classes are [ValidateDockerConfigJSON]'s: `OS` for the open,
-// `Value` for the parse (ERROR_CODES.md §1.2).
 func EncodeDockerConfigJSON(path string) (string, error) {
 	data, err := os.ReadFile(expandUser(path))
 	if err != nil {
@@ -57,11 +44,6 @@ func EncodeDockerConfigJSON(path string) (string, error) {
 // pyJSONDumps is `json.dumps(json.loads(data))`: a decode that keeps object key
 // order, then an encode with CPython's default separators `", "` and `": "` and
 // its `ensure_ascii=True` string escaping.
-//
-// It walks tokens rather than unmarshalling into `map[string]any` because a Go
-// map has no order and CPython's dict has the file's. Duplicate keys follow
-// dict assignment: the last value wins and the key keeps the position of its
-// *first* appearance.
 func pyJSONDumps(data []byte) ([]byte, error) {
 	dec := json.NewDecoder(bytes.NewReader(data))
 	dec.UseNumber()
@@ -177,14 +159,6 @@ func appendPyJSONArray(dst []byte, dec *json.Decoder) ([]byte, error) {
 }
 
 // pyNumberRepr is how `json.dumps` writes a number `json.loads` produced.
-//
-// CPython's scanner splits on the literal's shape: a literal with a `.` or an
-// exponent becomes a float, anything else an `int`. A float is written through
-// `repr` ([pyFloatRepr]); an int is written through `int.__repr__`, which for a
-// JSON integer literal is the literal itself — JSON forbids leading zeros and a
-// leading `+`, so `int(s)` round-trips every spelling except `-0`, which
-// CPython normalises to `0`. Python ints are unbounded, so a literal too long
-// for any Go integer type is still exactly its own repr.
 func pyNumberRepr(literal string) string {
 	if strings.ContainsAny(literal, ".eE") {
 		var f float64

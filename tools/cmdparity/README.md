@@ -1,190 +1,25 @@
-# cmdparity — command-flow parity harness
+# Command-parity tool
 
-The Layer A golden suite (`tools/goldenharness`) exercises `lstart`, in-container
-probes and `lclean`. `PORT_SPEC.md` §11's merge gate additionally demands that
-`vstart` / `vconfig` / `vclean` be byte-identical to the Python implementation,
-and `lconfig`, `lrestart`, `wipe`, `list` and `exec` have no behaviour golden at
-all. This tool closes that gap.
+This is a maintainer utility for comparing command flows between the Python
+Kathará release and this implementation. It is not part of the shipped CLI.
 
-For each **flow** — a fixed argv sequence over a fixed scratch scenario — it
-drives **both** implementations through the identical steps and records, after
-every step:
+It runs selected workflows twice against each implementation, captures command
+output and Docker state, and reports nondeterminism or behavioural differences.
+The recordings are deliberately local and ignored by Git.
 
-- the exit code,
-- normalized stdout and stderr,
-- a normalized snapshot of the Kathara-owned Docker state (containers,
-  networks, mounts, driver opts, dangling volume count).
-
-Each flow is run twice per implementation. Comparing run 1 against run 2 of one
-implementation is the **determinism** check; comparing Python against Go
-run-for-run is the **parity** check.
-
-## Running
-
-```sh
-go build -o /tmp/kgo ./cmd/kathara            # from the repo root
+```console
+go build -o /tmp/kgo ./cmd/kathara
 cd tools/cmdparity
-go run . -record -compare                     # all flows, both impls, 2 runs
-go run . -record -flow exec                   # one flow
-go run . -compare                             # diff what is already recorded
-go run . -record -compare -columns 80         # golden-harness geometry
+go run . -record -compare
+go run . -record -flow exec
+go run . -compare
 ```
 
-Recordings land in `recordings/<flow>.<impl>.run<N>.json` and are committed as
-the expected behaviour. `-compare` prints one block per difference and a count;
-the count is the assertion.
+The default Python oracle is `/root/kathara/pyvenv/bin/python`. Use
+`-py-bin /path/to/python` for a different environment containing Kathará 3.8.3,
+and `-go-bin` if the Go binary is not `/tmp/kgo`.
 
-The tool owns Docker while it runs: it force-cleans every Kathara container and
-network before and after each flow, on every path including failure.
-
-## Two environment traps this harness had to solve
-
-1. **`$HOME` does not move the settings file.** `utils.get_current_user_home`
-   (`utils.py:212`) picks the `passwd_home` arm on Linux, so both
-   implementations read `<pw_dir>/.config/kathara.conf` and ignore `$HOME`
-   entirely. Verified: `HOME=/tmp/x python -c "from Kathara.setting.Setting
-   import DEFAULT_SETTINGS_PATH; print(DEFAULT_SETTINGS_PATH)"` prints
-   `/root/.config/kathara.conf`, and `HOME=/tmp/x kathara config get image`
-   returns the value from the real file. cmdparity therefore installs its
-   pinned `kathara.conf` **at the real default path** and restores the previous
-   content on exit. (`tools/goldenharness/runner.go:437` sets `HOME` only, which
-   on Linux pins nothing — see the findings note below.)
-
-2. **Console width.** Both implementations honour `COLUMNS`. The harness pins
-   200 rather than the golden harness's 80, because `create_lab_table` builds an
-   eleven-column `expand=True` table and at 80 every cell renders as a single
-   ellipsis. The cost is that the `usage:` block width then differs between the
-   two (the port renders help at a fixed 80 — `DIVERGENCES.md` #103); use
-   `-columns 80` to remove that axis.
-
-## Flows
-
-| Flow | What it covers |
-|---|---|
-| `vsugar` | `vstart` two devices on one collision domain, `list`, `vconfig --add`/`--add CD/MAC`/`--rm`, re-`--rm` of a removed CD, `vconfig` on an unknown device, `vclean` each, `vclean` of an already-stopped name |
-| `vsugar-args` | The whole `§6/§7/§8` flag surface without Docker: `-h`, `--print`/`--dry-run`, every mutually-exclusive group, missing required, `--eth`/`--volume`/`--rm` type errors, unknown flag |
-| `vstart-full` | One device deployed with the full device-configuration surface (`--eth` with MAC, `--mem`, `--cpus`, `-i`, `--bridged`, `--port` ×2, `--sysctl`, `--env` ×2, `--ulimit`, `--volume`, `--shell`, `-e`, `--entrypoint` + `--` args), plus `--hosthome`, `--privileged`, and a duplicate `vstart` |
-| `lab` | `lstart` → `lconfig --add`/`--rm` → unknown-CD and unknown-device errors → `lrestart` (whole scenario and one device) → `lclean` |
-| `listwipe` | `list` with a lab **and** a vlab up, `list -n`, `list -n <unknown>`, `list -a`, `wipe -f`, `wipe -f -a`, `wipe` without `--force` (EOF on stdin) |
-| `exec` | Exit-code propagation (`true`/`false`/`exit 7`/missing binary → 127), stdout and stderr routing, `--no-stdout`, `--no-stderr`, both, `--` multiword, unknown device, `-v` with nothing running, argparse errors |
-| `edge` | `lclean` with nothing up, `lstart` twice, `vconfig`/`vclean` aimed at a lab device through the vlab, the `lrestart --xterm` latent bug (`DIVERGENCES.md` on `LrestartCommand`), `--wait`, `lclean` with a device list / `--exclude`, `lclean -d <missing>` |
-| `cmd-args` | `-h` for the ten sub-commands `vsugar-args` does not cover, the whole top-level dispatcher (no command / `-h` / `-v` / unknown / non-lowercase), `lstart --print`/`--dry-mode`, all three `lstart` tri-state MEGs, `-o/--pass` accepted and malformed, `-d <missing>`, `lrestart`'s rejection of `--print` and `--terminal-emu`, `linfo`'s flag shapes and both MEGs, `list -n` with no value, `wipe -s -a`, `lconfig` with no group, `lclean --exclude` with no value, `check extra` |
-| `lstart-flags` | The `lstart` flag surface deployed: device selection, `--exclude`, both with an unknown name, `-o/--pass mem=`, `--hosthome`, `--no-shared`, `--privileged`, `-l` — each followed by a Docker snapshot, so `Memory`, `Privileged` and the `Binds`/`Mounts` set are asserted, not just stdout |
-| `folderlab` | `-F/--force-lab`: `lstart` with no `lab.conf` (fails), `lstart --print -F`, `lstart -F`, `list`, `lclean` — the `FolderParser` path, which no golden and no other flow reaches |
-| `checkcmd` | `kathara check` twice: the five identity lines plus a real deploy/undeploy of the `kathara_test` lab |
-
-## What is normalized, and why
-
-Every rule deletes a named source of nondeterminism. Nothing else is touched.
-
-| Rule | Source |
-|---|---|
-| ANSI CSI/OSC/single-char escapes stripped, CR dropped | colour and cursor control carry no behaviour |
-| Log records unfolded (a `CRITICAL `-class line absorbs its 9-space continuations) | `RichHandler` folds to the console width; the port emits records unfolded on purpose (`DIVERGENCES.md` #91) |
-| Progress-bar glyphs (`━╸╹╺╻`), braille spinner frames, `docker pull` layer chatter dropped | frame count is a function of elapsed time |
-| Literal tokens: scratch dir → `<LABDIR>`, lab hash → `<LABHASH>`, `kathara_vlab` hash → `<VLABHASH>`, user slug → `<USER>`, harness home → `<HOME>` | host identity |
-| MACs → `<MAC>`, except `00:…:00`, `ff:…:ff` and any MAC the flow itself spells out (those reach the daemon as `kathara.mac_addr` and are an assertion) | the plugin derives a random MAC unless `kathara.machine` is sent — see `goldenharness/NORMALIZATION.md` |
-| 64-hex ids → `<CID>`, Docker default-pool IPv4 → `<DOCKERIP>` | container/volume ids and bridge allocation |
-| `TIMESTAMP: <datetime.now()>` → `TIMESTAMP: <TS>`, and the line is left-trimmed | `create_lab_table` titles the table with the wall clock; the title is centred, so its indent follows its own length |
-| `list` table rewritten to a cell grid: horizontal runs collapsed on junction-bearing border rows, `PIDS`/`CPU USAGE`/`MEM USAGE`/`MEM PERCENT`/`NET USAGE` cells → `<STAT>` | rich sizes columns from content, and those five hold live counters, so two runs of the *same* binary lay the table out differently. Box style, header set and order, row order and every other cell stay asserted. Panels (two verticals) are untouched and stay byte-exact |
-| `CapAdd` loses its `CAP_` prefix | the Go Docker SDK rewrites the list client-side inside `ContainerCreate`; unreachable from port code (`DIVERGENCES.md` #106) |
-| `com.docker.network.endpoint.sysctls` comma list sorted | `DockerLink` joins a Python set; the order varies between two runs of the oracle itself |
-
-## Expected differences
-
-`-compare` is **not** expected to print zero blocks. As of the run recorded
-here it prints 124 over the eleven flows, and every one of them falls into a
-class below. A block that does not is a regression.
-
-| Class | Blocks | Status |
-|---|---|---|
-| `list` table columns: Python has eleven, the port five (`PIDS`, `CPU USAGE`, `MEM USAGE`, `MEM PERCENT`, `NET USAGE`, `INTERFACES` absent) | 27 PARITY | Sanctioned: `PORT_SPEC.md` §0.3 defers resource sampling and enumerates the six inventory fields that survive |
-| `list` row order differs between two Python runs | 4 DETERMINISM (py only) | Sanctioned: `ORDERING.tsv` row `DockerMachine.py:1044` marks the source `!!` nondeterministic and prescribes sorting by name, which the port does |
-| `lstart` on an already-running scenario names whichever device the pool reached first | 2 | Inherent: `ORDERING.tsv` row `DockerMachine.py:597` — completion order under the deploy pool is nondeterministic |
-| exit-2 stderr carries the port's **full help** where argparse prints the `usage:` block alone | 46 PARITY | **Fixed** (after this run): `parser.usageBlock` (`cmd/kathara/usage.go:458`) is now what `usageError` prints (`root.go:292`). Pinned by `TestUsageErrorPrintsTheUsageBlockOnly` (`cmd/kathara/usage_test.go:260`). See below |
-| `--format` and the port's own `--lab-hash`/`--lab-name`/`--from-archive`/`--name` rows appear in help and usage | 21 PARITY | Sanctioned: `PORT_SPEC.md` §5.1, `DIVERGENCES.md` #102(a) |
-| `usage:` block wrapped at 80 by the port, at `COLUMNS` by argparse | included above | Recorded: `DIVERGENCES.md` #103. Disappears with `-columns 80` — `cmd-args`'s `09-help-connect` block is this class alone and is the one block the 80-column run drops |
-| pflag's message text for a malformed flag (`unknown flag:`, `flag needs an argument:` — long form and the short form `flag needs an argument: 'n' in -n`, `invalid argument %q for %q flag:`) | included above | `DIVERGENCES.md` #102(b) covers the first two verbatim; the third is the `ArgumentTypeError` class and is **not** listed there |
-| `linfo`'s exit code and stdout: Python runs the command, the port answers `FeatureNotAvailable` | 4 PARITY | Sanctioned: `PORT_SPEC.md` §3.4 defers `linfo`; `DIVERGENCES.md` #105 |
-| `linfo -h`: the port renders `[-d]` / `-d, --directory` where argparse renders `[-d DIRECTORY]` / `-d, --directory DIRECTORY` | 2 PARITY | **Fixed** (after this run): `newLinfoCmd` now calls `cmd.meta("directory", "DIRECTORY")` (`cmd/kathara/list.go:157`) like every other command with the flag. Pinned by `TestLinfoDeclaresTheDirectoryMetavar` (`cmd/kathara/usage_test.go:302`), which reads the real command rather than the fidelity test's replica parser (`usage_test.go:75`) that hid it |
-| `check`: Python's five identity lines carry their tab run **expanded to spaces** (rich, 8-column tab stops), the port emits raw `\t`; and the label is `Python version is:` vs `Go version is:` | 4 PARITY | The label is sanctioned (`DIVERGENCES.md` #94); the tab expansion is **fixed** (after this run): the five lines carry rich's expanded spaces, pinned by `TestCheckReportExpandsTabsLikeRich` (`cmd/kathara/commands_test.go:1676`) |
-
-The three rows marked **Fixed** were open findings when this run was recorded
-and have since been applied; the block counts in the table are that run's, so a
-re-recording drops those classes. The diagnoses below are kept verbatim as the
-record of what was wrong and why, each with the fix that was taken.
-
-**The exit-2 finding (fixed).** `app.usageError` (`cmd/kathara/root.go:288`) prints
-`spec.Cmd.UsageString()`, which `parser.SetUsageFunc` (`cmd/kathara/parser.go:56`)
-wires to `parser.usage()` → `usageAt(80)` — i.e. argparse's `format_help()`, not
-its `format_usage()`. `argparse.ArgumentParser.error` calls `print_usage`, so
-Python emits the `usage:` block and one message. `kathara vclean` with no
-arguments is 2 lines of stderr from Python and 13 from the port; `lstart --bogus`
-is 4 and 51. `CLI_SURFACE.md` §0.6 and `JSON_CLI_CONTRACT.md` §5.5 both pin
-"usage + error on stderr" as observable, and `root.go:287`'s own comment says
-"usage text plus one message". Smallest fix: add
-`func (p *parser) usageBlock() string { return p.formatUsage(helpWidth(80)) }`
-next to `usage()` in `cmd/kathara/usage.go` and call it from `usageError`. The
-`--help` path (`root.go:228`) must keep `UsageString()`.
-
-*Applied* as written: `parser.usageBlock` lives at `cmd/kathara/usage.go:458`
-and `usageError` calls it (`root.go:292`); `--help` still prints the full help.
-`TestUsageErrorPrintsTheUsageBlockOnly` (`cmd/kathara/usage_test.go:260`) pins
-both halves, and `kathara vclean` with no arguments is back to Python's two
-stderr lines (modulo the sanctioned `[--format FORMAT]` in the usage block).
-
-**The `linfo` metavar finding (fixed).** `newLinfoCmd` (`cmd/kathara/list.go:155`)
-registers `--directory` with `flags.StringVarP` but never calls
-`cmd.meta("directory", "DIRECTORY")`, which every other command that has the
-flag does (`lstart.go:78`, `lclean.go:34`, `exec.go:34`, `connect.go:50`,
-`lconfig.go:47` with `LAB_PATH`). `parser.optionArgs` (`cmd/kathara/usage.go:658`)
-reads "no metavar" as `nargs == 0` and prints nothing, so `kathara linfo -h`
-renders `usage: kathara linfo [-h] [-d] …` and `-d, --directory   Specify the
-folder …` where argparse renders `[-d DIRECTORY]` and `-d, --directory
-DIRECTORY`. Parsing is unaffected — the flag still takes a value. Smallest fix:
-one line, `cmd.meta("directory", "DIRECTORY")` after `list.go:156`.
-
-*Applied* as written (`cmd/kathara/list.go:157`), pinned by
-`TestLinfoDeclaresTheDirectoryMetavar` (`cmd/kathara/usage_test.go:302`), which
-exercises the real `newLinfoCmd` instead of the replica parser that hid it.
-
-**The `check` tab finding (fixed).** `CheckCommand` writes its five identity lines
-through rich, which expands the `\t` runs against 8-column tab stops before the
-bytes leave the process; the port writes the tabs through. Both land the value
-in column 32 on a terminal, but on a pipe the bytes differ:
-`Current Manager is:` + 13 spaces (Python) vs `Current Manager is:\t\t` (port).
-No golden covers `check`, so nothing else sees this. `CheckCommand.py:40,43,46,49,59`
-and `cmd/kathara/wipe.go:158,162,166,167,168` spell the same format strings; the
-difference is entirely rich's `tab_size=8` expansion inside `Console.print`.
-Those five lines are the only tab-carrying output in the ported surface (the
-other two `\t` sites in Python are consolemenu help strings, deferred scope), so
-the smallest fix is local: replace the `\t` runs in those five `fmt.Sprintf`
-calls with the spaces that pad each label to column 32. Expanding tabs inside
-`internal/cliout`'s `Print` would match rich more generally but changes a
-shared writer for one call site.
-
-*Applied* as written — the five `fmt.Sprintf` calls pad to column 32 instead of
-carrying `\t` — and pinned by `TestCheckReportExpandsTabsLikeRich`
-(`cmd/kathara/commands_test.go:1676`), which asserts both that no raw tab
-reaches stdout and that each of the five values starts at column 32. The
-`Go version is:` label stays (`DIVERGENCES.md` #94), so this class still shows
-one block per `check` flow rather than none.
-
-## Note on the golden harness's HOME pin
-
-`tools/goldenharness/runner.go:71-89` writes a pinned `kathara.conf` into a
-temporary HOME and `runKathara` exports `HOME=` it, and `NORMALIZATION.md` §1
-claims the recording therefore "can depend neither on the operator's mutable
-settings nor on the release / image update checks those settings would allow to
-fire". On Linux that pin has no effect (trap 1 above): both binaries read
-`<pw_dir>/.config/kathara.conf`. Whatever that file happens to contain — this
-host's held `"image": "scenario/image"` and `"image_update_policy": "Prompt"`
-before cmdparity replaced it — is what the goldens were recorded against.
-
-**Status: already recorded.** `NORMALIZATION.md` §1 carries this as a caveat
-("found 2026-08-12") and makes the operator's real `~/.config/kathara.conf`
-part of the harness contract on Linux. It is not an open finding; it is
-repeated here because it is also the reason cmdparity installs its pinned file
-at the real default path instead of exporting `HOME`. If the golden harness
-ever adopts the same approach, `pinSettings`/`passwdHome` (`main.go:176-206`)
-is the code to lift.
+The tool owns the Docker resources it creates and force-cleans Kathará state
+before and after each flow. On Linux it also temporarily replaces the invoking
+user's real `~/.config/kathara.conf` and restores it on normal exit. Run it only
+on a disposable development host.

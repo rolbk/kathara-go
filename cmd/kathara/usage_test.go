@@ -9,17 +9,6 @@ import (
 
 // TestArgparseHelpFormatterMatchesOracle pins [parser.usageAt] byte for byte
 // against `argparse.HelpFormatter`.
-//
-// The captures in `testdata/argparse_help/` are `parser.format_help()` run on
-// the real `Kathara.cli.command.*Command` objects at COLUMNS=80. The Go flag
-// sets carry port additions (`--format`, `--lab-hash`, `--lab-name`,
-// `--from-archive`), so the commands themselves cannot match those captures;
-// what is compared here is the *formatter*, driven by parsers that replicate
-// Python's declarations exactly. Every layout branch the fourteen commands can
-// reach is covered: a short help column (check, wipe), the 24-column cap, an
-// invocation too long for its column, a wrapped usage line, an unwrapped one, a
-// required option, a required group, both `nargs` list shapes, REMAINDER,
-// a four-spelling action, and a description that folds.
 func TestArgparseHelpFormatterMatchesOracle(t *testing.T) {
 	for _, name := range []string{"check", "wipe", "list", "linfo", "lclean", "lconfig", "vconfig", "connect", "exec", "lstart", "lrestart", "vstart", "vclean"} {
 		t.Run(name, func(t *testing.T) {
@@ -37,7 +26,7 @@ func TestArgparseHelpFormatterMatchesOracle(t *testing.T) {
 }
 
 // oracleParser builds a parser with Python's declarations for name, and nothing
-// the port added.
+// this implementation added.
 func oracleParser(t *testing.T, name string) *parser {
 	t.Helper()
 	p := newParser(name)
@@ -230,7 +219,7 @@ func oracleParser(t *testing.T, name string) *parser {
 
 // TestUsageCarriesNoSentinel is the `nargs='*'` leak: pflag's own FlagUsages
 // interpolates a flag's NoOptDefVal, and [emptyListSentinel] carries two NUL
-// bytes. Nothing the port prints may contain it.
+// bytes. Nothing this implementation prints may contain it.
 func TestUsageCarriesNoSentinel(t *testing.T) {
 	a := newTestApp(t)
 	for name, spec := range commandTable(a.app) {
@@ -248,15 +237,6 @@ func TestUsageCarriesNoSentinel(t *testing.T) {
 
 // TestUsageErrorPrintsTheUsageBlockOnly is argparse's `ArgumentParser.error()`:
 // `print_usage(stderr)` then one message, and nothing else.
-//
-// The oracle, verified: `python -m kathara vclean` writes exactly
-//
-//	usage: kathara vclean [-h] -n DEVICE_NAME
-//	kathara vclean: error: the following arguments are required: -n/--name
-//
-// — two lines. Printing `format_help()` there instead answered with thirteen:
-// the description, the whole option table and the wiki epilog, on stderr, for
-// a missing flag.
 func TestUsageErrorPrintsTheUsageBlockOnly(t *testing.T) {
 	for _, tc := range []struct {
 		command string
@@ -274,7 +254,7 @@ func TestUsageErrorPrintsTheUsageBlockOnly(t *testing.T) {
 				t.Fatalf("exit = %d, want 2", code)
 			}
 			if a.stdoutString() != "" {
-				t.Errorf("stdout = %q, want nothing (§5.5)", a.stdoutString())
+				t.Errorf("stdout = %q, want nothing for a usage error", a.stdoutString())
 			}
 
 			lines := strings.Split(strings.TrimSuffix(a.stderrString(), "\n"), "\n")

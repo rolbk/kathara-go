@@ -1,13 +1,4 @@
-"""`build_wheels.py` against five dummy binaries.
-
-The flag contract (`--dist`, `--out`, exactly five wheels) is
-`.github/workflows/release.yml`'s only requirement of this script, so it is what
-gets asserted, alongside the two things `PORT_SPEC.md` §7.3 pins: the binary
-lands in ``.data/scripts/`` and each wheel carries a platform tag.
-
-The tests are skipped when hatchling is unavailable — it is a build-time
-dependency, not a runtime one, and the release job pip-installs it.
-"""
+"""`build_wheels.py` against five dummy binaries."""
 
 import os
 import shutil
@@ -85,7 +76,6 @@ class DiscoveryTest(unittest.TestCase):
 
 
 class ReleaseVersionTest(unittest.TestCase):
-    """`PORT_SPEC.md` §7.3: `pip install kathara` must keep working."""
 
     def test_a_version_below_the_last_pypi_release_is_refused(self):
         # pip resolves by version order: 1.0.0 would leave every existing

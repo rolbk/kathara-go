@@ -1,9 +1,3 @@
-"""Error-envelope decoding: `ERROR_CODES.md` is the whole test oracle here.
-
-The registry is FROZEN and §1 requires the class↔code mapping to be exhaustive
-and injective. These tests assert exactly that, code by code, through a real
-subprocess emitting a real envelope.
-"""
 
 import unittest
 
@@ -23,10 +17,8 @@ from Kathara.exceptions import (
 )
 from Kathara.manager.Kathara import Kathara
 
-#: Every code of `ERROR_CODES.md` §1 with a representative message drawn from
-#: the §2 template catalogue, and the structured fields §5.4 pins for it.
+
 CODE_FIXTURES = [
-    # -- §1.1 the 33 Kathara exception classes ------------------------------
     ("ClassNotFound", "Unrecognized command `bogus`.", {}),
     ("HTTPConnection", "Connection to GitHub failed.", {}),
     ("Instantiation", "This class is a singleton!", {}),
@@ -67,7 +59,6 @@ CODE_FIXTURES = [
      {"image": "kathara/nope"}),
     ("DockerPlugin", "Kathara Network Plugin not found on remote Docker connection.", {}),
     ("KubernetesConfigMap", "Unable to upload device folder. Maximum supported size: 3.0 MB. Current: 4.0 MB.", {}),
-    # -- §1.2 the 8 user-reachable builtins ---------------------------------
     ("Syntax", "In lab.conf - Line 3: `pc1[0]=A/`.", {"file": "lab.conf", "line": 3}),
     ("Value", "In lab.conf - Line 1: `shared` is a reserved name, you can not use it for a device.",
      {"file": "lab.conf", "line": 1}),
@@ -78,17 +69,15 @@ CODE_FIXTURES = [
     ("Permission",
      "To mount volume `/a` in `/b` you miss the following permissions: `read (r)`.", {}),
     ("Connection", "Cannot read Kubernetes configuration.", {}),
-    # -- §1.3 third-party passthrough ---------------------------------------
     ("DockerAPI", "500 Server Error: Internal Server Error", {}),
     ("KubernetesAPI", "(403) Reason: Forbidden", {}),
-    # -- §1.4 port-new codes ------------------------------------------------
     ("FeatureNotAvailable", "lab.ext external links are not supported in this release. Use Kathará 3.8.x.",
      {"feature": "lab.ext"}),
     ("InternalError", "something went sideways", {}),
     ("ConfirmationRequired", "Confirmation required: re-run with `--force` to wipe Kathara.", {}),
 ]
 
-#: `ERROR_CODES.md` §1: "46 codes total".
+
 EXPECTED_CODE_COUNT = 46
 
 
@@ -102,9 +91,6 @@ class RegistryShapeTest(unittest.TestCase):
         )
 
     def test_mapping_is_injective_except_the_generic_bucket(self):
-        # §4: "the mapping is injective". The only many-to-one entries are the
-        # codes with no v3.8.3 class, which all fall into KatharaError, plus
-        # FeatureNotAvailable, which §1.4 explicitly routes to NotSupportedError.
         seen = {}
         for code, cls in _proc.CODE_TO_EXCEPTION.items():
             if cls in (KatharaError,):
@@ -131,11 +117,11 @@ class ErrorEnvelopeTest(FakeBinaryTestCase):
                 with self.assertRaises(expected) as caught:
                     manager.undeploy_lab(lab_hash="deadbeef")
 
-                # `ERROR_CODES.md` §4: str(e) parity is load-bearing.
+
                 self.assertEqual(message, str(caught.exception))
 
     def test_machine_binary_error_attributes(self):
-        # `ERROR_CODES.md` §4 "Attributes, for API parity".
+
         manager = Kathara.get_instance()
         self.plan_error("MachineBinary", "Binary `frr` not found in device `pc1`.", binary="frr", machine="pc1")
 
@@ -172,8 +158,7 @@ class ErrorEnvelopeTest(FakeBinaryTestCase):
         self.assertEqual(message, str(caught.exception))
 
     def test_unknown_code_falls_back_to_kathara_error(self):
-        # `JSON_CLI_CONTRACT.md` §9.2: clients MUST map unknown codes to a
-        # generic error rather than crashing.
+
         manager = Kathara.get_instance()
         self.plan_error("SomeFutureCode", "a thing from the future", detail="x")
 
@@ -185,7 +170,7 @@ class ErrorEnvelopeTest(FakeBinaryTestCase):
         self.assertEqual({"detail": "x"}, caught.exception.fields)
 
     def test_lab_checker_catches_its_four_classes_by_name(self):
-        # `ERROR_CODES.md` §4: the compatibility-critical set.
+
         manager = Kathara.get_instance()
         pairs = [
             ("MachineNotRunning", MachineNotRunningError),
@@ -204,7 +189,7 @@ class ErrorEnvelopeTest(FakeBinaryTestCase):
                     manager.undeploy_lab(lab_hash="deadbeef")
 
     def test_sibling_errors_array_is_ignored(self):
-        # `ERROR_CODES.md` §6.5: the client raises the primary error only.
+
         manager = Kathara.get_instance()
         self.plan([{
             "exit": 1,
@@ -222,7 +207,6 @@ class ErrorEnvelopeTest(FakeBinaryTestCase):
         self.assertEqual("Binary `frr` not found in device `pc1`.", str(caught.exception))
 
     def test_interrupt_envelope_raises_keyboard_interrupt(self):
-        # Contract §6.2: exit 0 with {"interrupted":true}.
         manager = Kathara.get_instance()
         self.plan([{"stdout": '{"interrupted":true}', "exit": 0}])
 
@@ -230,7 +214,6 @@ class ErrorEnvelopeTest(FakeBinaryTestCase):
             manager.undeploy_lab(lab_hash="deadbeef")
 
     def test_usage_error_raises_invocation_error(self):
-        # Contract §5.5: exit 2, usage text on stderr, nothing on stdout.
         manager = Kathara.get_instance()
         self.plan([{"stdout": "", "stderr": "usage: kathara lclean ...", "exit": 2}])
 
@@ -247,10 +230,6 @@ class ErrorEnvelopeTest(FakeBinaryTestCase):
             manager.undeploy_lab(lab_hash="deadbeef")
 
     def test_error_envelope_that_is_not_an_object_raises_kathara_error(self):
-        # Contract §5.1 types `error` as an object. A build that sends a bare
-        # string is not speaking the contract, and the client must answer that
-        # the way §9.2 answers any envelope it cannot read — with the base
-        # `KatharaError` — not with an `AttributeError` from its own decoder.
         manager = Kathara.get_instance()
         self.plan([{"stdout": '{"error":"boom"}', "exit": 1}])
 
@@ -261,8 +240,6 @@ class ErrorEnvelopeTest(FakeBinaryTestCase):
         self.assertIsNone(caught.exception.code)
 
     def test_error_envelope_with_a_non_string_code_raises_kathara_error(self):
-        # `dict.get` on an unhashable key raises `TypeError`; an unknown code
-        # buckets to `KatharaError` (§9.2) and so must an unreadable one.
         manager = Kathara.get_instance()
         self.plan([{"stdout": '{"error":{"code":["MachineNotFound"],"message":"boom"}}', "exit": 1}])
 
@@ -272,7 +249,6 @@ class ErrorEnvelopeTest(FakeBinaryTestCase):
         self.assertEqual("boom", str(caught.exception))
 
     def test_jsonl_error_event_that_is_not_an_object_raises_kathara_error(self):
-        # The same shape guard on the streaming side (§4.1's `error` event).
         manager = Kathara.get_instance()
         self.plan([
             self.probe_response(),
@@ -284,9 +260,6 @@ class ErrorEnvelopeTest(FakeBinaryTestCase):
             list(stream)
 
     def test_jsonl_exit_event_with_a_null_code_is_a_protocol_error(self):
-        # §4.1 types the `exit` event's `code` as an int, so `null` cannot come
-        # from a conforming binary — but `int(None)` would answer it with a
-        # `TypeError` raised from inside the client's own generator.
         manager = Kathara.get_instance()
         self.plan([
             self.probe_response(),

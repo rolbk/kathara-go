@@ -87,9 +87,6 @@ type PortBindingRecord struct {
 	HostPort string `json:"host_port"`
 }
 
-// EndpointAssertions records the wiring invariants the harness checks per
-// endpoint. These replace the (empirically false) deterministic-MAC anchor of
-// PORT_SPEC §9; see NORMALIZATION.md.
 type EndpointAssertions struct {
 	HasKatharaIface         bool  `json:"has_kathara_iface"`
 	HasKatharaLink          bool  `json:"has_kathara_link"`
@@ -149,15 +146,6 @@ type ContainerRecord struct {
 }
 
 // NetworkRecord is the golden subset of `docker network inspect <network>`.
-//
-// EnableIPv6, IPAMConfig and Options are the rest of what
-// `DockerLink.create`'s `networks.create(...)` call decides. Python passes
-// `ipam=IPAMConfig(driver='null')` and nothing else, so the daemon answers with
-// EnableIPv6 false, the single `0.0.0.0/0` config row the null driver
-// synthesizes, and an empty option map — a Kathara collision domain is a pure
-// L2 segment with no address management. Recording them is what makes a port
-// that enabled IPv6 on the network, handed the link a subnet, or passed a
-// driver option fail the golden instead of passing it.
 type NetworkRecord struct {
 	Link            string            `json:"link"`
 	NetworkName     string            `json:"network_name"` // tokenized

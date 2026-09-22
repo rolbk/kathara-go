@@ -28,11 +28,6 @@ const BackendName = "docker"
 const FormattedName = "Docker (Kathara)"
 
 // Backend is the registry row `cmd/kathara` registers.
-//
-// There is no `init()` that registers it: registration order is the declared
-// docker → kubernetes order and import order is not a declared order
-// (PACKAGE_GRAPH.md §1.2), and the `nok8s` build leaves `client-go` out of the
-// binary by simply not naming the other backend.
 func Backend() kathara.Backend {
 	return kathara.Backend{
 		Name:          BackendName,
@@ -42,15 +37,6 @@ func Backend() kathara.Backend {
 }
 
 // Manager is `DockerManager` (`DockerManager.py:57`).
-//
-// Its four Python slots — `client`, `docker_image`, `docker_machine`,
-// `docker_link` — are here, plus the two things PORT_SPEC §0.2 #10 took away
-// from the constructor and made parameters: the settings and the event
-// dispatcher.
-//
-// It is safe for concurrent use to the extent Python's was: the Docker client
-// is shared across the fan-out goroutines, as docker-py's was across pool
-// threads, and the event dispatcher does its own locking.
 type Manager struct {
 	api        *client.Client
 	settings   *settings.Settings
@@ -65,34 +51,6 @@ type Manager struct {
 
 var _ kathara.Manager = (*Manager)(nil)
 
-// New is `DockerManager.__init__` wrapped in `check_docker_status`
-// (`DockerManager.py:35,61`), and the ORDER of its side effects is the contract
-// — PORT_SPEC §9's goldens encode when a daemon-down error appears relative to
-// the rest of a command (analysis/manager-foundation.md §7 gotcha 9):
-//
-//  1. build the client — local socket, or the remote URL with a CA-verified
-//     TLS config;
-//  2. check, install, enable and reconfigure the network plugin;
-//  3. read the engine version (`DockerMachine.__init__`);
-//  4. PING — the decorator wraps the constructor and pings AFTER it returns, so
-//     a daemon that has gone away is reported after the plugin work, not
-//     before.
-//
-// Step 4 reading last is not an accident of the decorator: `check_docker_status`
-// calls `method(*args)` first and `client.ping()` second (`:41,48`). A reader
-// who expects the ping to gate everything will be surprised by a plugin error
-// arriving from a dead daemon, and so will a golden.
-//
-// # max_pool_size
-//
-// Python passes `max_pool_size=cpu_count()` so the HTTP connection pool matches
-// the worker count. Go's `http.Transport` does not cap concurrent connections —
-// only idle ones — so the equivalent is `MaxIdleConnsPerHost`, set below for
-// the same reason: without it the default of 2 makes the fan-out reopen a
-// connection per request. Neither setting is observable in the API's answers.
-//
-// Errors: [kerrors.ErrDaemonConnection] for a client that cannot be built or a
-// daemon that will not answer, then whatever the plugin check says.
 func New(ctx context.Context, cfg kathara.Config) (kathara.Manager, error) {
 	api, err := newAPIClient(cfg.Settings)
 	if err != nil {
@@ -139,16 +97,6 @@ func New(ctx context.Context, cfg kathara.Config) (kathara.Manager, error) {
 
 // newAPIClient is the `docker.from_env` / `docker.DockerClient` fork of
 // `DockerManager.__init__` (`DockerManager.py:63-73`).
-//
-// `timeout=None` is "no client-side timeout", which is the default for the Go
-// SDK's transport too — a `docker exec` on a long-running command must not be
-// cut off by a client deadline, and the context is what bounds an operation
-// now (PORT_SPEC §0.2 #11).
-//
-// The remote fork builds `TLSConfig(ca_cert=Setting.cert_path)`: server
-// verification against that CA, with no client certificate. A nil `cert_path`
-// with a non-nil `remote_url` is legal in the schema and gives docker-py a
-// TLSConfig with `verify=None`, i.e. the system roots.
 func newAPIClient(s *settings.Settings) (*client.Client, error) {
 	// ORDER IS LOAD-BEARING. `WithHTTPClient` REPLACES the client wholesale,
 	// while `WithHost`, `FromEnv` and `WithTLSClientConfig` all reach into the
@@ -203,16 +151,6 @@ func (m *Manager) GetReleaseVersion(ctx context.Context) (string, error) {
 
 // resolveRequired is the two lines that open eleven methods
 // (`DockerManager.py:335-339` and its ten twins):
-//
-//	check_required_single_not_none_var(lab_hash=…, lab_name=…, lab=…)
-//	if lab: lab_hash = lab.hash
-//	elif lab_name: lab_hash = generate_urlsafe_hash(lab_name)
-//
-// The guard counts non-None values; the dispatch below it is a truthiness
-// chain. Python can therefore pass the guard with `lab_name=""` and fall
-// through both arms, leaving `lab_hash` as None — an unfiltered query where the
-// caller asked for one scenario. [kathara.LabRef] collapses "" into "absent"
-// (NILABILITY.tsv:54), which loses only that path.
 func resolveRequired(ref kathara.LabRef) (string, error) {
 	if err := ref.RequireSingle(); err != nil {
 		return "", err
@@ -230,9 +168,6 @@ func resolveAtMostOne(ref kathara.LabRef) (string, error) {
 	return resolveHash(ref), nil
 }
 
-// resolveHash is the `if lab: … elif lab_name: …` dispatch, in Python's order:
-// the object wins over the name, and the name is hashed with the one function
-// that names everything (SYNTHESIS §1.1).
 func resolveHash(ref kathara.LabRef) string {
 	switch {
 	case ref.Lab != nil:
@@ -247,10 +182,6 @@ func resolveHash(ref kathara.LabRef) string {
 // scopedUser is `utils.get_current_user_name() if not all_users else None`,
 // the eight-site idiom that turns the `all_users` flag into a label filter.
 // The empty string is Python's None: [ObjectFilters] drops a falsy user.
-//
-// The error is the identity chain's own — a passwd lookup that fails, or a
-// hostname the platform will not report — which Python has no way to raise
-// because `platform.node()` and `pwd.getpwuid` do not fail there.
 func scopedUser(allUsers bool) (string, error) {
 	if allUsers {
 		return "", nil
@@ -263,12 +194,6 @@ func scopedUser(allUsers bool) (string, error) {
 // ---------------------------------------------------------------------------
 
 // DeployMachine is `deploy_machine` (`DockerManager.py:83`).
-//
-// It deploys the device's collision domains first and the device second, which
-// is the same links-then-machines order [Manager.DeployLab] uses. The link set
-// is built from the device's interfaces, INCLUDING tombstones — Python's
-// `{x.link.name for x in machine.interfaces.values()}` dereferences `.link` on
-// every slot and dies on a removed one, which is reproduced.
 func (m *Manager) DeployMachine(ctx context.Context, machine *model.Machine) error {
 	if machine.Lab == nil {
 		return kerrors.NewLabNotFoundDevice(machine.Name)
@@ -291,12 +216,6 @@ func (m *Manager) DeployMachine(ctx context.Context, machine *model.Machine) err
 // interfaceLinkNames is `{x.link.name for x in machine.interfaces.values()}`,
 // the set comprehension `deploy_machine` and `undeploy_machine` both build
 // (`DockerManager.py:103,289`).
-//
-// A tombstone — the slot `remove_interface` leaves behind — has no `.link`, and
-// Python's comprehension has no guard, so it crashes with
-// `AttributeError: 'NoneType' object has no attribute 'link'`. Reproduced
-// rather than skipped: the set is what decides which collision domains are
-// deployed, and silently dropping a slot would deploy a different scenario.
 func interfaceLinkNames(machine *model.Machine) (kathara.NameSet, error) {
 	names := kathara.NewNameSet()
 	for _, iface := range machine.Interfaces() {
@@ -317,28 +236,6 @@ func (m *Manager) DeployLink(ctx context.Context, link *model.Link) error {
 }
 
 // DeployLab is `deploy_lab` (`DockerManager.py:124`).
-//
-// The order below is the order errors surface in, and it is observable:
-//
-//  1. `lab.check_integrity()` — before the filters are even looked at, so a
-//     scenario with a non-sequential interface fails the same way whatever was
-//     selected;
-//  2. selected-and-excluded;
-//  3. selected names not in the scenario, then excluded names not in it, each
-//     naming the offending set;
-//  4. narrow the collision domains, then deploy links, then machines.
-//
-// # The link narrowing
-//
-// `selected_machines` narrows to the collision domains those devices touch.
-// `excluded_machines` computes the domains of the REMAINING devices and
-// subtracts them from the excluded devices' domains, so a collision domain
-// shared with a device that is still being deployed survives — only domains
-// used exclusively by excluded devices are dropped.
-//
-// Errors: [kerrors.ErrSelectOrExcludeDevices], [kerrors.ErrMachineNotFound]
-// naming the set (sorted here, where Python's set repr is hash-ordered —
-// ORDERING.tsv rows 52-53).
 func (m *Manager) DeployLab(ctx context.Context, lab *model.Lab, opts kathara.DeployLabOptions) error {
 	if err := lab.CheckIntegrity(); err != nil {
 		return err
@@ -393,10 +290,6 @@ func (m *Manager) DeployLab(ctx context.Context, lab *model.Lab, opts kathara.De
 
 // missingMachines is `selected_machines - set(lab.machines.keys())`, the
 // difference the MachineNotFound message names.
-//
-// Python interpolates a `set`, whose repr order is hash-randomised; ORDERING.tsv
-// rows 52-53 rule the port sorts, and `kerrors.NewMachineNotFoundSet` does the
-// sorting itself (ERROR_CODES.md §0.2).
 func missingMachines(lab *model.Lab, names kathara.NameSet) []string {
 	missing := make([]string, 0, len(names))
 	for _, name := range names.Names() {
@@ -412,29 +305,6 @@ func missingMachines(lab *model.Lab, names kathara.NameSet) []string {
 // ---------------------------------------------------------------------------
 
 // ConnectMachineToLink is `connect_machine_to_link` (`DockerManager.py:177`).
-//
-// The guards run in Python's order and the middle one is a LIVE reload: the
-// device's cached api_object is refreshed before its status is compared to
-// "running", so a container that exited since the scenario was loaded is
-// reported as not running rather than connected to.
-//
-// # Interface numbering on a bridged device
-//
-// `add_interface` would auto-assign `len(interfaces)`, which on a bridged
-// device collides with the slot the bridge occupies. So the number is computed
-// here instead (`:213-220`):
-//
-//	bridged_iface absent from meta → read it back off the container LABEL
-//	no interfaces, or bridged_iface above every interface number
-//	                              → bridged_iface + 1
-//	otherwise                     → max(interface numbers) + 1
-//
-// which is what makes successive connections on a bridged device land at 1, 2,
-// … and at 2 when the device already had an eth0.
-//
-// Errors: [kerrors.ErrLabNotFound] for either object,
-// [kerrors.ErrMachineNotRunning], [kerrors.ErrMachineCollisionDomain] when the
-// device is already attached.
 func (m *Manager) ConnectMachineToLink(ctx context.Context, machine *model.Machine, link *model.Link, macAddress string) error {
 	if machine.Lab == nil {
 		return kerrors.NewLabNotFoundDevice(machine.Name)
@@ -479,10 +349,7 @@ func (m *Manager) ConnectMachineToLink(ctx context.Context, machine *model.Machi
 		slots := machine.Interfaces()
 		bridged, isInt := bridgedIfaceNumber(machine)
 		if !isInt {
-			// The meta is a string, which is all lab.conf can store
-			// (DIVERGENCES.md 1). Python then compares it to an int, or adds an
-			// int to it, and dies either way — with a different message per
-			// branch, which is why the branch is taken before the failure.
+
 			if len(slots) == 0 {
 				return newPyTypeError(`can only concatenate str (not "int") to str`)
 			}
@@ -517,10 +384,6 @@ func (m *Manager) ConnectMachineToLink(ctx context.Context, machine *model.Machi
 // DisconnectMachineFromLink is `disconnect_machine_from_link`
 // (`DockerManager.py:227`), with the same guard sequence and the same live
 // reload.
-//
-// The collision domain is undeployed afterwards unless keepLink is set, and
-// [linkService.Undeploy]'s "only networks with zero attached containers" rule
-// is what keeps a still-used one alive.
 func (m *Manager) DisconnectMachineFromLink(ctx context.Context, machine *model.Machine, link *model.Link, keepLink bool) error {
 	if machine.Lab == nil {
 		return kerrors.NewLabNotFoundDevice(machine.Name)
@@ -592,11 +455,6 @@ func (m *Manager) UndeployLink(ctx context.Context, link *model.Link) error {
 
 // UndeployLab is `undeploy_lab` (`DockerManager.py:310`): machines first, then
 // links — the reverse of the deploy order.
-//
-// The manager-level both-filters guard is TRUTHINESS, and the machine layer's
-// is `is not None`, so two non-nil EMPTY sets pass here and trip there
-// (SYNTHESIS §1.7). That is not a bug being routed around: it is the reason
-// `lclean` passes nil and `lstart` passes empty sets and both mean "all".
 func (m *Manager) UndeployLab(ctx context.Context, ref kathara.LabRef, opts kathara.UndeployLabOptions) error {
 	labHash, err := resolveRequired(ref)
 	if err != nil {
@@ -614,15 +472,6 @@ func (m *Manager) UndeployLab(ctx context.Context, ref kathara.LabRef, opts kath
 }
 
 // Wipe is `wipe` (`DockerManager.py:348`): every scenario, machines then links.
-//
-// `all_users` is silently DOWNGRADED on a remote daemon (`:361-363`) — there is
-// no other user's identity to filter on across a socket — and the downgrade is
-// a warning, not an error.
-//
-// The privilege check `all_users` implies is NOT here: `wipe` does not perform
-// one, and the `@privileged` decorator it carries raises effective privileges
-// rather than demanding them. The CLI's own check
-// (`kerrors.ErrPrivilegeWipeAllUsers`) is what a user actually meets.
 func (m *Manager) Wipe(ctx context.Context, allUsers bool) error {
 	if m.settings.RemoteURL != nil && allUsers {
 		allUsers = false
@@ -645,9 +494,6 @@ func (m *Manager) Wipe(ctx context.Context, allUsers bool) error {
 // ---------------------------------------------------------------------------
 
 // ConnectTTY is `connect_tty` (`DockerManager.py:370`).
-//
-// The user scope is unconditional here — `connect_tty` has no `all_users` — so
-// one user cannot attach to another's device even with the right hash.
 func (m *Manager) ConnectTTY(ctx context.Context, machineName string, ref kathara.LabRef, opts kathara.ConnectTTYOptions) (kathara.TTYSession, error) {
 	labHash, err := resolveRequired(ref)
 	if err != nil {
@@ -669,10 +515,6 @@ func (m *Manager) ConnectTTYObj(ctx context.Context, machine *model.Machine, opt
 }
 
 // Exec is `exec(..., stream=False)` (`DockerManager.py:437`).
-//
-// `tty=False` is forced here even though `DockerMachine.exec` defaults it to
-// True (`:476`), which is what makes the output multiplexed and therefore
-// demuxable into separate stdout and stderr.
 func (m *Manager) Exec(ctx context.Context, machineName string, command kathara.Command, ref kathara.LabRef, wait kathara.WaitPolicy) ([]byte, []byte, int, error) {
 	labHash, err := resolveRequired(ref)
 	if err != nil {
@@ -735,12 +577,6 @@ func (m *Manager) ExecStreamObj(ctx context.Context, machine *model.Machine, com
 
 // CopyFiles is `copy_files` (`DockerManager.py:508`): pack the pairs into a tar
 // and extract it at the container's root.
-//
-// The destination is always "/" and the guest paths are the archive's member
-// names, which is why an entry's `GuestPath` must be absolute for the file to
-// land where the caller means. Duplicate guest paths resolve last-wins on
-// extraction, which is why the parameter is an ordered slice (ORDERING.tsv row
-// `utils.py:452`).
 func (m *Manager) CopyFiles(ctx context.Context, machine *model.Machine, files []kathara.CopyEntry) error {
 	entries := make([]util.TarEntry, 0, len(files))
 	for _, file := range files {
@@ -766,10 +602,6 @@ func (m *Manager) CopyFiles(ctx context.Context, machine *model.Machine, files [
 // copyEntryContent is `pack_file_for_tar`'s value branch (`utils.py:430-435`):
 // a host path gets the `convert_win_2_linux` pass, a reader is shipped
 // verbatim.
-//
-// Content wins when both are set. There is no Python original for that
-// precedence — the `isinstance` ladder tests two types a value cannot both have
-// — and [kathara.CopyEntry] fixes it so two backends cannot disagree.
 func copyEntryContent(entry kathara.CopyEntry) ([]byte, error) {
 	if entry.Content != nil {
 		return io.ReadAll(entry.Content)
@@ -791,7 +623,6 @@ func (m *Manager) RetrieveFiles(ctx context.Context, machine *model.Machine, src
 // ---------------------------------------------------------------------------
 
 // GetMachineAPIObject is `get_machine_api_object` (`DockerManager.py:541`).
-// `containers.pop()` takes the LAST match (ORDERING.tsv row 10).
 func (m *Manager) GetMachineAPIObject(ctx context.Context, machineName string, ref kathara.LabRef, allUsers bool) (any, error) {
 	labHash, err := resolveRequired(ref)
 	if err != nil {
@@ -888,11 +719,6 @@ func (m *Manager) GetLinksAPIObjects(ctx context.Context, ref kathara.LabRef, al
 // ---------------------------------------------------------------------------
 
 // GetMachinesStats is `get_machines_stats` (`DockerManager.py:842`).
-//
-// The ref check runs NOW: this Python method holds no `yield`, so it validates
-// and then returns the generator its machine layer built. Its singular sibling
-// does hold one and behaves differently on purpose
-// ([kathara.Manager.GetMachineStats]). Oracle-probed on both.
 func (m *Manager) GetMachinesStats(ctx context.Context, ref kathara.LabRef, machineName string, allUsers bool) (kathara.MachinesStatsStream, error) {
 	labHash, err := resolveAtMostOne(ref)
 	if err != nil {

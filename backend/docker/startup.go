@@ -1,25 +1,12 @@
 // This file is `STARTUP_COMMANDS` (`DockerMachine.py:43`) and
 // `SHUTDOWN_COMMANDS` (:99), plus the two `"; ".join(...).format(...)` calls
 // that turn them into the single shell line each container runs.
-//
-// The list order is the contract (SYNTHESIS §1.10, ORDERING.tsv rows 42 and
-// 45): unmounts → hostlab copy → /etc/hosts default → permissions →
-// quagga/frr ownership → shared.startup → {machine}.startup → the user's exec
-// commands → `touch /tmp/EOS`. The sentinel at the end is what
-// `_wait_startup_execution` polls for.
 
 package docker
 
 import "strings"
 
 // startupCommands is `STARTUP_COMMANDS`, element for element and byte for byte.
-//
-// The `{machine_name}` and `{machine_commands}` tokens are Python `str.format`
-// placeholders; they are substituted by [renderStartupCommands] with a literal
-// replace rather than a template engine, because the fragments are quote-heavy
-// shell and a template engine would have opinions about the braces. There are
-// no other braces in the text, which is what makes the substitution safe —
-// `str.format` would raise on a stray one and the port would silently keep it.
 var startupCommands = []string{
 	// Unmount the /etc/resolv.conf and /etc/hosts files, automatically mounted
 	// by Docker inside the container, so custom user files can replace them.
@@ -91,11 +78,6 @@ const noopCommand = ":"
 // interleaveExecCommands is `DockerMachine.start`'s rewrite of
 // `machine.meta['exec_commands']` (:538-543): before each command, an echo of
 // it into the startup log.
-//
-// Python does this DESTRUCTIVELY — it assigns the doubled list back onto the
-// device's meta — so starting the same [model.Machine] twice wraps the echoes
-// again ("++ echo \"++ cmd\" …", docker-backend.md gotcha 14). The mutation is
-// reproduced at the call site in `start`; this function is the pure half.
 func interleaveExecCommands(commands []string) []string {
 	if len(commands) == 0 {
 		return nil
@@ -111,10 +93,6 @@ func interleaveExecCommands(commands []string) []string {
 // renderStartupCommands is
 // `"; ".join(STARTUP_COMMANDS).format(machine_name=…, machine_commands=…)`
 // (`DockerMachine.py:546-549`).
-//
-// The order of the two substitutions does not matter and neither can introduce
-// the other's token: a device name is `^[a-z0-9_]{1,30}$`, and the commands are
-// substituted into a slot the joined string holds exactly once.
 func renderStartupCommands(machineName string, execCommands []string) string {
 	machineCommands := noopCommand
 	if len(execCommands) > 0 {

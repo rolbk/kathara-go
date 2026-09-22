@@ -1,30 +1,3 @@
-// Package kerrors is the Kathará error taxonomy (PORT_SPEC §4.3, §0.2 #6),
-// frozen by docs/port/ERROR_CODES.md.
-//
-// Every Python exception class of exceptions.py maps 1:1 onto a code of
-// codes.go, and every class that Go 1.0 can raise has exactly one representation
-// here: a class sentinel matched with errors.Is, plus a struct type matched
-// with errors.As when the error carries data that a JSON field needs. The four
-// classes ERROR_CODES.md §1.1 gives the Go representation "none" —
-// ClassNotFoundError, InstantiationError, TestError and
-// MachineSignatureNotFoundError — keep a reserved code and get no sentinel.
-// Struct types unwrap to their class sentinel, so both spellings work on one
-// value:
-//
-//	err := kerrors.NewMachineBinary("frr", "pc1")
-//	errors.Is(err, kerrors.ErrMachineBinary) // true
-//	var bin *kerrors.BinaryError
-//	errors.As(err, &bin)                     // true, bin.Binary == "frr"
-//
-// The messages are the Python format strings byte-for-byte, typos, missing
-// periods and trailing spaces included (ERROR_CODES.md §0.2, DIVERGENCES.md).
-// They are built here, never at the call sites, so that the CLI, the JSON
-// envelope and the Python client all render the same bytes. Sentinel text is
-// identity only and is never shown to a user.
-//
-// The package is a stdlib-only leaf: nothing in the module is below it
-// (PACKAGE_GRAPH.md §1.1). Package kathara re-exports every name of this file
-// as an alias, so the spec-§4.3 public surface holds (PACKAGE_GRAPH.md D-1).
 package kerrors
 
 import (
@@ -73,10 +46,6 @@ func (e *message) Unwrap() []error {
 
 // New returns an error rendering msg exactly, classified under the class
 // sentinel of this package.
-//
-// Call sites should prefer the named constructors of messages.go, which hold
-// the frozen templates; New exists for the sites a later phase adds and for
-// packages that must build a taxonomy error from text they already rendered.
 func New(class error, msg string) error {
 	return &message{msg: msg, class: class}
 }
@@ -101,25 +70,6 @@ func (e *SettingsNotFoundError) notAJoin() {}
 
 // Joined returns the elements of a multi-error, in order, or nil when err
 // carries no batch.
-//
-// It exists because errors of this package also implement Unwrap() []error to
-// carry their class and cause: expanding those as if they were a join would
-// emit the class sentinel as a sibling error. Use this, never a bare type
-// assertion, to build the `errors` array of ERROR_CODES.md §6.5.
-//
-// A batch is anything outside this package with Unwrap() []error. That is
-// errors.Join, which is how the port builds batches (§6.2), but also an
-// fmt.Errorf with more than one %w — the stdlib gives both the same shape and
-// they are indistinguishable from outside. Do not build multi-%w errors on a
-// path that reaches the CLI boundary: such an error would be reported as a
-// batch, and its formatted text would be replaced by its elements.
-// TestJoinedTreatsMultiWrapAsBatch pins the behaviour.
-//
-// The result is a fresh slice. errors.Join hands out its own backing array, and
-// the caller of Joined is the one that sorts the batch into the canonical order
-// of ERROR_CODES.md §6.2 — sorting the returned slice in place would reorder the
-// join itself and silently change which element Code reports, i.e. the primary
-// error of §6.3 and the `code` of the JSON envelope.
 func Joined(err error) []error {
 	if err == nil {
 		return nil
@@ -134,11 +84,6 @@ func Joined(err error) []error {
 	}
 	return slices.Clone(multi.Unwrap())
 }
-
-// ---------------------------------------------------------------------------
-// Context wrappers (ERROR_CODES.md §0.3): they attach a structured JSON field
-// and render the message of the error they wrap unchanged.
-// ---------------------------------------------------------------------------
 
 // MachineError attaches the JSON field "machine" to a device-scoped error.
 // Op is free-form context for the Go API and the debug-level error chain; it
@@ -239,18 +184,6 @@ func WrapPath(path string, err error) error {
 	return &PathError{Path: path, Err: err}
 }
 
-// ---------------------------------------------------------------------------
-// Class sentinels — 40 in all: one per Python exception class that has a Go
-// representation (ERROR_CODES.md §1.1, i.e. 29 of the 33; the four "none" rows
-// are code-only), one per user-reachable builtin (§1.2), one per third-party
-// passthrough (§1.3), plus the JSON-mode ConfirmationRequired (§1.4).
-// FeatureNotAvailable and InternalError have no sentinel: the first reports its
-// code from its struct, the second is the unmapped-error fallback.
-//
-// The texts of the seven sentinels named by PORT_SPEC §4.3 are verbatim from
-// the spec. No sentinel text is ever user-visible.
-// ---------------------------------------------------------------------------
-
 var (
 	// ErrHTTPConnection is RESERVED: raised only by the deferred webhooks/.
 	ErrHTTPConnection = newClass(CodeHTTPConnection, "kathara: HTTP connection error")
@@ -264,7 +197,6 @@ var (
 	// ErrSettingsNotFound is a missing settings file; see SettingsNotFoundError.
 	ErrSettingsNotFound = newClass(CodeSettingsNotFound, "kathara: settings file not found")
 
-	// ErrDaemonConnection is DockerDaemonConnectionError (spec §4.3 name).
 	ErrDaemonConnection = newClass(CodeDockerDaemonConnection, "kathara: cannot connect to the container daemon")
 
 	// ErrNotSupported is an operation the selected backend refuses.
@@ -289,8 +221,6 @@ var (
 	// ErrEmptyLab is a network scenario with no devices.
 	ErrEmptyLab = newClass(CodeEmptyLab, "kathara: network scenario has no devices")
 
-	// ErrDependencyLoop is MachineDependencyError (spec §4.3 name); the JSON
-	// code stays MachineDependency for the 1:1 class mapping.
 	ErrDependencyLoop = newClass(CodeMachineDependency, "kathara: dependency loop in lab.dep")
 
 	// ErrMountDenied is a refused volume mount.
@@ -351,7 +281,6 @@ var (
 	// which unwraps to this sentinel.
 	ErrSyntax = newClass(CodeSyntax, "kathara: syntax error")
 
-	// ErrValue is Python's ValueError at the sites of ERROR_CODES.md §2.
 	ErrValue = newClass(CodeValue, "kathara: invalid value")
 
 	// ErrOS is Python's OSError, which is also its IOError: the parser
@@ -362,9 +291,6 @@ var (
 	// wrap fs.ErrNotExist.
 	ErrFileNotFound = newClass(CodeFileNotFound, "kathara: file not found")
 
-	// ErrFileExists is Python's FileExistsError, which utils.py raises when the
-	// path does NOT exist. The class label and message keep parity; errors
-	// carrying it wrap fs.ErrNotExist, never fs.ErrExist (ERROR_CODES.md §0.2).
 	ErrFileExists = newClass(CodeFileExists, "kathara: path does not exist")
 
 	// ErrNotADirectory is Python's NotADirectoryError.
@@ -377,28 +303,16 @@ var (
 	// ErrConnection is Python's ConnectionError.
 	ErrConnection = newClass(CodeConnection, "kathara: connection error")
 
-	// ErrDockerAPI is a Docker daemon error no translation rule matched
-	// (ERROR_CODES.md §1.3, §3); human label APIError.
 	ErrDockerAPI = newClass(CodeDockerAPI, "kathara: docker api error")
 
 	// ErrKubernetesAPI is a Kubernetes API error no translation rule matched;
 	// human label ApiException.
 	ErrKubernetesAPI = newClass(CodeKubernetesAPI, "kathara: kubernetes api error")
 
-	// ErrConfirmationRequired is the json/jsonl-only refusal to wipe without
-	// --force (JSON_CLI_CONTRACT.md §1.5). It can never be raised in human
-	// mode, where the interactive prompt is unchanged.
 	ErrConfirmationRequired = newClass(CodeConfirmationRequired, "kathara: confirmation required")
 )
 
-// ---------------------------------------------------------------------------
-// Data-bearing class types (ERROR_CODES.md §0.3, §0.4): they render their own
-// message and unwrap to their class sentinel.
-// ---------------------------------------------------------------------------
-
 // BinaryError is MachineBinaryError: a binary missing inside a device.
-// JSON fields "binary" and "machine"; both are part of the lab-checker
-// compatibility contract (ERROR_CODES.md §4).
 type BinaryError struct {
 	Binary  string
 	Machine string
@@ -456,9 +370,6 @@ func (e *MacAddressError) Error() string {
 
 func (e *MacAddressError) Unwrap() error { return ErrInterfaceMacAddress }
 
-// Variants of MachineCollisionDomainError (ERROR_CODES.md §2), numbered by
-// raise site. Variants 4 and 5 render exactly like 2 and 3; they are kept
-// apart because the sites differ (model/Machine.py vs manager/docker).
 const (
 	// CDVariantInterfaceTaken is model/Machine.py:106.
 	CDVariantInterfaceTaken = 1
@@ -472,9 +383,6 @@ const (
 	CDVariantManagerNotConnected = 5
 )
 
-// CollisionDomainError is MachineCollisionDomainError, one of the four classes
-// kathara-lab-checker catches by name (ERROR_CODES.md §4). JSON fields
-// "machine" and "link", or "machine" and "iface" for variant 1.
 type CollisionDomainError struct {
 	Machine string
 	Link    string
@@ -511,14 +419,7 @@ func (e *OptionError) Error() string { return e.Message }
 
 func (e *OptionError) Unwrap() error { return ErrMachineOption }
 
-// MachineSetError is the plural MachineNotFoundError variant, raised when a
-// --machine selection names devices the network scenario does not have. It is a
-// class type rather than a MachineError wrap because the JSON field is the
-// array "machines" (JSON_CLI_CONTRACT.md §5.4).
 type MachineSetError struct {
-	// Machines is the JSON "machines" array. NewMachineNotFoundSet stores it
-	// sorted bytewise ascending, matching the message; Error sorts again so a
-	// hand-built value still renders in the canonical order of §0.2.
 	Machines []string
 }
 
@@ -573,8 +474,6 @@ func (e *HostArchError) Error() string {
 
 func (e *HostArchError) Unwrap() error { return ErrHostArchitecture }
 
-// Feature tokens of FeatureNotAvailableError: the closed set of 1.0
-// (ERROR_CODES.md §5, JSON_CLI_CONTRACT.md §5.6).
 const (
 	// FeatureLabExt covers lab.ext and external collision domains.
 	FeatureLabExt = "lab.ext"
@@ -595,10 +494,6 @@ var featureMessages = map[string]string{
 	FeatureWebhooks:      "Docker Hub image listing is not supported in this release. Use Kathará 3.8.x.",
 }
 
-// FeatureNotAvailableError is the port-new code for the features deferred to
-// post-1.0. JSON field "feature". It reports its own code because it wraps
-// ErrNotSupported: the Python client raises NotSupportedError for it, with the
-// same message verbatim (ERROR_CODES.md §1.4, §5).
 type FeatureNotAvailableError struct {
 	Feature string
 }
@@ -620,22 +515,6 @@ func (e *FeatureNotAvailableError) Unwrap() error { return ErrNotSupported }
 // Helpers shared by the message catalog
 // ---------------------------------------------------------------------------
 
-// pythonSet renders names the way Python renders a set inside an f-string,
-// with the elements sorted bytewise ascending instead of in Python's
-// nondeterministic iteration order (ERROR_CODES.md §0.2, JSON_CLI_CONTRACT.md
-// §5.3). The empty set renders as Python's set(), which the raise sites of
-// DockerManager.py:151 cannot reach.
-//
-// Quoting is unconditionally single, per the frozen ruling ("elements
-// single-quoted, comma-space separated, braces", ERROR_CODES.md §0.2). Note that
-// the names reaching this variant are NOT device names validated by
-// ^[a-z0-9_]{1,30}$ (model/Machine.py:62): they are exactly the argv words that
-// did not match a device, taken from an unvalidated nargs='*' argparse argument
-// (LstartCommand.py:139,231) and set-differenced at DockerManager.py:151. CPython
-// would therefore apply full repr quoting to them — {"it's"} for a name holding
-// an apostrophe, backslash doubling, \xNN for control characters. The frozen
-// ruling pins the single-quote form, so the port keeps it and the residual gap
-// is recorded in PROPOSED-DIVERGENCES.md rather than fixed here.
 func pythonSet(names []string) string {
 	if len(names) == 0 {
 		return "set()"

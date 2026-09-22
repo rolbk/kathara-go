@@ -10,7 +10,7 @@ import (
 	"testing"
 )
 
-// Regression tests for the Phase 3 review findings. Every "want" below was
+// Regression tests for the compatibility review findings. Every "want" below was
 // re-derived against the live Kathara 3.8.3 / pyfilesystem2 stack through
 // /root/kathara/pyvenv, on BOTH backends unless a row says otherwise.
 
@@ -508,12 +508,6 @@ func TestPySearchDivergentCorpus(t *testing.T) {
 	// testdata/pysearch_divergent.json was produced BY CPython 3.13 and is
 	// concentrated on patterns whose `$` is NOT terminal — a class the 522-row
 	// matrix contains none of, which is why it reported 0 disagreements.
-	//
-	// Two properties are pinned:
-	//   1. the emulation is ONE-SIDED — it may miss a Python match, it must
-	//      never invent one (that is what makes the retry safe);
-	//   2. the gap still exists. If it ever closes, these rows belong in
-	//      pysearch_matrix.json and SPIKES/vfs.md §5 needs updating.
 	var rows []struct {
 		Pattern string `json:"pattern"`
 		Line    string `json:"line"`
@@ -546,8 +540,7 @@ func TestPySearchDivergentCorpus(t *testing.T) {
 		}
 	}
 	if misses == 0 {
-		t.Error("no row diverges any more: the mid-pattern $ gap looks closed — " +
-			"fold these rows into pysearch_matrix.json and update SPIKES/vfs.md §5")
+		t.Error("no row diverges any more: fold the closed mid-pattern $ gap into pysearch_matrix.json")
 	}
 	t.Logf("%d rows, %d known one-sided misses (mid-pattern $)", len(rows), misses)
 }
@@ -573,27 +566,20 @@ func TestWriteLineBeforeMidPatternDollarMisses(t *testing.T) {
 	})
 }
 
-// --- the back-reference divergence found by the Phase 3 fixer ----------------
+// --- the back-reference divergence found by the compatibility review ----------------
 
 func TestBackReferenceIsClampedNotRefused(t *testing.T) {
-	// NOT a review finding: found by a 36-scenario Go-vs-Python differential
-	// while verifying the fixes above, and left UNFIXED pending a ruling
-	// (SPIKES/vfs.md §5.11, open item §7.11).
-	//
 	// pyfilesystem's normpath refuses any ".." that escapes the root:
 	//   normpath("/../../x")  -> IllegalBackReference
 	//   normpath("..")        -> IllegalBackReference
 	//   normpath("a/../..")   -> IllegalBackReference
 	// so create_file_from_string("x", "/../../esc.txt") writes NOTHING and
 	// raises, on both mem:// and osfs:// (verified live on both backends).
-	//
 	// CleanPath clamps instead, so the same call succeeds and creates the file
 	// at the root under a DIFFERENT name than the caller asked for. Neither
 	// behaviour can escape the filesystem root, so this is a silent
 	// wrong-target write rather than a containment hole.
-	//
-	// This test pins the CURRENT behaviour so it cannot drift silently. If the
-	// ruling says "refuse", this test is what changes.
+	// This test pins the current behavior so it cannot drift silently.
 	t.Run("CleanPath clamps where pyfilesystem raises", func(t *testing.T) {
 		for _, in := range []string{"/../../x", "..", "a/../..", "/..", "../../x"} {
 			got, err := CleanPath(in)
@@ -625,11 +611,6 @@ func TestBackReferenceIsClampedNotRefused(t *testing.T) {
 }
 
 func TestCopyDirectoryMissingSourceErrorClass(t *testing.T) {
-	// Also from the differential: Python's copy_directory_from_path opens the
-	// source with open_fs(), so a missing source is fs.errors.CreateFailed
-	// (verified live, both backends). The port has no CreateFailed equivalent
-	// -- OSDir(path) cannot fail eagerly (documented divergence §5.3) -- so the
-	// os.Stat error surfaces instead. Both error; only the class differs.
 	forEachFS(t, func(t *testing.T, fsys FS) {
 		err := CopyDirectory(fsys, filepath.Join(t.TempDir(), "nothere"), "/dst")
 		if err == nil {

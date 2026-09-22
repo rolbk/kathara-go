@@ -3,11 +3,6 @@
 // multiplexing header the daemon puts in front of every chunk, and
 // `demux_adaptor`, which turns a frame into the `(stdout|None, stderr|None)`
 // pair Kathará hands out.
-//
-// It also holds `OCI_RUNTIME_RE` (`DockerMachine.py:35`), the regexp that turns
-// runc's English error text into `MachineBinaryError` — a class
-// kathara-lab-checker catches by name (PORT_SPEC §4.3), which is why the two
-// capture groups are reproduced rather than replaced by something tidier.
 
 package docker
 
@@ -27,18 +22,6 @@ import (
 )
 
 // ociRuntimeRE is `OCI_RUNTIME_RE` (`DockerMachine.py:35`):
-//
-//	OCI runtime exec failed(.*?)(stat (.*): no such file or directory|exec: "(.*)": executable file not found)
-//
-// Groups 3 and 4 are the two spellings of the missing binary, and Python takes
-// `matches.group(3) or matches.group(4)` — whichever alternative matched. RE2
-// supports the lazy `(.*?)` and the capture groups, so the pattern is copied
-// character for character.
-//
-// It is matched with `search`, not `match`, on BOTH the daemon's error
-// explanation and (in non-stream mode) the command's own stdout: with a tty the
-// runtime prints the failure to stdout and the API call succeeds
-// (docker-backend.md gotcha 11).
 var ociRuntimeRE = regexp.MustCompile(
 	`OCI runtime exec failed(.*?)(stat (.*): no such file or directory|exec: "(.*)": executable file not found)`)
 
@@ -53,12 +36,6 @@ func ociBinaryError(err error, machineName string) error {
 // ociBinaryErrorFromOutput is the second detection path
 // (`DockerMachine.py:879-890`): the same pattern over the collected STDOUT of a
 // finished, non-zero exec.
-//
-// Python decodes the bytes with `chardet` before matching. The pattern is pure
-// ASCII and every encoding chardet can detect agrees with UTF-8 on the ASCII
-// range for these bytes, so the match is done on the bytes; the only inputs
-// that could differ are wide encodings (UTF-16), which no OCI runtime emits.
-// DIVERGENCES.md records the dropped decode.
 func ociBinaryErrorFromOutput(out []byte, machineName string) error {
 	matches := ociRuntimeRE.FindSubmatch(out)
 	if matches == nil {
@@ -72,15 +49,6 @@ func ociBinaryErrorFromOutput(out []byte, machineName string) error {
 }
 
 // execFrames reads the daemon's exec output stream.
-//
-// Two wire formats, chosen by whether the exec allocated a tty:
-//
-//   - tty: the payload is raw. Everything is stdout, which is what docker-py's
-//     `frames_iter_tty` assumes.
-//   - no tty: each chunk is an 8-byte header — stream id, three pad bytes, a
-//     big-endian uint32 length — followed by that many payload bytes.
-//     `DockerManager.exec` forces `tty=False` (`DockerManager.py:476`), so this
-//     is the format every `kathara exec` sees.
 type execFrames struct {
 	response types.HijackedResponse
 	reader   *bufio.Reader
@@ -95,15 +63,6 @@ func newExecFrames(response types.HijackedResponse, tty bool) *execFrames {
 
 // Next is one turn of docker-py's `frames_iter` + `demux_adaptor`: the next
 // frame, as a pair with the side it did not belong to left nil.
-//
-// io.EOF ends the stream, which is Python's StopIteration
-// ([kathara.ExecStream.Next]). A frame with a zero-length payload is legal and
-// returns two nils with a nil error.
-//
-// The context is honoured by closing the hijacked connection on cancellation,
-// which is what unblocks a read from a device that has stopped writing — the
-// SIGINT path of JSON_CLI_CONTRACT.md §6.2. A `bufio.Reader` over a hijacked
-// connection has no other way to be interrupted.
 func (f *execFrames) Next(ctx context.Context) (stdout, stderr []byte, err error) {
 	if err := ctx.Err(); err != nil {
 		return nil, nil, err
@@ -146,10 +105,6 @@ func (f *execFrames) Next(ctx context.Context) (stdout, stderr []byte, err error
 }
 
 // ReadAll is the non-stream collection: every frame, concatenated per side.
-//
-// It is what `exec_start(stream=False, demux=True)` returns — a tuple of two
-// byte strings, each `None` when that side produced nothing. Nil is that None;
-// the two are already indistinguishable downstream (JSON_CLI_CONTRACT.md §4.2).
 func (f *execFrames) ReadAll(ctx context.Context) (stdout, stderr []byte, err error) {
 	for {
 		out, errOut, err := f.Next(ctx)
@@ -193,10 +148,6 @@ func (f *execFrames) abortOnCancel(ctx context.Context) func() {
 
 // translateReadError maps the transport's end-of-stream and its
 // cancellation-induced failures onto the two errors the interface names.
-//
-// `io.ErrUnexpectedEOF` from a half-read header or payload is still the end of
-// the stream: the daemon closes the connection when the exec finishes, and
-// docker-py's `next_frame_header` reports a short read as StopIteration too.
 func translateReadError(ctx context.Context, err error) error {
 	if ctxErr := ctx.Err(); ctxErr != nil {
 		return ctxErr
@@ -226,17 +177,6 @@ func (s *execStream) Next(ctx context.Context) (stdout, stderr []byte, err error
 
 // ExitCode is `exit_code` (`DockerExecStream.py:32`):
 // `int(exec_inspect(id)['ExitCode'])`.
-//
-// Python's `int(None)` is a TypeError while the command is still running
-// (analysis/manager-foundation.md §7 gotcha 8) — the field is null until then —
-// so calling this before the stream is exhausted is a caller error in both
-// implementations. It is reported as one ([model.PyRuntimeError], class
-// TypeError, CPython's own message) rather than guessed at, which is what
-// [kathara.ExecStream.ExitCode] requires.
-//
-// The error return is the shape change DIVERGENCES.md 50 records against
-// PACKAGE_GRAPH.md §2.7's `ExitCode() int` sketch: the value comes from a live
-// round trip that can fail on its own.
 func (s *execStream) ExitCode(ctx context.Context) (int, error) {
 	inspect, err := s.manager.api.ContainerExecInspect(ctx, s.execID)
 	if err != nil {

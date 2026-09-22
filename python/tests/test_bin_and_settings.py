@@ -1,4 +1,3 @@
-"""Binary discovery (`PORT_SPEC.md` §7.3) and the settings surface (§0.4)."""
 
 import json
 import os
@@ -39,7 +38,7 @@ class BinaryDiscoveryTest(unittest.TestCase):
         self.assertEqual(target, _bin.binary_path())
 
     def test_missing_binary_raises_the_v383_message(self):
-        # `ERROR_CODES.md` §2, code FileNotFound.
+
         os.environ.pop("KATHARA_BIN", None)
         original_scripts, original_which = _bin._scripts_dirs, _bin.shutil.which
         _bin._scripts_dirs = lambda: [self.tmpdir]
@@ -53,9 +52,7 @@ class BinaryDiscoveryTest(unittest.TestCase):
             _bin._scripts_dirs, _bin.shutil.which = original_scripts, original_which
 
     def test_a_stale_override_is_an_error_not_a_fallback(self):
-        # A `$KATHARA_BIN` that does not resolve must fail with the frozen
-        # message (`ERROR_CODES.md` §2), not reach subprocess as an OS error and
-        # not silently pick a different Kathara.
+        # A stale explicit override must fail rather than fall back to PATH.
         os.environ["KATHARA_BIN"] = os.path.join(self.tmpdir, "gone")
 
         _bin.clear_cache()

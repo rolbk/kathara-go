@@ -25,11 +25,6 @@ func testContext() context.Context {
 // TestClientDelegates is `manager/Kathara.py:63-605`: thirty bodies that each
 // forward to the identically named manager method with the identical
 // arguments, positionally.
-//
-// Gotcha 28 of analysis/manager-foundation.md is what this is guarding: the
-// facade's delegation is positional, so a reordered parameter would type-check
-// on both sides and be wrong. Each row therefore asserts the *whole* argument
-// list, context included.
 func TestClientDelegates(t *testing.T) {
 	t.Parallel()
 
@@ -251,9 +246,6 @@ func TestClientDelegates(t *testing.T) {
 		},
 	}
 
-	// The facade proxies thirty IManager methods; `exec`/`exec_obj` each split
-	// in two (NILABILITY.tsv:61), so the delegating surface is thirty-two.
-	// A method added to Manager without a row here would slip through.
 	if want := reflect.TypeOf((*Manager)(nil)).Elem().NumMethod(); len(tests) != want {
 		t.Fatalf("delegation table covers %d methods, Manager declares %d", len(tests), want)
 	}
@@ -385,11 +377,6 @@ func TestClientReturnsBackendResults(t *testing.T) {
 // TestClientDoesNotValidate is the load-bearing negative: `manager/Kathara.py`
 // performs no argument validation at all, and a client-side
 // `check_required_single_not_none_var` would be observable.
-//
-// The sharpest case is `get_machine_stats`, whose Python body holds a `yield`.
-// A generator function runs nothing until the first `next()`, so an empty
-// lab-identifier triple reaches the *backend* and fails there, on the first
-// element — not at the call. A Client that checked would raise it a step early.
 func TestClientDoesNotValidate(t *testing.T) {
 	t.Parallel()
 
@@ -416,13 +403,6 @@ func TestClientDoesNotValidate(t *testing.T) {
 	}
 }
 
-// TestClientPreservesNilVersusEmptyFilters is SYNTHESIS.md §1.7 and
-// NILABILITY.tsv:55-57 at the layer that can still lose it.
-//
-// An empty set means "everything" on the deploy path and "nothing" on the
-// undeploy path. If the facade normalised either into the other — or into nil —
-// `lclean --machine-name`-style filtering would silently become a full wipe.
-// Nothing between here and the backend is allowed to touch these fields.
 func TestClientPreservesNilVersusEmptyFilters(t *testing.T) {
 	t.Parallel()
 
@@ -531,9 +511,6 @@ func TestNewClient(t *testing.T) {
 		if err != nil {
 			t.Fatalf("NewClient: %v", err)
 		}
-		// `Kathara.__init__` builds the manager in the constructor, which is
-		// why a stopped Docker daemon is a constructor error and not a first-
-		// operation one (analysis/manager-foundation.md §7 gotcha 9).
 		if built != 1 {
 			t.Errorf("factory ran %d times, want 1", built)
 		}
@@ -546,7 +523,7 @@ func TestNewClient(t *testing.T) {
 		if gotCfg.Dispatcher != dispatcher {
 			t.Errorf("Config.Dispatcher = %#v, want the dispatcher passed in", gotCfg.Dispatcher)
 		}
-		// OQ-4: the model's Setting reads become injected defaults, resolved
+		// The model's settings reads become injected defaults, resolved
 		// once, here.
 		want := model.Defaults{
 			Image:             "kathara/frr",
@@ -566,10 +543,7 @@ func TestNewClient(t *testing.T) {
 		s.ManagerType = "podman"
 
 		_, err := NewClient(testContext(), s, WithRegistry(NewRegistry()))
-		// Python's own path here is a bare `ClassNotFoundError` that
-		// ERROR_CODES.md keeps RESERVED; what a user is ever shown for an
-		// unusable `manager_type` is `Setting._check_manager`'s message, and
-		// that is what this reproduces byte for byte.
+
 		if !errors.Is(err, kerrors.ErrSettings) {
 			t.Fatalf("NewClient err = %v, want a SettingsError", err)
 		}
@@ -687,13 +661,6 @@ func TestNewClient(t *testing.T) {
 
 // TestClientAvailableManagersUsesItsOwnRegistry is
 // `Kathara.get_available_managers_name()`.
-//
-// Python's is static, but "static" there read the one process-global table that
-// `__init__` had already resolved against, so the listing and the construction
-// could not disagree. In Go they can, because [WithRegistry] is the way an
-// embedder keeps out of package state — so the client answers from the registry
-// it was built with, and only a [NewClientWithManager] client, which resolved
-// nothing, falls back to [DefaultRegistry].
 func TestClientAvailableManagersUsesItsOwnRegistry(t *testing.T) {
 	t.Parallel()
 
@@ -744,9 +711,8 @@ func TestNewClientWithManagerRejectsNil(t *testing.T) {
 	}
 }
 
-// TestDefaultsFrom pins the OQ-4 mapping: which setting backs which model
-// fallback. Getting one of these wrong changes what image a device with no
-// `image=` line runs.
+// TestDefaultsFrom checks which setting backs each model default, including the
+// image used by a device with no `image=` line.
 func TestDefaultsFrom(t *testing.T) {
 	t.Parallel()
 
@@ -767,8 +733,6 @@ func TestDefaultsFrom(t *testing.T) {
 		t.Errorf("DefaultsFrom = %+v, want %+v", got, want)
 	}
 
-	// A nil settings is the API caller with no configuration file, which
-	// PORT_SPEC §11 requires to work: the 3.8.3 factory defaults.
 	if got, want := DefaultsFrom(nil), model.DefaultDefaults(); got != want {
 		t.Errorf("DefaultsFrom(nil) = %+v, want %+v", got, want)
 	}

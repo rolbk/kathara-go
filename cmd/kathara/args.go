@@ -1,7 +1,3 @@
-// This file is the argparse compatibility layer: the two argparse features
-// `pflag` has no equivalent for, which the CLI_SURFACE.md flag table depends on
-// in eleven places.
-//
 //  1. `nargs='+'` / `nargs='*'` on an *option*. Python's `--exclude a b c` and
 //     `-o k=v k2=v2` consume the whole following run of non-option tokens
 //     (oracle-probed: `--exclude a b pc1` swallows `pc1`, leaving the
@@ -12,12 +8,7 @@
 //     included, and the leading `--` is *kept* — which is why
 //     `VstartCommand.run` strips it by hand (`VstartCommand.py:228`).
 //     [splitRemainder] finds that cut.
-//
 // What is deliberately NOT reproduced is argparse's prefix matching, i.e.
-// `--dir` for `--directory`. CLI_SURFACE.md §0.6's note leaves the choice to
-// the port and records that no golden exercises it; abbreviations make every
-// future flag addition a potential breaking change, so the port requires full
-// names. DIVERGENCES.md records it.
 
 package main
 
@@ -53,12 +44,6 @@ const emptyListSentinel = "\x00kathara-empty-list\x00"
 
 // isOptionToken is argparse's `_parse_optional` reduced to the question
 // [expandGreedy] asks: does this token end the run of values?
-//
-// argparse answers no for the empty string, for a bare "-", for anything not
-// starting with a prefix character, for a token containing a space, and for a
-// negative number when the parser has no numeric-looking options — which none
-// of Kathará's do, so `--sysctl net.ipv4.x=-1` keeps its value and a bare `-5`
-// would be a positional.
 func isOptionToken(s string) bool {
 	if len(s) < 2 || s[0] != '-' {
 		return false
@@ -90,9 +75,6 @@ func isNegativeNumber(s string) bool {
 // expandGreedy rewrites the option runs of specs into one `--opt=value` per
 // value, so that pflag's one-value-per-occurrence parsing produces the list
 // argparse's `nargs` would.
-//
-// Tokens after a bare `--` are left alone: argparse marks them all positional
-// and stops matching options there, and so does pflag.
 func expandGreedy(args []string, specs []greedySpec) []string {
 	if len(specs) == 0 {
 		return args
@@ -159,21 +141,6 @@ type valueTaking struct {
 // splitRemainder implements `nargs=argparse.REMAINDER` for `vstart`: everything
 // from the first positional token — or from a bare `--` — onwards is the
 // remainder, verbatim and including any option-looking tokens.
-//
-// The `--` is kept in the remainder, which is what the oracle shows
-// (`vstart -n pc1 -- echo hi` yields `args == ['--', 'echo', 'hi']`) and why
-// `VstartCommand.run` has a line that strips it.
-//
-// The greedy options have to be understood here and not left to
-// [expandGreedy], because the two features interact and argparse resolves the
-// interaction in the option's favour. Oracle-probed on all four shapes:
-//
-//	--eth 0:A 1:B --image x -- sleep 1   → eths=[0:A,1:B], args=['--','sleep','1']
-//	--sysctl a=1 b=2 ls                  → sysctls=['a=1','b=2','ls']   (ls is swallowed)
-//	ls --sysctl x=1                      → args=['ls','--sysctl','x=1'] (verbatim)
-//
-// So the run belongs to the option whenever the option came first, and the
-// remainder is copied untouched whenever the positional did.
 func splitRemainder(args []string, taking valueTaking, greedy []greedySpec) (head, remainder []string) {
 	greedyLong := map[string]bool{}
 	greedyShort := map[string]bool{}

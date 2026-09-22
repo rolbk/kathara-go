@@ -26,9 +26,6 @@ func frame(stream byte, payload string) []byte {
 
 // hijacked wraps a byte stream in the `types.HijackedResponse` the SDK's
 // `ContainerExecAttach` returns.
-//
-// The connection half is a real (closed) pipe end rather than nil, so that
-// Close does what the production path does.
 func hijacked(t *testing.T, wire []byte) types.HijackedResponse {
 	t.Helper()
 
@@ -43,10 +40,6 @@ func hijacked(t *testing.T, wire []byte) types.HijackedResponse {
 
 // TestExecFramesDemux is docker-py's `frames_iter_no_tty` + `demux_adaptor`:
 // stream id 1 is stdout, 2 is stderr, and the OTHER side of the pair is nil.
-//
-// Nil is Python's `None`, and JSON_CLI_CONTRACT.md §4.2 already makes it
-// indistinguishable from an empty chunk downstream — an event is emitted only
-// for a non-empty side.
 func TestExecFramesDemux(t *testing.T) {
 	wire := bytes.Join([][]byte{
 		frame(1, "out1"),
@@ -179,9 +172,6 @@ func TestExecFramesTTYIsUnmultiplexed(t *testing.T) {
 	}
 }
 
-// TestExecFramesHonoursCancellation is the SIGINT path of
-// JSON_CLI_CONTRACT.md §6.2: a cancelled context aborts the read rather than
-// waiting for a device that has stopped writing.
 func TestExecFramesHonoursCancellation(t *testing.T) {
 	frames := newExecFrames(hijacked(t, frame(1, "out")), false)
 	defer func() { _ = frames.Close() }()
@@ -205,9 +195,6 @@ func TestExecFramesCloseIsIdempotent(t *testing.T) {
 	}
 }
 
-// TestOCIRuntimeDetection is EXPECTATIONS-docker.md §1.7: runc's two English
-// spellings of "no such binary", mapped to `MachineBinaryError` carrying the
-// binary name — a class kathara-lab-checker catches by name (PORT_SPEC §4.3).
 func TestOCIRuntimeDetection(t *testing.T) {
 	tests := []struct {
 		name       string

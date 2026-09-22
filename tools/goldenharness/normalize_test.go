@@ -220,7 +220,7 @@ func TestScrubAddrJSONDropsDADAndSLAAC(t *testing.T) {
 // TestScrubAddrJSONKeepsKernelOrder pins the removal of the addr_info sort. The
 // kernel lists an interface's addresses in the order they were added — the
 // link-local at carrier-up, then whatever the lab's .startup configured — and
-// that order is an assertion about what the port did, not an artifact of the
+// that order is an assertion about what this implementation did, not an artifact of the
 // observation. Canonical-JSON sorting moved a static `2001::` address in front
 // of the `fe80::` link-local it is listed after.
 func TestScrubAddrJSONKeepsKernelOrder(t *testing.T) {

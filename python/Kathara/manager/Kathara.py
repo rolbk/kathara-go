@@ -36,54 +36,16 @@ LAB_OPTION_FLAGS: Dict[str, Tuple[str, str]] = {
     "shared_mount": ("--shared", "--no-shared"),
 }
 
-#: The `check` envelope (contract §3.7), memoized per process: it is the only
-#: carrier of `manager`/`manager_version`, and producing it deploys and
-#: undeploys the `kathara_test` scenario. Neither value can change inside one
-#: process, so paying for that once is enough.
 _CHECK_REPORT: Dict[str, Any] = {}
 
 
 def _not_supported(operation: str, reason: str) -> NotSupportedError:
-    """Build the error for an operation the JSON CLI contract cannot express.
-
-    `PORT_SPEC.md` §7.2 accepts a bounded loss of API surface in 1.0. Every such
-    site raises :class:`~Kathara.exceptions.NotSupportedError` — the class the
-    port already uses for deferred features (`ERROR_CODES.md` §1.4) — with the
-    reason spelled out, rather than silently doing something adjacent.
-    """
+    """Build the error for an operation the command interface cannot express."""
     return NotSupportedError(f"`{operation}` is not available in this release. {reason}")
 
 
 class Kathara(object):
-    """Facade class for interacting with Kathara.
-
-    Same public method names as the v3.8.3 manager facade, but every operation
-    is a call into the Go ``kathara`` binary over the JSON CLI contract
-    (``docs/port/JSON_CLI_CONTRACT.md``) instead of a Docker/Kubernetes SDK
-    call. The model half of the API (:class:`~Kathara.model.Lab.Lab` and
-    friends) is untouched Python and needs no manager at all, which is most of
-    the observed real-world usage (`PORT_SPEC.md` §7.1).
-
-    **What 1.0 cannot do** (`PORT_SPEC.md` §7.2, §0.3). These raise
-    :class:`~Kathara.exceptions.NotSupportedError`:
-
-    ================================== ==========================================
-    Method                             Why
-    ================================== ==========================================
-    ``deploy_link`` / ``undeploy_link`` no per-collision-domain command exists
-    ``copy_files`` / ``retrieve_files`` no file-transfer command exists
-    ``get_link_api_object(s)``          ``list`` is a device inventory only
-    ``get_lab_from_api``                needs interface data the contract omits
-    ``update_lab_from_api``             idem
-    ``get_link(s)_stats``               idem, plus stats sampling is deferred
-    ``check_image``                     no single-image check command exists
-    ================================== ==========================================
-
-    ``get_machine(s)_api_objects`` return the **inventory dicts** of contract
-    §3.0.2 rather than docker-py ``Container`` objects, which cannot cross a
-    process boundary (§7.2); ``get_machine(s)_stats`` return the same inventory
-    fields, resource sampling being deferred (§0.3).
-    """
+    """Facade class for interacting with Kathara."""
     __slots__ = []
 
     __instance: Kathara = None
@@ -129,14 +91,14 @@ class Kathara(object):
         """Render device selection as CLI tokens.
 
         Both `lstart` and `lclean` take positional device names plus
-        ``--exclude`` (`CLI_SURFACE.md` §1, §2). Names are sorted so an
-        invocation is reproducible from a `set`, which is what the API takes.
+        ``--exclude``. Names are sorted so an invocation is reproducible from
+        a `set`, which is what the API takes.
         """
         if selected_machines and excluded_machines:
             # The message users observe on this path in v3.8.3: `DockerManager`
             # guards `deploy_lab`/`undeploy_lab` before `DockerMachine` ever runs
             # (`DockerManager.py:147,342`), so its wording is the reachable one.
-            # `str(e)` is contract (`ERROR_CODES.md` §4).
+
             raise InvocationError("You can either select or exclude devices.")
 
         args: List[str] = []
@@ -153,8 +115,8 @@ class Kathara(object):
 
         v3.8.3 reads two keys out of this dict while deploying — ``shared_mount``
         (`DockerMachine.py:161`) and ``hosthome_mount`` (`:302-310`) — and both
-        have a flag pair on `lstart` (`CLI_SURFACE.md` §1). Anything else the
-        binary has no way to hear about, so it is refused rather than dropped.
+        have a flag pair on `lstart`. Anything else the binary has no way to
+        receive, so it is refused rather than dropped.
         """
         args: List[str] = []
         unsupported: List[str] = []
@@ -234,20 +196,7 @@ class Kathara(object):
     @staticmethod
     def _list_machines(lab_hash: Optional[str] = None, machine_name: Optional[str] = None,
                        all_users: bool = False) -> List[Dict[str, Any]]:
-        """Return the inventory objects of contract §3.0.2, optionally filtered.
-
-        ``kathara list`` is inventory-wide (contract §8 gives no scenario
-        addressing flags to it), so the scenario filter is applied here on the
-        ``network_scenario_id`` field.
-
-        ``all_users`` carries the CLI's root gate (`ListCommand.py:58`,
-        `cmd/kathara/list.go:57-62`) into every caller. For
-        ``get_machines_stats`` that is a re-worded `PrivilegeError`
-        (DIVERGENCES.md 27, v3.8.3 raises its own at
-        `DockerMachine.py:1037-1038`); for ``get_machine(s)_api_objects`` it is
-        a **narrowing** (DIVERGENCES.md 122), v3.8.3 having no privilege check
-        on that path at all.
-        """
+        """Return the machine inventory, optionally filtered."""
         args: List[str] = []
         if machine_name:
             args += ["-n", machine_name]
@@ -299,37 +248,13 @@ class Kathara(object):
         """
         raise _not_supported(
             "deploy_link",
-            "The JSON CLI contract has no per-collision-domain command; deploy the network scenario "
+            "The command interface has no per-collision-domain operation; deploy the network scenario "
             "with `deploy_lab`, which creates every collision domain its devices use."
         )
 
     def deploy_lab(self, lab: Lab, selected_machines: Optional[Set[str]] = None,
                    excluded_machines: Optional[Set[str]] = None) -> None:
-        """Deploy a Kathara network scenario.
-
-        The scenario is serialised to a tar of a normal Kathará scenario
-        directory and piped to ``kathara lstart --from-archive -``
-        (`PORT_SPEC.md` §5.4). ``--name`` carries the string the scenario's hash
-        was derived from, so the deployed identity is exactly ``lab.hash`` and a
-        later ``exec(lab_hash=lab.hash)`` addresses the same scenario.
-        ``general_options`` and ``global_machine_metadata`` travel as the
-        `lstart` flags the CLI fills them from, and boot dependencies as a
-        generated ``lab.dep`` (see :mod:`Kathara._archive`).
-
-        Args:
-            lab (Kathara.model.Lab): A Kathara network scenario.
-            selected_machines (Optional[Set[str]]): If not None, deploy only the specified devices.
-            excluded_machines (Optional[Set[str]]): If not None, exclude devices from being deployed.
-
-        Returns:
-            None
-
-        Raises:
-            InvocationError: If both selected and excluded devices are specified, or if the
-                scenario cannot be expressed as a lab.conf.
-            NotSupportedError: If a device has a disconnected (tombstoned) interface, or if an
-                option or global metadata value has no `lstart` spelling.
-        """
+        """Deploy a Kathara network scenario."""
         # Rendered first: it carries the both-given guard
         # (`DockerManager.py:146-147`). v3.8.3 runs `lab.check_integrity()`
         # ahead of it (`:144`), which the client cannot: integrity is validated
@@ -349,11 +274,7 @@ class Kathara(object):
                 raise MachineNotFoundError(f"The following devices are not in the network scenario: {missing}.")
 
             if lab.links:
-                # DIVERGENCES.md 123: v3.8.3 *does* deploy this — `deploy_links`
-                # takes `lab.links` whole before any device is created
-                # (`DockerManager.py:169-170`). A lab.conf with no device line
-                # cannot say it, so this is a refusal rather than a silent
-                # success.
+
                 raise _not_supported(
                     "deploy_lab of a network scenario with collision domains but no devices",
                     "`lstart` deploys the collision domains its devices declare; there is no device-less deploy."
@@ -498,7 +419,7 @@ class Kathara(object):
         """
         raise _not_supported(
             "undeploy_link",
-            "The JSON CLI contract has no per-collision-domain command; `undeploy_lab` removes the collision "
+            "The command interface has no per-collision-domain operation; `undeploy_lab` removes the collision "
             "domains of the network scenario."
         )
 
@@ -552,15 +473,6 @@ class Kathara(object):
         Raises:
             PrivilegeError: If all_users is True and the user does not have root privileges.
         """
-        # `--force` is mandatory in JSON mode: without it the binary answers
-        # `ConfirmationRequired` and wipes nothing (contract §1.5). An API call
-        # is by definition the explicit form of the request.
-        #
-        # DIVERGENCES.md 121: the `PrivilegeError` documented above is the
-        # *CLI's* gate (`WipeCommand.py:65-66`, reproduced in
-        # `cmd/kathara/wipe.go:79-84`). v3.8.3's `DockerManager.wipe` has no
-        # privilege check of its own, so this call is narrower than the API it
-        # replaces whenever `all_users` is set.
         args = ["-f"]
         if all_users:
             args += ["-a"]
@@ -574,44 +486,7 @@ class Kathara(object):
     def connect_tty(self, machine_name: str, lab_hash: Optional[str] = None, lab_name: Optional[str] = None,
                     lab: Optional[Lab] = None, shell: str = None, logs: bool = False,
                     wait: Union[bool, Tuple[int, float]] = True) -> None:
-        """Connect to a device in a running network scenario, using the specified shell.
-
-        Runs ``kathara connect`` with the parent's terminal attached: it is a
-        human-only, interactive command (contract §1.1) and there is no
-        envelope to decode.
-
-        ``connect`` addresses a scenario by directory or by ``-v``: contract §8
-        gives ``--lab-hash``/``--lab-name`` to `exec`, `lclean` and `lconfig`
-        only. A **named** scenario — with or without a directory of its own — is
-        therefore addressed through a scenario directory containing nothing but
-        its ``LAB_NAME=`` line: `LabParser` assigns that through the name setter,
-        which recomputes the hash from it (`JSON_CLI_CONTRACT.md` §3.0.1, A8), so
-        the binary lands on exactly the hash `deploy_lab` deployed under. Only a
-        scenario known by hash alone cannot be addressed, a hash not being
-        invertible into a name.
-
-        Args:
-            machine_name (str): The name of the device to connect.
-            lab_hash (Optional[str]): The hash of the network scenario.
-                Can be used as an alternative to lab_name and lab. If None, lab_name or lab should be set.
-            lab_name (Optional[str]): The name of the network scenario.
-                Can be used as an alternative to lab_hash and lab. If None, lab_hash or lab should be set.
-            lab (Optional[Kathara.model.Lab]): The network scenario object.
-                Can be used as an alternative to lab_hash and lab_name. If None, lab_hash or lab_name should be set.
-            shell (str): The name of the shell to use for connecting.
-            logs (bool): If True, print startup logs on stdout.
-            wait (Union[bool, Tuple[int, float]]): Ignored: `kathara connect` always waits for the startup
-                commands to finish. v3.8.3 threads this down to
-                `DockerMachine.connect` (`DockerManager.py:405-411`), where False skips the wait; the
-                command line has no spelling for it (DIVERGENCES.md 124).
-
-        Returns:
-            None
-
-        Raises:
-            InvocationError: If a running network scenario hash or name is not specified.
-            NotSupportedError: If the scenario can only be addressed by hash.
-        """
+        """Connect to a device in a running network scenario, using the specified shell."""
         check_required_single_not_none_var(lab_hash=lab_hash, lab_name=lab_name, lab=lab)
 
         name = lab.name if lab is not None else lab_name
@@ -627,16 +502,6 @@ class Kathara(object):
             _proc.run_interactive("connect", ["-v"] + tail)
             return
 
-        # The **name** decides, and the directory is only the fallback. A named
-        # scenario is deployed under `hash(name)` — `deploy_lab` passes
-        # `--name=lab.hash_seed`, and v3.8.3 addresses `connect_tty` by
-        # `lab.hash` unconditionally (`DockerManager.py:398-401`) — while
-        # `connect -d <dir>` takes the *directory's* identity: the `LAB_NAME=`
-        # of the lab.conf found on disk, or `hash(<dir>)` when it has none
-        # (contract §3.0.1; `cmd/kathara/lclean.go:145-155`). For a scenario
-        # that has both a name and a directory those two agree only by
-        # accident, so the name is served first, through a synthesised
-        # `LAB_NAME=` directory.
         if name:
             with self._named_scenario_dir(name) as directory:
                 _proc.run_interactive("connect", ["-d", directory] + tail)
@@ -654,7 +519,7 @@ class Kathara(object):
 
         raise _not_supported(
             "connect_tty by hash",
-            "`connect` takes `-d`/`-v` only: contract §8 gives `--lab-hash`/`--lab-name` to `exec`, `lclean` "
+            "`connect` takes `-d`/`-v` only; `--lab-hash`/`--lab-name` are available to `exec`, `lclean` "
             "and `lconfig`, and a hash cannot be turned back into the name it was derived from. Pass the "
             "network scenario object or its name, or use `exec`."
         )
@@ -682,7 +547,7 @@ class Kathara(object):
 
         # Leading or trailing whitespace does not round-trip either, and it is
         # the quieter failure: both parsers `.strip()` the metadata value
-        # (`LabParser.py:52`; the port's `labfile/labconf.go` `applyLabMetadata`
+        # (`LabParser.py:52`; `labfile/labconf.go`'s `applyLabMetadata`
         # through `pyStrip`), so a scenario deployed as `--name=" foo "` lives
         # under `hash(" foo ")` while the synthesised directory resolves to
         # `hash("foo")` — `connect` would reach a different scenario, or none,
@@ -730,11 +595,11 @@ class Kathara(object):
 
         if isinstance(wait, tuple):
             if len(wait) != 2:
-                # Same message as `DockerMachine` (`ERROR_CODES.md` §2, Value).
+
                 raise ValueError("Invalid `wait` value.")
             raise _not_supported(
                 "exec(wait=(retries, interval))",
-                "`exec --wait` waits indefinitely; the retry budget is not part of the CLI contract. "
+                "`exec --wait` waits indefinitely and cannot express a retry budget. "
                 "Pass wait=True or poll yourself."
             )
 
@@ -844,7 +709,7 @@ class Kathara(object):
         """
         raise _not_supported(
             "copy_files",
-            "The JSON CLI contract has no file-transfer command; put the files in the network scenario "
+            "The command interface has no file-transfer operation; put the files in the network scenario "
             "filesystem before `deploy_lab`, which ships them in the deploy archive."
         )
 
@@ -864,7 +729,7 @@ class Kathara(object):
         """
         raise _not_supported(
             "retrieve_files",
-            "The JSON CLI contract has no file-transfer command; read the file with `exec` instead."
+            "The command interface has no file-transfer operation; read the file with `exec` instead."
         )
 
     # ------------------------------------------------------------------ #
@@ -873,30 +738,7 @@ class Kathara(object):
 
     def get_machine_api_object(self, machine_name: str, lab_hash: Optional[str] = None, lab_name: Optional[str] = None,
                                lab: Optional[Lab] = None, all_users: bool = False) -> Any:
-        """Return the inventory object of a running device in a network scenario.
-
-        A docker-py ``Container`` cannot cross a process boundary
-        (`PORT_SPEC.md` §7.2), so this returns the inventory dict of contract
-        §3.0.2: ``network_scenario_id``, ``name``, ``container_name``, ``user``,
-        ``status``, ``image``.
-
-        Args:
-            machine_name (str): The name of the device.
-            lab_hash (Optional[str]): The hash of the network scenario.
-                Can be used as an alternative to lab_name and lab. If None, lab_name or lab should be set.
-            lab_name (Optional[str]): The name of the network scenario.
-                Can be used as an alternative to lab_hash and lab. If None, lab_hash or lab should be set.
-            lab (Optional[Kathara.model.Lab]): The network scenario object.
-                Can be used as an alternative to lab_hash and lab_name. If None, lab_hash or lab_name should be set.
-            all_users (bool): If True, return information about devices of all users.
-
-        Returns:
-            Dict[str, Any]: The inventory object of the device.
-
-        Raises:
-            InvocationError: If a running network scenario hash or name is not specified.
-            MachineNotFoundError: If the specified device is not found.
-        """
+        """Return the inventory object of a running device in a network scenario."""
         check_required_single_not_none_var(lab_hash=lab_hash, lab_name=lab_name, lab=lab)
 
         machines = self._list_machines(
@@ -943,7 +785,7 @@ class Kathara(object):
         """
         raise _not_supported(
             "get_link_api_object",
-            "`kathara list` is a device inventory; the contract exposes no collision-domain listing."
+            "`kathara list` is a device inventory and exposes no collision-domain listing."
         )
 
     def get_links_api_objects(self, lab_hash: Optional[str] = None, lab_name: Optional[str] = None,
@@ -958,7 +800,7 @@ class Kathara(object):
         """
         raise _not_supported(
             "get_links_api_objects",
-            "`kathara list` is a device inventory; the contract exposes no collision-domain listing."
+            "`kathara list` is a device inventory and exposes no collision-domain listing."
         )
 
     def get_lab_from_api(self, lab_hash: Optional[str] = None, lab_name: Optional[str] = None) -> Lab:
@@ -972,8 +814,7 @@ class Kathara(object):
         """
         raise _not_supported(
             "get_lab_from_api",
-            "Rebuilding a network scenario needs per-device interface data, which the 1.0 inventory envelope "
-            "(contract §3.0.2) does not carry."
+            "Rebuilding a network scenario needs per-device interface data, which the inventory output does not carry."
         )
 
     def update_lab_from_api(self, lab: Lab) -> None:
@@ -987,8 +828,7 @@ class Kathara(object):
         """
         raise _not_supported(
             "update_lab_from_api",
-            "Rebuilding a network scenario needs per-device interface data, which the 1.0 inventory envelope "
-            "(contract §3.0.2) does not carry."
+            "Rebuilding a network scenario needs per-device interface data, which the inventory output does not carry."
         )
 
     # ------------------------------------------------------------------ #
@@ -998,32 +838,7 @@ class Kathara(object):
     def get_machines_stats(self, lab_hash: Optional[str] = None, lab_name: Optional[str] = None,
                            lab: Optional[Lab] = None, machine_name: str = None, all_users: bool = False) \
             -> Generator[Dict[str, Dict[str, Any]], None, None]:
-        """Return information about the running devices.
-
-        Yields **one** snapshot of the inventory fields per contract §3.0.2 and
-        stops: resource sampling (``pids``, ``cpu_usage``, ``mem_usage``,
-        ``mem_percent``, ``net_usage``, ``interfaces``) is deferred to
-        post-1.0 (`PORT_SPEC.md` §0.3), and with nothing to sample there is
-        nothing to iterate.
-
-        Args:
-            lab_hash (Optional[str]): The hash of the network scenario.
-                Can be used as an alternative to lab_name and lab.
-            lab_name (Optional[str]): The name of the network scenario.
-                Can be used as an alternative to lab_hash and lab.
-            lab (Optional[Kathara.model.Lab]): The network scenario object.
-                Can be used as an alternative to lab_hash and lab_name.
-            machine_name (str): If specified return all the devices with machine_name.
-            all_users (bool): If True, return information about the device of all users.
-
-        Returns:
-            Generator[Dict[str, Dict[str, Any]], None, None]: A generator containing dicts that have the container
-            name as keys and the device inventory dicts as values.
-
-        Raises:
-            InvocationError: If more than one param among lab_hash, lab_name and lab is specified.
-            PrivilegeError: If all_users is True and the user does not have root privileges.
-        """
+        """Return information about the running devices."""
         check_single_not_none_var(lab_hash=lab_hash, lab_name=lab_name, lab=lab)
 
         resolved_hash = self._resolve_hash(lab_hash, lab_name, lab)
@@ -1099,8 +914,7 @@ class Kathara(object):
         """
         raise _not_supported(
             "get_links_stats",
-            "Resource statistics sampling is deferred (spec §0.3) and the contract exposes no collision-domain "
-            "listing to fall back on."
+            "Resource statistics sampling and collision-domain inventory are not available."
         )
 
     def get_link_stats(self, link_name: str, lab_hash: Optional[str] = None, lab_name: Optional[str] = None,
@@ -1115,8 +929,7 @@ class Kathara(object):
         """
         raise _not_supported(
             "get_link_stats",
-            "Resource statistics sampling is deferred (spec §0.3) and the contract exposes no collision-domain "
-            "listing to fall back on."
+            "Resource statistics sampling and collision-domain inventory are not available."
         )
 
     def get_link_stats_obj(self, link: Link, all_users: bool = False) -> Generator[Any, None, None]:
@@ -1130,8 +943,7 @@ class Kathara(object):
         """
         raise _not_supported(
             "get_link_stats_obj",
-            "Resource statistics sampling is deferred (spec §0.3) and the contract exposes no collision-domain "
-            "listing to fall back on."
+            "Resource statistics sampling and collision-domain inventory are not available."
         )
 
     # ------------------------------------------------------------------ #
@@ -1152,21 +964,12 @@ class Kathara(object):
         """
         raise _not_supported(
             "check_image",
-            "`kathara check` self-tests the default image only; the contract has no single-image check."
+            "`kathara check` self-tests the default image only; there is no single-image check."
         )
 
     @staticmethod
     def _check_report() -> Dict[str, Any]:
-        """Return the `check` envelope, running the command at most once.
-
-        Contract §3.7 makes `check` the only carrier of `manager` and
-        `manager_version`, and running it deploys and undeploys a test device
-        (possibly pulling its image). v3.8.3's getters were free — a literal and
-        one SDK call (`DockerManager.py:1043-1058`) — so the first call is a
-        real deploy where they were not, and fails when the daemon cannot run a
-        container (DIVERGENCES.md 125). Memoizing keeps them cheap to call in a
-        loop, and neither value can change while the process runs.
-        """
+        """Return the `check` envelope, running the command at most once."""
         if not _CHECK_REPORT:
             _CHECK_REPORT.update(_proc.run_json("check", []))
 

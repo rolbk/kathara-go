@@ -8,19 +8,12 @@ import (
 
 // TestTopLevelHelpMatchesTheOracleByte forByte compares `kathara -h` against a
 // recording of the real 3.8.3 parser.
-//
-// testdata/toplevel_help.txt was produced by running Python's own
-// `parser.format_help()` over the entrypoint's parser, with the harness's
-// environment (`COLUMNS=80 TERM=dumb NO_COLOR=1`, NORMALIZATION.md §1). It is
-// the only piece of `rich` layout the CLI emits that is NOT a panel, and it
-// exercises the boxless two-column `Table`, its `ratio_reduce` widths and the
-// fold of `lconfig`'s description at column 68.
 func TestTopLevelHelpMatchesTheOracle(t *testing.T) {
 	want, err := os.ReadFile("testdata/toplevel_help.txt")
 	if err != nil {
 		t.Fatal(err)
 	}
-	// `parser.print_help()` writes the block plus a trailing newline; the port
+	// `parser.print_help()` writes the block plus a trailing newline; this implementation
 	// prints the block through `Console.Print`, which adds the same one.
 	got := topLevelHelp(80) + "\n"
 	if got != string(want) {
@@ -41,8 +34,6 @@ func TestTopLevelHelpMatchesTheOracle(t *testing.T) {
 	}
 }
 
-// TestCommandTableOrderIsTheStringsDict pins the display order of the help,
-// which is `Kathara/strings.py`'s insertion order (ORDERING.tsv).
 func TestCommandTableOrderIsTheStringsDict(t *testing.T) {
 	want := []string{
 		"vstart", "vclean", "vconfig", "lstart", "lclean", "linfo", "lrestart",
@@ -58,10 +49,6 @@ func TestCommandTableOrderIsTheStringsDict(t *testing.T) {
 	}
 }
 
-// TestEveryDescribedCommandIsRegistered checks the other direction: the help
-// lists exactly the commands the dispatcher can run, plus `config`, the new
-// command PORT_SPEC §3.2 adds and which Python's `strings` dict cannot know
-// about.
 func TestEveryDescribedCommandIsRegistered(t *testing.T) {
 	a := newTestApp(t)
 	table := commandTable(a.app)

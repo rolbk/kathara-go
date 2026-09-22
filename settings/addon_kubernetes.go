@@ -1,4 +1,4 @@
-// This file is the port of `setting/addon/KubernetesSettingsAddon.py`: the
+// This file implements `setting/addon/KubernetesSettingsAddon.py`: the
 // five keys the file carries when `manager_type` is kubernetes, in `_to_dict`
 // order.
 
@@ -26,16 +26,6 @@ const DefaultDockerConfigJSONPath = "~/.docker/config.json"
 
 // kubernetesKeys is `KubernetesSettingsAddon._to_dict`
 // (KubernetesSettingsAddon.py:26).
-//
-// Three of the five are unrestricted. `api_server_url` and `api_token` were
-// guarded by the settings screen's own regex validators, which belong to the
-// replaced consolemenu prompt layer rather than to `validator/` and are not
-// ported (the URL one is case-sensitive against an upper-case character class
-// and rejects every lower-case domain — DIVERGENCES.md). `docker_config_json`
-// is left alone because what a caller may hand it — a path to encode, or the
-// encoded value — is unruled (DIVERGENCES.md item 34): the key holds the
-// schema value, i.e. the base64, and [ValidateDockerConfigJSON] is available
-// for the path reading the settings screen's flow needs.
 var kubernetesKeys = []keyDesc{
 	{name: "api_server_url", kind: KindNullableString, ptr: func(s *Settings) any { return &s.APIServerURL }},
 	{name: "api_token", kind: KindNullableString, ptr: func(s *Settings) any { return &s.APIToken }},

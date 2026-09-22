@@ -3,7 +3,6 @@
 // on: the `stream(connect_get_namespaced_pod_exec, _preload_content=False)`
 // call that opens a SPDY/WebSocket exec channel, and the `returncode` property
 // that reads the exit status off the error channel once it closes.
-//
 // It also holds `OCI_RUNTIME_RE` (`KubernetesMachine.py:40`), which on this
 // backend is the bare literal `OCI runtime exec failed` — no capture groups,
 // unlike the Docker backend's. That is why `MachineBinaryError.binary` here is
@@ -64,34 +63,6 @@ type execResult struct {
 
 // runExecAll is `_exec_all` (`KubernetesMachine.py:879`): pump the exec to
 // completion and answer everything it wrote plus its exit status.
-//
-// # What the stdin buffer does
-//
-// Python's loop writes ONE element of `stdin_buffer` per turn and breaks as
-// soon as the buffer empties — before reading whatever the command wrote next.
-// The Go transport takes an `io.Reader` for stdin and closes the remote side at
-// EOF, so the buffer is concatenated and handed over whole. The difference is
-// invisible on the two call paths that use it: `copy_files` passes a single
-// element and never reads the output, and nothing else passes a buffer at all.
-//
-// # The exit code
-//
-// Python reads `response.returncode`, which parses the API server's `Status`
-// off the error channel and does `int(status['details']['causes'][0]['message'])`.
-// Three outcomes, and client-go's decoder reaches the same three by a different
-// route:
-//
-//   - success → 0 (`Status: Success`; client-go returns a nil error);
-//   - a real exit code → that code (`reason: NonZeroExitCode`; client-go
-//     returns [utilexec.CodeExitError]);
-//   - anything else → `int()` fails with a ValueError carrying the API server's
-//     message, and Kathará matches [ociRuntimeRE] against it: a hit is
-//     [kerrors.ErrMachineBinary], a miss is exit code **1**. client-go returns a
-//     plain error carrying the same `Status.Message`, which is what is matched
-//     here.
-//
-// A context cancellation is NOT one of the three: it is the Ctrl-C path and is
-// returned as itself, not silently turned into exit 1.
 func runExecAll(ctx context.Context, factory executorFactory, req execRequest, machineName string, stdinBuffer [][]byte) (execResult, error) {
 	executor, err := factory.NewExecutor(req)
 	if err != nil {
@@ -119,9 +90,6 @@ func runExecAll(ctx context.Context, factory executorFactory, req execRequest, m
 // execExitCode is the `try: exit_code = response.returncode / except ValueError`
 // block (`KubernetesMachine.py:913-918`), shared by [runExecAll] and
 // [execStream.ExitCode].
-//
-// Errors: [kerrors.ErrMachineBinary] when the failure text names an OCI runtime
-// exec failure, carrying `shlex.join(command)` as the binary.
 func execExitCode(ctx context.Context, streamErr error, machineName string, command []string) (int, error) {
 	switch {
 	case streamErr == nil:
@@ -155,14 +123,6 @@ type execFrame struct {
 // execStream is `KubernetesExecStream`
 // (`exec_stream/KubernetesExecStream.py:6`), the handle
 // `exec(..., is_stream=True)` returns.
-//
-// Python's generator polls a websocket that buffers per channel; there is no
-// polling here, because the Go transport pushes into an [io.Writer] per side.
-// The writers publish into one channel and [execStream.Next] takes from it, so
-// a frame carries exactly one side — which is the same shape Python's
-// `(stdout|None, stderr|None)` pair has, and which
-// [kathara.ExecStream.Next] explicitly allows ("chunk boundaries are a
-// transport artefact").
 type execStream struct {
 	frames chan execFrame
 
@@ -179,12 +139,6 @@ type execStream struct {
 }
 
 // newExecStream opens the exec and starts pumping it.
-//
-// The transport goroutine owns its own context, derived from the caller's, so
-// that [execStream.Close] can abort a stream the caller has walked away from.
-// Python had no such need: CPython's refcounting closed the websocket when the
-// generator went out of scope, which is exactly the gap
-// [kathara.ExecStream.Close] exists to fill.
 func newExecStream(ctx context.Context, factory executorFactory, req execRequest, machineName string, stdinBuffer [][]byte) (*execStream, error) {
 	executor, err := factory.NewExecutor(req)
 	if err != nil {
@@ -253,9 +207,6 @@ func (w *frameWriter) Write(p []byte) (int, error) {
 
 // Next is `stream_next` (`KubernetesExecStream.py:14`): the next frame, io.EOF
 // once the command has finished writing.
-//
-// Python raises StopIteration at that point and Go returns io.EOF
-// ([kathara.ExecStream.Next]).
 func (s *execStream) Next(ctx context.Context) (stdout, stderr []byte, err error) {
 	select {
 	case <-ctx.Done():
@@ -270,22 +221,6 @@ func (s *execStream) Next(ctx context.Context) (stdout, stderr []byte, err error
 
 // ExitCode is `exit_code` (`KubernetesExecStream.py:22`):
 // `int(self._stream_api_object.returncode)`.
-//
-// It blocks until the transport has finished, because that is when the exit
-// status arrives — Python's `returncode` answers `None` while the socket is
-// open and `int(None)` is a TypeError, so calling it early was a caller error
-// there and is a wait here rather than a guess ([kathara.ExecStream.ExitCode]).
-//
-// # The one asymmetry with `_exec_all`
-//
-// `KubernetesExecStream.exit_code` has NO `try/except ValueError`
-// (k8s-backend.md G19): a non-integer status propagates as a ValueError and is
-// never translated into `MachineBinaryError`, which the non-streaming path
-// does translate. That asymmetry is not preserved — both paths go through
-// [execExitCode] — because the class it would produce is the difference between
-// `kathara exec --format jsonl` reporting `MachineBinary` and reporting an
-// untyped crash for the same missing binary, and JSON_CLI_CONTRACT.md §4 pins
-// the former for `exec`. DIVERGENCES.md records it.
 func (s *execStream) ExitCode(ctx context.Context) (int, error) {
 	select {
 	case <-ctx.Done():

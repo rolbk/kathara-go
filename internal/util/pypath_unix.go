@@ -67,11 +67,6 @@ func whichFiles(cmd string) []string {
 
 // whichAccessCheck is `shutil._access_check(fn, os.F_OK | os.X_OK)`:
 // `os.path.exists(fn) and os.access(fn, mode) and not os.path.isdir(fn)`.
-//
-// `os.access` is access(2) — [unix.Access] — which answers for the **real**
-// uid. Go's own exec.LookPath uses faccessat's AT_EACCESS and answers for the
-// effective one; the two differ exactly on a setuid install, which is the
-// configuration `cmd/kathara`'s privilege drop exists for.
 func whichAccessCheck(name string) bool {
 	info, err := os.Stat(name)
 	if err != nil {

@@ -13,7 +13,6 @@ import (
 // `cli/ui/utils.open_machine_terminal` (CPython 3, `shlex` and the `%`
 // interpolation, same as 3.8.3) and printing the argv each `subprocess.Popen`
 // would receive. They are quoted verbatim, double spaces included.
-//
 //	'"/usr/local/bin/kathara" connect  -l pc1'
 //	['gnome-terminal', '--', '/usr/local/bin/kathara', 'connect', '-l', 'pc1']
 //	['/usr/bin/xterm', '-e', '"/usr/local/bin/kathara" connect  -l pc1']
@@ -21,7 +20,7 @@ import (
 //	' clear && "/usr/local/bin/kathara" connect  -l pc1 && exit'
 
 // quotedExe is what `internal/util.GetExecutablePath` hands the adapters: the
-// resolved path, already wrapped in double quotes by Python and by the port.
+// resolved path, already wrapped in double quotes by Python and by this implementation.
 const quotedExe = `"/usr/local/bin/kathara"`
 
 func TestConnectCommandMatchesPython(t *testing.T) {

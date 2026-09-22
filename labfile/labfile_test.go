@@ -39,8 +39,6 @@ func writeLab(t *testing.T, files map[string]string) string {
 	return dir
 }
 
-// TestCheckExt covers the deferred lab.ext feature, which has no vector: the
-// corpus records 3.8.3's behaviour and 3.8.3 parses the file (PORT_SPEC §0.3).
 func TestCheckExt(t *testing.T) {
 	t.Run("absent", func(t *testing.T) {
 		if err := CheckExt(writeLab(t, map[string]string{"lab.conf": "pc1[0]=A\n"})); err != nil {
@@ -77,8 +75,6 @@ func TestCheckExt(t *testing.T) {
 	})
 }
 
-// TestParseErrorShape pins the struct ERROR_CODES.md §0.3 freezes. The vectors
-// compare the rendered message; the fields are what the JSON envelope reads.
 func TestParseErrorShape(t *testing.T) {
 	tests := []struct {
 		name    string
@@ -185,7 +181,7 @@ func TestParseLabFileLevelErrors(t *testing.T) {
 		if err == nil || err.Error() != "Cannot open lab.conf file." {
 			t.Fatalf("error = %v, want the unopenable message", err)
 		}
-		// Python swallows the original exception; the port keeps it reachable
+		// Python swallows the original exception; this implementation keeps it reachable
 		// without letting it into the message (kerrors.NewOSCannotOpenConf).
 		var pathErr *os.PathError
 		if !errors.As(err, &pathErr) {
@@ -208,7 +204,7 @@ func TestParseLabFileLevelErrors(t *testing.T) {
 	})
 }
 
-// TestParseLabMetadataEmptyName pins the one LAB_ tri-state the port keeps.
+// TestParseLabMetadataEmptyName pins the one LAB_ tri-state this implementation keeps.
 // `LAB_NAME=` names the scenario the empty string, which is NOT the same as an
 // unnamed scenario: the hash is computed from "" rather than from the path.
 func TestParseLabMetadataEmptyName(t *testing.T) {
@@ -226,8 +222,6 @@ func TestParseLabMetadataEmptyName(t *testing.T) {
 	}
 }
 
-// TestParseDepEmptyVariants pins the nil-versus-empty distinction of RULINGS.md,
-// which the Python signature can only express as None-versus-[].
 func TestParseDepEmptyVariants(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -314,8 +308,6 @@ func TestParseOptionsOrder(t *testing.T) {
 	})
 }
 
-// TestInterfaceNumberDispatch pins RULINGS.md OQ-14a at the function that
-// implements it: only a failed integer parse routes a line to the meta path.
 func TestInterfaceNumberDispatch(t *testing.T) {
 	tests := []struct {
 		arg    string
@@ -334,8 +326,7 @@ func TestInterfaceNumberDispatch(t *testing.T) {
 		{arg: "²", isMeta: true}, // superscript two: isdigit, not int()
 		{arg: "image", isMeta: true},
 		{arg: "0x1", isMeta: true},
-		// Beyond a Go int. Still a number, so it stays on the interface path
-		// and saturates (DIVERGENCES.md 45).
+		// Beyond a Go int.
 		{arg: "99999999999999999999", number: math.MaxInt},
 	}
 
@@ -360,12 +351,6 @@ func TestInterfaceNumberDispatch(t *testing.T) {
 	})
 }
 
-// TestInterfaceNumberSaturationIsObservable pins the residue of DIVERGENCES.md
-// 45. A single out-of-range number lands on the same message as Python's, which
-// is what the test above asserts; two of them on one device do not, because
-// saturation makes distinct numbers equal and makes an exact one unprintable.
-// Both cases are oracle-verified against 3.8.3 and both are recorded, so a
-// change here is a change to the divergence, not a regression.
 func TestInterfaceNumberSaturationIsObservable(t *testing.T) {
 	tests := []struct {
 		name   string
@@ -411,10 +396,6 @@ func TestInterfaceNumberSaturationIsObservable(t *testing.T) {
 	}
 }
 
-// TestFlattenCycleGuard pins the one place the port refuses to follow Python:
-// a cyclic graph makes `depgen.flatten` recurse until RecursionError, which in
-// Go would be a fatal stack exhaustion (DIVERGENCES.md 46). ParseDep never gets
-// here — it calls HasLoop first — but Flatten is exported.
 func TestFlattenCycleGuard(t *testing.T) {
 	graph := NewDepGraph()
 	graph.Set("a", []string{"b"})
@@ -465,9 +446,9 @@ func TestDuplicateMetaWarning(t *testing.T) {
 	}
 }
 
-// TestFolderParserSortsNames pins the OQ-15a ruling: Python's glob order is the
-// filesystem's, and the port replaces it with a sort. The vector for it is
-// marked order-insensitive on purpose, so this is where the ruling is asserted.
+// TestFolderParserSortsNames checks the stable replacement for Python's
+// filesystem-dependent glob order. The corresponding vector is deliberately
+// order-insensitive.
 func TestFolderParserSortsNames(t *testing.T) {
 	dir := t.TempDir()
 	for _, name := range []string{"m_delta", "m_alpha", "m_charlie", "m_bravo", "shared", ".git"} {
@@ -523,11 +504,6 @@ func TestFolderParserFollowsSymlinks(t *testing.T) {
 // TestFolderParserGlobsTheScenarioPath pins the consequence of building the
 // pattern by concatenation: the scenario path is part of it, so a `[`, `]`, `*`
 // or `?` in the path is MATCHED rather than looked up.
-//
-// Oracle-verified against 3.8.3: with `lab1/devb` next to `lab[1]/deva`,
-// `FolderParser.parse(".../lab[1]")` returns the single device `devb` — the
-// character class matched the sibling directory and the bracketed one was never
-// listed — while the scenario's filesystem stays rooted at the literal path.
 func TestFolderParserGlobsTheScenarioPath(t *testing.T) {
 	base := t.TempDir()
 	for _, dir := range []string{"lab[1]/deva", "lab1/devb", "lab1/shared"} {
@@ -589,10 +565,6 @@ func TestFolderParserGlobsTheScenarioPath(t *testing.T) {
 // is `glob`'s, so EVERY component of the path is a pattern, a literal component
 // in between two of them is looked up rather than listed, and a relative path
 // resolves against the working directory.
-//
-// It drives `machineFolders` rather than [ParseFolder] because a path that is
-// only a pattern has no directory for the `Lab` constructor to open. All three
-// expectations are `glob`'s, measured on 3.8.3.
 func TestMachineFoldersExpandsEveryComponent(t *testing.T) {
 	base := t.TempDir()
 	for _, dir := range []string{
@@ -626,7 +598,7 @@ func TestGlobPatternMatching(t *testing.T) {
 		// The expectations replay CPython's POSIX fnmatch; on Windows both
 		// CPython and this port normcase through ntpath (lowercase,
 		// separator flip), so the POSIX-shaped table cannot apply.
-		// TODO(windows-runtime): record a Windows oracle table post-1.0.
+		// TODO(windows-runtime): record a Windows oracle table.
 		t.Skip("expectations are the POSIX fnmatch oracle's")
 	}
 	names := []string{"a", "b", "z", "ab", "]", "[", "-", "^", "!", `\`, "a-b", "lab1", "lab[1]"}

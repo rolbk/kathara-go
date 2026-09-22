@@ -12,11 +12,6 @@ import (
 // testdata/startup.json, which was produced by importing `STARTUP_COMMANDS` and
 // `SHUTDOWN_COMMANDS` from 3.8.3 and running its own
 // `"; ".join(...).format(...)` on them.
-//
-// It is a byte comparison of the whole line, which is the only useful
-// granularity: the fragments are quote-heavy shell whose `sed` expression
-// carries a literal backslash-n, and any transcription slip anywhere in the
-// list changes what runs inside every container.
 func TestStartupCommandsMatchPython(t *testing.T) {
 	raw, err := os.ReadFile("testdata/startup.json")
 	if err != nil {
@@ -44,9 +39,6 @@ func TestStartupCommandsMatchPython(t *testing.T) {
 	}
 }
 
-// TestStartupCommandOrder is SYNTHESIS §1.10 and ORDERING.tsv row 42: the
-// sequence inside the container is contract, and `touch /tmp/EOS` must be LAST
-// because it is the sentinel `_wait_startup_execution` polls for.
 func TestStartupCommandOrder(t *testing.T) {
 	line := renderStartupCommands("pc1", nil)
 
@@ -100,11 +92,6 @@ func TestInterleaveExecCommands(t *testing.T) {
 	}
 }
 
-// TestInterleaveExecCommandsIsNotIdempotent records the destructive rewrite of
-// docker-backend.md gotcha 14: Python assigns the doubled list back onto the
-// device's meta, so starting the same object twice wraps the echoes again. The
-// port reproduces the mutation, so the second pass must double again rather
-// than notice.
 func TestInterleaveExecCommandsIsNotIdempotent(t *testing.T) {
 	once := interleaveExecCommands([]string{"ip a"})
 	twice := interleaveExecCommands(once)

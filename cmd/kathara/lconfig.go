@@ -1,13 +1,3 @@
-// This file is `cli/command/LconfigCommand.py` (CLI_SURFACE.md §5) and
-// `cli/command/VconfigCommand.py` (§8), which are the same command over two
-// scenarios: one parsed from a directory, one the fixed `kathara_vlab`.
-//
-// §0.2 #3 collapses the second onto the first. What survives the collapse is
-// the one behavioural difference between them: `vconfig` fetches the backend's
-// own handles for the device and for each collision domain it detaches
-// (`VconfigCommand.py:63,85`), while `lconfig` relies on
-// `update_lab_from_api` having filled them.
-
 package main
 
 import (
@@ -29,12 +19,6 @@ type configFlags struct {
 	toRemove  *stringList
 }
 
-// registerConfigFlags declares the rows of CLI_SURFACE.md §5/§8. The
-// `--add`/`--rm` group is `required=True`, so omitting both is a usage error.
-//
-// `--rm` validates its values here, through `alphanumeric`'s
-// `ArgumentTypeError`; `--add` does NOT, because `cd_mac` raises a bare
-// `SyntaxError` that argparse never catches (JSON_CLI_CONTRACT.md A9).
 func registerConfigFlags(cmd *parser, lab bool) *configFlags {
 	f := &configFlags{
 		toAdd:    &stringList{},

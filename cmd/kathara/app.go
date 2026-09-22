@@ -1,8 +1,3 @@
-// This file is `foundation/cli/command/Command.py` — the two helpers every
-// lab-path-taking command shares — plus the process-wide state the §0.2 #10
-// singleton removal turned into a value: the settings, the event dispatcher,
-// the console, and the manager the commands run against.
-
 package main
 
 import (
@@ -23,11 +18,6 @@ import (
 )
 
 // app is everything a command needs that Python read off a singleton.
-//
-// `Setting.get_instance()`, `EventDispatcher.get_instance()` and
-// `Kathara.get_instance()` are all fields here (PORT_SPEC §0.2 #10), which is
-// what lets `cmd/kathara`'s tests run a whole command against a fake manager
-// with no Docker daemon in sight.
 type app struct {
 	// console is `Command.console` and the logging handler at once.
 	console *cliout.Console
@@ -38,12 +28,7 @@ type app struct {
 	// — exactly as Python mutates its singleton.
 	settings *settings.Settings
 	// dispatcher is the event bus the backends announce into.
-	dispatcher *event.Dispatcher
-	// settingsDir is the directory `kathara config` and the settings form save
-	// into, i.e. the `dir` argument of [settings.Settings.Save]. It is empty in
-	// production, which means [settings.DefaultPath] — `~/.config/kathara.conf`,
-	// the frozen location (§3.2 item 1). It is a field only so that a test can
-	// exercise the write path without touching the developer's own file.
+	dispatcher  *event.Dispatcher
 	settingsDir string
 	// cwd is `os.getcwd()`, the fallback lab path.
 	cwd string
@@ -58,9 +43,6 @@ type app struct {
 	// `--xterm` fail after the clean has already run.
 	rawArgs []string
 
-	// suppressEmit stops a nested command from writing its own envelope.
-	// `lrestart` runs `lclean` and `lstart` in-process and emits ONE combined
-	// object at the end (JSON_CLI_CONTRACT.md §3.3).
 	suppressEmit bool
 	// lastLcleanResult and lastLstartResult are how `lrestart` collects the
 	// two phase envelopes it composes.
@@ -71,11 +53,6 @@ type app struct {
 	// one; the production value calls [kathara.NewClient].
 	newManager func(ctx context.Context) (kathara.Manager, error)
 
-	// checkSettings is `Setting.get_instance().check()`, the startup pass
-	// step 3 of CLI_SURFACE.md §0.2 runs for every command whose name does not
-	// contain "settings". It is a field because the real one writes to
-	// `~/.config/kathara.conf` — the weekly `last_checked` stamp — which a
-	// dispatch test must not do to the machine it runs on.
 	checkSettings func() error
 
 	// handlers holds the CLI's event subscriptions, so that
@@ -98,29 +75,12 @@ type app struct {
 	// paths without a pseudo-terminal; production is [app.isInteractiveTTY].
 	isTTY func() bool
 
-	// muxDevices are the devices the built-in multiplexer will show
-	// (PORT_SPEC §3.3 item 1). Python opens one OS window per device as each
-	// one deploys; the multiplexer is one window for the whole scenario, so
-	// the per-device event enqueues here and [app.runPendingTerminals] opens
-	// the window once, after the command has emitted its result. Empty for
-	// every other terminal mode and for `--noterminals`.
 	muxDevices []*model.Machine
 
-	// opCtx is the operation context, stored because the event bus that calls
-	// [app.openMachineTerminals] is `EventDispatcher`-shaped and carries none:
-	// a subscriber signature with a ctx would be a change to `event/`, which
-	// this package does not own. It is set once per dispatch and is what keeps
-	// the terminal driver off context.Background() (PORT_SPEC §0.2 #11).
 	opCtx context.Context
 }
 
 // manager builds the backend once and caches it.
-//
-// The construction is eager in the same sense Python's was: `Kathara.__init__`
-// opened the Docker client and checked the network plugin, so a daemon that is
-// not running failed at the first `Kathara.get_instance()` and not at the first
-// operation (analysis/manager-foundation.md §7 gotcha 9). What moved is *when*
-// that first call happens: Python's is inside the command body, and so is this.
 func (a *app) manager(ctx context.Context) (kathara.Manager, error) {
 	a.managerOnce.Do(func() {
 		a.managerVal, a.managerErr = a.newManager(ctx)
@@ -131,10 +91,6 @@ func (a *app) manager(ctx context.Context) (kathara.Manager, error) {
 // resolveLabPath is the idiom every lab-path-taking command opens with
 // (`LstartCommand.py:150-151` and six siblings): strip every quote character
 // from the `-d` value, fall back to the working directory, then resolve.
-//
-// The quote stripping is a `str.replace` over the whole string, not a
-// surrounding-quote trim, so a directory whose name contains an apostrophe
-// cannot be reached with `-d`. That is Python's behaviour and it is reproduced.
 func (a *app) resolveLabPath(directory string) (string, error) {
 	labPath := a.cwd
 	if directory != "" {
@@ -146,13 +102,6 @@ func (a *app) resolveLabPath(directory string) (string, error) {
 // loadCustomConfiguration is `Command._load_custom_configuration`: a
 // `kathara.conf` sitting in the scenario directory is layered onto the settings
 // before the scenario is parsed.
-//
-// The layering is asymmetric and the asymmetry is Python's: the twelve base
-// keys are overlaid, but the active addon's keys are *reset to their defaults*
-// first, because `load_settings_addon()` builds a fresh addon object before the
-// file's values are applied. A per-scenario file that sets only `image`
-// therefore also resets `hosthome_mount`, `remote_url` and the rest.
-// `settings.Settings.LoadFromDisk` carries that whole behaviour.
 func (a *app) loadCustomConfiguration(labPath string) error {
 	custom := filepath.Join(labPath, settings.Filename)
 	if _, err := os.Stat(custom); err != nil {
@@ -162,16 +111,12 @@ func (a *app) loadCustomConfiguration(labPath string) error {
 	return a.settings.LoadFromDisk(labPath)
 }
 
-// defaults are the four settings values `model` falls back to (OQ-4). They are
+// defaults are the four settings values the model falls back to. They are
 // re-read per lab because `loadCustomConfiguration` can have changed them.
 func (a *app) defaults() model.Defaults {
 	return kathara.DefaultsFrom(a.settings)
 }
 
-// registerFormat declares `--format` on a command and records which values it
-// accepts (JSON_CLI_CONTRACT.md §1.1). A command that takes no `--format` at
-// all — `connect`, `settings` — simply does not call this, so the flag is
-// unknown there and any use of it is a usage error, exit 2.
 func registerFormat(p *parser, streaming bool) {
 	help := "Output format: human or json."
 	if streaming {
@@ -199,9 +144,6 @@ func (a *app) applyFormat(spec *commandSpec) error {
 	return nil
 }
 
-// asLabObject builds the JSON_CLI_CONTRACT.md §3.0.1 `lab` object from a parsed
-// scenario. withPath is false for the v-family and for archive deploys, whose
-// scenario has no stable directory.
 func asLabObject(lab *model.Lab, withPath bool) cliout.Lab {
 	obj := cliout.Lab{Hash: lab.Hash}
 	if lab.HasName() {
@@ -225,6 +167,4 @@ func asLabObject(lab *model.Lab, withPath bool) cliout.Lab {
 // `ConnectCommand.py:64`, `ExecCommand.py:81`).
 const vlabName = "kathara_vlab"
 
-// newVlab builds it. §0.2 #3 collapses the v-commands onto the lab code path,
-// and this constructor is the whole of what "a one-device in-memory Lab" means.
 func (a *app) newVlab() *model.Lab { return model.NewLab(vlabName, a.defaults()) }

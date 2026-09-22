@@ -16,9 +16,7 @@ type Kind uint8
 // can hold. They are the closed set the model can produce or accept; anything
 // else Python could technically store there is unreachable through this API.
 const (
-	// KindAbsent is "the key is not in the dict". It is not Python's None: a
-	// stored None is not representable (DIVERGENCES.md), because every reader
-	// in this subsystem tests presence, not nil-ness.
+	// KindAbsent is "the key is not in the dict".
 	KindAbsent Kind = iota
 	// KindString is `str`, what every lab.conf value and every CLI flag is.
 	KindString
@@ -36,18 +34,6 @@ const (
 
 // Scalar is one Python `Any` the model stores without interpreting: a meta
 // value, a general option, a global machine metadata entry.
-//
-// It exists because the values are genuinely dynamic in 3.8.3 and the dynamism
-// is observable. `pc1[ipv6]=false` stores the *string* `"false"` while
-// `update_meta({'ipv6': False})` stores the *bool*, and `is_ipv6_enabled`
-// branches on `type(x) is bool` (DIVERGENCES.md 3, README SURPRISE 7).
-// `bridged_iface` is worse: a string there makes `check()` raise a TypeError,
-// an int makes it fill an interface slot (DIVERGENCES.md 1). Collapsing the two
-// into a Go string or a Go int would erase a difference the port is required to
-// keep.
-//
-// The zero value is [KindAbsent], i.e. "no such key", which is why [Meta] can
-// use plain fields for the optional metas instead of pointers to them.
 type Scalar struct {
 	kind    Kind
 	str     string
@@ -114,9 +100,6 @@ func (s Scalar) AsStrings() ([]string, bool) { return s.strings, s.kind == KindS
 // String is Python's `str(x)`, which `add_meta` applies before handing
 // `privileged` and `bridged` to `strtobool` (`model/Machine.py:159,168`) —
 // `str(True)` is `"True"`, which `strtobool` then folds and accepts.
-//
-// An absent value renders as the empty string; Python has no `str()` of a
-// missing key, and no caller reaches this without checking [Scalar.IsSet].
 func (s Scalar) String() string {
 	switch s.kind {
 	case KindString:
@@ -144,10 +127,6 @@ func (s Scalar) String() string {
 }
 
 // Truthy is Python's truth value.
-//
-// It is what `if memory:` in `get_mem` tests (so `""` means "no limit"), what
-// `is_privileged`/`is_bridged` hand back to callers that use the result as a
-// bool, and what `update_meta`'s `privileged`/`bridged` gates test.
 func (s Scalar) Truthy() bool {
 	switch s.kind {
 	case KindString:
@@ -188,15 +167,6 @@ func (s Scalar) pyTypeName() string {
 }
 
 // pyInt is Python's `int(x)` over a stored value, at Python's precision.
-//
-// The conversions differ per type and all of them are reachable: a str parses
-// (`int(" 3 ")` is 3, `int("٣")` is 3, `int("2.5")` raises), a bool is 1 or 0,
-// a float truncates toward zero (`int(2.9)` is 2) and raises for an infinity or
-// a NaN, and a list is a TypeError.
-//
-// The error is one of: [util.ErrPyIntSyntax] (the ValueError every caller turns
-// into its own MachineOptionError), errPyIntNaN, errPyIntInf or a
-// [PyRuntimeError] for the TypeError.
 func (s Scalar) pyInt() (*big.Int, error) {
 	switch s.kind {
 	case KindString:
@@ -258,15 +228,6 @@ func floatToBigInt(f float64) (*big.Int, error) {
 
 // pyFloatRepr is `str(f)` for a float: Python's repr, i.e. the shortest decimal
 // that round-trips, with a trailing ".0" on an integral value.
-//
-// The digits are Go's — both languages emit the shortest round-tripping decimal
-// — but the CHOICE between fixed and exponent notation is not. CPython's
-// `format_float_short` switches to the exponent form when the decimal point
-// falls at position `<= -4` or `> 16`, i.e. for `|x| < 1e-4` and `|x| >= 1e16`;
-// Go's `'g'` switches on the exponent reaching the precision, which for the
-// shortest form means as early as `1e6`. So `str(1e6)` is `1000000.0` and
-// `str(123456789012345.0)` keeps all its digits on the oracle, where `'g'`
-// would have produced `1e+06` and `1.23456789012345e+14`.
 func pyFloatRepr(f float64) string {
 	if math.IsInf(f, 1) {
 		return "inf"

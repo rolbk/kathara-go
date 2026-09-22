@@ -17,18 +17,13 @@ import (
 )
 
 // testdata/model_oracle.json was produced BY Kathará 3.8.3, not by this port:
-//
 //	/root/kathara/pyvenv/bin/python tools/vectorcheck/model_probe.py
-//
 // It records, for a corpus of inputs, exactly what `add_meta` stored, what each
 // lazily-validated accessor returned or raised, what `check()` did with a
 // `bridged_iface`, and what `Lab` computed for its hash, its dependency order
 // and its two rendered forms. The hand-written tables in the other files sample
 // that behaviour and explain it; this file is the differential.
-//
-// Python is the truth. When Go disagrees, Go is wrong — except at the one point
-// DIVERGENCES.md records (integers beyond an int64 saturate), which is asserted
-// explicitly rather than skipped.
+// Python provides the reference behaviour for this differential test.
 
 type oracleDocument struct {
 	AddMeta      []oracleAddMeta      `json:"add_meta"`
@@ -177,8 +172,6 @@ func loadModelOracle(t *testing.T) *oracleDocument {
 	return doc
 }
 
-// errorClass is Python's `type(e).__name__` for a Go error: the human label of
-// the ERROR_CODES.md registry (§0.1), or the class a ported crash carries.
 func errorClass(err error) string {
 	if err == nil {
 		return ""
@@ -295,8 +288,6 @@ func TestAddMetaAgainstOracle(t *testing.T) {
 	}
 }
 
-// TestAddMetaTwiceAgainstOracle pins the previous-value contract, which is what
-// LabParser's duplicate-meta warning reads (NILABILITY.tsv:8).
 func TestAddMetaTwiceAgainstOracle(t *testing.T) {
 	t.Parallel()
 	doc := loadModelOracle(t)
@@ -404,9 +395,7 @@ func TestAccessorsAgainstOracle(t *testing.T) {
 					continue
 				}
 				if beyondInt64(arm.want.ResultStr) {
-					// DIVERGENCES.md 37: the fifth saturating value. Python
-					// hands Docker `int(1e300)` with all 301 digits, which
-					// Docker rejects; the port hands it math.MaxInt64.
+
 					if *got != math.MaxInt64 {
 						t.Errorf("%s(%q) = %d, want the documented saturation", arm.name, tc.Value, *got)
 					}
@@ -434,11 +423,7 @@ func TestAccessorsAgainstOracle(t *testing.T) {
 			}
 			want := tc.ResultStr
 			if beyondInt64(want) {
-				// DIVERGENCES.md: Python's ints are arbitrary precision and a
-				// Go int is not, so a terminal count wider than an int64
-				// saturates instead of being carried exactly. Nothing can
-				// consume such a value; the assertion is here so the
-				// divergence cannot drift into something else.
+
 				if got != math.MaxInt {
 					t.Errorf("GetNumTerms(%q) = %d, want the documented saturation", tc.Value, got)
 				}
@@ -515,8 +500,6 @@ func beyondInt64(decimal string) bool {
 	return ok && !v.IsInt64()
 }
 
-// TestCheckAgainstOracle replays Machine.check(), including both bridged_iface
-// branches of DIVERGENCES.md 1.
 func TestCheckAgainstOracle(t *testing.T) {
 	t.Parallel()
 	doc := loadModelOracle(t)

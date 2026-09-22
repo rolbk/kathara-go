@@ -28,15 +28,6 @@ import (
 	"github.com/KatharaFramework/kathara-go/settings"
 )
 
-// TestBuildDefinitionGoldens is EXPECTATIONS-k8s §1 "_build_definition →
-// Deployment object": every generated Deployment compared, as JSON, against the
-// object 3.8.3 submits.
-//
-// The devices here have NOT been through `create`, exactly as the Python
-// fixtures have not, so `machine.meta['sysctls']` is empty and the postStart
-// hook's `{sysctl_commands}` expands to "" — which the
-// `test_build_definition_no_config` expectation states outright. The merged
-// sysctls are covered by [TestCreateGoldens].
 func TestBuildDefinitionGoldens(t *testing.T) {
 	tests := []struct {
 		name      string
@@ -102,9 +93,6 @@ func TestBuildDefinitionGoldens(t *testing.T) {
 	}
 }
 
-// TestCreateGoldens is EXPECTATIONS-k8s §1 "create": the Deployment `create`
-// actually submits, which differs from [TestBuildDefinitionGoldens] by the
-// sysctl merge and the `real_name` assignment.
 func TestCreateGoldens(t *testing.T) {
 	volume0 := t.TempDir()
 	volume1 := t.TempDir()
@@ -150,9 +138,7 @@ func TestCreateGoldens(t *testing.T) {
 			replacements: [][2]string{{"<VOLUME0>", volume0}, {"<VOLUME1>", volume1}},
 		},
 		{
-			// EXPECTATIONS-k8s `test_create_volume_never`: the quirk that the
-			// pod still DECLARES the hostPath volume the policy forbids
-			// mounting (k8s-backend.md G10).
+
 			name:         "volume_mount_policy Never declares but does not mount",
 			golden:       "create_volume_never.json",
 			metas:        [][2]string{{"volume", volume0 + "|/test|ro"}},
@@ -245,10 +231,6 @@ func createdDeployment(t *testing.T, clientset actionRecorder) (*appsv1.Deployme
 
 type actionRecorder interface{ Actions() []k8stesting.Action }
 
-// TestCreateConflictIsMachineAlreadyExists is
-// EXPECTATIONS-k8s / `KubernetesMachine.py:366-370`: a 409 from the API server
-// is the device already existing, and every other status is the passthrough
-// code.
 func TestCreateConflictIsMachineAlreadyExists(t *testing.T) {
 	tests := []struct {
 		name   string
@@ -285,9 +267,6 @@ func TestCreateConflictIsMachineAlreadyExists(t *testing.T) {
 	}
 }
 
-// TestCreateVolumeMissingPermission is EXPECTATIONS-k8s
-// `test_create_volume_no_w_permission`: a `rw` volume whose host directory the
-// user cannot write is a PermissionError and NOTHING is submitted.
 func TestCreateVolumeMissingPermission(t *testing.T) {
 	if goruntime.GOOS == "windows" {
 		// The refusal is provoked by stripping unix permission bits, which
@@ -320,9 +299,6 @@ func TestCreateVolumeMissingPermission(t *testing.T) {
 	}
 }
 
-// TestMergeSysctlsOrder pins k8s-backend.md O4: the defaults in their literal
-// order, then the device's own keys — and a device key that collides with a
-// default keeps the DEFAULT's position while taking the device's value.
 func TestMergeSysctlsOrder(t *testing.T) {
 	tests := []struct {
 		name  string
@@ -397,9 +373,6 @@ func TestSysctlOverrideValue(t *testing.T) {
 	}
 }
 
-// TestNetworkAttachmentsCrashes reproduces the two Python crashes the
-// annotation loop reaches: a tombstoned interface slot and a collision domain
-// that was never deployed (k8s-backend.md G2/O9).
 func TestNetworkAttachmentsCrashes(t *testing.T) {
 	t.Run("tombstoned interface", func(t *testing.T) {
 		s := testSettings()
@@ -438,9 +411,6 @@ func TestNetworkAttachmentsCrashes(t *testing.T) {
 	})
 }
 
-// TestDeployMachinesFilters is EXPECTATIONS-k8s §1 "deploy_machines": which
-// devices are created for each filter shape, and that both filters together are
-// refused before anything is created.
 func TestDeployMachinesFilters(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -459,8 +429,7 @@ func TestDeployMachinesFilters(t *testing.T) {
 			wantErr:  kerrors.ErrSelectedOrExcludedMachines,
 		},
 		{
-			// TRUTHINESS on this path: two empty sets are "no filter", not an
-			// error (SYNTHESIS §1.7).
+
 			name:     "two empty sets deploy everything",
 			selected: kathara.NewNameSet(),
 			excluded: kathara.NewNameSet(),
@@ -502,11 +471,6 @@ func TestDeployMachinesFilters(t *testing.T) {
 
 // deployedNames is the `name` label of every Deployment the fake clientset was
 // asked to create.
-//
-// The result is SORTED, not in submission order: the fan-out is a thread pool in
-// Python and an errgroup here, and CONCURRENCY.tsv row
-// `KubernetesMachine.py:197` records intra-chunk order as scheduler-dependent
-// (k8s-backend.md O8). Asserting on it would be asserting on a race.
 func deployedNames(clientset actionRecorder) []string {
 	var names []string
 	for _, action := range clientset.Actions() {
@@ -522,15 +486,6 @@ func deployedNames(clientset actionRecorder) []string {
 	return names
 }
 
-// TestDeployMachinesDispatchesEvents pins CONCURRENCY.tsv row
-// `KubernetesMachine.py:184`: all three device events come from the WATCHER,
-// not from the deploy workers — `machines_deploy_started` carries the devices
-// the wait set covers, `machine_deployed` fires when a pod reports Ready (with
-// the device NAME, since Megalos has no Machine to pass), and
-// `machines_deploy_ended` only when every watched device reported.
-//
-// It also pins that `DeployMachines` BLOCKS until then: the assertions run
-// after it returns, and nothing has joined the watcher but the call itself.
 func TestDeployMachinesDispatchesEvents(t *testing.T) {
 	s := testSettings()
 	m, clientset, _, _ := newTestManager(t, s)
@@ -574,10 +529,6 @@ func TestDeployMachinesDispatchesEvents(t *testing.T) {
 	}
 }
 
-// TestDeployMachinesLeavesNoWatcherBehind pins the half of DIVERGENCES.md 72
-// that is not the watchdog: a fan-out failure stops the watcher and returns the
-// worker's error PROMPTLY, where Python skips the join and leaks the thread
-// until its own 180 s timer fires.
 func TestDeployMachinesLeavesNoWatcherBehind(t *testing.T) {
 	s := testSettings()
 	m, clientset, _, _ := newTestManager(t, s)
@@ -606,12 +557,8 @@ func TestDeployMachinesLeavesNoWatcherBehind(t *testing.T) {
 	}
 }
 
-// TestDeployMachinesWatchdog is the OQ-10 ruling: with no pod events at all the
-// deploy ends after [maxTimeError] with [context.DeadlineExceeded], not with a
-// process-wide SIGINT.
-//
-// The timer is 180 s, so the test drives the watcher directly rather than
-// waiting for it.
+// TestDeployMachinesWatchdog checks that a deploy with no pod events ends after
+// [maxTimeError] with [context.DeadlineExceeded].
 func TestDeployMachinesWatchdog(t *testing.T) {
 	s := testSettings()
 	m, _, _, _ := newTestManager(t, s)
@@ -635,9 +582,6 @@ func TestDeployMachinesWatchdog(t *testing.T) {
 	}
 }
 
-// TestUndeployFilters is EXPECTATIONS-k8s §1 "undeploy": which pods are
-// deleted, and the `is not None` guard that makes two empty sets an error here
-// where they are "no filter" on the deploy path.
 func TestUndeployFilters(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -673,9 +617,6 @@ func TestUndeployFilters(t *testing.T) {
 			wantErr:  kerrors.ErrSelectedOrExcludedMachines,
 		},
 		{
-			// `is not None` on this path: two non-nil empty sets are refused
-			// even though the manager's own pre-check lets them through
-			// (k8s-backend.md G3).
 			name:     "two empty sets are refused",
 			pods:     []string{"a"},
 			selected: kathara.NewNameSet(),
@@ -779,9 +720,6 @@ func TestUndeployDispatchesEventsAndWaits(t *testing.T) {
 	}
 }
 
-// TestUndeployLeavesNoWatcherBehind is the undeploy half of DIVERGENCES.md 72:
-// a fan-out failure is reported PROMPTLY, without waiting out the shutdown
-// watchdog — Python skips `join()` there and leaks the thread instead.
 func TestUndeployLeavesNoWatcherBehind(t *testing.T) {
 	s := testSettings()
 	m, clientset, _, _ := newTestManager(t, s,
@@ -805,9 +743,6 @@ func TestUndeployLeavesNoWatcherBehind(t *testing.T) {
 	}
 }
 
-// TestUndeployWatchdog is CONCURRENCY.tsv row `KubernetesMachine.py:599`: with
-// no DELETED event at all the wait ends after the timeout instead of hanging
-// forever as Python's `join()` does, and the undeploy still succeeds.
 func TestUndeployWatchdog(t *testing.T) {
 	s := testSettings()
 	m, _, _, _ := newTestManager(t, s,
@@ -836,10 +771,6 @@ func TestUndeployWatchdog(t *testing.T) {
 	}
 }
 
-// TestUndeployUnlabelledPodIsAKeyError is `{item.metadata.labels["name"] for
-// item in pods}` (`KubernetesMachine.py:590`) on a foreign pod that carries
-// `app=kathara` and no `name`: Python raises KeyError out of `undeploy` and so
-// does this — unlike the two watchers, which skip it (DIVERGENCES.md 73).
 func TestUndeployUnlabelledPodIsAKeyError(t *testing.T) {
 	s := testSettings()
 	foreign := newTestPod(defaultScenarioHash, "pc1")
@@ -856,10 +787,6 @@ func TestUndeployUnlabelledPodIsAKeyError(t *testing.T) {
 	}
 }
 
-// TestUndeployAPIErrorsCarryThePassthroughCode is ERROR_CODES.md §1.3: an
-// `ApiException` nobody translated reaches the CLI as `KubernetesAPI` /
-// `ApiException`, not as the `InternalError` fallback — the pod listing and the
-// Deployment delete are the two undeploy sites that can raise one.
 func TestUndeployAPIErrorsCarryThePassthroughCode(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -894,11 +821,6 @@ func TestUndeployAPIErrorsCarryThePassthroughCode(t *testing.T) {
 	}
 }
 
-// TestBuildDefinitionRejectsUnsupportedMemoryUnit is the `mem` unit Kubernetes
-// has no suffix for. `Machine.get_mem` accepts b/k/m/g
-// (`model/Machine.py:499`), and `memory.upper()` turns `100k` into `100K` —
-// which Python posts and the API server refuses with an ApiException, and which
-// client-go refuses locally. Same code either way (DIVERGENCES.md 87).
 func TestBuildDefinitionRejectsUnsupportedMemoryUnit(t *testing.T) {
 	for _, mem := range []string{"100k", "5b"} {
 		t.Run(mem, func(t *testing.T) {
@@ -950,8 +872,6 @@ func deletedDeployments(clientset actionRecorder) []string {
 	return names
 }
 
-// TestWipeMachines is EXPECTATIONS-k8s §1 "wipe": every Kathará pod in every
-// Kathará namespace, one delete each.
 func TestWipeMachines(t *testing.T) {
 	tests := []struct {
 		name string
@@ -983,9 +903,6 @@ func TestWipeMachines(t *testing.T) {
 	}
 }
 
-// TestGetMachinesByFilters is EXPECTATIONS-k8s §1
-// "get_machines_api_objects_by_filters": the exact label selector, and the
-// namespace enumeration that a lab hash skips.
 func TestGetMachinesByFilters(t *testing.T) {
 	s := testSettings()
 	objects := []runtime.Object{

@@ -20,15 +20,6 @@ const waitUserInputTimeout = 100 * time.Millisecond
 // (DockerMachine.py:935-939): while Kathará waits for `/tmp/EOS` to appear it
 // checks, once per iteration, whether the user has asked for the terminal
 // back.
-//
-// It reports whether standard input is *readable*, and it does not read it —
-// so the keystroke stays in the buffer for whatever runs next. The Windows arm
-// cannot do that and consumes the key instead; the asymmetry is Python's and
-// is preserved (PACKAGE_GRAPH.md §4).
-//
-// "Readable" is not "a key was pressed". A redirected or closed stdin is
-// readable at EOF and always has been, so `kathara lstart < /dev/null` breaks
-// out of the wait on its first iteration in both implementations.
 func WaitUserInput() (bool, error) {
 	fd := int(os.Stdin.Fd())
 

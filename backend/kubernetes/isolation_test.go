@@ -12,19 +12,6 @@ import (
 	"testing"
 )
 
-// TestClientGoIsConfinedToThisPackage is PORT_SPEC §0.2 #8 and
-// PACKAGE_GRAPH.md §1.2: a Docker-only build must be able to leave `client-go`
-// out of the binary, and the only mechanism for that is that NOTHING outside
-// this package names it.
-//
-// That is why there is no `init()` here and why [Backend] is a function
-// `cmd/kathara` calls from `backends_all.go`: an import-time registration would
-// force every build that links the CLI to link `client-go` too.
-//
-// The check is a source scan rather than a `go list -deps` because it has to
-// hold for a build that does not exist yet — `cmd/kathara` is a later stage —
-// and because a test that shells out to the toolchain is not one that runs
-// anywhere.
 func TestClientGoIsConfinedToThisPackage(t *testing.T) {
 	root, err := filepath.Abs(filepath.Join("..", ".."))
 	if err != nil {
@@ -87,10 +74,6 @@ func TestClientGoIsConfinedToThisPackage(t *testing.T) {
 	}
 }
 
-// TestNoInitFunction pins the other half of the same rule: registration is a
-// call `cmd/kathara` makes, not something that happens because the package was
-// linked. An `init()` here would also make the registration ORDER depend on the
-// import graph, which PACKAGE_GRAPH.md §1.2 rules out.
 func TestNoInitFunction(t *testing.T) {
 	fileSet := token.NewFileSet()
 	entries, err := os.ReadDir(".")

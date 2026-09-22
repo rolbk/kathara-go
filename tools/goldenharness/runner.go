@@ -30,15 +30,14 @@ type Runner struct {
 	KatharaArgv []string
 	Docker      *Docker
 	Verbose     bool
-	// HomeDir is the harness-owned HOME the binary under test runs with. It
-	// contains the pinned .config/kathara.conf, so a recording can depend
-	// neither on the operator's mutable settings nor on the release / image
-	// update checks those settings would allow to fire.
+	// HomeDir is the harness-owned HOME passed to the binary under test. Its
+	// pinned settings file is used on platforms that resolve settings through
+	// HOME; Linux resolves the invoking account through passwd instead.
 	HomeDir string
 }
 
-// pinnedKatharaConf is the settings file the binary under test sees. It is the
-// stock 3.8.3 default configuration with two deliberate changes:
+// pinnedKatharaConf is used when the target resolves settings through HOME. It
+// is the stock 3.8.3 configuration with two deliberate changes:
 //   - image_update_policy "Never": under "Prompt" every lstart asks Docker Hub
 //     for each image's digest, and an upstream push turns the run into a
 //     confirmation prompt. The recording must not depend on registry state.
@@ -68,8 +67,8 @@ const pinnedKatharaConf = `{
 }
 `
 
-// SetupHome creates the harness-owned HOME and writes the pinned settings
-// file. The caller removes the directory when the harness exits.
+// SetupHome creates the harness-owned HOME and writes its pinned settings file.
+// The caller removes the directory when the harness exits.
 func (r *Runner) SetupHome() (cleanup func(), err error) {
 	home, err := os.MkdirTemp("", "goldenharness-home-")
 	if err != nil {

@@ -1,8 +1,8 @@
-# Layer A golden scenario manifest (PORT_SPEC.md 9).
+# Golden scenario manifest.
 #
 # Two groups:
 #   * 24 real network scenarios from KatharaFramework/Kathara-Labs, the golden
-#     set selected in analysis/GOLDEN_CANDIDATES.md. Between them they cover
+#     set selected for broad compatibility coverage. Between them they cover
 #     every lab.conf option and value-syntax variant the corpus actually uses
 #     (image, port, bridged, ipv6, sysctl, num_terms=0) and every image except
 #     the redundant kathara/frr:latest tag.
@@ -19,7 +19,7 @@
 #
 # The `route` probe is only enabled where the routing table is fully static.
 # Labs running FRR/Quagga/BGP/OSPF converge nondeterministically, so their
-# goldens cover the static facets only (see GOLDEN_CANDIDATES.md).
+# goldens cover the static facets only.
 
 version: 1
 
@@ -298,7 +298,7 @@ scenarios:
     dir: test/scenarios/synthetic/syn-unknown-opt
     note: >-
       Pins the current silent pass-through of an unknown device option so the
-      Go port cannot diverge by accident.
+      implementation cannot diverge by accident.
     probes: [link, addr, route, hosts, hostname, fstree, startup_log]
 
   # ------------------------------------------------------------- error fixtures
@@ -308,9 +308,9 @@ scenarios:
     status: reference
     note: >-
       lab.ext fixture. Recorded in dry mode so lab.ext is parsed but no host
-      bridge or VLAN interface is created. ExternalLink is DEFERRED post-1.0
-      (PORT_SPEC 0.3): the Go build is expected to fail here with
-      FeatureNotAvailable, so drift against this snapshot is reported, not fatal.
+      bridge or VLAN interface is created. The Go build does not support
+      ExternalLink and is expected to fail with FeatureNotAvailable, so drift
+      against this snapshot is reported, not fatal.
 
   - name: err-nonexistent-dir
     dir: test/scenarios/synthetic/this-directory-does-not-exist

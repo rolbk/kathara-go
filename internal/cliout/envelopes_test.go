@@ -11,7 +11,6 @@ import (
 	"github.com/KatharaFramework/kathara-go/labfile"
 )
 
-// The two golden hashes of JSON_CLI_CONTRACT.md §3.0.1.
 const (
 	hashDefaultScenario = "FwFaxbiuhvSWb2KpN5zw"
 	hashNamedScenario   = "9pe3y6IDMwx4PfOPu5mbNg"
@@ -42,9 +41,6 @@ func emit(t *testing.T, e Envelope) string {
 	return out.String()
 }
 
-// TestEnvelopesMatchContractExamples is the byte-for-byte snapshot of
-// JSON_CLI_CONTRACT.md §3: the key ORDER is frozen by §9.1, so this asserts the
-// whole encoded object rather than a decoded map.
 func TestEnvelopesMatchContractExamples(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -52,7 +48,7 @@ func TestEnvelopesMatchContractExamples(t *testing.T) {
 		want     string
 	}{
 		{
-			name: "E1 lstart normal deploy",
+			name: "lstart normal deploy",
 			envelope: LstartResult{
 				Lab:      labObject(),
 				Machines: []string{"r1", "pc1", "pc2"},
@@ -62,7 +58,7 @@ func TestEnvelopesMatchContractExamples(t *testing.T) {
 				`"dry_run":false,"machines":["r1","pc1","pc2"],"links":["A","B"]}`,
 		},
 		{
-			name: "E1 lstart dry mode",
+			name: "lstart dry mode",
 			envelope: LstartResult{
 				Lab:    labObject(),
 				DryRun: true,
@@ -72,7 +68,7 @@ func TestEnvelopesMatchContractExamples(t *testing.T) {
 				`"dry_run":true,"checks":[{"file":"lab.conf","ok":true},{"file":"lab.dep","ok":true}]}`,
 		},
 		{
-			name: "E1 lstart with --list appends machine_stats",
+			name: "lstart with --list appends machine_stats",
 			envelope: LstartResult{
 				Lab:          labObject(),
 				Machines:     []string{"pc1"},
@@ -86,7 +82,7 @@ func TestEnvelopesMatchContractExamples(t *testing.T) {
 				`"status":"running","image":"kathara/base"}]}`,
 		},
 		{
-			name: "E1 lab metadata keys are appended when any is set",
+			name: "lab metadata keys are appended when any is set",
 			envelope: LstartResult{
 				Lab: Lab{
 					Name: Str("Default scenario"), Hash: hashNamedScenario, Path: Str("/labs/x"),
@@ -100,7 +96,7 @@ func TestEnvelopesMatchContractExamples(t *testing.T) {
 				`"dry_run":false,"machines":["pc1"],"links":[]}`,
 		},
 		{
-			name: "E2 lclean",
+			name: "lclean",
 			envelope: LcleanResult{
 				Lab:      labObject(),
 				Machines: []string{"pc1", "r1"},
@@ -110,13 +106,13 @@ func TestEnvelopesMatchContractExamples(t *testing.T) {
 				`"machines":["pc1","r1"],"links":["A","B"]}`,
 		},
 		{
-			name:     "E2 empty arrays are [] and never null",
+			name:     "empty arrays are [] and never null",
 			envelope: LcleanResult{Lab: labObject()},
 			want: `{"lab":{"name":null,"hash":"FwFaxbiuhvSWb2KpN5zw","path":"/labs/default_scenario"},` +
 				`"machines":[],"links":[]}`,
 		},
 		{
-			name: "E3 lrestart is the composite of E2 and E1",
+			name: "lrestart combines the clean and start envelopes",
 			envelope: LrestartResult{
 				Clean: LcleanResult{Lab: labObject(), Machines: []string{"pc1"}, Links: []string{"A"}},
 				Start: LstartResult{Lab: labObject(), Machines: []string{"pc1"}, Links: []string{"A"}},
@@ -127,29 +123,29 @@ func TestEnvelopesMatchContractExamples(t *testing.T) {
 				`"dry_run":false,"machines":["pc1"],"links":["A"]}}`,
 		},
 		{
-			name:     "E4 wipe",
+			name:     "wipe",
 			envelope: WipeResult{Machines: []string{"pc1"}, Links: []string{"A"}},
 			want:     `{"settings_wiped":false,"all_users":false,"machines":["pc1"],"links":["A"]}`,
 		},
 		{
-			name:     "E4 wipe --settings",
+			name:     "wipe --settings",
 			envelope: WipeResult{SettingsWiped: true},
 			want:     `{"settings_wiped":true,"all_users":false,"machines":[],"links":[]}`,
 		},
 		{
-			name:     "E5 list",
+			name:     "list",
 			envelope: ListResult{Machines: []*kathara.MachineStats{inventory()}},
 			want: `{"machines":[{"network_scenario_id":"9pe3y6IDMwx4PfOPu5mbNg","name":"pc1",` +
 				`"container_name":"kathara_user_pc1_9pe3y6IDMwx4PfOPu5mbNg","user":"user-abcdefgh",` +
 				`"status":"running","image":"kathara/base"}]}`,
 		},
 		{
-			name:     "E6 exec",
+			name:     "exec",
 			envelope: ExecResult{Stdout: "PING 8.8.8.8\n", ExitCode: 0},
 			want:     `{"stdout":"PING 8.8.8.8\n","stderr":"","exit_code":0}`,
 		},
 		{
-			name: "E7 check ok",
+			name: "check ok",
 			envelope: CheckResult{
 				Manager: "Docker (Kathara)", ManagerVersion: "27.3.1", RuntimeVersion: "go1.24.1",
 				KatharaVersion: "3.8.3", OSVersion: "Linux-6.12.88-x86_64",
@@ -160,7 +156,7 @@ func TestEnvelopesMatchContractExamples(t *testing.T) {
 				`"container_test":{"image":"kathara/base","ok":true,"error":null}}`,
 		},
 		{
-			name: "E7 check failed carries the exception string",
+			name: "check failed carries the exception string",
 			envelope: CheckResult{
 				Manager: "Docker (Kathara)", ManagerVersion: "27.3.1", RuntimeVersion: "go1.24.1",
 				KatharaVersion: "3.8.3", OSVersion: "Linux-6.12.88-x86_64",
@@ -171,7 +167,7 @@ func TestEnvelopesMatchContractExamples(t *testing.T) {
 				`"container_test":{"image":"kathara/base","ok":false,"error":"no such image"}}`,
 		},
 		{
-			name: "E8 vstart",
+			name: "vstart",
 			envelope: VstartResult{
 				Lab: Lab{Name: Str("kathara_vlab"), Hash: "vlabhash"}, Machine: "pc1",
 				Links: []string{"A", "B"},
@@ -180,21 +176,21 @@ func TestEnvelopesMatchContractExamples(t *testing.T) {
 				`"dry_run":false,"links":["A","B"]}`,
 		},
 		{
-			name: "E8 vstart dry mode stops at dry_run",
+			name: "vstart dry mode stops at dry_run",
 			envelope: VstartResult{
 				Lab: Lab{Name: Str("kathara_vlab"), Hash: "vlabhash"}, Machine: "pc1", DryRun: true,
 			},
 			want: `{"lab":{"name":"kathara_vlab","hash":"vlabhash","path":null},"machine":"pc1","dry_run":true}`,
 		},
 		{
-			name: "E9 vclean reports an empty machines for a name that was not running",
+			name: "vclean reports an empty machines for a name that was not running",
 			envelope: VcleanResult{
 				Lab: Lab{Name: Str("kathara_vlab"), Hash: "vlabhash"}, Machine: "pc1",
 			},
 			want: `{"lab":{"name":"kathara_vlab","hash":"vlabhash","path":null},"machine":"pc1","machines":[]}`,
 		},
 		{
-			name: "E10 lconfig",
+			name: "lconfig",
 			envelope: ConfigResult{
 				Lab: Lab{Hash: "abc", Path: Str("/labs/x")}, Machine: "pc1",
 				Added: []AddedLink{{Link: "A"}, {Link: "B", MAC: "00:11:22:33:44:55"}},
@@ -203,7 +199,7 @@ func TestEnvelopesMatchContractExamples(t *testing.T) {
 				`"added":[{"link":"A","mac":null},{"link":"B","mac":"00:11:22:33:44:55"}],"removed":[]}`,
 		},
 		{
-			name: "E11 vconfig has the same shape over the vlab",
+			name: "vconfig has the same shape over the vlab",
 			envelope: ConfigResult{
 				Lab: Lab{Name: Str("kathara_vlab"), Hash: "vlabhash"}, Machine: "pc1",
 				Added: []AddedLink{{Link: "A"}},
@@ -212,12 +208,12 @@ func TestEnvelopesMatchContractExamples(t *testing.T) {
 				`"added":[{"link":"A","mac":null}],"removed":[]}`,
 		},
 		{
-			name:     "E12 config get",
+			name:     "config get",
 			envelope: SettingsGetResult{Key: "image", Value: "kathara/base"},
 			want:     `{"key":"image","value":"kathara/base"}`,
 		},
 		{
-			name:     "E12 config set",
+			name:     "config set",
 			envelope: SettingsSetResult{Key: "image", Value: "kathara/frr", Saved: true},
 			want:     `{"key":"image","value":"kathara/frr","saved":true}`,
 		},
@@ -233,8 +229,6 @@ func TestEnvelopesMatchContractExamples(t *testing.T) {
 	}
 }
 
-// TestListSortsCanonically is §3.5: the rows come back sorted by
-// (`network_scenario_id`, `name`), because Python's order is API-listing order.
 func TestListSortsCanonically(t *testing.T) {
 	mk := func(hash, name string) *kathara.MachineStats {
 		return &kathara.MachineStats{NetworkScenarioID: hash, Name: name, Image: "i"}
@@ -261,8 +255,6 @@ func TestListSortsCanonically(t *testing.T) {
 	}
 }
 
-// TestEncodingRules is JSON_CLI_CONTRACT.md §1.3: compact, UTF-8, HTML escaping
-// disabled, exactly one trailing newline.
 func TestEncodingRules(t *testing.T) {
 	out := emit(t, SettingsGetResult{Key: "image", Value: `a<b>c&d "e"`})
 	// `<`, `>` and `&` appear literally; only the quote is escaped, which is
@@ -282,8 +274,6 @@ func TestEncodingRules(t *testing.T) {
 	}
 }
 
-// TestErrorEnvelope is §5.1 and §5.4: `code`, `message`, then the structured
-// fields in the order the table lists them.
 func TestErrorEnvelope(t *testing.T) {
 	tests := []struct {
 		name string
@@ -346,9 +336,6 @@ func TestErrorEnvelope(t *testing.T) {
 	}
 }
 
-// TestErrorBatchAddsTheErrorsSibling is §5.1's partial-failure rule: the
-// primary error is `error`, and a batch additionally carries `errors` with the
-// primary as element 0.
 func TestErrorBatchAddsTheErrorsSibling(t *testing.T) {
 	joined := errors.Join(kerrors.NewMachineNotRunning("pc1"), kerrors.NewMachineNotRunning("pc2"))
 	var out bytes.Buffer
@@ -364,21 +351,8 @@ func TestErrorBatchAddsTheErrorsSibling(t *testing.T) {
 	}
 }
 
-// TestErrorBatchRendersOnlyThePrimaryInTheErrorObject is ERROR_CODES.md §6.3-5:
-// the `error` object of a batch is the PRIMARY error — element 0 of the
-// canonically ordered join — and nothing else. Not the join's own rendering,
-// whose `Error()` is every message glued with newlines, and not a mix of the
-// primary's code with a sibling's structured fields.
-//
-// The batch here is heterogeneous on purpose: the primary carries `machine`
-// only, the sibling carries `binary` + `machine`, so a renderer that walks the
-// whole join with errors.As instead of the primary alone shows up as a stray
-// `binary` key.
 func TestErrorBatchRendersOnlyThePrimaryInTheErrorObject(t *testing.T) {
-	// The batch a half-failed chunk produces: the primary plus two decoys, in
-	// the canonical bytewise-by-device order the backend pools sort it into
-	// (ERROR_CODES.md §6.2 — pinned on the producing side by the two backends'
-	// TestRunChunkedJoinsEveryFailureInCanonicalOrder).
+
 	joined := errors.Join(
 		kerrors.NewMachineNotRunning("pc1"),
 		kerrors.NewMachineBinary("frr", "pc2"),
@@ -402,10 +376,6 @@ func TestErrorBatchRendersOnlyThePrimaryInTheErrorObject(t *testing.T) {
 	}
 }
 
-// TestErrorBatchHumanLineIsThePrimaryOnly is ERROR_CODES.md §6.4: human mode
-// prints ONE `CRITICAL ({label}) {message}` line — Python's observable output
-// for a half-failed batch — so the join's newline-glued rendering must never
-// reach it, and the label is the primary's class, not a sibling's.
 func TestErrorBatchHumanLineIsThePrimaryOnly(t *testing.T) {
 	joined := errors.Join(
 		kerrors.NewMachineNotRunning("pc1"),
@@ -425,14 +395,12 @@ func TestErrorBatchHumanLineIsThePrimaryOnly(t *testing.T) {
 	}
 }
 
-// TestJSONLEvents is §4.1: the five event shapes, with their pinned key order.
 func TestJSONLEvents(t *testing.T) {
 	var out bytes.Buffer
 	c := New(&out, &bytes.Buffer{}, FormatJSONL, LevelWarning)
 
 	c.EmitStreamChunk("stdout", "PING 8.8.8.8\n")
 	c.EmitStreamChunk("stderr", "oops\n")
-	// §4.2: no event at all for an empty side.
 	c.EmitStreamChunk("stdout", "")
 	c.EmitStreamExit(3)
 
@@ -444,7 +412,7 @@ func TestJSONLEvents(t *testing.T) {
 	}
 }
 
-// TestJSONLErrorEvent is S4: the same inner object as E13, under `type`.
+// TestJSONLErrorEvent checks the streaming error event.
 func TestJSONLErrorEvent(t *testing.T) {
 	var out bytes.Buffer
 	c := New(&out, &bytes.Buffer{}, FormatJSONL, LevelWarning)
@@ -457,15 +425,6 @@ func TestJSONLErrorEvent(t *testing.T) {
 	}
 }
 
-// TestJSONLErrorEventOfABatchIsThePrimaryAlone pins the one place the two
-// structured formats diverge: `json` grows the §5.1 `errors` sibling for a
-// batch, `jsonl` does not — its event stays "the same inner object … under
-// `type`" whatever the join carries.
-//
-// Unreachable in 1.0 (§1.2 gives `jsonl` to `exec`, which is single-device), so
-// this is a shape lock rather than a behavior test: it is what fails if someone
-// widens `jsonl` to a fan-out command and leaves the arm alone, and it is what
-// has to be rewritten deliberately on the day the sibling is added there.
 func TestJSONLErrorEventOfABatchIsThePrimaryAlone(t *testing.T) {
 	joined := errors.Join(
 		kerrors.NewMachineNotRunning("pc1"),
@@ -488,7 +447,6 @@ func TestJSONLErrorEventOfABatchIsThePrimaryAlone(t *testing.T) {
 	}
 }
 
-// TestInterruptEnvelopes is E14 and S5 (§6.2).
 func TestInterruptEnvelopes(t *testing.T) {
 	for _, tc := range []struct {
 		format Format
@@ -507,9 +465,6 @@ func TestInterruptEnvelopes(t *testing.T) {
 	}
 }
 
-// TestHumanModeEmitsNothingToStdoutInJSONMode is the one-object rule of §1.4
-// applied backwards: a `Print` made while the console is in json mode must not
-// reach stdout, or the envelope would not be alone there.
 func TestHumanModeEmitsNothingToStdoutInJSONMode(t *testing.T) {
 	var out, errw bytes.Buffer
 	c := New(&out, &errw, FormatJSON, LevelWarning)
@@ -525,8 +480,6 @@ func TestHumanModeEmitsNothingToStdoutInJSONMode(t *testing.T) {
 	}
 }
 
-// TestAssignedNodeIsAbsentOnDockerAndPresentOnKubernetes is §3.0.2's one
-// three-state field.
 func TestAssignedNodeIsAbsentOnDockerAndPresentOnKubernetes(t *testing.T) {
 	docker := inventory()
 	if strings.Contains(emit(t, ListResult{Machines: []*kathara.MachineStats{docker}}), "assigned_node") {

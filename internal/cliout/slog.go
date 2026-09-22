@@ -1,9 +1,8 @@
 // This file is the other half of `logging.basicConfig(handlers=[RichHandler(…)])`:
-// the ported packages below `cmd/kathara` emit their `logging` calls through
+// the Go packages below `cmd/kathara` emit their `logging` calls through
 // `log/slog` on the default logger (labfile's duplicate-meta warning, the two
 // backends' progress and warning lines), and [NewSlogHandler] is what routes
 // them into the same [Console] the commands print through.
-//
 // Without it those records go to `log/slog`'s default text handler, which
 // writes to **stderr** with a timestamp — visible in a Layer A recording as a
 // missing stdout line and an unexpected stderr one.
@@ -26,7 +25,7 @@ type slogHandler struct {
 }
 
 // NewSlogHandler returns the handler `cmd/kathara` installs as the default, so
-// that every ported package's log call lands on the same console, at the same
+// that every package's log call lands on the same console, at the same
 // level threshold, on the stream the format dictates.
 func NewSlogHandler(console *Console) slog.Handler {
 	return &slogHandler{console: console}
@@ -38,20 +37,6 @@ func (h *slogHandler) Enabled(_ context.Context, level slog.Level) bool {
 }
 
 // Handle renders the record.
-//
-// Structured attributes have no Python analogue — `logging.warning` takes an
-// already-interpolated string — so they are appended as ` key=value`. That
-// rendering is a divergence wherever the message has a `logging` original: the
-// oracle writes "To expose ports of device `pc1` on the host, …" where an
-// attribute would produce "To expose ports of a device on the host, …
-// device=pc1", which is what the `syn-port-udp` golden caught.
-//
-// So EVERY ported call site interpolates its own message and passes no
-// attributes; `TestPortedLogCallsCarryNoAttributes` and
-// `TestPortedLogMessagesMatchPythonFormatStrings` hold both halves of that
-// rule. What is left for the `key=value` path is the handful of Go-only
-// diagnostics with no `logging` original — the backends' event-dispatch
-// failures — plus anything a future caller adds outside the ported packages.
 func (h *slogHandler) Handle(_ context.Context, r slog.Record) error {
 	var b strings.Builder
 	b.WriteString(r.Message)

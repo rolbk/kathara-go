@@ -1,6 +1,6 @@
 # Layer B — parser conformance vectors
 
-`PORT_SPEC.md` §9 Layer B. A table of *(input files → expected model JSON | expected error)*
+A table of *(input files → expected model JSON | expected error)*
 covering `lab.conf`, `lab.dep`, the folder-layout fallback and the CLI `-o` option parser.
 
 **These vectors are shared by the Go `labfile` package and the Python client's `LabParser`.
@@ -8,7 +8,7 @@ They are what keeps the two implementations from drifting.** Neither implementat
 "win" an argument with a vector: the vectors record what Kathará 3.8.3's Python parser
 actually does, verified by replaying them against the real Python parser.
 
-`ExtParser` (`lab.ext`) is deferred post-1.0 per spec §0.3 and has no vectors here.
+`lab.ext` is not supported by this implementation and has no vectors here.
 
 ---
 
@@ -17,8 +17,10 @@ actually does, verified by replaying them against the real Python parser.
 The authority runner loads every vector, drives the **real Python parser**, serialises the
 resulting model into the vector JSON shape and diffs it against `expected.json`:
 
-```
-/root/kathara/pyvenv/bin/python tools/vectorcheck/check_python.py
+Create an isolated environment containing `kathara==3.8.3`, then run:
+
+```console
+python3 tools/vectorcheck/check_python.py
 ```
 
 | Flag | Effect |
@@ -28,11 +30,10 @@ resulting model into the vector JSON shape and diffs it against `expected.json`:
 | `--update` | rewrite the failing `expected.json` files from observed Python behaviour |
 | `--vectors DIR` | point at a different corpus root |
 
-Exit status is 0 only when every vector passes. **Python is the truth**: if a vector
-disagrees with Python, the vector is wrong. Read the diff, decide whether the behaviour is
-merely surprising or an actual bug, re-record with `--update`, and add an entry to
-[SURPRISES](#surprises) below (and to `DIVERGENCES.md` only if it is a bug the Go port will
-deliberately not reproduce).
+Exit status is 0 only when every vector passes. Python is the compatibility reference for
+these vectors. If a vector differs, inspect the result, re-record with `--update` when
+appropriate, and add a [compatibility note](#compatibility-notes) when the observed
+behaviour needs an explanation.
 
 The Go side replays the same corpus against `labfile`, using the same serialisation.
 
@@ -142,11 +143,11 @@ is deliberate, not a stray edit.
 }
 ```
 
-Two shape notes that matter for the Go port:
+Two shape notes that matter for the Go implementation:
 
 * **`meta.extra` values keep their parsed Python type.** `privileged` and `bridged` are real
   booleans (they go through `strtobool`); everything else coming out of `lab.conf` is a
-  **string**, including `ipv6`, `mem`, `cpus` and `num_terms`. See SURPRISE 7.
+  **string**, including `ipv6`, `mem`, `cpus` and `num_terms`. See compatibility note 7.
 * **`ports` keys are a flattened tuple.** Python keys `meta['ports']` by `(host_port, protocol)`;
   the vector serialises that as `"3000/tcp"`.
 
@@ -167,7 +168,7 @@ interface numbering downstream.
 `"order_sensitive": false` marks a vector whose order is *unspecified in Python* — today only
 the `FolderParser` glob-order cases. The runner sorts those lists on both sides before
 comparing, so the vector asserts the device *set* and stays reproducible on any filesystem.
-See SURPRISE 21.
+See compatibility note 21.
 
 Interface numbers are always contiguous `0..N-1` in a successful `lab.conf` parse
 (`check_integrity` runs inside `parse`), so `interfaces` needs no separate order array.
@@ -192,35 +193,34 @@ exactly that way.
 
 ---
 
-## SURPRISES
+## Compatibility notes
 
-Python behaviours worth knowing before porting. Each is pinned by at least one vector.
-Marked **[bug]** where the behaviour looks unintended — those are `DIVERGENCES.md` candidates,
-not automatic divergences: per spec §0.1 the default is to port them as-is.
+Python behaviours captured by the corpus. Each is pinned by at least one vector.
+Some are unusual edge cases, but they remain expected behaviour unless the project
+deliberately changes them.
 
 1. **`int()` accepts PEP 515 underscore separators, so `pc1[0_1]` is interface 1** and
    `pc1[1_0]` is interface 10. The interface-vs-meta dispatch is "does `int(arg)` raise", and
-   `\w` admits `_`. Go's `strconv.Atoi` rejects `"0_1"`, so a naive port silently reclassifies
+   `\w` admits `_`. Go's `strconv.Atoi` rejects `"0_1"`, so a direct implementation silently reclassifies
    the line as a *meta*. `_0` and `0_` are malformed PEP 515 and do become metas.
    → `labconf/interface_underscore_digits`, `labconf/meta_named_like_number`
 
-2. **The lab.dep "phantom empty dependency" does not exist.** `parser-settings.md` §1.2 and
-   `EXPECTATIONS-core.md` §15/23 both state that `a: b c ` yields an empty-string machine name
-   in the flattened output. It cannot: `line.strip()` runs *before* the regex, so a trailing
+2. **The lab.dep "phantom empty dependency" does not exist.** `a: b c ` cannot yield an
+   empty-string machine name: `line.strip()` runs *before* the regex, so a trailing
    space never reaches the deps group. Do not implement the phantom in Go.
    → `labdep/trailing_space_no_phantom`
 
-3. **`bridged_iface` in lab.conf is always fatal.** `EXPECTATIONS-core.md` §15/13 claims it
-   "can legally fill the hole" in interface numbering. It cannot. `add_meta` stores it via the
+3. **`bridged_iface` in lab.conf is always fatal.** It cannot fill a hole in interface
+   numbering. `add_meta` stores it via the
    generic path as a **string**, and `Machine.check()` does
    `sorted_keys.append(self.meta['bridged_iface']); sorted_keys.sort()` — sorting `str` against
    `int` raises `TypeError: '<' not supported between instances of 'str' and 'int'`. With no
    interfaces at all it instead raises `NonSequentialMachineInterfaceError`. There is no
-   lab.conf that sets `bridged_iface` and parses. **[bug]**
+   lab.conf that sets `bridged_iface` and parses. **[compatibility edge case]**
    → `labconf/bridged_iface_with_interface`, `labconf/bridged_iface_only`
 
-4. **Inner quotes are never "deleted".** `EXPECTATIONS-core.md` §15/2 predicts
-   `pc1[image]="ka"tha"ra"` → `kathara`. The `.replace('"','').replace("'",'')` on the matched
+4. **Inner quotes are never "deleted".** For example,
+   `pc1[image]="ka"tha"ra"` does not become `kathara`. The `.replace('"','').replace("'",'')` on the matched
    value is dead code — the value class `[^"']+` already excludes quotes — so the line simply
    fails to match and raises. Quote handling is: opening quote optional, closing quote must be
    the *same* character (a regex backreference), nothing in between.
@@ -229,28 +229,28 @@ not automatic divergences: per spec §0.1 the default is to port them as-is.
 5. **The `ulimit` errors name the meta, not the device.** `MachineOptionError(f"Invalid ulimit
    value (\`{value}\`) on \`{name}\`.")` interpolates `add_meta`'s `name` parameter, which is
    the literal string `"ulimit"`. Every other option error interpolates `self.name`. So the
-   message reads ``on `ulimit` `` where the user expects ``on `pc1` ``. **[bug]**
+   message reads ``on `ulimit` `` where the user expects ``on `pc1` ``. **[compatibility edge case]**
    → `labconf/ulimit_invalid_format`, `labconf/ulimit_below_minus_one`,
    `labconf/ulimit_soft_unlimited_hard_bounded`
 
 6. **The invalid-volume-mode message ends with a trailing space**
    (`"Allowed values are ro, rw, rx. "`). Byte-exact error parity requires keeping it.
-   Also note `rx` really is an accepted mode (contra `tests-docs.md`; see SYNTHESIS C-6).
+   Also note that `rx` is an accepted mode.
    → `labconf/volume_invalid_mode`, `labconf/meta_all_options`
 
 7. **Only `privileged` and `bridged` become real booleans.** Everything else from lab.conf is
    a string: `pc1[ipv6]=false` stores the string `"false"`, which is **truthy**. The same key
    set via the Python API (`update_meta`) receives an actual `bool`, so the two entry points
    produce different types for the same meta. `mem`, `cpus` and `num_terms` are likewise
-   strings out of lab.conf. **[bug]** for `ipv6`.
+   strings out of lab.conf. **[compatibility edge case]** for `ipv6`.
    → `labconf/meta_all_options`, `labconf/strtobool_spellings`
 
 8. **Trailing comments only work after a *quoted* value.** The `(\s+#.*)?$` group can never
    fire otherwise, because `[^"']+` is greedy and includes `#` and spaces. So
    `pc1[image]=kathara/frr # note` silently stores `kathara/frr # note`, and the same swallow
-   on an interface line surfaces as the baffling
+   on an interface line produces
    ``Collision domain `A # comment` contains non-alphanumeric characters.`` A comment glued to
-   the closing quote (`'A'# c`) is a syntax error. **[bug]**
+   the closing quote (`'A'# c`) is a syntax error. **[compatibility edge case]**
    → `labconf/comment_swallowed_meta`, `labconf/comment_swallowed_interface_error`,
    `labconf/inline_comment`, `labconf/inline_comment_no_space`
 
@@ -261,20 +261,20 @@ not automatic divergences: per spec §0.1 the default is to port them as-is.
 
 10. **Syntax-error messages embed the raw line including its trailing newline** — and the CR
     on a CRLF file, since mmap over a text-mode fd does no newline translation. The message
-    therefore contains an embedded newline before its closing backtick. A Go port that trims
+    therefore contains an embedded newline before its closing backtick. An implementation that trims
     the line produces different bytes.
     → `labconf/error_line_number`, `labconf/crlf_error_message`, `labconf/unknown_lab_metadata_key`
 
-11. **`LAB_*` values containing `=` crash the parser.** The metadata branch does
+11. **`LAB_*` values containing `=` raise an uncaught exception.** The metadata branch does
     `(key, value) = line.split("=")`, so `LAB_WEB=https://example.org/?a=b` — an entirely
     plausible line — raises an uncaught `ValueError: too many values to unpack (expected 2)`
-    with no file, no line number and no mention of lab.conf. **[bug]**
+    with no file, no line number and no mention of lab.conf. **[compatibility edge case]**
     → `labconf/lab_metadata_with_equals`
 
 12. **A UTF-8 BOM breaks line 1.** `'﻿'.isspace()` is `False`, so `strip()` keeps it, the
     device regex fails, and the file dies with a syntax error whose message contains an
     invisible character. Any lab.conf saved as "UTF-8 with BOM" by a Windows editor is
-    rejected. **[bug]**
+    rejected. **[compatibility edge case]**
     → `labconf/bom_file`
 
 13. **Invalid UTF-8 anywhere aborts the parse** with an uncaught `UnicodeDecodeError`, because
@@ -307,36 +307,34 @@ not automatic divergences: per spec §0.1 the default is to port them as-is.
 18. **Unicode digits split three ways.** `pc1[٣]` (Arabic-Indic three) is **interface 3**:
     `\w` matches it and `int()` parses it. `pc1[²]` (superscript two) is a **meta named `²`**:
     `\w` matches and `str.isdigit()` is true, but `int()` rejects it. Go's RE2 `\w` is ASCII, so
-    both lines fail the device regex entirely and become syntax errors — OQ-14a, needs a ruling.
+    both lines fail the device regex entirely and become syntax errors unless handled explicitly.
     → `labconf/interface_unicode_digit`, `labconf/meta_named_like_number`
 
 19. **`depgen.flatten` is not a canonical topological sort.** Within one dependency level the
     order is lab.dep *line* order: `d: b c` yields `[a, b, c, d]` while the same graph written
     `d: c b` yields `[a, c, b, d]`. Device deploy order under lab.dep therefore depends on how
-    the file was typed. OQ-15b: a Go rewrite using "topological sort with cycle detection" must
-    reproduce this, not improve on it.
+    the file was typed. An implementation must reproduce this ordering.
     → `labdep/diamond_order_ab`, `labdep/diamond_order_ba`
 
 20. **A comments-only lab.dep returns `[]`, not `None`,** while a missing or zero-byte lab.dep
     returns `None` (the empty one also logs `lab.dep file is empty. Ignoring...`). Callers test
-    truthiness so all three behave alike today, but the Go signature has to be able to express
-    the distinction or record it as a divergence.
+    truthiness so all three behave alike today, but the Go signature must still express the
+    distinction.
     → `labdep/comments_only`, `labdep/missing_lab_dep`, `labdep/empty_lab_dep`
 
 21. **`FolderParser` device order is neither sorted nor creation order.** `glob` does not sort;
     the order is `os.scandir` order. On the oracle host, folders created
     `m_delta, m_alpha, m_charlie, m_bravo` came back `['m_bravo', 'm_charlie', 'm_alpha', 'm_delta']`
-    (ext4 hashed readdir). This is OQ-15a: unspecified in Python, and it decides machine
+    (ext4 hashed readdir). The order is unspecified in Python and decides machine
     insertion order — hence deploy order — for conf-less labs. The vector is marked
-    `"order_sensitive": false` so it asserts the device set only; whichever way the ruling goes,
-    the vector stays valid.
+    `"order_sensitive": false` so it asserts the device set only.
     → `labfolder/glob_order`
 
-22. **One badly-named folder kills the whole FolderParser run.** `glob` skips dot-directories,
+22. **One invalid device-folder name rejects the FolderParser run.** `glob` skips dot-directories,
     but any other directory whose name breaks the device charset — `PC1`, `my-notes`, a 31-char
     name — reaches the `Machine` constructor and raises
     ``SyntaxError: Invalid device name `PC1`.`` So `kathara lstart` on a conf-less directory
-    fails outright if the user has a `Docs/` folder next to their devices. **[bug]**
+    fails if the user has a `Docs/` folder next to their devices. **[compatibility edge case]**
     → `labfolder/invalid_device_name`
 
 23. **`.startup` files have no effect on parsing at all.** No parser reads them; an orphan
@@ -363,7 +361,7 @@ not automatic divergences: per spec §0.1 the default is to port them as-is.
     `ValueError` raised *in the interface branch* would be silently reinterpreted as a meta
     assignment.** Nothing on today's interface path raises `ValueError`
     (`MachineCollisionDomainError`, `InterfaceMacAddressError` and `SyntaxError` all propagate),
-    so the hazard is latent — but a Go port must dispatch on `strconv.Atoi`'s result alone and
+    so the hazard is latent — but the Go implementation must dispatch on `strconv.Atoi`'s result alone and
     must not route "any error" to the meta path.
     → `labconf/duplicate_interface_number`, `labconf/same_collision_domain_error`
 
@@ -382,33 +380,33 @@ not automatic divergences: per spec §0.1 the default is to port them as-is.
     → `labconf/duplicate_meta_overwrite`, `labconf/duplicate_typed_meta_warnings`,
     `labconf/exec_order_preserved`, `labconf/duplicate_interface_number`
 
-29. **The sysctl int coercion can crash the parser.** `int(val) if val.lstrip('-').isnumeric() else val`
+29. **The sysctl int coercion can raise an uncaught exception.** `int(val) if val.lstrip('-').isnumeric() else val`
     strips **all** leading dashes before the numeric test, so `net.a.b=--5` passes `isnumeric()`
     and `int('--5')` raises a bare `ValueError: invalid literal for int() with base 10: '--5'` —
     uncaught, because it fires inside the `except ValueError:` dispatcher (same escape route as
-    SURPRISE 14). A single leading `-` is fine and yields a negative int. **[bug]**
+    compatibility note 14). A single leading `-` is fine and yields a negative int. **[compatibility edge case]**
     → `labconf/sysctl_double_dash_crash`, `labconf/meta_all_options`
 
-30. **Malformed port values crash the tuple unpack.** Two `/` (`80/tcp/x`) or two `:` (`1:2:3`)
+30. **Malformed port values raise during tuple unpacking.** Two `/` (`80/tcp/x`) or two `:` (`1:2:3`)
     raise a bare uncaught `ValueError: too many values to unpack (expected 2)` — no file, no
     line, no device name. Only *non-numeric* ports get the wrapped
-    `MachineOptionError: Port value not valid …`. **[bug]**
+    `MachineOptionError: Port value not valid …`. **[compatibility edge case]**
     → `labconf/port_two_slashes`, `labconf/port_two_colons`, `labconf/port_value_invalid`
 
 31. **Interface numbers are unbounded Python ints.** `pc1[99999999999999999999]=A` is an
     *interface* (the dispatch is `int(arg)`, arbitrary precision) and fails only later, in
     `check_integrity`, as ``Interface `0` missing``. Go's `strconv.Atoi` overflows on the same
-    arg, and a naive port would misroute the line to the meta path — the overflow twin of the
-    PEP 515 hazard in SURPRISE 1.
+    arg, and a direct implementation would misroute the line to the meta path — the overflow twin of the
+    PEP 515 behavior in compatibility note 1.
     → `labconf/interface_number_overflow`
 
-32. **The volume `|` split filters empty segments, like the MAC `/` split (SURPRISE 24).**
+32. **The volume `|` split filters empty segments, like the MAC `/` split (compatibility note 24).**
     `/a||/b` and `|/a|/b` both survive as two-part volumes with mode `ro`. The sysctl *key*
     regex additionally needs `net.` plus at least **two** more labels: `net.foo=1` is rejected
     with the namespace error even though its namespace is fine.
     → `labconf/volume_empty_segments`, `labconf/sysctl_shallow_key`
 
-### Not surprising, but easy to get wrong
+### Additional compatibility details
 
 * `IOError` is `OSError` in Python 3 — vectors record the class as `OSError`.
 * A missing `lab.conf` and a zero-byte `lab.conf` are two different messages
@@ -428,7 +426,7 @@ not automatic divergences: per spec §0.1 the default is to port them as-is.
 * `OptionParser` accepts an empty key: `-o =value` yields `{"": "value"}` (`options/empty_key`).
 * `check_integrity()` runs *inside* `LabParser.parse`, so a sparse interface list is a
   parse-time error and a successfully-parsed lab.conf can never produce a sparse machine.
-  (This contradicts the `PORT_SPEC.md` §4.1 struct comment; see SYNTHESIS C-2.)
+  (This differs from an earlier design note; the vector is authoritative.)
 * Device names are capped at 30 characters — 30 parses, 31 is a syntax error, and the error is
   the generic "unmatched line" one, not a "bad device name" one. The same is true of uppercase
   and dashed names.

@@ -148,13 +148,6 @@ func TestCheckDirectoryPermissionsErrors(t *testing.T) {
 // dropped to uid 65534, which owns nothing in the tree and is therefore
 // genuinely missing permissions; those rows pin the report order and the label
 // strings against Python instead of against this port's own unit test.
-//
-// The probe answer is replayed rather than reproduced: this process is root
-// (or it would not have recorded the section at all), and root passes
-// access(2) on any directory. What is modelled is only access(2) itself —
-// `nobody` matches neither the owner nor the group of a root-owned directory,
-// so its answer is the mode's "other" triad, which the fixture records
-// alongside every row.
 func TestCheckDirectoryPermissionsUnprivileged(t *testing.T) {
 	fixture := loadFixture(t)
 	if fixture.PermsUnprivileged == nil {

@@ -1,7 +1,3 @@
-// This file is `cli/command/LstartCommand.py` (CLI_SURFACE.md §1), plus the two
-// additions PORT_SPEC §5 makes to it: `--format` and the `--from-archive`
-// tar-on-stdin deploy of JSON_CLI_CONTRACT.md §7.
-//
 // The order of operations in [runLstart] is Python's, statement for statement,
 // because it is observable: the "Starting Network Scenario" panel is printed
 // BEFORE `lab.conf` is parsed, which is why a scenario with a broken lab.conf
@@ -26,13 +22,7 @@ import (
 	"github.com/KatharaFramework/kathara-go/model"
 )
 
-// lstartFlags is the flag surface shared by `lstart` and `lrestart`, which
-// differ only in the two rows CLI_SURFACE.md §3 lists.
 type lstartFlags struct {
-	// terminalPair, hosthomePair and sharedPair are the argparse
-	// mutually-exclusive `store_const` pairs. Each pair shares one `dest`, so
-	// [pickTristate] collapses them back into the single tri-state PORT_SPEC
-	// §4.2 requires.
 	terminalPair [2]*tristate
 	hosthomePair [2]*tristate
 	sharedPair   [2]*tristate
@@ -51,10 +41,6 @@ type lstartFlags struct {
 	xterm       string
 }
 
-// registerLstartFlags declares the rows of CLI_SURFACE.md §1. lrestart passes
-// restart=true, which swaps `--terminal-emu`+`--print` for `--xterm` and gives
-// the terminals group argparse's `default=True` — a default that can never be
-// read, because lrestart hands its raw argv to lstart's parser anyway (§3).
 func registerLstartFlags(cmd *parser, restart bool) *lstartFlags {
 	f := &lstartFlags{
 		privileged: &tristate{constant: true},
@@ -186,39 +172,10 @@ func runLstart(ctx context.Context, a *app, f *lstartFlags, selected []string) (
 	}
 
 	// The `--from-archive` extraction directory's lifetime.
-	//
-	// §7.4 pins it: "The temp directory is the lab's host path for
-	// mounts/`hostlab` during the run." `/shared` and `/hostlab` are bind
-	// mounts rooted in it and the containers outlive this process, so removing
-	// it on the success path would leave the running scenario with a dangling
-	// bind — every access under `/shared` answering ENOENT.
-	//
 	// It is therefore removed only on the paths that end with `deployed`
 	// false: a usage or extraction failure (handled inside `resolveScenario`
 	// and just above), a parse or validation failure before `DeployLab`, and
 	// `--dry-mode`, which never deploys at all.
-	//
-	// Nothing removes it afterwards, and that is deliberate rather than a leak
-	// left behind: §7.5 tears an archive lab down by identity
-	// (`lclean --lab-hash`/`--lab-name`), which never learns the path, so
-	// `lclean` has nothing to remove — the same lifecycle the Python client's
-	// own temporary-directory deploys have, where `undeploy_lab` on the hash
-	// leaves the directory to the caller. Removal on `lclean` is not part of
-	// the contract and is not attempted.
-	//
-	// Caveat, recorded rather than fixed: "nothing deployed" is the intent of
-	// the `deployed` flag, not a guarantee of the error paths. A `DeployLab`
-	// that FAILS also lands in the cleanup branch, and it is not always
-	// empty-handed — §6.1 runs the failing chunk to completion and nothing
-	// rolls back the chunks before it, so a partial failure can leave
-	// containers running while this cleanup deletes the directory their
-	// `/hostlab` and `/shared` binds are rooted in, which is exactly the
-	// dangling-bind state the success path exists to avoid. Keeping the
-	// directory there would leak it on every failed deploy instead, with
-	// `lclean` (above) unable to collect it. Removal stays the pinned choice
-	// and the surviving containers of a half-deployed archive scenario are its
-	// price: their `/shared` and `/hostlab` reads answer ENOENT until `lclean`
-	// removes them.
 	deployed := false
 	if cleanup != nil {
 		defer func() {
@@ -259,9 +216,6 @@ func runLstart(ctx context.Context, a *app, f *lstartFlags, selected []string) (
 		}
 	}
 	if f.archiveName != "" {
-		// §7.2: `--name` is applied after parsing, through the same name
-		// setter `LabParser` uses, so it overrides an archived `LAB_NAME=`
-		// for both the name and the hash.
 		lab.SetName(f.archiveName)
 	}
 
@@ -289,9 +243,6 @@ func runLstart(ctx context.Context, a *app, f *lstartFlags, selected []string) (
 		lab.AddGlobalMachineMetadata(entry.Key, model.Str(entry.Value))
 	}
 
-	// `lab.ext` handling. ERROR_CODES.md §5 moves the check ahead of the root
-	// and platform gates Python applies here, so a scenario that declares
-	// external links reports the deferral rather than "you must be root".
 	labExtExists := false
 	if _, statErr := os.Stat(filepath.Join(labPath, labfile.ExtName)); statErr == nil {
 		labExtExists = true
@@ -369,9 +320,6 @@ func runLstart(ctx context.Context, a *app, f *lstartFlags, selected []string) (
 		}
 		defer func() { _ = stream.Close() }()
 		entries, err := stream.Next(ctx)
-		// An exhausted generator is `create_lab_table`'s `None`, which
-		// `console.print` swallows and which does not fail the command
-		// (CLI_SURFACE.md §13).
 		if err != nil && !errors.Is(err, io.EOF) {
 			return out, err
 		}
@@ -384,15 +332,9 @@ func runLstart(ctx context.Context, a *app, f *lstartFlags, selected []string) (
 	return out, nil
 }
 
-// deployedNames is what the E1 envelope reports: the devices actually deployed,
+// deployedNames reports the devices actually deployed,
 // in **schedule order** (lab.conf insertion order as reordered by `lab.dep`),
 // and their collision domains, canonically sorted.
-//
-// The two orders differ on purpose. Device order is semantic in Python and
-// deterministic here, so it is emitted as scheduled; link order is
-// pool-completion order in Python and therefore nondeterministic, which
-// ORDERING.tsv rules must be replaced by a canonical sort
-// (JSON_CLI_CONTRACT.md §3.1).
 func deployedNames(lab *model.Lab, opts kathara.DeployLabOptions) (machines, links []string) {
 	selected := opts.SelectedMachines
 	excluded := opts.ExcludedMachines
@@ -424,10 +366,6 @@ func deployedNames(lab *model.Lab, opts kathara.DeployLabOptions) (machines, lin
 
 // resolveScenario answers the directory `lstart` parses, materialising the
 // `--from-archive` tar into a private temporary directory when one was given.
-//
-// §7.4 pins the semantics: "the archive is materialized to a private temporary
-// directory and `lstart` proceeds **exactly** as if `-d <tmpdir>` had been
-// given".
 func (f *lstartFlags) resolveScenario(a *app) (string, func(), error) {
 	if f.fromArchive == "" {
 		if f.archiveName != "" {

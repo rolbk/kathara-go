@@ -1,16 +1,5 @@
 // This file turns bubbletea's parsed key events back into the bytes a device
 // shell expects.
-//
-// It exists because the §3.3 item 1 rebuild puts bubbletea between the user's
-// keyboard and the device: bubbletea reads stdin and hands the model a
-// [tea.KeyMsg], so the multiplexer has to re-encode. Python never faced this —
-// an external emulator owned the keyboard end to end.
-//
-// The encoding is xterm's modern form, which is the same decision
-// docs/port/SPIKES/windows-terminal.md §9 row 4 records for the Windows console
-// leg: F1–F4 go out as SS3 (`ESC OP`…`ESC OS`) rather than the legacy
-// `ESC[11~`…`ESC[14~` of Python's hand-rolled KEYCODES table. Devices run
-// `TERM=xterm`, whose terminfo agrees.
 
 package term
 
@@ -84,18 +73,6 @@ var specialKeys = map[tea.KeyType]string{
 }
 
 // encodeKey renders a key event as the bytes a terminal would have sent.
-//
-// Three cases, in the order they are tested:
-//
-//  1. Text (including a paste, which arrives as one KeyRunes event): the UTF-8
-//     of the runes.
-//  2. A C0 control: bubbletea's KeyType for these *is* the byte value
-//     (`keyNUL`=0 … `keyDEL`=127 in bubbletea's own table), so Enter is 0x0d
-//     and Backspace is 0x7f without a lookup.
-//  3. Everything else: the [specialKeys] table.
-//
-// Alt prefixes the result with ESC, which is what a terminal in the usual
-// eight-bit-clean configuration sends for a meta modifier.
 func encodeKey(k tea.KeyMsg) []byte {
 	var body []byte
 

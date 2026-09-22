@@ -55,9 +55,6 @@ func withEntries(base map[string]string, extra map[string]string) map[string]str
 	return out
 }
 
-// TestContainerSysctls covers the engine forks of EXPECTATIONS-docker.md §1.1
-// (`test_create_interface_old_engine`) and the merge precedence of
-// ORDERING.tsv row 35.
 func TestContainerSysctls(t *testing.T) {
 	tests := []struct {
 		name          string
@@ -223,11 +220,6 @@ func TestParseMemoryRoundsThroughFloat64(t *testing.T) {
 	}
 }
 
-// TestParseMemorySaturates records DIVERGENCES.md 68: Python's result is an
-// arbitrary-precision int, so it posts a `Memory` the daemon cannot decode into
-// its int64 and answers 400 to; the port saturates to the ceiling instead, and
-// the daemon ACCEPTS that. `9223372036854775807b` is the smallest reachable
-// input that differs — `float()` rounds it up to 2^63, one past the ceiling.
 func TestParseMemorySaturates(t *testing.T) {
 	if got := parseMemory("99999999999999999999999g"); got != math.MaxInt64 {
 		t.Errorf("parseMemory(huge) = %d, want the int64 ceiling", got)
@@ -236,7 +228,7 @@ func TestParseMemorySaturates(t *testing.T) {
 		t.Errorf("parseMemory(2^63-1) = %d, want the ceiling (Python posts 2^63)", got)
 	}
 	// `float()` of digits past ~1.8e308 is `inf` and `int(inf)` is Python's
-	// OverflowError; the port saturates rather than growing an error return.
+	// OverflowError; this implementation saturates rather than growing an error return.
 	if got := parseMemory(strings.Repeat("9", 400) + "b"); got != math.MaxInt64 {
 		t.Errorf("parseMemory(inf) = %d, want the ceiling", got)
 	}
@@ -330,8 +322,6 @@ func TestEnvListPreservesInsertionOrder(t *testing.T) {
 	}
 }
 
-// TestUlimitList is ORDERING.tsv row 32: the list order is insertion order and
-// is visible in `HostConfig.Ulimits`.
 func TestUlimitList(t *testing.T) {
 	machine := newFixtureMachine(t, false)
 	for _, ulimit := range []string{"nofile=1024:2048", "nproc=100"} {
@@ -358,10 +348,6 @@ func TestUlimitList(t *testing.T) {
 // `ulimits=[]` — not `None` — and docker-py's `create_host_config` gates on
 // `if ulimits is not None`, so the empty list is put in the payload and the
 // daemon records `"Ulimits": []`.
-//
-// A nil slice here would serialize as `"Ulimits": null` (the SDK field carries
-// no `omitempty`), which is the shape a live diff caught against a
-// Python-created container.
 func TestUlimitListEmptyIsAnEmptyList(t *testing.T) {
 	got := ulimitList(newFixtureMachine(t, false).Ulimits())
 	if got == nil {
@@ -371,8 +357,6 @@ func TestUlimitListEmptyIsAnEmptyList(t *testing.T) {
 		t.Fatalf("ulimitList = %+v, want an empty list", got)
 	}
 
-	// The observable is the request body, so assert the encoding rather than
-	// the Go nilness alone (PORT_SPEC §9C).
 	payload, err := json.Marshal(container.HostConfig{Resources: container.Resources{Ulimits: got}})
 	if err != nil {
 		t.Fatalf("marshal HostConfig: %v", err)
@@ -426,9 +410,6 @@ func TestCreateArgsWithoutInterfaces(t *testing.T) {
 	}
 }
 
-// TestCreateArgsCapabilities is EXPECTATIONS-docker.md §7 item 1: the exact
-// capability set, or none at all when privileged — Docker grants everything
-// then, and Python passes `cap_add=None`.
 func TestCreateArgsCapabilities(t *testing.T) {
 	unprivileged := createArgs("n", "i", "h", false, "", nil, nil, nil, 0, 0, nil, nil, nil, nil, nil, nil, nil, nil)
 	if !reflect.DeepEqual([]string(unprivileged.HostConfig.CapAdd), model.MachineCapabilities()) {
@@ -495,9 +476,6 @@ func TestCreateArgsVolumes(t *testing.T) {
 	}
 }
 
-// TestNetworkCreateOptions is EXPECTATIONS-docker.md §3.2's `test_create`:
-// the plugin driver and a NULL IPAM driver, which is what makes a collision
-// domain a pure L2 segment with no addresses handed out.
 func TestNetworkCreateOptions(t *testing.T) {
 	labels := map[string]string{"name": "A", "app": "kathara"}
 	got := networkCreateOptions("kathara/katharanp_vde:amd64", labels)

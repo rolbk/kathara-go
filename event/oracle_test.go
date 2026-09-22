@@ -18,7 +18,6 @@ import (
 // entry — which is the only way to pin the mid-dispatch mutation behaviour,
 // since it falls out of CPython's list and dict semantics and not out of
 // anything the source says.
-//
 // The two events the scenarios use are real catalog entries, so the KeyError
 // text a trace records is the text this package must produce.
 

@@ -1,29 +1,3 @@
-// cmdparity records and compares command-flow behaviour of the Python oracle
-// and the Go port for the commands the Layer A golden suite does not exercise:
-// vstart / vconfig / vclean (PORT_SPEC §3.4, whose merge gate demands they be
-// byte-identical), lconfig, lrestart, list, wipe and exec.
-//
-// For each flow it runs the identical argv sequence against both binaries,
-// twice per binary, capturing after every step:
-//
-//   - exit code,
-//   - normalized stdout and stderr,
-//   - a normalized snapshot of the Kathara-owned Docker state.
-//
-// Run-to-run comparison of one implementation is the determinism check; the
-// cross-implementation comparison is the parity check.
-//
-// Usage:
-//
-//	cmdparity -record            # both implementations, both runs, all flows
-//	cmdparity -record -flow exec
-//	cmdparity -compare           # diff the recordings already on disk
-//
-// IMPORTANT: on Linux both implementations resolve kathara.conf from the
-// passwd entry (utils.get_current_user_home), not from $HOME, so a HOME
-// override cannot pin the settings. cmdparity therefore installs its pinned
-// settings file at the real default path and restores the previous content
-// when it exits.
 package main
 
 import (
@@ -288,7 +262,7 @@ func recordFlow(ctx context.Context, f Flow, im impl, run int, root, scratch str
 	n.AddLiteral(UserSlug(), TokUser)
 	n.AddLiteral(GenerateURLSafeHash("kathara_vlab"), TokVlabHash)
 	n.AddLiteral(labHash(labDir, realLabDir), TokLabHash)
-	// The oracle's argv is three tokens, the port's one; both become <KATHARA>.
+	// The oracle's argv is three tokens, this implementation's one; both become <KATHARA>.
 	n.AddLiteral(strings.Join(im.Argv, " "), TokKathara)
 	// Every MAC the flow itself spells out is deterministic by construction.
 	for _, st := range f.Steps {

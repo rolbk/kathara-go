@@ -49,7 +49,7 @@ func TestPtyEcho(t *testing.T) {
 func TestPtyInitialSize(t *testing.T) {
 	// The size handed to New must be visible to the child from its very first
 	// instruction — the property the ConPTY leg mirrors by passing it to
-	// CreatePseudoConsole (no initial-resize race; fixes OQ-19's
+	// CreatePseudoConsole (no initial-resize race; fixes terminal compatibility behavior
 	// no-initial-size divergence symmetrically).
 	p, err := New(Winsize{Cols: 101, Rows: 42})
 	if err != nil {

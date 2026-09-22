@@ -1,5 +1,4 @@
 // This file is `DockerMachine.py`: devices as Docker containers.
-//
 // The payload construction lives next door in containerconfig.go, the command
 // templates in startup.go and the fan-out shape in pool.go; what is left here
 // is the order of operations, which is the part a golden sees.
@@ -37,10 +36,6 @@ const bridgeConnectedMeta = "_bridge_connected"
 
 // eosProbe is the probe `_wait_startup_execution` runs (`DockerMachine.py:922`)
 // against the sentinel the startup script touches last (:96).
-//
-// Python passes the single string `"cat /tmp/EOS"` and docker-py's
-// `exec_create` shlex-splits it (`utils.split_command`); the split is done here
-// instead, because the Go SDK takes a `[]string` and never splits anything.
 var eosProbe = []string{"cat", "/tmp/EOS"}
 
 // machineService is `DockerMachine` (`DockerMachine.py:112`).
@@ -60,32 +55,6 @@ type machineService struct {
 // ---------------------------------------------------------------------------
 
 // DeployMachines is `deploy_machines` (`DockerMachine.py:121`).
-//
-// Order, all of it observable:
-//
-//  1. the both-filters guard (TRUTHINESS here, unlike [machineService.Undeploy]);
-//  2. filter the scenario's devices, preserving scenario order;
-//  3. check and pull every distinct image, sequentially;
-//  4. write the `_mount_volumes` option and dispatch `machines_with_volumes`
-//     when any device asks for volumes, so the CLI can prompt;
-//  5. create the shared folder, unless the daemon is remote;
-//  6. `machines_deploy_started`, then the fan-out — parallel when the scenario
-//     has no `lab.dep`, strictly sequential in dependency order when it has —
-//     then `machines_deploy_ended`;
-//  7. remove `_mount_volumes`.
-//
-// Step 7 is a `del` in Python and there is no [model.Lab] method for it. What is
-// written back instead is the value step 4 computed, which is
-// BEHAVIOURALLY IDENTICAL for every reader: [model.Machine.GetVolumes] falls
-// back to exactly `policy in ("Prompt", "Always")` when the option is absent.
-// The one thing it preserves that leaving the prompt's answer in place would
-// not is that a declined prompt does not persist into the next deploy of the
-// same [model.Lab]. PROPOSED-DIVERGENCES.md asks for `Lab.RemoveOption`.
-// (Python leaks the option on the error path too — `del` is not in a `finally`
-// — and so does this: the restore is skipped when the fan-out fails.)
-//
-// Errors: [kerrors.ErrSelectedOrExcludedMachines], then whatever the image
-// pass, the shared folder or any worker answers.
 func (s *machineService) DeployMachines(ctx context.Context, lab *model.Lab, selected, excluded kathara.NameSet) error {
 	if len(selected) > 0 && len(excluded) > 0 {
 		return kerrors.ErrSelectedOrExcludedMachines
@@ -93,10 +62,6 @@ func (s *machineService) DeployMachines(ctx context.Context, lab *model.Lab, sel
 
 	machines := filterMachines(lab.Machines(), selected, excluded)
 
-	// `lab_images = set(map(lambda x: x[1].get_image(), machines))`, whose
-	// iteration order is hash-randomised and decides the order of the pull
-	// progress bars and update prompts. ORDERING.tsv rows 29 and 46 rule the
-	// port dedupes preserving first occurrence instead.
 	seen := make(map[string]struct{}, len(machines))
 	images := make([]string, 0, len(machines))
 	for _, machine := range machines {
@@ -127,10 +92,9 @@ func (s *machineService) DeployMachines(ctx context.Context, lab *model.Lab, sel
 		}
 	}
 
-	// `lab.general_options['shared_mount'] if present else Setting.shared_mount`
-	// — the CORRECT read of the option, unlike the one in `create` (see
-	// [machineService.volumeBinds]). The two halves of the feature disagree
-	// and the disagreement is the bug both reproduce.
+	// `lab.general_options['shared_mount'] if present else Setting.shared_mount`.
+	// This differs from the presence-based read in [machineService.volumeBinds];
+	// both paths preserve the established behaviour.
 	sharedMount := s.manager.settings.SharedMount
 	if option, ok := lab.GeneralOption("shared_mount"); ok {
 		sharedMount = option.Truthy()
@@ -151,11 +115,7 @@ func (s *machineService) DeployMachines(ctx context.Context, lab *model.Lab, sel
 	if !lab.HasDependencies {
 		deployErr = runChunked(ctx, machines, machineItemName, s.deployAndStart)
 	} else {
-		// CONCURRENCY.tsv row 6: a plain loop, first error aborts
-		// immediately, and the order is `lab.dep`'s — which
-		// `Lab.ApplyDependencies` has already stable-sorted into
-		// `lab.machines`. No DAG scheduler: Python never had one and the row
-		// says not to add one.
+
 		for _, machine := range machines {
 			if deployErr = s.deployAndStart(ctx, machine); deployErr != nil {
 				break
@@ -174,9 +134,6 @@ func (s *machineService) DeployMachines(ctx context.Context, lab *model.Lab, sel
 	return nil
 }
 
-// deployAndStart is `_deploy_and_start_machine` (`DockerMachine.py:190`): the
-// unit of work the pool runs, which dispatches its own completion event from
-// the worker goroutine (CONCURRENCY.tsv row 5).
 func (s *machineService) deployAndStart(ctx context.Context, machine *model.Machine) error {
 	if err := s.Create(ctx, machine); err != nil {
 		return err
@@ -189,12 +146,6 @@ func (s *machineService) deployAndStart(ctx context.Context, machine *model.Mach
 
 // filterMachines is the dict comprehension of `deploy_machines`
 // (`DockerMachine.py:139-147`).
-//
-// Both filters are TRUTHINESS-tested here, so an empty set is "no filter" and
-// `lstart`'s empty sets mean "everything" — the exact inverse of
-// [machineService.Undeploy] (SYNTHESIS §1.7, NILABILITY.tsv:55-57). The
-// comprehension preserves scenario order, which is submission order, which is
-// chunk order.
 func filterMachines(machines []*model.Machine, selected, excluded kathara.NameSet) []*model.Machine {
 	switch {
 	case len(selected) > 0:
@@ -223,13 +174,6 @@ func filterMachines(machines []*model.Machine, selected, excluded kathara.NameSe
 
 // Create is `DockerMachine.create` (`DockerMachine.py:206`): build the
 // container and, if the device ships files, push them in before it starts.
-//
-// The container is created, not started; [machineService.Start] does that and
-// attaches the remaining collision domains afterwards.
-//
-// Errors: [kerrors.ErrMachineAlreadyExists], the model's option errors,
-// [kerrors.ErrPrivilege] for a privileged device without root, a
-// [kerrors.ErrPermission] for an unmountable volume, and the daemon's own.
 func (s *machineService) Create(ctx context.Context, machine *model.Machine) error {
 	// `"Creating device `%s`..." % machine.name` (`DockerMachine.py:219`).
 	slog.Debug("Creating device `" + machine.Name + "`...")
@@ -315,10 +259,7 @@ func (s *machineService) Create(ctx context.Context, machine *model.Machine) err
 			}
 			bridgedIface++
 		}
-		// `add_meta("bridged_iface", <int>)` stores a Python int, and the int
-		// is what lets `Machine.check()` count it as an occupied slot; a
-		// string there is the TypeError of DIVERGENCES.md 1. `AddMeta` takes
-		// only strings, so the typed field is written directly.
+
 		machine.Meta.BridgedIface = model.Int(int64(bridgedIface))
 	}
 
@@ -415,8 +356,8 @@ func (s *machineService) Create(ctx context.Context, machine *model.Machine) err
 	created, err := s.manager.api.ContainerCreate(ctx, request.Config, request.HostConfig, request.Networking, nil, request.Name)
 	if err != nil {
 		// `except APIError as e: raise e` — an identity re-raise
-		// (`DockerMachine.py:385-386`), dead in Python and a plain return
-		// here.
+		// (`DockerMachine.py:385-386`), unreachable under the Python control
+		// flow and a plain return here.
 		return err
 	}
 
@@ -442,17 +383,6 @@ func (s *machineService) Create(ctx context.Context, machine *model.Machine) err
 
 // firstInterface is `machine.interfaces[0]` guarded by `if machine.interfaces:`
 // (`DockerMachine.py:259-261`).
-//
-// The guard tests whether the device has ANY interface and the lookup then asks
-// for the one numbered ZERO, which are not the same question. Python's two
-// failures are reproduced rather than smoothed over (docker-backend.md gotcha
-// 9), because both are reachable through `connect_machine_to_link`, which can
-// leave a device with a hole at 0 that `Machine.check()` never sees:
-//
-//   - a device with interfaces but none numbered 0 → `KeyError: 0`;
-//   - a device whose slot 0 is a TOMBSTONE — `remove_interface` leaves the
-//     number taken and the value None — → `AttributeError: 'NoneType' object
-//     has no attribute 'link'`, from the `.link` on the next line.
 func firstInterface(machine *model.Machine) (model.Interface, bool, error) {
 	slots := machine.Interfaces()
 	if len(slots) == 0 {
@@ -472,14 +402,6 @@ func firstInterface(machine *model.Machine) (model.Interface, bool, error) {
 }
 
 // entrypointAndArgs is `DockerMachine.create`'s pair at `:358-361`.
-//
-// `entrypoint` is shlex-split whenever the meta is PRESENT — no truthiness gate,
-// so `entrypoint=""` splits to the empty list and is sent as an empty
-// entrypoint, which RESETS the image's rather than inheriting it. `args` has
-// one: `if "args" in meta and meta["args"]`, so an empty
-// value is dropped entirely. Then `shlex.split(args) if type(args) == str else
-// args`, which is the string/list union [model.Scalar] keeps — lab.conf gives a
-// string, the CLI's argparse REMAINDER gives a list.
 func entrypointAndArgs(machine *model.Machine) (entrypoint, args []string, err error) {
 	if machine.Meta.Entrypoint.IsSet() {
 		if entrypoint, err = ShlexSplit(machine.Meta.Entrypoint.String()); err != nil {
@@ -508,43 +430,6 @@ func entrypointAndArgs(machine *model.Machine) (entrypoint, args []string, err e
 	return entrypoint, args, nil
 }
 
-// volumeBinds is the `volumes` dict of `create` (`DockerMachine.py:300-325`),
-// already rendered as `HostConfig.Binds` strings in Python's insertion order:
-// `/shared` first, `/hosthome` second, the device's own volumes after
-// (ORDERING.tsv row 36 — the list order is golden-visible).
-//
-// # The reproduced bug
-//
-//	shared_mount = ['shared_mount'] if 'shared_mount' in lab_options else Setting…
-//
-// The true branch is a LITERAL LIST holding the option's NAME, not its value,
-// and a one-element list is always truthy. So a per-scenario
-// `shared_mount=False` cannot suppress the `/shared` mount here; only the
-// absence of `lab.shared_path` can (docker-backend.md gotcha 2). The folder
-// creation in `deploy_machines` reads the same option CORRECTLY, so the two
-// halves of the feature disagree: the folder is not created and the mount is
-// still requested — of a path that is then empty.
-//
-// `hosthome_mount` has no such bug and is additionally gated on a local daemon:
-// there is no host home to bind on a remote one.
-//
-// The device's own volumes come from [model.Machine.GetVolumes], whose
-// MountDenied is caught and downgraded to a warning exactly as Python does
-// (`:324-325`) — that catch is live, not dead: `get_volumes` is inside the
-// `try`. A PermissionError from the per-directory check is NOT caught and
-// propagates.
-//
-// # Two payload fields, not one
-//
-// docker-py splits the same `volumes` dict across BOTH of the create request's
-// halves: `host_config_kwargs['binds'] = volumes` gives `HostConfig.Binds`, and
-// `create_kwargs['volumes'] = [v.get('bind') for v in volumes.values()]`
-// (`models/containers.py:1173-1177`) gives `Config.Volumes`, which
-// `ContainerConfig` turns into `{"/shared": {}, "/hosthome": {}, …}`
-// (`types/containers.py:778`). `docker inspect .Config.Volumes` shows the
-// second, so the guest halves are returned alongside the bind strings rather
-// than re-derived from them — a Windows bind (`C:\x:/guest:rw`) cannot be split
-// back apart unambiguously.
 func (s *machineService) volumeBinds(machine *model.Machine) (binds, mountPoints []string, err error) {
 	add := func(hostPath, guestPath, mode string) {
 		binds = append(binds, bind(hostPath, guestPath, mode))
@@ -553,7 +438,7 @@ func (s *machineService) volumeBinds(machine *model.Machine) (binds, mountPoints
 
 	sharedMount := s.manager.settings.SharedMount
 	if _, ok := machine.Lab.GeneralOption("shared_mount"); ok {
-		sharedMount = true // the bug: presence, not value
+		sharedMount = true // Presence, rather than value, controls this path.
 	}
 	if sharedMount && machine.Lab.SharedPath != "" {
 		add(machine.Lab.SharedPath, "/shared", "rw")
@@ -601,21 +486,6 @@ func (s *machineService) volumeBinds(machine *model.Machine) (binds, mountPoints
 // ---------------------------------------------------------------------------
 
 // Start is `DockerMachine.start` (`DockerMachine.py:493`).
-//
-//  1. start the container, translating two daemon 500s;
-//  2. attach every collision domain AFTER the first — Python's comment says
-//     Docker orders pre-start attachments nondeterministically, which is why
-//     interface 0 is bound at create and the rest here;
-//  3. attach the Docker bridge if bridging was asked for and `create` did not
-//     already do it;
-//  4. rewrite the device's exec commands with an echo before each;
-//  5. run the whole startup script DETACHED, downgrading a missing shell to a
-//     warning plus `num_terms=0`;
-//  6. reload, and drop the `_bridge_connected` flag.
-//
-// Step 4 mutates the model destructively, as Python does: a second `start` on
-// the same [model.Machine] wraps the echoes again (docker-backend.md gotcha
-// 14).
 func (s *machineService) Start(ctx context.Context, machine *model.Machine) error {
 	// `"Starting device `%s`..." % machine.name` (`DockerMachine.py:509`).
 	slog.Debug("Starting device `" + machine.Name + "`...")
@@ -636,11 +506,6 @@ func (s *machineService) Start(ctx context.Context, machine *model.Machine) erro
 		}
 	}
 
-	// `islice(machine.interfaces.items(), 1, None)` — every slot but the
-	// FIRST-INSERTED, which `Machine.check()` has already made the
-	// numerically-lowest one (ORDERING.tsv row 41). The ordered slice makes
-	// that literally "all but the first element"; `islice` of an empty
-	// sequence is empty rather than an error, hence the length guard.
 	slots := machine.Interfaces()
 	if len(slots) > 0 {
 		slots = slots[1:]
@@ -720,14 +585,6 @@ func (s *machineService) Start(ctx context.Context, machine *model.Machine) erro
 
 // ConnectInterface is `connect_interface` (`DockerMachine.py:395`): attach a
 // running container to one more collision domain, unless it is already on it.
-//
-// The membership test is by DOCKER NETWORK NAME against the container's current
-// endpoint map, so it is the deployed network that decides, not the model.
-//
-// Errors: [kerrors.ErrInconsistentState] for the two 500s that mean the plugin
-// and the daemon disagree about what exists; everything else propagates
-// untranslated, including the 510 of the Python suite's
-// `test_connect_interface_plugin_api_error`.
 func (s *machineService) ConnectInterface(ctx context.Context, machine *model.Machine, iface model.Interface) error {
 	machineContainer, ok := containerOf(machine.APIObject)
 	if !ok {
@@ -783,20 +640,6 @@ func (s *machineService) DisconnectFromLink(ctx context.Context, machine *model.
 // ---------------------------------------------------------------------------
 
 // Undeploy is `DockerMachine.undeploy` (`DockerMachine.py:577`).
-//
-// The filters are IS-NOT-NONE here, which inverts what an empty set means: a
-// non-nil empty `selected` undeploys NOTHING, where the same value on the
-// deploy path deploys everything (SYNTHESIS §1.7). The both-filters guard is
-// `is not None` too, so two empty sets are an [kerrors.ErrSelectedOrExcludedMachines]
-// even though the deploy-side guard would have let them through.
-//
-// The listing is always scoped to the current user — `undeploy` does not take
-// a user parameter and hardcodes it — so one user cannot tear down another's
-// devices even with a matching lab hash. Only [machineService.Wipe] can.
-//
-// The `_started`/`_ended` events bracket the fan-out on the CALLER's goroutine
-// and are dispatched only when there is something to do (`len(containers) > 0`),
-// which is why an empty selection produces no progress bar at all.
 func (s *machineService) Undeploy(ctx context.Context, labHash string, selected, excluded kathara.NameSet) error {
 	if selected != nil && excluded != nil {
 		return kerrors.ErrSelectedOrExcludedMachines
@@ -839,10 +682,6 @@ func (s *machineService) Undeploy(ctx context.Context, labHash string, selected,
 
 // Wipe is `DockerMachine.wipe` (`DockerMachine.py:614`): every device of one
 // user, or of every user when user is empty.
-//
-// No events: the wipe path has no progress bar (CONCURRENCY.tsv row 8), and the
-// pool is entered unconditionally — an empty list is an empty chunk list, so
-// there is nothing to skip.
 func (s *machineService) Wipe(ctx context.Context, user string) error {
 	containers, err := s.getByFilters(ctx, "", "", user)
 	if err != nil {
@@ -863,10 +702,6 @@ func (s *machineService) undeployMachine(ctx context.Context, c *Container) erro
 // deleteMachine is `_delete_machine` (`DockerMachine.py:1087`): run the
 // shutdown script if the container is running, then force-remove it WITH its
 // anonymous volumes.
-//
-// The shutdown exec is PRIVILEGED, where the startup exec deliberately is not
-// (`:1107` vs `:559`), and a missing shell is a warning rather than a failure —
-// the container is removed either way.
 func (s *machineService) deleteMachine(ctx context.Context, c *Container) error {
 	name := c.Label(labelName)
 	shutdownCommandsString := renderShutdownCommands(name)
@@ -885,14 +720,7 @@ func (s *machineService) deleteMachine(ctx context.Context, c *Container) error 
 			if !errors.As(err, &binaryErr) {
 				return err
 			}
-			// Python reports `container.image.tags[0]` here, which IndexErrors
-			// on an untagged image. The image reference from the inspect is
-			// used when there is no tag, because a log line must not be able
-			// to fail a teardown (PORT_SPEC §10).
-			// `f"Shell `{e.binary}` not found in image
-			// `{container.image.tags[0]}` of device `{container.labels['name']}`.
-			// Shutdown commands will not be executed."`
-			// (`DockerMachine.py:1111-1113`).
+
 			slog.Warn("Shell `" + binaryErr.Binary + "` not found in " +
 				"image `" + s.manager.imageLabel(ctx, c) + "` of device `" + name + "`. " +
 				"Shutdown commands will not be executed.")
@@ -952,10 +780,7 @@ type execRunResult struct {
 	ExitCode *int
 	// ID is the Docker exec id, `resp['Id']`.
 	ID string
-	// Stdout and Stderr are the collected output of a non-stream run. Python's
-	// demux hands back `None` for a side that produced nothing; nil here is
-	// that None, and the JSON CLI already treats the two alike
-	// (JSON_CLI_CONTRACT.md §4.2).
+	// Stdout and Stderr are the collected output of a non-stream run.
 	Stdout []byte
 	Stderr []byte
 	// Stream is set for a streaming run: the live frame source.
@@ -964,25 +789,6 @@ type execRunResult struct {
 
 // execRun is `_exec_run` (`DockerMachine.py:820`), docker-py's `exec_run` plus
 // the missing-binary detection Kathará wraps around it.
-//
-// The detection has TWO independent paths and only one of them is on every
-// call:
-//
-//   - the OCI-runtime `APIError` from `exec_start` itself (`:871-876`), which
-//     fires in every mode including streaming;
-//   - a scan of the collected STDOUT for the same pattern (`:879-890`), which
-//     needs the whole output and a non-zero exit code, and therefore runs only
-//     for a non-stream, non-socket call. A tty runtime prints the failure to
-//     stdout instead of failing the API call, which is why the second path
-//     exists at all.
-//
-// Streaming execs therefore NEVER raise `MachineBinaryError` from the scan, and
-// the error text reaches the consumer as ordinary output — a deliberate
-// asymmetry the Python suite pins with three pairs of tests.
-//
-// `exec_inspect` is called on every path, streaming included, before the
-// result is assembled; its ExitCode is null while the command runs, which is
-// what makes the streaming exit code nil here.
 func (s *machineService) execRun(ctx context.Context, c *Container, opts execRunOptions) (*execRunResult, error) {
 	created, err := s.manager.api.ContainerExecCreate(ctx, c.ID, container.ExecOptions{
 		Cmd:          opts.Cmd,
@@ -1056,11 +862,7 @@ func (s *machineService) execRun(ctx context.Context, c *Container, opts execRun
 	exitCode := execExitCode(inspect)
 
 	if exitCode != nil && *exitCode != 0 {
-		// `(stdout_out, _) = exec_output if demux else (exec_output, None)` —
-		// the scan is over STDOUT only, whether or not the caller asked for
-		// demuxing. Python decodes with chardet first; the pattern is ASCII
-		// and the regexp runs on the bytes here, which finds the same matches
-		// for every encoding chardet would have detected (DIVERGENCES).
+
 		if binaryErr := ociBinaryErrorFromOutput(stdout, c.Label(labelName)); binaryErr != nil {
 			return nil, binaryErr
 		}
@@ -1071,9 +873,6 @@ func (s *machineService) execRun(ctx context.Context, c *Container, opts execRun
 
 // execExitCode is `exec_inspect(...)['ExitCode']` with Python's None for "still
 // running".
-//
-// The Go SDK reports the pair as `Running bool` + `ExitCode int` where the API
-// sends `"ExitCode": null`, so the null is recovered from `Running`.
 func execExitCode(inspect container.ExecInspect) *int {
 	if inspect.Running {
 		return nil
@@ -1096,15 +895,6 @@ func commandRepr(command kathara.Command) string {
 }
 
 // Exec is `DockerMachine.exec` (`DockerMachine.py:750`).
-//
-// wait is applied BEFORE the command runs, and a wait that ends in an API error
-// is [kerrors.ErrMachineNotRunning] here — where [machineService.Connect]
-// silently returns instead (docker-backend.md gotcha 17).
-//
-// `containers.pop()` takes the LAST match (ORDERING.tsv row 10), which is
-// observable only when the filters match more than one container — the
-// `machine_name` + `lab_hash` + `user` triple makes that impossible for a
-// scenario this backend created.
 func (s *machineService) Exec(
 	ctx context.Context,
 	labHash, machineName string,
@@ -1175,30 +965,6 @@ const (
 // waitStartupExecution is `_wait_startup_execution`
 // (`DockerMachine.py:897`): poll `cat /tmp/EOS` until it succeeds, the retries
 // run out, or the user hits a key.
-//
-// The contract, item by item:
-//
-//   - nRetries nil is FOREVER (NILABILITY.tsv). A negative count is made
-//     positive (`abs`), and a negative interval becomes 1 second — both
-//     sanitised on entry, both reachable through the API's `wait=(-1, -1)`.
-//   - Zero retries means "probe once and stop", because the counter is
-//     compared BEFORE it is incremented.
-//   - `machine_startup_wait_started` is dispatched at most once, the first
-//     time the probe fails, so the CLI prints its "press ENTER" notice once.
-//   - The user-input probe runs on EVERY iteration, including the one where
-//     the probe just succeeded; when it fires, the answer is
-//     `int(False or is_cmd_success)` — 1 if the startup had just finished,
-//     0 otherwise.
-//   - `except KeyboardInterrupt: pass` swallows Ctrl-C so the terminal does
-//     not close mid-wait (docker-backend.md gotcha 18). Go's analogue is
-//     context cancellation, and it is NOT swallowed: JSON_CLI_CONTRACT.md §6.2
-//     turns a cancelled operation into an orderly exit 0, which needs the
-//     cancellation to be returned rather than ignored, and the terminal it was
-//     protecting has not been opened yet at this point.
-//   - An APIError from the probe returns 2 immediately. A `MachineBinaryError`
-//     is NOT an APIError and escapes instead — an image without `cat` fails
-//     `exec --wait` and `connect` with the binary error, not with "not
-//     running".
 func (s *machineService) waitStartupExecution(ctx context.Context, c *Container, nRetries *int, retryInterval time.Duration) (int, error) {
 	// `f"Waiting startup commands execution for device
 	// {container.labels['name']}..."` (`DockerMachine.py:910`) — no backticks
@@ -1292,24 +1058,6 @@ func (s *machineService) copyFiles(ctx context.Context, c *Container, path strin
 
 // retrieveFiles is `DockerMachine.retrieve_files` (`DockerMachine.py:970`):
 // pull a path out of the container as a tar and extract it into dst.
-//
-// # No member sanitisation
-//
-// Python calls `tarfile.extractall(path=dst)` with no `filter=`, i.e. the
-// fully-trusted extraction, so an archive holding `../` members writes outside
-// dst. The port reproduces that (docker-backend.md gotcha 28: "Go's `tar`
-// extraction must not silently add safety that changes behaviour (record a
-// PROPOSED-DIVERGENCE if hardening is wanted)"), and PROPOSED-DIVERGENCES.md
-// carries the request to harden it. An ABSOLUTE member name is the one case
-// that differs — it is rooted under dst rather than honoured — because Docker's
-// `get_archive` cannot emit one (DIVERGENCES.md 69, [extractTar]). The source
-// of the archive is the Docker daemon relaying a path chosen by the caller, so
-// the exposure needs a container that is already hostile.
-//
-// Python streams the archive into a temporary file first and reopens it,
-// because `tarfile` wants a seekable object; Go's `tar.Reader` is sequential,
-// so the daemon's stream is extracted directly and the temporary file has no
-// counterpart.
 func (s *machineService) retrieveFiles(ctx context.Context, c *Container, src, dst string) error {
 	bits, _, err := s.manager.api.CopyFromContainer(ctx, c.ID, src)
 	if err != nil {
@@ -1322,12 +1070,6 @@ func (s *machineService) retrieveFiles(ctx context.Context, c *Container, src, d
 
 // bridgedIfaceNumber reads `machine.meta['bridged_iface']` as the int Python's
 // arithmetic needs.
-//
-// The second result is false when the meta holds something else, which is what
-// every lab.conf produces: the parser stores every meta as a string, so a
-// scenario that sets `bridged_iface` puts a `str` there and Python's `>` and
-// `+` both raise (DIVERGENCES.md 1). Callers turn that into the TypeError of
-// the branch they are in.
 func bridgedIfaceNumber(machine *model.Machine) (int, bool) {
 	if machine.Meta.BridgedIface.Kind() != model.KindInt {
 		return 0, false

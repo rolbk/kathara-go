@@ -7,11 +7,6 @@ import (
 	"testing"
 )
 
-// Every "verified:" note below records the output of running the real
-// FilesystemMixin from Kathara 3.8.3 on pyfilesystem2 through
-// /root/kathara/pyvenv; the probe scripts and their transcripts are summarised
-// in docs/port/SPIKES/vfs.md.
-
 func TestSplitLines(t *testing.T) {
 	// pyfilesystem opens text files with newline="": universal-newline
 	// SPLITTING, no translation. Verified by reading each byte string back
@@ -164,10 +159,10 @@ var writeLineAfterCases = []lineCase{
 	// test_write_line_after_end_line_with_no_return, verified P5: the
 	// matched last line gains the "\n" it lacked, then the new line lands.
 	{"match on a last line with no newline", "\ta\n\t\tb\n\t\t\td", "c", "d", false, 1, "\ta\n\t\tb\n\t\t\td\nc\n"},
-	// verified A2: the endswith("\n") test looks at the RAW line, so a
+	// The endswith("\n") test looks at the raw line, so a
 	// line ending in a bare CR is treated as unterminated.
 	{"last line ending in a bare CR", "a\r\nd\r", "X", "d", false, 1, "a\nd\r\nX\n"},
-	// verified A1: a CRLF-terminated match needs no extra "\n".
+	// A CRLF-terminated match needs no extra "\n".
 	{"CRLF-terminated match", "a\r\nd\r\n", "X", "d", false, 1, "a\nd\nX\n"},
 	// verified P2c
 	{"CRLF file collapses to LF", "a\r\nb\r\nd\r\n", "c", "b", false, 1, "a\nb\nc\nd\n"},

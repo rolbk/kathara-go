@@ -15,9 +15,6 @@ import (
 
 // newTestContainer builds the `Container` value a listing would have produced:
 // an inspect response with the labels and host config a test needs.
-//
-// It is not a mock of an SDK call (PORT_SPEC §9C) — it is the DATA the SDK
-// returns, which is what the reconstruction maps.
 func newTestContainer(deviceName string, hostConfig *container.HostConfig) *Container {
 	if hostConfig == nil {
 		hostConfig = &container.HostConfig{}
@@ -69,9 +66,6 @@ func newTestNetwork(dockerName, linkName string) *Network {
 	}
 }
 
-// TestApplyContainerMetas is EXPECTATIONS-docker.md §2.14's
-// `test_get_lab_from_api_lab_name_all_info`: the full inverse mapping from
-// container state back into device metas.
 func TestApplyContainerMetas(t *testing.T) {
 	lab := model.NewLab("Default scenario", model.DefaultDefaults())
 	device, err := lab.GetOrNewMachine("pc1", nil)
@@ -130,7 +124,7 @@ func TestApplyContainerMetas(t *testing.T) {
 		t.Errorf("env test = %q", got)
 	}
 
-	// The port map is INVERTED: (host, protocol) keys a guest port.
+	// This implementation map is INVERTED: (host, protocol) keys a guest port.
 	guest, ok := device.Ports().Get(model.PortKey{HostPort: 3000, Protocol: "udp"})
 	if !ok || guest != 55 {
 		t.Errorf("ports = %v, want (3000, udp) -> 55", device.Ports().Entries())
@@ -188,10 +182,10 @@ func TestApplyContainerMetasEmptyPortDataIsAnIndexError(t *testing.T) {
 	// `model` itself raises — so the class is read off the carrier.
 	var typed *model.PyRuntimeError
 	if err := applyContainerMetas(device, c); !errors.As(err, &typed) {
-		t.Fatalf("empty port data gave %v, want a reproduced Python crash", err)
+		t.Fatalf("empty port data gave %v, want the Python exception behaviour", err)
 	}
 	if typed.Class != "IndexError" || typed.Msg != "list index out of range" {
-		t.Errorf("crash = %s: %s, want IndexError: list index out of range", typed.Class, typed.Msg)
+		t.Errorf("exception = %s: %s, want IndexError: list index out of range", typed.Class, typed.Msg)
 	}
 }
 
@@ -359,14 +353,6 @@ func TestApplyEndpointSysctlsIsANoOpWithoutTheOpt(t *testing.T) {
 	}
 }
 
-// TestSortByIfaceOptIsLexicographic is ORDERING.tsv rows 55-56: the sort key is
-// the RAW STRING of `kathara.iface`, so "10" sorts before "2".
-//
-// The port keeps the quirk because the register pins it. It is unobservable in
-// the rebuilt model — `add_interface` is given the number explicitly and the
-// ordered interface slice re-sorts numerically — which is exactly what
-// ORDERING.tsv row 55 predicts ("interfaces slice re-sorts numerically per spec
-// 4.1 making insertion order moot").
 func TestSortByIfaceOptIsLexicographic(t *testing.T) {
 	endpoints := map[string]*network.EndpointSettings{
 		"net2":  endpoint("2", "B", "", ""),
@@ -395,8 +381,8 @@ func TestSortByIfaceOptBreaksTiesByName(t *testing.T) {
 }
 
 // TestIfaceNumberOf reproduces the order of `get_lab_from_api:755`: the
-// `int(...["kathara.iface"])` runs BEFORE the `is not None` guard two lines
-// below, so a nil DriverOpts crashes here and the guard is dead code.
+// `int(...["kathara.iface"])` runs before the `is not None` guard two lines
+// below, so a nil DriverOpts raises before the guard is reached.
 func TestIfaceNumberOf(t *testing.T) {
 	got, err := ifaceNumberOf(endpoint("3", "A", "", ""))
 	if err != nil || got != 3 {
@@ -435,9 +421,6 @@ func TestIfaceNumberOfIsPythonsInt(t *testing.T) {
 	}
 }
 
-// TestIfaceOptNumberIsTotal: the dynamic-link sort key (ORDERING.tsv:57) can
-// never fail — the raise is deferred to the loop body's own [ifaceNumberOf],
-// which is where Python raises it.
 func TestIfaceOptNumberIsTotal(t *testing.T) {
 	if got := ifaceOptNumber(endpoint("7", "A", "", "")); got != 7 {
 		t.Errorf("ifaceOptNumber = %d, want 7", got)

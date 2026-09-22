@@ -1,16 +1,6 @@
 // This file is `cli/ui/event/register.py`: the eighteen subscriptions the CLI
 // installs before dispatch and tears down on every exit path.
-//
 // Two properties of the Python are load-bearing and reproduced exactly.
-//
-//   - **Order.** `machine_deployed` has two subscribers and they are called in
-//     registration order: the progress bar advances, *then* the terminal window
-//     opens (`register.py:72,81`, ORDERING.tsv row 96). Swapping them would
-//     make a device's window appear before its bar moved.
-//   - **Idempotent teardown.** `unregister_cli_events` unsubscribes
-//     `machine_deployed` twice (`register.py:37,44`) and relies on the second
-//     call being a no-op. `event.Unsubscribe` is, for the same reason Python's
-//     `not in self.events` guard is.
 
 package main
 
@@ -182,12 +172,6 @@ func unsubscribeAll(d *event.Dispatcher) {
 
 // openMachineTerminals is `HandleMachineTerminal.run`: when `open_terminals` is
 // set, open `machine.get_num_terms()` windows onto the device.
-//
-// The Kubernetes backend dispatches this event with the device *name* and no
-// object (`KubernetesMachine.py:260`), which in Python would crash on
-// `item.get_num_terms()`; it never does, because Megalos force-disables
-// terminals first (`KubernetesMachine.py:174`). The nil check below is the
-// same guard made explicit rather than left to a crash.
 func (a *app) openMachineTerminals(e event.MachineDeployed) error {
 	if !a.settings.OpenTerminals || a.console.Format.Machine() {
 		return nil

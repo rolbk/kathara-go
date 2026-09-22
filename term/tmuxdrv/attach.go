@@ -23,10 +23,6 @@ func (d *Driver) SwitchClientArgs(session string) []string {
 
 // InsideTmux reports whether this process is running inside a tmux pane.
 // tmux sets $TMUX for every process it spawns.
-//
-// It is not on its own the thing that makes tmux refuse to nest: tmux refuses
-// an attach-session when $TMUX is set *and* the client's tty is the tty of one
-// of the target server's panes (server_client_check_nested). See Attach.
 func InsideTmux() bool { return os.Getenv("TMUX") != "" }
 
 // outerSocketPath returns the socket path of the tmux server this process is
@@ -52,39 +48,6 @@ func (d *Driver) serverSocketPath(ctx context.Context) (string, error) {
 // Attach gives the caller's terminal to the scenario session, optionally
 // selecting one device's window first. This is `kathara connect --tmux
 // <device>`: select-window to point at the device, then attach.
-//
-// On Unix it replaces the current process image with tmux (execve), so it does
-// not return on success; the shell that ran kathara ends up talking to tmux
-// directly, with no proxy process in between to mangle signals, window-size
-// changes or the exit status. When the user detaches (prefix-d), tmux exits and
-// the session, its windows and the devices behind them keep running.
-//
-// Three cases, decided by $TMUX and by which server it points at:
-//
-//   - not inside tmux: exec attach-session.
-//   - inside a client of the same server: exec would put a client inside one of
-//     that server's own panes, so the existing client is switched to the
-//     session instead and Attach returns normally.
-//   - inside a client of a different server (kathara on the default socket,
-//     user's tmux on `-L work`): not nesting, so attach normally, with $TMUX
-//     dropped from the child environment.
-//
-// tmux's own refusal ("sessions should be nested with care, unset $TMUX to
-// force") fires when $TMUX is set *and* the client's tty is a pane tty of the
-// target server — not on $TMUX's presence alone (verified on 3.5a: attaching
-// with a foreign $TMUX set, or with $TMUX set from a tty that is not one of the
-// server's panes, both succeed). Two things follow, and both are why this
-// function decides for itself rather than leaning on tmux:
-//
-//   - dropping $TMUX on the different-server path is belt-and-braces, not the
-//     load-bearing part; it costs nothing and keeps the child from inheriting a
-//     variable that names a server it is not talking to.
-//   - dropping $TMUX on the *same*-server path would disarm tmux's protection
-//     and attach a client inside its own pane — a terminal mirroring itself.
-//     So the same-server branch never execs, and a failure to establish which
-//     server we are in is returned, never guessed past.
-//
-// window may be empty to attach without changing the active window.
 func (d *Driver) Attach(ctx context.Context, session, window string) error {
 	if err := checkSessionName(session); err != nil {
 		return err
@@ -140,14 +103,6 @@ func (d *Driver) Attach(ctx context.Context, session, window string) error {
 }
 
 // sameSocket reports whether two socket paths name the same tmux server.
-//
-// $TMUX carries the path the *server* was started with and #{socket_path}
-// reports what this Driver is talking to; for the default socket, which is what
-// production uses, the two are byte-identical. They need not be when a caller
-// passes a relative or symlinked -S path, and a false "different" is the
-// dangerous answer — it is the one that execs with $TMUX stripped, i.e. the
-// terminal-mirrors-its-own-pane case in Attach's doc. Resolution failures fall
-// back to the plain comparison rather than to a guess.
 func sameSocket(a, b string) bool {
 	if a == b {
 		return a != ""

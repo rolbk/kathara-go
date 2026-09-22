@@ -30,13 +30,6 @@ func stubBackend(name, formatted string) Backend {
 	}
 }
 
-// TestRegistryKeepsDeclaredOrder is SYNTHESIS.md C-5 and ORDERING.tsv row
-// `manager/Kathara.py:617`: `AVAILABLE_MANAGERS = ["docker", "kubernetes"]` is
-// not dead code, it is the order `Kathara.get_available_managers_name()` builds
-// its dict in, and that dict's order is what the settings screen shows.
-//
-// Registration order is the listing order. Nothing sorts, and nothing ranges
-// over the map.
 func TestRegistryKeepsDeclaredOrder(t *testing.T) {
 	t.Parallel()
 
@@ -65,10 +58,6 @@ func TestRegistryKeepsDeclaredOrder(t *testing.T) {
 	}
 }
 
-// TestRegistryOrderMatchesSettingsVocabulary ties the two lists together: the
-// order `cmd/kathara` is expected to register in is the order the frozen
-// settings schema declares (SYNTHESIS.md C-5 — `AVAILABLE_MANAGERS` lives in
-// `Setting.py` and is iterated by the facade).
 func TestRegistryOrderMatchesSettingsVocabulary(t *testing.T) {
 	t.Parallel()
 
@@ -96,10 +85,6 @@ func TestRegistryLookup(t *testing.T) {
 		about string
 	}{
 		{name: "docker", want: true},
-		// `manager_type.capitalize()` lowercased everything after the first
-		// character in Python; the registry does no case folding at all, so a
-		// case-mangled value that loads out of the config file finds nothing
-		// (analysis/manager-foundation.md §7 gotcha 3).
 		{name: "DOCKER", want: false},
 		{name: "Docker", want: false},
 		{name: "kubernetes", want: false},
@@ -169,12 +154,6 @@ func TestRegistryRejectsBadRegistrations(t *testing.T) {
 	})
 }
 
-// TestRegistryListingDoesNotConstruct is
-// analysis/manager-foundation.md §7 gotcha 10: `get_available_managers_name()`
-// resolves the manager *class* and never instantiates it, so listing the
-// backends in the settings screen must not open a Docker connection. That is
-// why [Backend.FormattedName] is declared alongside the factory instead of
-// being read off a constructed [Manager].
 func TestRegistryListingDoesNotConstruct(t *testing.T) {
 	t.Parallel()
 

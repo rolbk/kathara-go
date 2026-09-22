@@ -42,8 +42,6 @@ func TestGetCurrentUserInfoSudoUID(t *testing.T) {
 		t.Errorf("GetCurrentUserInfo with a padded SUDO_UID: %v", err)
 	}
 
-	// A non-numeric one is an uncaught ValueError in Python, which
-	// ERROR_CODES.md §1.2 maps to the `Value` code. Its text is CPython's own.
 	t.Setenv("SUDO_UID", "abc")
 	_, err = GetCurrentUserInfo()
 	if err == nil {

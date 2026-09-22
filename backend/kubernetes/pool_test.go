@@ -16,15 +16,6 @@ import (
 	"github.com/KatharaFramework/kathara-go/kerrors"
 )
 
-// This file is the Docker backend's `pool_test.go` for the copy of the fan-out
-// that lives here (see `pool.go`'s header for why there are two): the frozen
-// batch-error semantics of ERROR_CODES.md §6 have to hold on both backends, so
-// they are pinned on both.
-
-// TestJoinFailuresOrdersTheBatchBytewiseByName is ERROR_CODES.md §6.2: the
-// batch is ordered by the failed item's name, BYTEWISE ascending — `PC1` before
-// `pc1` (0x50 < 0x70), `pc10` before `pc2` (`1` < `2`) — and element 0 is the
-// primary error of §6.3, which is the one the envelope reports.
 func TestJoinFailuresOrdersTheBatchBytewiseByName(t *testing.T) {
 	failed := []batchFailure{
 		{name: "pc2", err: kerrors.NewMachineNotRunning("pc2")},
@@ -52,9 +43,6 @@ func TestJoinFailuresOrdersTheBatchBytewiseByName(t *testing.T) {
 	}
 }
 
-// TestJoinFailuresOfOneDoesNotGrowAnErrorsKey is the §6.5 boundary: a single
-// failure stays a one-element batch, which is what makes the renderer omit the
-// `errors` key and reproduce Python's output byte for byte.
 func TestJoinFailuresOfOneDoesNotGrowAnErrorsKey(t *testing.T) {
 	only := kerrors.NewMachineNotRunning("pc1")
 	err := joinFailures([]batchFailure{{name: "pc1", err: only}})
@@ -70,13 +58,6 @@ func TestJoinFailuresOfOneDoesNotGrowAnErrorsKey(t *testing.T) {
 	}
 }
 
-// TestRunChunkedJoinsEveryFailureInCanonicalOrder is ERROR_CODES.md §6 items 2,
-// 3 and 5: a chunk with a primary failure and TWO decoy failures reports all
-// three, always in the same order, whichever worker finished first.
-//
-// The stagger makes the alphabetically FIRST device finish LAST, so the
-// pre-fix shape — a bare errgroup, whose `Wait` answers the first arrival and
-// drops the siblings — can only ever report `z1`.
 func TestRunChunkedJoinsEveryFailureInCanonicalOrder(t *testing.T) {
 	size := util.PoolSize()
 	if size < 3 {

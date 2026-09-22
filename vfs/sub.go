@@ -18,10 +18,6 @@ type subFS struct {
 // Sub returns an FS rooted at dir inside fsys, reproducing fs.opendir:
 // the directory must already exist, otherwise the call fails.
 // Machine.py:636 is the caller that MkdirAlls first.
-//
-// The degenerate root view is wrapped like any other: pyfilesystem's
-// opendir("") and opendir("/") both return a SubFS, so fs_type() is "sub" and
-// not the parent's own name (verified live on a mem:// and an osfs:// parent).
 func Sub(fsys FS, dir string) (FS, error) {
 	if fsys == nil {
 		return nil, ErrNoFilesystem

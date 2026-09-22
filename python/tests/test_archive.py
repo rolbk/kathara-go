@@ -1,11 +1,3 @@
-"""The deploy archive: `JSON_CLI_CONTRACT.md` §7.
-
-The strongest assertion available here is a **round trip**: pack a model, unpack
-the tar into a directory, parse it back with the client's own `LabParser`, and
-require the two models to agree. That is the same equivalence the wire format
-relies on, since the binary extracts the archive and proceeds "exactly as if
-`-d <tmpdir>` had been given" (§7.4).
-"""
 
 import io
 import os
@@ -133,9 +125,6 @@ class RoundTripTest(ArchiveTestCase):
         self.assertEqual("https://example.org/kathara", reparsed.web)
 
     def test_device_order_survives_apply_dependencies(self):
-        # Contract §3.1: `machines` is emitted in deploy schedule order, which
-        # is lab.conf insertion order after lab.dep reordering, so the ordering
-        # is baked into the file itself.
         lab = Lab("deps")
         for name in ["pc1", "pc2", "pc3"]:
             lab.connect_machine_to_link(name, "A")
@@ -312,8 +301,6 @@ class ArchiveRefusalTest(ArchiveTestCase):
             _archive.generate_lab_conf(lab)
 
     def test_an_unwritable_lab_name_is_skipped_not_refused(self):
-        # Contract §7.2/A8: `lstart --name` wins over `LAB_NAME` for both name
-        # and hash, so the line is fidelity only and the scenario still deploys.
         lab = Lab("a=b")
         lab.connect_machine_to_link("pc1", "A")
 
@@ -324,8 +311,7 @@ class ArchiveRefusalTest(ArchiveTestCase):
         self.assertEqual("a=b", _archive.archive_name(lab))
 
     def test_lab_metadata_with_equals_is_refused(self):
-        # DIVERGENCES.md item 5: `LAB_WEB=https://x/?a=b` crashes the parser
-        # with an uncaught ValueError, and the Go port reproduces that.
+
         lab = Lab("meta")
         lab.web = "https://example.org/?a=b"
         lab.connect_machine_to_link("pc1", "A")

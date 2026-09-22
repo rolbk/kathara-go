@@ -1,8 +1,3 @@
-// This file is `cli/ui/utils.confirmation_prompt` (`rich.prompt.Confirm.ask`)
-// and the `rich.tree.Tree` that `cli/ui/event/MountDevicesVolumes.py` draws
-// above it — the only two interactive renderables in the CLI, and the two
-// JSON_CLI_CONTRACT.md §1.5 has to answer for a client that cannot type.
-
 package cliout
 
 import (
@@ -21,10 +16,6 @@ import (
 // line` and exits 1. The Layer A harness closes stdin on every run
 // (NORMALIZATION.md §1), so this is the answer a non-interactive human-mode
 // `kathara wipe` gets.
-//
-// It carries no taxonomy class, so `kerrors.Code` buckets it to
-// `InternalError`; [HumanLabelOf] reads the label off the value so the human
-// line still says `EOFError`.
 var ErrPromptEOF error = &eofError{}
 
 type eofError struct{}
@@ -34,12 +25,6 @@ func (e *eofError) ErrorCode() string  { return kerrors.CodeInternalError }
 func (e *eofError) HumanLabel() string { return "EOFError" }
 
 // Prompter is the confirmation half of the CLI's interactivity.
-//
-// It exists as a type rather than a function because the answer is
-// format-dependent and the three sites disagree about what a non-interactive
-// answer should be (JSON_CLI_CONTRACT.md §1.5): the image-update prompt
-// auto-answers no, the volume prompt auto-answers yes, and `wipe` refuses
-// outright.
 type Prompter struct {
 	// Console renders the question and takes the lock while it does.
 	Console *Console
@@ -54,13 +39,6 @@ type Prompter struct {
 // Confirm is `Confirm.ask(prompt)`: render `<prompt> [y/n]: `, read a line,
 // and re-ask on anything that is not `y` or `n` after stripping and
 // lower-casing (`rich/prompt.py`, `Confirm.process_response`).
-//
-// There is no default, so a bare Enter re-asks — `Confirm.ask` is called with
-// no `default=`, which leaves it as the Ellipsis sentinel and makes the empty
-// string fall through to validation.
-//
-// It must not be called in json/jsonl mode; the callers there apply §1.5's
-// pinned answers instead.
 func (p *Prompter) Confirm(prompt string) (bool, error) {
 	if p.In == nil {
 		p.Console.printPromptSuffix(prompt)
@@ -117,10 +95,6 @@ var treeGuides = [4]string{"    ", "│   ", "├── ", "└── "}
 
 // Tree renders a `rich.tree.Tree` the way `MountDevicesVolumes.run` builds one:
 // a root label with one level of children, no styling.
-//
-// The four-cell guide prefix is why the golden reads `├── Host Path: …`; a
-// continuation of a wrapped child would carry `    ` or `│   ` instead, which
-// is the reason those two entries exist in the guide set at all.
 func Tree(node TreeNode, width int) []string {
 	if width <= 0 {
 		width = DefaultWidth

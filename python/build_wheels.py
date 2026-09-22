@@ -1,32 +1,5 @@
 #!/usr/bin/env python3
-"""Build the five platform-tagged Kathará wheels.
-
-`PORT_SPEC.md` §7.3:
-
-    goreleaser builds five binaries. A build script emits five platform-tagged
-    wheels with the binary in `.data/scripts/` so pip puts it on PATH directly.
-    Backend is hatchling. No cibuildwheel, no auditwheel, no C toolchain,
-    because there is no C extension. This is the `ruff` and `uv` distribution
-    pattern.
-
-Flag contract (`.github/workflows/release.yml`)::
-
-    python python/build_wheels.py --dist dist --out python/dist
-
-``--dist`` is the goreleaser output tree; ``--out`` is where the wheels land.
-The wheels are built **from the binaries goreleaser just produced**, never from
-a second compile, so a wheel and the release tarball can never disagree.
-
-How it works: hatchling builds one pure-Python wheel; then, per platform, that
-wheel is unpacked, the matching binary is dropped into
-``kathara-<version>.data/scripts/``, the ``WHEEL`` metadata is retagged,
-``RECORD`` is regenerated, and the result is repacked under its platform tag.
-
-Extra flags beyond the contract: ``--version`` (override, otherwise read from
-``dist/metadata.json`` when goreleaser wrote one, otherwise from
-``Kathara/version.py``) and ``--project`` (the directory holding
-``pyproject.toml``; defaults to this script's directory).
-"""
+"""Build the five platform-tagged Kathará wheels."""
 
 import argparse
 import base64
@@ -63,11 +36,7 @@ PLATFORMS = {
 
 EXPECTED_WHEEL_COUNT = len(PLATFORMS)
 
-#: The last version of the Python Kathará on PyPI. `PORT_SPEC.md` §7.3 requires
-#: `pip install kathara` to keep working, and pip resolves by version order: a
-#: wheel that does not sort above this one would leave every existing install on
-#: the Python line, silently. Release builds must therefore carry a higher
-#: version, which goreleaser's tag supplies (`dist/metadata.json`).
+
 LAST_PYTHON_RELEASE = (3, 8, 3)
 
 BINARY_NAMES = ("kathara", "kathara.exe")

@@ -14,10 +14,6 @@ import (
 // TestLabRefRequireSingle is `check_required_single_not_none_var(lab_hash=…,
 // lab_name=…, lab=…)` (`utils.py:117`), the guard that opens eleven methods in
 // each backend.
-//
-// The two failure texts differ, Python tests the "none" case first, and the
-// kwargs order is the message — ORDERING.tsv pins it, so a permutation is a
-// regression even though it "says the same thing".
 func TestLabRefRequireSingle(t *testing.T) {
 	t.Parallel()
 
@@ -36,10 +32,7 @@ func TestLabRefRequireSingle(t *testing.T) {
 		{name: "hash and lab", ref: LabRef{Hash: "h", Lab: lab}, wantMsg: "You must specify only a parameter among lab_hash, lab_name, lab"},
 		{name: "name and lab", ref: LabRef{Name: "n", Lab: lab}, wantMsg: "You must specify only a parameter among lab_hash, lab_name, lab"},
 		{name: "all three", ref: LabRef{Hash: "h", Name: "n", Lab: lab}, wantMsg: "You must specify only a parameter among lab_hash, lab_name, lab"},
-		// NILABILITY.tsv:54 collapses "" onto absent. Python counts
-		// `is not None`, so `lab_name=""` passes this guard and then falls
-		// through the `if lab: … elif lab_name:` dispatch right after it,
-		// leaving the query unfiltered — the one path the collapse loses.
+
 		{name: "empty strings are absent", ref: LabRef{Hash: "", Name: ""}, wantMsg: "You must specify a parameter among lab_hash, lab_name, lab"},
 	}
 
@@ -114,19 +107,6 @@ func TestLabRefAtMostOne(t *testing.T) {
 
 // TestLabRefMessagesMatchUtil is the drift guard named in
 // [LabRef.RequireSingle]'s doc comment.
-//
-// `internal/util` holds the general `check_*_not_none_var`, this package holds
-// the specialisation for the one kwargs tuple that matters, and PACKAGE_GRAPH.md
-// §1.2 gives this package no edge to that one — so the counting is written
-// twice. Here the two are put side by side, at the only layer that can import
-// both, so that a divergence is a failing test and not a wrong sentence in a
-// user's terminal.
-//
-// The import is this test binary's and not the package's: `kathara.a` links
-// against `kerrors`, `model`, `settings` and `event` and nothing else, which is
-// the §1.2 row exactly, and `internal/util` imports only `kerrors`, so no cycle
-// exists either way. It is recorded as DIVERGENCES.md #54 because the frozen
-// edge list calls itself complete and does not say whether test files count.
 func TestLabRefMessagesMatchUtil(t *testing.T) {
 	t.Parallel()
 
@@ -165,10 +145,6 @@ func errText(err error) string {
 	return err.Error()
 }
 
-// TestNameSet pins the one property the type exists for: nil and empty stay
-// apart. Every filter semantics above it (SYNTHESIS.md §1.7) is built on the
-// distinction, and a constructor that returned nil for no arguments would erase
-// it.
 func TestNameSet(t *testing.T) {
 	t.Parallel()
 
@@ -214,10 +190,6 @@ func TestNameSet(t *testing.T) {
 	t.Run("Names is sorted and copied", func(t *testing.T) {
 		t.Parallel()
 
-		// The backend enumerates the set once, to build
-		// `selected_machines - set(lab.machines.keys())` for
-		// MachineNotFoundError; a map's own order would be an unordered
-		// iteration on a path that reaches a container (PORT_SPEC §10).
 		set := NewNameSet("pc3", "pc1", "pc2")
 		if got := set.Names(); !slices.Equal(got, []string{"pc1", "pc2", "pc3"}) {
 			t.Errorf("Names() = %q, want sorted", got)
@@ -231,9 +203,6 @@ func TestNameSet(t *testing.T) {
 	})
 }
 
-// TestWaitPolicy is NILABILITY.tsv:60 and `DockerMachine.py:679-690`: the three
-// shapes of `wait: Union[bool, Tuple[int, float]]`, and the per-method default
-// that differs between `connect_tty` (True) and `exec` (False).
 func TestWaitPolicy(t *testing.T) {
 	t.Parallel()
 

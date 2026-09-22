@@ -3,10 +3,6 @@
 // `int()` and `float()`. `internal/util` owns the two that other packages also
 // need ([util.PyInt], [util.StrToBool]); what is here is what only the meta
 // accessors reach.
-//
-// RULINGS.md OQ-14a ("Replicate CPython") is what makes these binding: the
-// accessors decide between a stored int and a stored string, between a
-// MachineOptionError and a crash, on the exact acceptance sets below.
 
 package model
 
@@ -23,15 +19,6 @@ import (
 
 // pySpace reports whether r is whitespace for `str.strip()`, i.e. whether
 // `str.isspace()` is true for it.
-//
-// [unicode.IsSpace] is that set minus the four separators 0x1C-0x1F, which
-// Python does treat as whitespace (`'\x1c'.isspace()` is True). The difference
-// is reachable: `Machine("\x1cpc1")` strips to `pc1` on the oracle, and with
-// Go's predicate alone it would fail the device-name regex instead.
-//
-// It is deliberately NOT [util.PyInt]'s whitespace set, which is the one
-// `int()` accepts and which excludes 0x1C-0x1F; the two Python functions
-// disagree and both are used here.
 func pySpace(r rune) bool {
 	return unicode.IsSpace(r) || (r >= 0x1C && r <= 0x1F)
 }
@@ -41,19 +28,6 @@ func pyStrip(s string) string { return strings.TrimFunc(s, pySpace) }
 
 // pyIsNumeric is `str.isnumeric()`: true when s is non-empty and every
 // character carries a Unicode numeric value.
-//
-// It gates the sysctl int coercion (`model/Machine.py:182`), where being wrong
-// in either direction is observable: `net.a.b=²` is numeric and then fails
-// `int()` with an uncaught ValueError, while `net.a.b=+5` is not numeric and is
-// stored as the string `"+5"` (both oracle-verified).
-//
-// RESIDUAL GAP, recorded in DIVERGENCES.md: Python's predicate is
-// `Numeric_Type != None`, which also covers the CJK ideographic numerals
-// (`'一'.isnumeric()` is True) and a handful of other Lo characters. Go's
-// tables carry no Numeric_Type, so this is the categories Nd, Nl and No —
-// every character Python calls numeric *except* those ideographs. The only
-// input class affected is a sysctl value made entirely of them, which Python
-// crashes on and this stores as a string.
 func pyIsNumeric(s string) bool {
 	if s == "" {
 		return false
@@ -80,18 +54,6 @@ func pyIntSpace(r rune) bool {
 }
 
 // pyBigInt is CPython's `int(s)` at CPython's precision.
-//
-// [util.PyInt] is the same function bounded to a Go int, and it is what decides
-// "is this a number" everywhere the answer only has to be yes or no. This one
-// exists for the three sites where the *value* can exceed a Go int and Python
-// keeps every digit: `get_mem` renders it back into the memory string,
-// `add_meta("ulimit", …)` renders it into the soft/hard error message
-// (kerrors.NewOptionUlimitSoftHard takes it pre-rendered for this reason), and
-// both compare it against -1.
-//
-// The accepted set is [util.PyInt]'s, restated: optional surrounding
-// whitespace, one optional sign, one or more decimal digits from any Unicode
-// script, PEP 515 underscores strictly between digits.
 func pyBigInt(s string) (*big.Int, error) {
 	trimmed := strings.TrimFunc(s, pyIntSpace)
 
@@ -139,10 +101,6 @@ func pyBigInt(s string) (*big.Int, error) {
 }
 
 // pyDecimalValue is the 0-9 value of a Unicode decimal digit.
-//
-// It asks [util.PyInt] rather than carrying a second copy of the Nd-zero table:
-// a one-rune literal is exactly a digit test, and reusing the frozen table is
-// what keeps `int("٣")` == 3 true in both packages at once.
 func pyDecimalValue(r rune) (int, bool) {
 	if r >= '0' && r <= '9' {
 		return int(r - '0'), true
@@ -155,17 +113,6 @@ func pyDecimalValue(r rune) (int, bool) {
 }
 
 // pyFloat is CPython's `float(s)`.
-//
-// [strconv.ParseFloat] is not it, in both directions: Go accepts the hex form
-// `0x1p2` that Python rejects, and Python accepts Unicode decimal digits
-// (`float("٣.٥")` is 3.5) and PEP 515 underscores that Go's parser does not
-// take in a decimal literal. Both differences reach `get_cpu`, whose failure
-// mode is a MachineOptionError the user sees.
-//
-// Accepted: surrounding whitespace ([pyIntSpace]'s set), one optional sign,
-// then either an infinity/NaN word (`inf`, `infinity`, `nan`, any case) or a
-// decimal literal — digits with at most one dot and an optional `e` exponent,
-// with underscores allowed strictly between digits.
 func pyFloat(s string) (float64, error) {
 	trimmed := strings.TrimFunc(s, pyIntSpace)
 
@@ -245,12 +192,6 @@ var errPyFloatSyntax = errors.New("model: could not convert string to float")
 
 // saturateInt64 is the one place Python's arbitrary-precision integers are
 // narrowed.
-//
-// Ports, ulimits and sysctl values are stored as fixed-width integers because
-// that is what a container runtime accepts; a literal wider than an int64 keeps
-// Python's "no error here" behaviour and clamps. DIVERGENCES.md records it. The
-// messages that quote such a number (the ulimit soft/hard variant) render the
-// big value, not the clamped one.
 func saturateInt64(v *big.Int) int64 {
 	if v.IsInt64() {
 		return v.Int64()
@@ -261,8 +202,6 @@ func saturateInt64(v *big.Int) int64 {
 	return math.MaxInt64
 }
 
-// saturateInt is [saturateInt64] for the port numbers, which spec §4.1 keeps as
-// a plain int.
 func saturateInt(v *big.Int) int {
 	n := saturateInt64(v)
 	if n > math.MaxInt {

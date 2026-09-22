@@ -1,11 +1,3 @@
-// ConPTY-backed Pty for Windows 10 1809+ (PORT_SPEC §0.2 #2, Windows leg).
-// Design and platform caveats: docs/port/SPIKES/windows-terminal.md.
-//
-// All Win32 surface comes from golang.org/x/sys/windows v0.47.0, which exports
-// CreatePseudoConsole / ResizePseudoConsole / ClosePseudoConsole plus the
-// ProcThreadAttributeListContainer needed to hand the HPCON to CreateProcess
-// (verified against the package source; no NewLazySystemDLL fallback needed —
-// the fallback spec lives in the SPIKES doc §2.2 should x/sys ever regress).
 package term
 
 import (
@@ -20,11 +12,6 @@ import (
 )
 
 // conPty implements Pty over a Windows pseudoconsole.
-//
-// Plumbing (parent side on the left, ConPTY duplicates its ends internally):
-//
-//	Write ──▶ inW ═pipe═ inR ──▶ [ConPTY input]  → child's console input
-//	Read  ◀── outR ═pipe═ outW ◀─ [ConPTY output] ← child's rendered VT stream
 type conPty struct {
 	mu      sync.Mutex
 	ws      Winsize
@@ -191,11 +178,6 @@ func (p *conPty) Write(b []byte) (int, error) {
 	return f.Write(b)
 }
 
-// Close closes the pseudoconsole first (disconnecting the child's console —
-// console-attached clients normally terminate; recorded platform difference),
-// then the parent pipe ends. ClosePseudoConsole before draining outR can
-// block on old Windows 10 builds; the runner's drain discipline is specified
-// in docs/port/SPIKES/windows-terminal.md §4.4. Idempotent.
 func (p *conPty) Close() error {
 	p.mu.Lock()
 	defer p.mu.Unlock()

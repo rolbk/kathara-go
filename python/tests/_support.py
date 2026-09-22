@@ -1,7 +1,7 @@
 """Shared scaffolding for the client unit tests.
 
 Every test that touches the wire layer runs against :mod:`fake_kathara` — a
-stdlib-only script that speaks the JSON CLI contract — installed as the binary
+stdlib-only script that speaks the JSON command protocol — installed as the binary
 through ``$KATHARA_BIN``. The tests therefore exercise a real subprocess, a real
 pipe and a real JSON decode, and never monkeypatch :mod:`subprocess`.
 """
@@ -77,13 +77,13 @@ class FakeBinaryTestCase(unittest.TestCase):
         self.plan([{"stdout": json.dumps(document), "exit": 0}])
 
     def plan_error(self, code, message, **fields) -> None:
-        """Plan one ``--format json`` error envelope (contract §5.1)."""
+        """Plan one ``--format json`` error envelope."""
         error = {"code": code, "message": message}
         error.update(fields)
         self.plan([{"stdout": json.dumps({"error": error}), "exit": 1}])
 
     def plan_events(self, events) -> None:
-        """Plan one ``--format jsonl`` event stream (contract §4)."""
+        """Plan one ``--format jsonl`` event stream."""
         self.plan([self.events_response(events)])
 
     @staticmethod

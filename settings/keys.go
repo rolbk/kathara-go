@@ -1,11 +1,6 @@
 // This file is the schema itself: the ordered table of keys that
 // `Setting._to_dict` and the two addons' `_to_dict` spell as dict literals,
 // plus the read/write/serialize machinery hung off it.
-//
-// It is one table rather than three because the key order *is* the file format
-// (ORDERING.tsv:111, :113) and a second list would be a second place to get it
-// wrong. Everything that needs to walk the schema — the loader, the writer,
-// `kathara config list`, the settings form — walks this.
 
 package settings
 
@@ -56,19 +51,6 @@ func (k Kind) label() string {
 }
 
 // keyDesc is one row of the schema.
-//
-// ptr hands out a pointer to the field in a given [Settings], which is what
-// lets one table serve reading, writing, resetting and copying without a
-// generated switch per operation. Its dynamic type is the discriminator
-// everywhere below, and [Kind] must agree with it — TestKeyKindsMatchFields
-// pins that.
-//
-// validate is the restriction the settings screen enforced on the value, or
-// nil for a key it let the user type freely. It runs on [Settings.Set] and
-// [Settings.SetString], and deliberately *not* on load: Python validates on
-// input and at `check()` time, never when reading the file, and a file that
-// fails validation has to stay loadable so that `check()` is the thing that
-// reports it.
 type keyDesc struct {
 	name     string
 	kind     Kind
@@ -76,9 +58,6 @@ type keyDesc struct {
 	validate func(*Settings, any) error
 }
 
-// baseKeys is `Setting._to_dict` (Setting.py:298), in its literal order. The
-// order is the file's key order for the first twelve entries and is frozen by
-// §0.4.
 var baseKeys = []keyDesc{
 	{name: "image", kind: KindString, ptr: func(s *Settings) any { return &s.Image }},
 	{name: "manager_type", kind: KindString, ptr: func(s *Settings) any { return &s.ManagerType }, validate: validateManagerTypeValue},
@@ -95,13 +74,6 @@ var baseKeys = []keyDesc{
 }
 
 // decode applies one raw JSON value from the file to the receiver.
-//
-// Python has no type checking here at all: `setattr` stores whatever
-// `json.load` produced, so `"open_terminals": "yes"` loads, saves back as the
-// string `"yes"`, and is truthy everywhere it is read. A typed struct cannot
-// express that, and silently coercing would be worse than refusing, so a
-// mismatch is reported as an invalid settings file. DIVERGENCES.md records the
-// difference.
 func (d keyDesc) decode(s *Settings, raw json.RawMessage) error {
 	fail := func() error {
 		return kerrors.NewSettingsInvalid("Setting `" + d.name + "` must be " + d.kind.label() + ".")
@@ -273,14 +245,6 @@ func toNullableString(value any) (*string, bool) {
 	return nil, false
 }
 
-// parse turns one command-line word into a schema value, so that `kathara
-// config set` and the settings form share one conversion and one set of
-// restrictions (§3.2 item 4).
-//
-// The empty string means `null` for a nullable key: that is the shell spelling
-// of the settings screen's "Reset value to default" items, which set those
-// keys to None rather than to "" (`DockerOptionsHandler.py:252`,
-// `KubernetesOptionsHandler.py:46,81,198`).
 func (d keyDesc) parse(raw string) (any, error) {
 	switch d.kind {
 	case KindBool:
@@ -291,13 +255,7 @@ func (d keyDesc) parse(raw string) (any, error) {
 		return v, nil
 	case KindFloat:
 		v, err := strconv.ParseFloat(raw, 64)
-		// `strconv.ParseFloat` accepts "inf", "infinity" and "nan" in any
-		// case, which `pyFloatRepr` would then write as CPython's `Infinity`
-		// or `NaN` — a document this port cannot read back (DIVERGENCES.md:
-		// Go's JSON scanner rejects all three where CPython's accepts them).
-		// A validated `config set` may not brick the file it writes, so the
-		// three spellings are refused here, at the one entry point that turns
-		// a command-line word into a number.
+
 		if err != nil || math.IsInf(v, 0) || math.IsNaN(v) {
 			return nil, kerrors.NewSettingsInvalid("Setting `" + d.name + "` must be " + d.kind.label() + ".")
 		}
@@ -390,9 +348,6 @@ func (s *Settings) Kind(name string) (Kind, error) {
 // Get returns one key's value as its schema type — string, bool, float64,
 // [SharedCollisionDomains], or an untyped nil for a nullable key holding
 // `null`.
-//
-// An unknown key, or one belonging to the other backend, is
-// [kerrors.SettingsInvalidError] (JSON_CLI_CONTRACT.md §3.12: code `Settings`).
 func (s *Settings) Get(name string) (any, error) {
 	d, err := s.lookup(name)
 	if err != nil {
@@ -401,20 +356,6 @@ func (s *Settings) Get(name string) (any, error) {
 	return d.get(s), nil
 }
 
-// Set assigns one key from an already-typed value and runs the restriction the
-// settings screen enforced on it, so that the scriptable path and the form
-// cannot disagree (§3.2 item 4).
-//
-// Accepted dynamic types follow the key's [Kind]: string, bool, float64,
-// `int`/[SharedCollisionDomains], and for a nullable key nil, string or
-// *string. The receiver is unchanged when the value is rejected.
-//
-// Setting `manager_type` to a different backend also resets the newly selected
-// addon's keys to their defaults, which is what
-// `cli/ui/setting/utils.update_setting_value` does with its `reload` flag
-// (`cli/ui/setting/utils.py:57-64`): the settings screen builds a fresh addon
-// object on the switch, so the values the previous backend's file carried do
-// not leak into the new one's.
 func (s *Settings) Set(name string, value any) error {
 	d, err := s.lookup(name)
 	if err != nil {
@@ -448,10 +389,6 @@ func (s *Settings) SetString(name string, value string) error {
 	return s.Set(name, typed)
 }
 
-// Encode returns the exact bytes [Settings.Save] writes: `json.dumps(...,
-// indent=True)`, which is one space of indent per level, `": "` after each
-// key, `",\n"` between entries and **no trailing newline** (SYNTHESIS.md
-// §1.5). Every value is spelled the way CPython spells it; see pyjson.go.
 func (s *Settings) Encode() ([]byte, error) {
 	schema, err := s.schema()
 	if err != nil {
@@ -472,22 +409,6 @@ func (s *Settings) Encode() ([]byte, error) {
 	return append(out, "\n}"...), nil
 }
 
-// MarshalJSON is [Settings.Encode] without the indentation: the same keys in
-// the same order, compact, for the `{"settings":{…}}` envelope of `kathara
-// config list` and `config reset` (JSON_CLI_CONTRACT.md §3.12).
-//
-// `encoding/json` re-escapes what a [json.Marshaler] returns when it embeds it,
-// but only when HTML escaping is on. The envelope writer turns it off
-// (`SetEscapeHTML(false)`, JSON_CLI_CONTRACT.md §1.3), so `<`, `>` and `&`
-// inside a value stay literal there, as they do in the on-disk file. Nothing
-// here may assume otherwise: the envelope is not the frozen artifact, the file
-// is, and only the file's own escaping (`ensure_ascii`, in pyjson.go) is
-// byte-compared against CPython.
-//
-// The receiver is a value so that both `Settings` and `*Settings` marshal
-// through here. With a pointer receiver, `json.Marshal(settings)` on a
-// non-addressable value would silently fall back to field-by-field encoding
-// and emit Go field names in declaration order.
 func (s Settings) MarshalJSON() ([]byte, error) {
 	schema, err := s.schema()
 	if err != nil {
@@ -512,11 +433,6 @@ func (s Settings) MarshalJSON() ([]byte, error) {
 // `encoding/json`'s field-name matching — which would happily accept an
 // `"Image"` key, ignore `manager_type`'s effect on which addon keys are legal,
 // and skip the addon reset.
-//
-// It carries `load_from_dict`'s semantics whole, including that the receiver
-// is *overlaid*: unmarshalling into a zero [Settings] leaves every absent base
-// key at its zero value and fails on the empty `manager_type`. Start from
-// [Defaults] or use [Load].
 func (s *Settings) UnmarshalJSON(data []byte) error {
 	return s.LoadFromJSON(data)
 }

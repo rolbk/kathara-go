@@ -1,11 +1,9 @@
 #!/usr/bin/env python3
-"""Layer B authority runner for the CPython primitives ``internal/util`` ports.
+"""Measure the CPython primitives used by ``internal/util``.
 
 ``version.parse`` and ``parse_docker_engine_version`` are built on ``int(str)``
-and ``str.isdigit()``, and RULINGS.md OQ-14a makes CPython's exact acceptance
-sets binding wherever Kathara dispatches on whether a parse raised. Those sets
-are properties of the interpreter, not of Kathara, so they are measured here
-rather than asserted from documentation:
+and ``str.isdigit()``. Their exact acceptance sets are properties of the
+interpreter, so they are measured here rather than copied into documentation:
 
   * the code points ``int()`` tolerates as surrounding whitespace
   * every code point ``int()`` reads as a decimal digit, and its value
@@ -16,7 +14,8 @@ rather than asserted from documentation:
 Result goes to ``internal/util/testdata/pyint/expected.json``, consumed by the
 Go table tests in ``internal/util/pyint_test.go``.
 
-The Python behaviour is the truth. When Go disagrees, Go is wrong.
+The probe records the reference Python behaviour. Investigate any difference
+in the Go implementation.
 
 Usage:
     /root/kathara/pyvenv/bin/python tools/vectorcheck/pyint_probe.py

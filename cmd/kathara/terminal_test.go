@@ -26,10 +26,6 @@ func newTestMachine(t *testing.T, a *testApp, name string) *model.Machine {
 	return machine
 }
 
-// TestTerminalTokensMatchTerm keeps the two spellings of the reserved
-// `terminal` values in step. `settings` cannot import `term` (PACKAGE_GRAPH.md
-// §5 holds it to the standard library), so this package — the one that imports
-// both — is where the constants are pinned equal.
 func TestTerminalTokensMatchTerm(t *testing.T) {
 	if settings.TerminalTMUX != term.TerminalTMUX {
 		t.Errorf("TMUX token drift: settings %q, term %q", settings.TerminalTMUX, term.TerminalTMUX)
@@ -48,8 +44,6 @@ func TestTerminalTokensMatchTerm(t *testing.T) {
 	}
 }
 
-// TestOpenTerminalDispatchesOnTheSetting is the §3.3 mode selection: one key,
-// three integrations.
 func TestOpenTerminalDispatchesOnTheSetting(t *testing.T) {
 	t.Run("MULTIPLEXER enqueues instead of spawning", func(t *testing.T) {
 		a := newTestApp(t)
@@ -111,10 +105,6 @@ func TestOpenTerminalDispatchesOnTheSetting(t *testing.T) {
 	})
 }
 
-// TestMuxDevicesAreDeduplicated is `num_terms` under the multiplexer: the event
-// fires `get_num_terms()` times, and the multiplexer shows one tab per device
-// — the same collapse tmux has always had, where the second `EnsureWindow`
-// finds the window the first one made (SPIKES/tmux.md §6).
 func TestMuxDevicesAreDeduplicated(t *testing.T) {
 	a := newTestApp(t)
 	a.settings.Terminal = term.TerminalMultiplexer
@@ -194,11 +184,6 @@ func TestRunPendingTerminalsNeedsAManager(t *testing.T) {
 	}
 }
 
-// TestRunPendingTerminalsSkipsANonTerminal is DIVERGENCES.md item 117 on the
-// deploy path: `kathara lstart | tee log` under MULTIPLEXER — the stock Windows
-// configuration — must not put alternate-screen frames in the pipe or read the
-// user's redirected stdin in raw mode. Python spawned OS windows here and
-// touched neither stream.
 func TestRunPendingTerminalsSkipsANonTerminal(t *testing.T) {
 	a := newTestApp(t)
 	a.settings.Terminal = term.TerminalMultiplexer

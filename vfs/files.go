@@ -20,9 +20,6 @@ const dirPerm os.FileMode = 0o755
 // CreateFileFromString is FilesystemMixin.create_file_from_string:
 // makedirs(dirname(dst), recreate=True) then open(dst, "w") — i.e. create or
 // TRUNCATE, never append.
-//
-// A nil FS yields ErrNoFilesystemCreate, whose message is the one-off
-// "Cannot create a file if the filesystem is not set." (FilesystemMixin.py:56).
 func CreateFileFromString(fsys FS, content, dstPath string) error {
 	return createBytes(fsys, []byte(content), dstPath, ErrNoFilesystemCreate)
 }
@@ -34,10 +31,6 @@ func CreateFileFromList(fsys FS, lines []string, dstPath string) error {
 }
 
 // UpdateFileFromString is update_file_from_string: open(dst, "a") — APPEND.
-//
-// It deliberately does not makedirs: Python does not either, so a missing
-// parent directory surfaces as fs.ErrNotExist (probe P6b) while a missing file
-// in an existing directory is created (probe P6).
 func UpdateFileFromString(fsys FS, content, dstPath string) error {
 	return appendBytes(fsys, []byte(content), dstPath)
 }
@@ -69,13 +62,6 @@ func CreateFileFromPath(fsys FS, srcPath, dstPath string) error {
 
 // CreateFileFromStream is create_file_from_stream: the reader is drained into
 // dstPath verbatim.
-//
-// Python branches on stream.mode and, for a text-mode stream, lets the host
-// open() apply universal-newline translation before writing. Go readers carry
-// no mode, so this is the binary branch only; the text branch's translation is
-// the caller's job. The write-only-stream test
-// (test_create_file_from_stream_unsupported_operation) is DROP per
-// EXPECTATIONS-core.md §5.
 func CreateFileFromStream(fsys FS, stream io.Reader, dstPath string) error {
 	if fsys == nil {
 		return ErrNoFilesystem
@@ -89,16 +75,6 @@ func CreateFileFromStream(fsys FS, stream io.Reader, dstPath string) error {
 
 // CopyDirectory is copy_directory_from_path: the host directory tree at
 // srcPath is copied into fsys at dstPath.
-//
-// Verified against fs.copy.copy_dir (probes CD1-CD3):
-//   - dstPath is created when missing, and merged into when it already exists;
-//   - files with colliding names are overwritten, unrelated files survive;
-//   - empty source directories are reproduced as empty directories;
-//   - a missing srcPath is an error (Python: CreateFailed from open_fs).
-//
-// The walk visits in lexical order, so the resulting FS is identical on every
-// run; Python's copy_dir uses scandir order, which is unobservable in the
-// result.
 func CopyDirectory(fsys FS, srcPath, dstPath string) error {
 	if fsys == nil {
 		return ErrNoFilesystem
@@ -125,26 +101,6 @@ func CopyDirectory(fsys FS, srcPath, dstPath string) error {
 }
 
 // copyHostDir is the recursion behind CopyDirectory.
-//
-// It classifies each entry with os.Stat, which FOLLOWS symlinks, because that
-// is what the Python side does: copy_dir walks an OSFS, OSFS.scandir asks
-// os.DirEntry.is_dir(), and that follows by default. Verified live on both a
-// mem:// and an osfs:// destination — a source holding "linkdir -> real/" and
-// "linkfile -> plain.txt" copies through both links, yielding /dst/linkdir/f.txt
-// and /dst/linkfile.
-//
-// os.DirFS + fs.WalkDir cannot express this: it reports a symlink as a non-dir
-// entry, so a link to a directory would be opened as a file and the copy would
-// abort with EISDIR partway through the tree. [WalkFollow] is the same
-// classification applied to an [FS] rather than to a host directory; anything
-// porting an `fs.walk` or `copy_fs` call needs one of the two.
-//
-// A symlink loop terminates the way Python's does: os.Stat eventually fails
-// with ELOOP (Python surfaces it as fs.errors.OperationFailed) and the error
-// propagates. A broken symlink is an error on both sides too.
-//
-// os.ReadDir returns entries sorted by name, so parents are created before
-// their contents and the traversal is deterministic.
 func copyHostDir(fsys FS, hostDir, dst string) error {
 	entries, err := os.ReadDir(hostDir)
 	if err != nil {
@@ -195,23 +151,6 @@ func joinLines(lines []string) []byte {
 
 // prepareCreate is the `makedirs(dirname(dst), recreate=True)` prologue shared
 // by every create_file_from_* helper.
-//
-// The parent comes from posixDirname on the RAW dst_path, not from the cleaned
-// one, because that is what Python does: os.path.dirname runs before the path
-// ever reaches pyfilesystem's normpath. The two disagree exactly when dst_path
-// carries a trailing slash, and the difference is observable — verified live on
-// both backends:
-//
-//	create_file_from_string("x", "/a/b/")  makedirs("/a/b") creates the
-//	                                       DIRECTORY /a/b, then open("/a/b/",
-//	                                       "w") raises FileExpected
-//	create_file_from_string("x", "/a/b/")  where /a/b is already a file:
-//	                                       makedirs raises DirectoryExpected
-//
-// Cleaning first would instead create /a and quietly write a FILE at /a/b.
-// Both outcomes fall out of this ordering: Create sees the directory it just
-// made and returns ErrFileExpected, MkdirAll sees the file and returns
-// ErrDirectoryExpected.
 func prepareCreate(fsys FS, dstPath string) (string, error) {
 	cleaned, err := CleanPath(dstPath)
 	if err != nil {
@@ -231,10 +170,6 @@ func prepareCreate(fsys FS, dstPath string) (string, error) {
 // everything up to and including the last "/", with trailing slashes stripped
 // unless the head is all slashes. Kept byte-for-byte with CPython because the
 // create_file_from_* helpers feed its result straight to makedirs.
-//
-//	"/a/b/" -> "/a/b"    "/a/b" -> "/a"    "a//b" -> "a"
-//	"a/"    -> "a"       "/"    -> "/"     "//a"  -> "//"
-//	"x.txt" -> ""        ""     -> ""
 func posixDirname(p string) string {
 	i := strings.LastIndexByte(p, '/') + 1
 	head := p[:i]
@@ -267,14 +202,6 @@ func appendBytes(fsys FS, content []byte, dstPath string) error {
 }
 
 // openAppend is fs.open(p, "a") on an arbitrary FS.
-//
-// An FS that implements Appender gets a real O_APPEND handle. Anything else
-// gets the read-modify-rewrite fallback the Appender doc contract promises:
-// same observable result, without the atomicity. It lives here, rather than
-// inline in appendBytes, so that subFS.Append can reach it too — a sub view
-// always satisfies the Appender assertion, so without this the fallback would
-// be unreachable for a Sub of a third-party FS and UpdateFileFrom* would fail
-// outright on one.
 func openAppend(fsys FS, cleaned string) (io.WriteCloser, error) {
 	if a, ok := fsys.(Appender); ok {
 		return a.Append(cleaned)

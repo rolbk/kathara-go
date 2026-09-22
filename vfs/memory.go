@@ -13,10 +13,6 @@ import (
 )
 
 // memFS is the `mem://` implementation (model/Lab.py:81).
-//
-// It is safe for concurrent use: a Lab's FS is read by both backends while the
-// deploy errgroup fans out (CONCURRENCY.tsv), which pyfilesystem's MemoryFS
-// also guarantees via its own lock.
 type memFS struct {
 	mu    sync.RWMutex
 	nodes map[string]*memNode // key: cleaned path; "." is the always-present root

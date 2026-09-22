@@ -25,12 +25,6 @@ func pyNormCase(p string) string { return ntNormCase(p) }
 
 // whichCurdir is the current-directory entry `shutil.which` puts in front of
 // PATH on Windows.
-//
-// Python asks `NeedCurrentDirectoryForExePath`, which answers "no" only when
-// the `NoDefaultCurrentDirectoryInExePath` variable is defined *and* the
-// command has no path separator in it. [pyWhich] reaches this only for a
-// command with no separator, so the environment variable decides on its own —
-// the same reduction Go's own exec.LookPath makes.
 func whichCurdir(string) []string {
 	if _, defined := os.LookupEnv("NoDefaultCurrentDirectoryInExePath"); defined {
 		return nil

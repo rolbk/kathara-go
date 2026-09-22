@@ -22,8 +22,8 @@ that `internal/util` ports:
 and dumps the result to ``internal/util/testdata/utils/expected.json`` for the
 Go table tests in ``internal/util/utils_test.go``.
 
-The Python behaviour is the truth. When Go disagrees with ``expected.json``,
-Go is wrong.
+``expected.json`` records the reference Python behaviour. Investigate and
+reconcile any difference in the Go implementation.
 
 Usage:
     /root/kathara/pyvenv/bin/python tools/vectorcheck/utils_probe.py
@@ -469,7 +469,7 @@ CHECK_CASES = [
     (False, [("machine_name", False), ("machine", False)]),
     (True, [("machine_name", False), ("machine", False)]),
     (True, [("machine_name", True), ("machine", True)]),
-    # falsy-but-set values still count as provided (NILABILITY.tsv)
+
     (True, [("lab_hash", "empty-string"), ("lab_name", False), ("lab", False)]),
     (False, [("lab_hash", "empty-string"), ("lab_name", "zero"), ("lab", False)]),
 ]

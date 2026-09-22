@@ -1,34 +1,3 @@
-// This file is the public face of PORT_SPEC §3.3 item 1, the built-in
-// multiplexer: one window, one tab per device, driven by bubbletea over the
-// [Session] seam.
-//
-// It replaces nothing in Python line for line — Python had no multiplexer, it
-// had `subprocess.Popen(["/usr/bin/xterm", ...])` per device. The requirements
-// it has to meet are §3.3's list: switching devices, scrollback, resize, copy,
-// and a clean detach that leaves the containers running.
-//
-// # Shape
-//
-//	Config{Devices: [...]}  →  Run(ctx, cfg)
-//	                             ├─ bubbletea program over muxModel
-//	                             │    ├─ tab bar        (device names)
-//	                             │    ├─ pane           (active device's Screen)
-//	                             │    └─ status line    (mode + key hints)
-//	                             └─ one pump goroutine per opened Session
-//
-// Sessions are opened **lazily**, on first activation of their tab. A
-// 50-device scenario would otherwise open 50 exec streams against the daemon
-// before the user has looked at one of them.
-//
-// # Detach
-//
-// Detach (`ctrl+b d`, or `ctrl+b q`) quits the program and closes every open
-// session. Closing a `kathara.TTYSession` closes an attach/exec stream; it does
-// not stop a container. Closing a [PtySession] kills the local connect client
-// it started, not the device. So detach leaves the scenario running, which is
-// the §3.3 requirement, and `kathara connect <device>` re-attaches afterwards
-// through the same transport the pane was using.
-
 package term
 
 import (
@@ -51,7 +20,6 @@ type Device struct {
 	// Open opens the session for this device. It is called at most once per
 	// attach, on the first activation of the tab, and may block — the
 	// multiplexer shows the tab as "opening…" while it does.
-	//
 	// The ctx passed is the multiplexer's own, which is cancelled when the
 	// multiplexer stops for any reason: a Ctrl-C during a slow attach cancels
 	// it, and so does a detach, which is what stops `ctrl+b d` from blocking
@@ -93,16 +61,6 @@ var ErrNoDevices = errors.New("term: multiplexer started with no devices")
 
 // Run opens the multiplexer and blocks until the user detaches, every device
 // that was attached has ended its session cleanly, or ctx is cancelled.
-//
-// The middle case is what makes a one-tab multiplexer behave like the raw
-// attach `kathara connect` used before it: type `exit` in the shell and the
-// window goes away. A tab that ended with an *error* does not close the window
-// — the user has to be able to read it — and a tab that was never activated
-// keeps the window open too, because its device is still waiting to be looked
-// at.
-//
-// It always returns with every session closed and every pump goroutine
-// finished — the property the `goleak` merge gate (PORT_SPEC §9) needs.
 func Run(ctx context.Context, cfg Config) error {
 	m, err := newMux(ctx, cfg)
 	if err != nil {
@@ -118,8 +76,7 @@ func Run(ctx context.Context, cfg Config) error {
 	}
 	p := tea.NewProgram(m, opts...)
 	if _, err := p.Run(); err != nil {
-		// A cancelled context is the Ctrl-C path, not a failure: the
-		// entrypoint turns it into exit 0 (JSON_CLI_CONTRACT.md §6.2).
+
 		if errors.Is(err, tea.ErrProgramKilled) && ctx.Err() != nil {
 			return nil
 		}
@@ -187,13 +144,11 @@ func newMux(ctx context.Context, cfg Config) (*muxModel, error) {
 func (m *muxModel) shutdown() {
 	m.closeOnce.Do(func() {
 		// Order matters, and each step unblocks the next:
-		//
 		//  1. close(done) releases a pump that is mid-emit, so it does not
 		//     deadlock against a program that has stopped reading the channel;
 		//  2. cancel() releases an attach that is still in flight, so a detach
 		//     during a slow `ConnectTTY` does not hold the process here;
 		//  3. closing the live sessions releases a pump blocked in Read.
-		//
 		// Only then can the WaitGroup be waited on.
 		close(m.done)
 		m.cancel()
@@ -224,12 +179,6 @@ func (m *muxModel) shutdown() {
 
 // osc52Writer is the default clipboard sink: an OSC 52 sequence written
 // straight to the program's output.
-//
-// Writing an escape sequence outside the renderer is bubbletea's own idiom for
-// terminal side effects (its SetWindowTitle does exactly this), and it is the
-// only clipboard mechanism that needs neither a helper binary (`xclip`,
-// `pbcopy`) nor a new module dependency — §3.3 item 1's "no external
-// dependency" is the point of the whole rebuild.
 func osc52Writer(w io.Writer) func(string) error {
 	return func(text string) error {
 		enc := base64.StdEncoding.EncodeToString([]byte(text))
@@ -263,11 +212,6 @@ func (m *muxModel) nextEvent() tea.Cmd {
 }
 
 // pump copies one session's output into the update loop until it ends.
-//
-// gen is the pane generation this pump belongs to. A pane that has been
-// re-attached has a newer one, and the update loop drops anything an older
-// pump still had in flight — otherwise the EOF from the *previous* session
-// would arrive a moment after the new one opened and close it again.
 func (m *muxModel) pump(idx, gen int, s Session) {
 	defer m.wg.Done()
 	buf := make([]byte, 4096)
@@ -431,8 +375,4 @@ type (
 	}
 )
 
-// DetachMsg detaches the multiplexer: the window closes, every session is
-// closed, and the containers keep running. It is exported because "detach" is
-// the one multiplexer behaviour with a §3.3 requirement attached to it, and a
-// test that asserts detach should not have to spell a private type.
 type DetachMsg struct{}

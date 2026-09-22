@@ -38,14 +38,6 @@ var (
 )
 
 // machineName is `platform.machine()` on Windows.
-//
-// CPython asks WMI for the CPU architecture and falls back to
-// `%PROCESSOR_ARCHITEW6432%` / `%PROCESSOR_ARCHITECTURE%`; both exist to see
-// past WOW64, which is what `GetNativeSystemInfo` reports directly and without
-// a WMI round trip (PACKAGE_GRAPH.md §4). The strings are CPython's, because
-// `get_architecture` matches on them after lower-casing: `AMD64` and `ARM64`
-// map, and `x86`, `ARM` and `ia64` deliberately do not — a 32-bit Windows is a
-// HostArchitectureError in Python too.
 func machineName() string {
 	if err := procGetNativeSystemInfo.Find(); err != nil {
 		return ""

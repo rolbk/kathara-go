@@ -39,18 +39,6 @@ func TestSlogHandlerRendersAttributesAsTrailingPairs(t *testing.T) {
 
 // TestPortedLogCallsCarryNoAttributes is the regression guard for the
 // structured-log interpolation defect class.
-//
-// Python interpolates every operand into the message before `logging` sees it
-// (`"To expose ports of device `%s` on the host, …" % machine.name`,
-// `DockerMachine.py:246-249`); a Go call that passes `"device", machine.Name`
-// instead renders `… device=pc1`, which is a user-visible divergence the
-// `syn-port-udp` golden caught. The rule for the ported packages is therefore:
-// one argument to `slog.Debug`/`Info`/`Warn`/`Error`, the finished message.
-//
-// The exemptions below are the sites with NO Python counterpart — the two
-// backends' event-dispatch failures, which `EventDispatcher.dispatch` cannot
-// produce because it returns nothing. Those are Go-only diagnostics and the
-// `key=value` rendering is the only thing they could do.
 func TestPortedLogCallsCarryNoAttributes(t *testing.T) {
 	// Sites without a Python original, keyed by the message literal.
 	exempt := []string{
@@ -84,16 +72,7 @@ func TestPortedLogCallsCarryNoAttributes(t *testing.T) {
 }
 
 // TestPortedLogMessagesMatchPythonFormatStrings pins the literal text of every
-// ported log message against the format string of the `logging` call it ports.
-//
-// The Go side is read out of the source: a message expression is rendered as a
-// template whose string literals are kept verbatim and whose interpolated
-// operands become `%s`, which is the same shape as Python's `%`-format and
-// f-string templates. Each want below is that Python template, transcribed
-// from the cited line.
-//
-// This is the assertion the `syn-port-udp` golden made: the message text is
-// user-visible output, and the port owes it byte for byte.
+// Go log message against the corresponding Python `logging` format string.
 func TestPortedLogMessagesMatchPythonFormatStrings(t *testing.T) {
 	tests := []struct {
 		dir  string
@@ -204,10 +183,6 @@ func TestPortedLogMessagesMatchPythonFormatStrings(t *testing.T) {
 				// `KubernetesSecret.py:81`
 				"Event: %s - Secret: %s",
 
-				// Go-only, no `logging` original: the event-dispatch failures
-				// (`EventDispatcher.dispatch` returns nothing and cannot fail)
-				// and the undeploy watchdog DIVERGENCES.md adds where Python
-				// hangs forever.
 				"Failed to dispatch machines_deploy_started.",
 				"Failed to dispatch machine_deployed.",
 				"Failed to dispatch machines_deploy_ended.",

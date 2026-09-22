@@ -1,10 +1,5 @@
-// This file is the encoder half of JSON_CLI_CONTRACT.md §1.3: compact UTF-8,
-// HTML escaping off, exactly one `\n` per object, and — the part `encoding/json`
-// cannot be told to do on a map — the pinned key emission order of every
-// envelope in §3 to §5.
-//
 // A struct with tagged fields would give the order for free, but not the
-// conditional presence the contract also pins (`lstart` emits `checks` OR
+// conditional fields required here (`lstart` emits `checks` OR
 // `machines`+`links`; the `lab` object grows five metadata keys only when at
 // least one of them is set; `errors` appears only for a batch). Encoding
 // through an explicit builder makes both properties one readable line each.
@@ -39,8 +34,6 @@ func (o *jobj) key(name string) {
 	o.buf.WriteByte(':')
 }
 
-// writeValue encodes v with `SetEscapeHTML(false)`, which is what makes `<`,
-// `>` and `&` appear literally (§1.3), and strips the newline the encoder adds.
 func (o *jobj) writeValue(v any) {
 	var b bytes.Buffer
 	enc := json.NewEncoder(&b)
@@ -83,10 +76,6 @@ func (o *jobj) Bool(name string, v bool) *jobj { return o.Any(name, v) }
 // Int adds an integer key.
 func (o *jobj) Int(name string, v int) *jobj { return o.Any(name, v) }
 
-// Strings adds an array-of-string key. A nil slice is emitted as `[]`, never
-// as `null`: every array in the contract is "empty when nothing matched"
-// (§3.2, §3.4, §3.9), and a client that has to tell `null` from `[]` would be
-// reading a distinction the contract does not make.
 func (o *jobj) Strings(name string, v []string) *jobj {
 	if v == nil {
 		v = []string{}
@@ -117,8 +106,6 @@ func (o *jobj) RawArray(name string, items [][]byte) *jobj {
 	return o
 }
 
-// Bytes closes the object and returns it. The result carries no trailing
-// newline; [Console.Emit] adds the single one §1.3 requires.
 func (o *jobj) Bytes() []byte {
 	out := make([]byte, 0, o.buf.Len()+1)
 	out = append(out, o.buf.Bytes()...)

@@ -10,13 +10,6 @@ import (
 // TestGreedyExpansionMatchesArgparse pins [expandGreedy] against the argparse
 // oracle. Every expectation below was produced by running the real 3.8.3
 // parsers:
-//
-//	$ python -c "from Kathara.cli.command.LstartCommand import LstartCommand; \
-//	             print(vars(LstartCommand().parser.parse_args([...])))"
-//
-// The results that matter are the two greedy ones: `--exclude a b pc1` swallows
-// the positional, and `-o` with nothing after it parses as the EMPTY LIST rather
-// than as absent.
 func TestGreedyExpansionMatchesArgparse(t *testing.T) {
 	specs := []greedySpec{
 		{long: "pass", short: "o", kind: greedyZeroOrMore},

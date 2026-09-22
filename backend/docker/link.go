@@ -22,20 +22,6 @@ type linkService struct {
 }
 
 // DeployLinks is `deploy_links` (`DockerLink.py:33`).
-//
-// Two things happen that are easy to miss:
-//
-//   - the both-filters guard is TRUTHINESS, like the machine deploy path's and
-//     unlike either undeploy path's;
-//   - the bridge link is injected into the CALLER'S scenario on every call,
-//     after the fan-out, whether or not anything was deployed
-//     (`:72-75`, docker-backend.md gotcha 15). `kathara_host_bridge` therefore
-//     appears in `lab.links` of any scenario that has ever been deployed, and
-//     its api_object is the Docker `bridge` network or nil when there is none.
-//
-// The `_started`/`_ended` events bracket the fan-out and fire only when the
-// filtered set is non-empty, so deploying a scenario with no collision domains
-// produces no progress bar and still injects the bridge.
 func (s *linkService) DeployLinks(ctx context.Context, lab *model.Lab, selected, excluded kathara.NameSet) error {
 	if len(selected) > 0 && len(excluded) > 0 {
 		return kerrors.ErrSelectedOrExcludedLinks
@@ -111,20 +97,6 @@ func filterLinks(links []*model.Link, selected, excluded kathara.NameSet) []*mod
 
 // Create is `DockerLink.create` (`DockerLink.py:95`): find or make the Docker
 // network for a collision domain.
-//
-// The reuse lookup and the labels both key off `shared_cds`, and they key off
-// it in OPPOSITE directions, which is what makes the three modes work:
-//
-//	NOT_SHARED  look up by (name, lab_hash, user); label with user + lab_hash
-//	LABS        look up by (name, user);           label with user
-//	USERS       look up by (name);                 label with neither
-//
-// So widening the mode widens both the search and the set of networks that can
-// match it. `networks.pop()` takes the LAST match (ORDERING.tsv row 10).
-//
-// External collision domains are DEFERRED (PORT_SPEC §0.3): the label they
-// would fill is always "" and [externalLabel] answers `FeatureNotAvailable`
-// rather than a wrong value if a caller hand-built one.
 func (s *linkService) Create(ctx context.Context, link *model.Link) error {
 	if link.Name == model.BridgeLinkName {
 		return nil
@@ -198,21 +170,6 @@ func (s *linkService) Create(ctx context.Context, link *model.Link) error {
 }
 
 // Undeploy is `DockerLink.undeploy` (`DockerLink.py:154`).
-//
-// The three-step filter is the whole semantic:
-//
-//  1. every network of the scenario — note NO user filter, unlike the machine
-//     undeploy, so a shared collision domain another user created is a
-//     candidate;
-//  2. `selected_links` if it is NOT NONE — an empty set therefore selects
-//     nothing, the inverse of the deploy path;
-//  3. reload each survivor and keep only those with ZERO attached containers,
-//     which is what makes a shared collision domain still in use survive a
-//     partial teardown.
-//
-// The reload in step 3 is sequential and happens before the pool, so its cost
-// is linear in the scenario's collision domains; that is Python's shape and the
-// events bracket only the deletion.
 func (s *linkService) Undeploy(ctx context.Context, labHash string, selected kathara.NameSet) error {
 	networks, err := s.getByFilters(ctx, labHash, "", "")
 	if err != nil {
@@ -252,11 +209,6 @@ func (s *linkService) Undeploy(ctx context.Context, labHash string, selected kat
 }
 
 // Wipe is `DockerLink.wipe` (`DockerLink.py:184`).
-//
-// The user filter is dropped entirely in `SharedBetweenUsers` mode
-// (`:193`): collision domains carry no `user` label there, so filtering by one
-// would match nothing and a wipe would leave every network behind. The
-// "keep only the empty ones" rule still applies, and there are no events.
 func (s *linkService) Wipe(ctx context.Context, user string) error {
 	userLabel := user
 	if s.manager.settings.SharedCds == settings.SharedBetweenUsers {
@@ -302,17 +254,6 @@ func (s *linkService) undeployLink(ctx context.Context, n *Network) error {
 
 // deleteLink is `_delete_link` (`DockerLink.py:300`): detach any external
 // interfaces, then remove the network.
-//
-// The `external` label is read UNGUARDED in Python and a network without it
-// would KeyError; [NetworkLabels] always emits the key, so the only way to see
-// one without it is a foreign network the `app=kathara` filter should not have
-// matched. Reading it as "" here is that KeyError's benign twin — an empty
-// label means no external links either way.
-//
-// The external teardown itself is DEFERRED (PORT_SPEC §0.3): a network carrying
-// a non-empty `external` label was created by a Python Kathará, and removing it
-// without detaching the host interfaces would leave them dangling, so this
-// answers `FeatureNotAvailable` instead of removing the network.
 func (s *linkService) deleteLink(ctx context.Context, n *Network) error {
 	if n.Label(labelExternal) != "" {
 		return kerrors.NewFeatureNotAvailable(kerrors.FeatureLabExt)
@@ -322,12 +263,6 @@ func (s *linkService) deleteLink(ctx context.Context, n *Network) error {
 
 // DockerBridge is `get_docker_bridge` (`DockerLink.py:219`):
 // `client.networks.list(names="bridge")` then `.pop()`.
-//
-// The `names` filter is a SUBSTRING match on the daemon side — docker-py turns
-// it into `filters={'name': 'bridge'}` and the daemon does not anchor it — so
-// a host with a network called `my-bridge-net` can match more than one, and
-// `.pop()` then takes the last. Both are reproduced; nil is Python's None,
-// which leaves the bridge link's api_object unset.
 func (s *linkService) DockerBridge(ctx context.Context) (*Network, error) {
 	args := filters.NewArgs(filters.Arg("name", "bridge"))
 	summaries, err := s.manager.api.NetworkList(ctx, network.ListOptions{Filters: args})

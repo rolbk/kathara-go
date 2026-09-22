@@ -14,11 +14,6 @@ import (
 	"github.com/KatharaFramework/kathara-go/settings"
 )
 
-// A bubbletea model is a pure function of its messages, so the whole screen is
-// driven here as key events with no terminal, no PTY and no goroutine. These
-// are the tests PORT_SPEC §3.2 item 3 could not have had against consolemenu,
-// which read the keyboard through `curses` from inside its own event loop.
-
 // keyMsg builds one key event from the name [tea.Key.String] would print.
 func keyMsg(name string) tea.KeyMsg {
 	switch name {
@@ -121,15 +116,6 @@ func managerLabel(t *testing.T, name string) string {
 	return ""
 }
 
-// TestSettingsFormCoversEveryMenuKey is the §3.2 item 3 requirement, checked
-// key by key: the form edits exactly the keys the three Python handlers built
-// items for.
-//
-// `last_checked` is deliberately absent from both lists. It is not a setting a
-// user sets — it is the update-check bookkeeping stamp — and
-// `CommonOptionsHandler` built no item for it. `kathara config set last_checked`
-// still writes it, which is the same asymmetry Python had between its file and
-// its screen.
 func TestSettingsFormCoversEveryMenuKey(t *testing.T) {
 	common := []string{
 		"manager_type", "image", "open_terminals", "device_shell", "terminal",
@@ -185,13 +171,6 @@ func TestSettingsFormCoversEveryMenuKey(t *testing.T) {
 	}
 }
 
-// TestSettingsFormChoicesAreAllAccepted is §3.2 item 4 as an invariant: not one
-// answer the form offers can be rejected by `settings`, because both go through
-// the same [settings.Settings.SetString].
-//
-// `terminal` is excluded because its validator touches the filesystem —
-// `/usr/bin/xterm` is a legal answer only where xterm is installed, and that is
-// Python's behaviour too (`TerminalValidator`).
 func TestSettingsFormChoicesAreAllAccepted(t *testing.T) {
 	for _, manager := range []string{"docker", "kubernetes"} {
 		cfg := settings.Defaults()
@@ -224,11 +203,9 @@ func TestSettingsFormChoicesAreAllAccepted(t *testing.T) {
 	}
 }
 
-// TestSettingsFormImagePullPolicyLabels is the one ported submenu whose text is
-// not the value it writes: Python's middle row read "If Not Present" and stored
-// `IfNotPresent` (`KubernetesOptionsHandler.py:142-149`). The vocabulary itself
-// still comes from `settings`, so a value with no label is offered under its
-// own name rather than dropped.
+// TestSettingsFormImagePullPolicyLabels checks display labels without changing
+// the stored values. Python's middle row reads "If Not Present" and stores
+// `IfNotPresent` (`KubernetesOptionsHandler.py:142-149`).
 func TestSettingsFormImagePullPolicyLabels(t *testing.T) {
 	cfg := settings.Defaults()
 	if err := cfg.Set("manager_type", "kubernetes"); err != nil {
@@ -428,8 +405,6 @@ func TestSettingsFormFreeTextEdit(t *testing.T) {
 // TestSettingsFormValidateReject is the third requirement: a rejected answer
 // keeps the prompt open with the reason on screen and the value unchanged —
 // consolemenu's re-prompt loop, minus the loop.
-//
-// The message is `settings`' own, not one this file writes.
 func TestSettingsFormValidateReject(t *testing.T) {
 	cases := []struct{ key, answer, wantMsg string }{
 		{key: "net_prefix", answer: "Kathara1",
@@ -748,7 +723,7 @@ func TestSettingsFormFreeTextEscapeFromASubmenu(t *testing.T) {
 	}
 }
 
-// TestSettingsFormDockerConfigJSONTakesAPath is the OQ-12c behaviour on the TUI
+// TestSettingsFormDockerConfigJSONTakesAPath is the docker_config_json path behavior on the TUI
 // side: the answer is a path, the stored value is the base64 of what it holds,
 // and the prompt is prefilled with `DEFAULT_DOCKER_CONFIG_JSON_PATH`.
 func TestSettingsFormDockerConfigJSONTakesAPath(t *testing.T) {
@@ -882,8 +857,6 @@ func TestSettingsWithoutATerminalRefuses(t *testing.T) {
 	}
 }
 
-// TestSettingsCommandTakesNoFlags is CLI_SURFACE.md M-5: `kathara settings -h`
-// does not print help, because the command never parses argv at all.
 func TestSettingsCommandTakesNoFlags(t *testing.T) {
 	a := newTestApp(t)
 	spec := commandTable(a.app)["settings"]

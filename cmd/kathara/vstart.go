@@ -1,15 +1,3 @@
-// This file is `cli/command/VstartCommand.py` (CLI_SURFACE.md §6) and
-// `cli/command/VcleanCommand.py` (§7), reimplemented as sugar over the lab path
-// per PORT_SPEC §0.2 #3: a one-device in-memory `kathara_vlab` scenario handed
-// to the same `DeployLab`/`UndeployLab` the `l`-family uses.
-//
-// "Sugar" is a claim about the *implementation*, not about the surface. Every
-// flag of CLI_SURFACE.md §6 is present, with the same metavars, the same
-// tri-states and the same two argparse traps: `--print`'s alias here is
-// `--dry-run` (it is `--dry-mode` on `lstart`), and dry mode returns **before**
-// any semantic validation, so `vstart --eth 0:A --print` never touches Docker
-// and never notices that `0:A` would have needed a scenario.
-
 package main
 
 import (
@@ -24,7 +12,6 @@ import (
 	"github.com/spf13/pflag"
 )
 
-// vstartFlags is CLI_SURFACE.md §6.
 type vstartFlags struct {
 	// flags is the parsed set, kept because the string options below have to
 	// be told apart by *presence* and not by emptiness: `Machine.update_meta`
@@ -270,12 +257,6 @@ func runVstart(ctx context.Context, a *app, f *vstartFlags, remainder []string) 
 
 // metaOptions is the `**args` that `lab.get_or_new_machine(name, **args)`
 // receives after `name`, `volumes` and `eths` have been popped.
-//
-// Python passes the *whole* remaining argument dict, so `terminals`,
-// `hosthome_mount`, `terminal_emu` and `dry_mode` go in too and
-// `Machine.update_meta` ignores them; what it does not ignore is the set below,
-// which is therefore the effective meta of a `vstart` device
-// (CLI_SURFACE.md §6 step 7).
 func (f *vstartFlags) metaOptions(args []string, privileged *bool) *model.MetaOptions {
 	opts := &model.MetaOptions{
 		ExecCommands: f.execCommands.Values(),
@@ -339,10 +320,6 @@ func newVcleanCmd(a *app) *commandSpec {
 }
 
 // runVclean is `VcleanCommand.run`.
-//
-// A name that is not running is a silent success: the undeploy filters it out
-// and nothing raises, so the envelope reports an empty `machines`
-// (JSON_CLI_CONTRACT.md §3.9).
 func runVclean(ctx context.Context, a *app, name string) (cliout.VcleanResult, error) {
 	lab := a.newVlab()
 	out := cliout.VcleanResult{Lab: asLabObject(lab, false), Machine: name}

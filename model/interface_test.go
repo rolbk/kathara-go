@@ -7,8 +7,6 @@ import (
 	"github.com/KatharaFramework/kathara-go/kerrors"
 )
 
-// TestInterfaceConstruction is EXPECTATIONS-core.md §3, tests/model/
-// interface_test.py: the nine MAC-regex cases plus the field-storage ones.
 func TestInterfaceConstruction(t *testing.T) {
 	t.Parallel()
 

@@ -23,7 +23,6 @@ type Window struct {
 	Dir string
 
 	// Env are "KEY=VALUE" pairs injected into the window (tmux -e).
-	//
 	// This matters more than it looks: a window created in an *existing*
 	// tmux server inherits that server's environment, captured whenever the
 	// server first started, not the environment of the kathara process
@@ -51,15 +50,6 @@ type WindowInfo struct {
 const listWindowsFormat = "#{window_index}\t#{window_name}\t#{window_id}\t#{window_active}\t#{pane_dead}"
 
 // HasSession reports whether the exactly-named session exists.
-//
-// tmux exits 1 both for "no such session" and for "no server running", and the
-// two are indistinguishable by exit status alone; both mean false here. A false
-// negative is safe: EnsureSession still refuses to clobber, because tmux itself
-// rejects a duplicate new-session.
-//
-// A name tmux would rewrite is rejected rather than probed: tmux could never
-// have stored it, so the honest answer is "you cannot ask that", not a "false"
-// the caller would act on forever.
 func (d *Driver) HasSession(ctx context.Context, session string) (bool, error) {
 	if err := checkSessionName(session); err != nil {
 		return false, err
@@ -76,12 +66,6 @@ func (d *Driver) HasSession(ctx context.Context, session string) (bool, error) {
 
 // ListSessions returns the names of all sessions on the server, in tmux's
 // listing order. No server means no sessions, not an error.
-//
-// One row per session is safe even against session names a foreign process
-// chose: tmux vis-escapes control characters in a session name before storing
-// it (a literal newline is stored as the two characters '\' and 'n'), so a
-// name cannot forge a row boundary in the newline-delimited -F output. Pinned
-// by TestForeignSessionNameCannotForgeARow.
 func (d *Driver) ListSessions(ctx context.Context) ([]string, error) {
 	out, err := d.run(ctx, "list-sessions", "-F", "#{session_name}")
 	if err != nil {
@@ -114,15 +98,6 @@ func (d *Driver) ListKatharaSessions(ctx context.Context) ([]string, error) {
 
 // EnsureSession creates the session, detached, iff it does not already exist,
 // and reports whether it created it.
-//
-// tmux cannot hold a session with zero windows, so creation needs the first
-// window up front; that first window is `initial`. 3.8.3 instead created the
-// session around a randomly-named placeholder window and killed the placeholder
-// afterwards; making the first device the first window removes the placeholder,
-// the cleanup step, and the "did I create it?" bookkeeping they needed.
-//
-// An existing session is never touched: no windows are added, renamed, killed
-// or re-ordered, and no client is disturbed.
 func (d *Driver) EnsureSession(ctx context.Context, session string, initial Window) (created bool, err error) {
 	if err := checkSessionName(session); err != nil {
 		return false, err
@@ -184,10 +159,6 @@ func (o WindowOutcome) String() string {
 // EnsureWindow is the one call the deploy path needs: it guarantees the
 // scenario session exists and that it holds exactly one window named w.Name
 // running w.Command.
-//
-// Re-running it for a device that already has a window is a no-op — tmux's own
-// new-window happily creates a second window with the same name, so the
-// duplicate check is ours to make.
 func (d *Driver) EnsureWindow(ctx context.Context, session string, w Window) (WindowOutcome, error) {
 	created, err := d.EnsureSession(ctx, session, w)
 	if err != nil {
@@ -256,14 +227,6 @@ func (w Window) creationFlags() []string {
 
 // commandArgs renders the shell-command positional, guarded by "--" so a
 // command starting with '-' can never be read as a flag.
-//
-// "--" does not protect against tmux's *command-sequence* parser, which runs
-// before argument assignment: an argument ending in an unescaped ';' is a
-// command separator, and tmux drops the ';' and starts a new command after it.
-// `new-session ... -- 'sleep 60;'` therefore runs `sleep 60` — silently, with
-// exit status 0. escapeTrailingSemicolon puts the ';' back where the caller
-// wanted it. A ';' anywhere else in the string is untouched, because only a
-// trailing one separates (both verified on tmux 3.5a).
 func (w Window) commandArgs() []string {
 	if w.Command == "" {
 		return nil
@@ -290,16 +253,6 @@ func escapeTrailingSemicolon(cmd string) string {
 
 // remainOnExitCommand appends a chained `; set-option -w remain-on-exit on` to
 // the creating command.
-//
-// neither new-session nor new-window takes remain-on-exit as a flag, and a
-// separate set-option invocation loses a race against any command that exits
-// immediately — which is exactly the case worth keeping visible. Chaining the
-// two commands into one tmux invocation removes the race: the server runs both
-// before it returns to its event loop and notices the pane has died. Verified
-// against `false` as the window command, which cannot exit any sooner.
-//
-// The alternative, `set-option -g -w remain-on-exit on`, would change every
-// window on the user's tmux server, Kathara's or not.
 func remainOnExitCommand(session string, w Window) []string {
 	if !w.RemainOnExit {
 		return nil
@@ -402,10 +355,6 @@ func (d *Driver) SelectWindow(ctx context.Context, session, window string) error
 // KillSession kills the session and everything in it, and reports whether
 // there was anything to kill. Killing is idempotent: an absent session (or an
 // absent server) is not an error.
-//
-// Devices are unaffected. The windows run `kathara connect`, which is an attach
-// to a running container; killing the window kills the attach, never the
-// container.
 func (d *Driver) KillSession(ctx context.Context, session string) (killed bool, err error) {
 	if err := checkSessionName(session); err != nil {
 		return false, err
@@ -444,11 +393,6 @@ func (d *Driver) KillWindow(ctx context.Context, session, window string) (killed
 // DetachSession detaches every client attached to the session, leaving the
 // session, its windows, their commands and the devices behind them running.
 // This is the programmatic form of the user pressing prefix-d.
-//
-// Detaching when nothing is attached is a no-op, not an error: tmux exits 1
-// with "no current client" in that case, and says the same thing when the
-// session target does not resolve either (verified on 3.5a — it looks for a
-// client before it looks at -s), so the two collapse into one no-op here.
 func (d *Driver) DetachSession(ctx context.Context, session string) error {
 	if err := checkSessionName(session); err != nil {
 		return err

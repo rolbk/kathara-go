@@ -16,7 +16,7 @@ import (
 )
 
 // TestBackendRow is the registry entry `cmd/kathara` registers. The two strings
-// are contract: `manager_type: docker` selects the backend and
+// are user-visible: `manager_type: docker` selects the backend and
 // "Docker (Kathara)" is what the settings screen shows.
 func TestBackendRow(t *testing.T) {
 	backend := Backend()
@@ -74,8 +74,6 @@ func TestResolveRequired(t *testing.T) {
 	}
 }
 
-// TestResolveRequiredMessages pins the two InvocationError texts, whose kwarg
-// order is the message and is fixed by ORDERING.tsv.
 func TestResolveRequiredMessages(t *testing.T) {
 	_, err := resolveRequired(kathara.LabRef{})
 	if err == nil || err.Error() != "You must specify a parameter among lab_hash, lab_name, lab" {
@@ -141,10 +139,6 @@ func TestScopedUser(t *testing.T) {
 	}
 }
 
-// TestFilterMachines is the deploy path's TRUTHINESS filter: an empty set is
-// "no filter, deploy everything", which is the exact inverse of the undeploy
-// path (SYNTHESIS §1.7). Scenario order is preserved, because it is submission
-// order and therefore chunk order.
 func TestFilterMachines(t *testing.T) {
 	lab := model.NewLab("Default scenario", model.DefaultDefaults())
 	for _, name := range []string{"pc1", "pc2", "pc3"} {
@@ -233,9 +227,6 @@ func TestFilterContainers(t *testing.T) {
 	}
 }
 
-// TestMissingMachines is the difference behind `MachineNotFoundError`'s
-// message. Python interpolates a set whose repr order is hash-randomised;
-// ORDERING.tsv rows 52-53 rule the port sorts.
 func TestMissingMachines(t *testing.T) {
 	lab := model.NewLab("Default scenario", model.DefaultDefaults())
 	for _, name := range []string{"pc1", "pc2"} {
@@ -251,7 +242,7 @@ func TestMissingMachines(t *testing.T) {
 }
 
 // TestInterfaceLinkNames is the set comprehension `deploy_machine` and
-// `undeploy_machine` build, including the crash a tombstoned slot causes.
+// `undeploy_machine` build, including the exception a tombstoned slot causes.
 func TestInterfaceLinkNames(t *testing.T) {
 	lab := model.NewLab("Default scenario", model.DefaultDefaults())
 	machine, err := lab.NewMachine("pc1", nil)
@@ -284,9 +275,6 @@ func TestInterfaceLinkNames(t *testing.T) {
 	}
 }
 
-// TestFirstInterface is `machine.interfaces[0]` under `if machine.interfaces:`
-// — a guard that asks whether there is ANY interface and a lookup that asks for
-// the one numbered ZERO (docker-backend.md gotcha 9).
 func TestFirstInterface(t *testing.T) {
 	t.Run("no interfaces at all", func(t *testing.T) {
 		machine := newFixtureMachine(t, false)
@@ -417,9 +405,6 @@ func TestEntrypointAndArgs(t *testing.T) {
 	})
 }
 
-// TestBridgedIfaceNumber is the typed read behind the arithmetic in
-// `connect_machine_to_link`: an int is usable, and anything else — which is all
-// lab.conf can store — is the TypeError of DIVERGENCES.md 1.
 func TestBridgedIfaceNumber(t *testing.T) {
 	machine := newFixtureMachine(t, false)
 	if _, ok := bridgedIfaceNumber(machine); ok {
@@ -439,17 +424,6 @@ func TestBridgedIfaceNumber(t *testing.T) {
 
 // TestNewAPIClientKeepsTheSocketDialer is a regression test for the option
 // ORDER in [newAPIClient].
-//
-// `client.WithHTTPClient` replaces the whole `*http.Client`, and both
-// `client.FromEnv` and `client.WithHost` configure the transport it replaces —
-// `WithHost` is what installs the unix-socket (or npipe) dialer through
-// `sockets.ConfigureTransport`. Applying the pool-sized client LAST therefore
-// throws that dialer away and leaves a client that cannot reach a local daemon
-// at all, which no unit test that stops at "the constructor returned" would
-// notice.
-//
-// Nothing here contacts a daemon: the client is constructed and its resolved
-// host is read back.
 func TestNewAPIClientKeepsTheSocketDialer(t *testing.T) {
 	t.Setenv("DOCKER_HOST", "unix:///var/run/docker.sock")
 

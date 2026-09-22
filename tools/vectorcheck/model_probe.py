@@ -1,22 +1,5 @@
 #!/usr/bin/env python3
-"""Layer B authority runner for the ``model`` package.
-
-``model/`` is a faithful port (PORT_SPEC §3.1 row 6) of ``Kathara/model/*``, and
-almost everything subtle about it is a *value* question rather than a structural
-one: which meta values ``add_meta`` accepts and what type it stores them as,
-which accessor raises which exception for which input, and what ``check()`` does
-when ``bridged_iface`` holds a string. Those answers belong to Kathara 3.8.3,
-not to a document, so they are measured here.
-
-Result goes to ``model/testdata/model_oracle.json``, consumed by the Go table
-tests in ``model/oracle_test.go``.
-
-The Python behaviour is the truth. When Go disagrees, Go is wrong.
-
-Usage:
-
-    /root/kathara/pyvenv/bin/python tools/vectorcheck/model_probe.py [--out PATH]
-"""
+"""Layer B authority runner for the ``model`` package."""
 
 from __future__ import annotations
 
@@ -32,7 +15,7 @@ from Kathara.model.Lab import Lab  # noqa: E402
 from Kathara.model.Machine import Machine  # noqa: E402
 
 # The six containers Machine.__init__ seeds; everything else in meta is a scalar
-# the Go port keeps in a typed field or in Meta.Extras.
+# the Go implementation keeps in a typed field or in Meta.Extras.
 CONTAINERS = ["exec_commands", "sysctls", "envs", "ports", "ulimits", "volumes"]
 
 
@@ -222,7 +205,7 @@ def probe_add_meta() -> list:
 
 
 def probe_add_meta_twice() -> list:
-    """The previous-value contract: LabParser warns on it, the API returns it."""
+    """Return the previous value, which LabParser uses when warning."""
     cases = []
     for meta_name, first, second in [
         ("image", "a", "b"),
@@ -272,9 +255,7 @@ def probe_accessors() -> dict:
     cpu = []
     for value in [
         "0.5", "2", "1e3", "  3 ", "-1.5", "١٢", "1_0", "abc", "", "0x1", "nan", "infinity",
-        # 1e300 is the widest reachable CPU limit: `int()` keeps all 301 digits
-        # at multiplier 1 (DIVERGENCES.md 37 saturates them) and overflows to an
-        # uncaught OverflowError at multiplier 1e9.
+        # Exercise a very large exponent that still reaches the CPU parser.
         "1e300",
     ]:
         machine = with_meta("cpus", value)

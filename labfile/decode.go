@@ -7,18 +7,9 @@ import (
 )
 
 // UnicodeDecodeError is Python's `UnicodeDecodeError`, which both file parsers
-// let escape: every line is `mmap.readline().decode('utf-8')`
-// (`LabParser.py:42,90`, `DepParser.py:50,70`) and nothing catches it, so a
-// single stray byte anywhere in a lab.conf aborts the whole parse with no file
-// name and no line number (README SURPRISE 13).
-//
-// Go strings are bytes and would have carried the invalid sequence happily, so
-// the check is explicit — and so is the message, which CPython builds from the
-// position and the reason its decoder stopped at.
-//
-// The class carries no ERROR_CODES.md row, so it reaches the CLI boundary as
-// `InternalError` (§1.4). [UnicodeDecodeError.PythonClass] is what the Layer B
-// vector runner compares against Python's `type(e).__name__`.
+// return directly: every line is `mmap.readline().decode('utf-8')`
+// (`LabParser.py:42,90`, `DepParser.py:50,70`). A decoding error therefore has
+// no file name or line number (compatibility note 13 in the vector README).
 type UnicodeDecodeError struct {
 	// Encoding is the codec name, always "utf-8" here.
 	Encoding string
@@ -56,10 +47,6 @@ func hexByte(b byte) string {
 
 // decodeUTF8 is `bytes.decode('utf-8')`: the string, or the
 // [UnicodeDecodeError] CPython would have raised.
-//
-// [utf8.Valid] and CPython's decoder accept exactly the same byte strings —
-// both reject overlong forms, surrogate halves and anything above U+10FFFF — so
-// the walk that locates the failure only runs once there is one.
 func decodeUTF8(b []byte) (string, error) {
 	if utf8.Valid(b) {
 		return string(b), nil
@@ -80,16 +67,6 @@ func isContinuation(b byte) bool { return b&0xC0 == 0x80 }
 // utf8Failure locates the first decode failure the way CPython's
 // `STRINGLIB(utf8_decode)` does, and classifies it the way
 // `unicode_decode_utf8` does.
-//
-// The structure is CPython's, branch for branch, because the *span* it reports
-// is not derivable from "the first invalid byte": a bad third byte of a 3-byte
-// sequence is reported as a two-byte failure, a truncated sequence at the end of
-// the input is reported as running to the end of the input, and the two
-// surrogate/overlong guards (`\xE0\x80`, `\xED\xA0`, `\xF0\x80`, `\xF4\x90`)
-// report a *continuation* failure rather than a bad start byte.
-//
-// It is only ever called on input [utf8.Valid] has already rejected, so the
-// loop always returns from inside.
 func utf8Failure(b []byte) (start, end int, reason string) {
 	const (
 		invalidStart        = "invalid start byte"
@@ -198,17 +175,12 @@ func utf8Failure(b []byte) (start, end int, reason string) {
 		}
 	}
 
-	// Unreachable: the caller only asks about input utf8.Valid rejected. Report
-	// the whole string rather than panicking (PORT_SPEC §10).
+	// Unreachable: the caller only asks about input utf8.Valid rejected.
 	return 0, n, unexpectedEnd
 }
 
 // readLines splits a file the way repeated `mmap.readline()` does: on `\n`,
 // keeping the terminator, with a final unterminated chunk kept as it is.
-//
-// No newline translation happens — Python maps the file rather than reading it
-// through the text layer, so a CRLF file keeps its CR and a syntax-error
-// message built from a raw line carries it (README SURPRISE 10).
 func readLines(data []byte) [][]byte {
 	var out [][]byte
 	for len(data) > 0 {

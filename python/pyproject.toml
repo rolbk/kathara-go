@@ -29,25 +29,21 @@ classifiers = [
     "Programming Language :: Python :: 3.13"
 ]
 
-# PORT_SPEC.md §8 lists what the Go port takes OUT of this list: the docker and
-# kubernetes SDKs, requests, pyroute2, rich, chardet, libtmux, appscript,
-# pypiwin32 and windows-curses are all the CLI's business now, and the CLI is a
-# static binary. What is left is what the *model* needs.
+# The Python client only depends on packages needed by its model layer. Backend,
+# HTTP, terminal, and platform SDKs belong to the static Go CLI.
 #
-#   fs           — spec §7.1 keeps the pyfilesystem2 model layer, memory FS
-#                  included; `Lab.fs` and `Machine.fs` are public API.
+#   fs           — provides the public `Lab.fs` and `Machine.fs` interfaces,
+#                  including in-memory filesystems.
 #   setuptools   — NOT a build dependency: `fs` 2.4.16 calls
 #                  `pkg_resources.declare_namespace` at import time, and
 #                  setuptools >= 81 removed pkg_resources. Same pin as v3.8.3,
 #                  and still load-bearing for the same reason.
-#   binaryornot  — `utils.convert_win_2_linux`, used by `Machine.pack_data` and
-#                  `utils.pack_file_for_tar`. Ported for API parity; it has no
-#                  dependencies of its own since 0.6.0.
+#   binaryornot  — used by `utils.convert_win_2_linux`, `Machine.pack_data`,
+#                  and `utils.pack_file_for_tar`.
 #
 # `chardet` is deliberately absent: an audit of the client code found its only
 # v3.8.3 consumer was `cli/command/ExecCommand.py`'s per-chunk decode, which is
-# now the binary's job (and whose crash-on-undecidable-bytes behaviour the
-# contract replaced with UTF-8 + U+FFFD, JSON_CLI_CONTRACT.md §3.6).
+# now handled by the binary using UTF-8 with replacement characters.
 dependencies = [
     "fs>=2.4.16",
     "setuptools<81",

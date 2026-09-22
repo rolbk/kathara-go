@@ -12,9 +12,6 @@ import (
 // taxonomy error wraps.
 var errCause = errors.New("500 Server Error: Internal Server Error")
 
-// catalogEntry is one row of the ERROR_CODES.md §2 message catalog: the error
-// as the port builds it, the stable JSON code, and the byte-exact Python
-// message.
 type catalogEntry struct {
 	name string
 	err  error
@@ -22,8 +19,6 @@ type catalogEntry struct {
 	msg  string
 }
 
-// catalog covers every template of ERROR_CODES.md §2 that Go 1.0 can raise.
-// The templates deliberately left out are listed at the top of messages.go.
 var catalog = []catalogEntry{
 	// Invocation
 	{"selected-or-excluded-machines", kerr.ErrSelectedOrExcludedMachines, kerr.CodeInvocation,
@@ -296,8 +291,6 @@ var catalog = []catalogEntry{
 		"Confirmation required: re-run with `--force` to wipe Kathara."},
 }
 
-// TestCatalogMessages pins every message of ERROR_CODES.md §2 byte-for-byte and
-// the code each one reports.
 func TestCatalogMessages(t *testing.T) {
 	for _, entry := range catalog {
 		t.Run(entry.name, func(t *testing.T) {
@@ -387,13 +380,6 @@ func TestMachineSetErrorEmpty(t *testing.T) {
 	}
 }
 
-// TestMachineSetErrorQuotingIsAlwaysSingle pins the frozen ruling of
-// ERROR_CODES.md §0.2 — "elements single-quoted" — against the names that reach
-// this variant, which come straight from an unvalidated argv list and so are not
-// restricted to ^[a-z0-9_]{1,30}$. CPython repr would switch to double quotes
-// for the first case and double the backslash in the second; the port keeps the
-// single-quote form the ruling pins, and the gap is recorded in
-// PROPOSED-DIVERGENCES.md. This test exists so the deviation stays deliberate.
 func TestMachineSetErrorQuotingIsAlwaysSingle(t *testing.T) {
 	cases := []struct {
 		name string

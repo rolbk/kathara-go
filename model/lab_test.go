@@ -13,9 +13,6 @@ import (
 	"github.com/KatharaFramework/kathara-go/vfs"
 )
 
-// TestLabConstruction is EXPECTATIONS-core.md §2 "Construction / naming (4)"
-// plus the name/path tri-state of NILABILITY.tsv:23-24. The hashes are the
-// oracle's (P14).
 func TestLabConstruction(t *testing.T) {
 	t.Parallel()
 
@@ -147,7 +144,6 @@ func TestLabConstruction(t *testing.T) {
 	})
 }
 
-// TestLabMachines is EXPECTATIONS-core.md §2 "Machines (12)".
 func TestLabMachines(t *testing.T) {
 	t.Parallel()
 
@@ -294,9 +290,6 @@ func TestLabMachines(t *testing.T) {
 	})
 }
 
-// TestLabRemoveMachineTombstoneCrash pins DIVERGENCES.md 28: a device with a
-// disconnected interface cannot be removed, because Python dereferences
-// `interface.link` on a None slot. Oracle P1.
 func TestLabRemoveMachineTombstoneCrash(t *testing.T) {
 	t.Parallel()
 
@@ -379,8 +372,6 @@ func TestLabRemoveMachineDeleteFS(t *testing.T) {
 			t.Fatalf("NewMachine: %v", err)
 		}
 
-		// pyfilesystem's removedir refuses a non-empty directory, and the
-		// startup file is already gone by then (model.md gotcha 20).
 		err = lab.RemoveMachine("pc1", true)
 		if !errors.Is(err, vfs.ErrDirectoryNotEmpty) {
 			t.Fatalf("error = %v, want ErrDirectoryNotEmpty", err)
@@ -455,11 +446,6 @@ func TestLabRemoveMachineDeleteFS(t *testing.T) {
 	})
 }
 
-// TestLabRemoveMachineTombstoneCrashOrder pins the residue of DIVERGENCES.md 36
-// on the crash path: 3.8.3 walks `interfaces.values()` in INSERTION order and
-// dies at the first tombstone, so a live slot added earlier has already lost its
-// back-reference and a live slot added later still has one. The ordered slice
-// walks in NUMBER order instead, so the survivors differ.
 func TestLabRemoveMachineTombstoneCrashOrder(t *testing.T) {
 	t.Parallel()
 
@@ -490,11 +476,10 @@ func TestLabRemoveMachineTombstoneCrashOrder(t *testing.T) {
 	// The divergence: 3.8.3 hits the tombstone (slot 5, added first) before it
 	// reaches slot 0, so B keeps its back-reference; here slot 0 comes first.
 	if len(b.MachineNames()) != 0 {
-		t.Errorf("B.MachineNames() = %v; DIVERGENCES.md 36 says the port clears it first", b.MachineNames())
+		t.Errorf("B.MachineNames() = %v; expected the destination to be cleared first", b.MachineNames())
 	}
 }
 
-// TestLabLinks is EXPECTATIONS-core.md §2 "Links (7)".
 func TestLabLinks(t *testing.T) {
 	t.Parallel()
 
@@ -512,7 +497,7 @@ func TestLabLinks(t *testing.T) {
 	if !errors.Is(err, kerrors.ErrLinkAlreadyExists) {
 		t.Fatalf("error = %v, want ErrLinkAlreadyExists", err)
 	}
-	// The missing "in" is Python's typo, frozen by ERROR_CODES.md §0.2.
+
 	if want := "Collision domain A is already the network scenario."; err.Error() != want {
 		t.Errorf("message = %q, want %q", err.Error(), want)
 	}
@@ -540,8 +525,6 @@ func TestLabLinks(t *testing.T) {
 	}
 }
 
-// TestLabConnect is EXPECTATIONS-core.md §2 "connect_machine_to_link (6) and
-// connect_machine_obj_to_link (6)".
 func TestLabConnect(t *testing.T) {
 	t.Parallel()
 
@@ -606,9 +589,6 @@ func TestLabConnect(t *testing.T) {
 	t.Run("by object across scenarios", func(t *testing.T) {
 		t.Parallel()
 
-		// model.md §1.1: nothing checks that the device belongs to this
-		// scenario, and the port keeps the hole (oracle P14/Q14: the second
-		// scenario gets the collision domain but no device).
 		first := NewLab("a", DefaultDefaults())
 		second := NewLab("b", DefaultDefaults())
 
@@ -643,8 +623,6 @@ func TestLabConnect(t *testing.T) {
 	})
 }
 
-// TestLabAssignMetaToMachine is EXPECTATIONS-core.md §2 "assign_meta_to_machine
-// (6)". Oracle P20: the first call reports nothing, the second the old value.
 func TestLabAssignMetaToMachine(t *testing.T) {
 	t.Parallel()
 
@@ -670,8 +648,6 @@ func TestLabAssignMetaToMachine(t *testing.T) {
 	}
 }
 
-// TestLabAttachExternalLinks pins the deferral: lab.ext is post-1.0, so the
-// model-side entry point answers FeatureNotAvailable (ERROR_CODES.md §5).
 func TestLabAttachExternalLinks(t *testing.T) {
 	t.Parallel()
 
@@ -695,8 +671,6 @@ func TestLabAttachExternalLinks(t *testing.T) {
 	}
 }
 
-// TestLabCheckIntegrity pins that the first device in scenario order is the one
-// whose error surfaces (ORDERING.tsv model/Lab.py:191, oracle Q9).
 func TestLabCheckIntegrity(t *testing.T) {
 	t.Parallel()
 
@@ -731,8 +705,6 @@ func TestLabCheckIntegrity(t *testing.T) {
 	}
 }
 
-// TestLabGetLinksFromMachines is EXPECTATIONS-core.md §2 "test_intersect_machines"
-// plus the tombstone crash (oracle P1).
 func TestLabGetLinksFromMachines(t *testing.T) {
 	t.Parallel()
 
@@ -837,8 +809,6 @@ func TestLabGetLinksFromMachines(t *testing.T) {
 	})
 }
 
-// TestLabApplyDependencies pins the stable sort of ORDERING.tsv model/Lab.py:252
-// against the oracle's P13 run.
 func TestLabApplyDependencies(t *testing.T) {
 	t.Parallel()
 
@@ -916,8 +886,6 @@ func TestLabOptions(t *testing.T) {
 	}
 }
 
-// TestLabCreateSharedFolder is EXPECTATIONS-core.md §2 test_create_shared_folder
-// and test_create_shared_folder_no_path (oracle Q6).
 func TestLabCreateSharedFolder(t *testing.T) {
 	t.Parallel()
 
@@ -976,7 +944,6 @@ func TestLabCreateSharedFolder(t *testing.T) {
 		if want := "`shared` folder is a symlink, delete it."; err.Error() != want {
 			t.Errorf("message = %q, want %q", err.Error(), want)
 		}
-		// SharedPath is assigned BEFORE the symlink check (model.md gotcha 19).
 		if lab.SharedPath == "" {
 			t.Error("SharedPath was not set on the error path")
 		}
@@ -1007,9 +974,6 @@ func TestLabCreateSharedFolder(t *testing.T) {
 	})
 }
 
-// TestLabFilesystemHelpers is EXPECTATIONS-core.md §6: the startup-file
-// wrappers write `<device>.startup` at the scenario root, create truncates and
-// update appends (oracle Q8).
 func TestLabFilesystemHelpers(t *testing.T) {
 	t.Parallel()
 

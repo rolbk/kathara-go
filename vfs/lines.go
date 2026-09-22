@@ -5,11 +5,6 @@ import (
 	"strings"
 )
 
-// This file ports FilesystemMixin.write_line_before / write_line_after /
-// delete_line. Every rule below was pinned against Kathara 3.8.3 running on
-// the real pyfilesystem2 (probe log in docs/port/SPIKES/vfs.md); the three
-// non-obvious ones are:
-//
 //  1. pyfilesystem opens text files with newline="" — universal-newline
 //     SPLITTING with no translation. Lines therefore keep their original
 //     terminator ("\r\n", "\r" or "\n") when the pattern is matched against
@@ -25,11 +20,6 @@ import (
 // SplitLines splits b the way Python's io.TextIOWrapper(newline="") does:
 // a line ends after "\n", after "\r\n", or after a "\r" not followed by "\n",
 // and the terminator stays attached to the line untranslated.
-//
-//	"a\r\rb"    -> ["a\r", "\r", "b"]
-//	"a\r\r\nb"  -> ["a\r", "\r\n", "b"]
-//	"a\n\rb"    -> ["a\n", "\r", "b"]
-//	""          -> []
 func SplitLines(b []byte) []string {
 	s := string(b)
 	var out []string
@@ -56,41 +46,11 @@ func SplitLines(b []byte) []string {
 }
 
 // normalizeLine is `line.replace("\n\r", "\n").replace("\r\n", "\n")`.
-//
-// The first replacement is unreachable for a single line (a "\n" can only be
-// the final byte of a line, so it can never be followed by "\r"); it is kept
-// so the port reads against the Python line-for-line. It is genuinely live in
-// utils.convert_win_2_linux, which runs on whole-file content.
 func normalizeLine(line string) string {
 	return strings.ReplaceAll(strings.ReplaceAll(line, "\n\r", "\n"), "\r\n", "\n")
 }
 
 // pySearch is Python's re.search over a line that still carries its terminator.
-//
-// Go's `$` is \z; Python's is "end of string, or immediately before a newline
-// at the end of the string". Retrying the match against the line with exactly
-// one trailing "\n" removed reproduces that, and cannot invent matches for
-// patterns that do not use an end anchor: the shorter string is a prefix of
-// the longer one, so any unanchored match in it also exists in the original.
-//
-// Pinned against Python (docs/port/SPIKES/vfs.md, probes D1-D6, N7):
-//
-//	"b$"  vs "b\n"    -> match      (Go alone: no match)
-//	"b$"  vs "b\r\n"  -> no match
-//	"b$"  vs "b\r"    -> no match
-//	"^$"  vs "\n"     -> match
-//
-// Residual gap, documented in SPIKES/vfs.md §5 and pinned by
-// testdata/pysearch_divergent.json. The retry only covers a `$` that the whole
-// match ends at. When a `$` sits MID-pattern and what follows it consumes the
-// trailing newline, Python matches and this returns false — `re.search("b$\n",
-// "b\n")` is True in Python, while under RE2 `b$\n` is unsatisfiable and the
-// stripped line has no "\n" left for the pattern to consume. Python's `$` is
-// the lookahead `(?=\n?\z)`, which RE2 has no spelling for, so there is no
-// faithful emulation; the failure mode is one-sided (a miss, never an invented
-// match), which is why the pinning test asserts exactly that. No in-tree
-// pattern uses `$` anywhere but in terminal position; this is reachable only
-// through a caller-supplied searched_line on the §7 client API.
 func pySearch(re *regexp.Regexp, line string) bool {
 	if re.MatchString(line) {
 		return true
@@ -102,16 +62,6 @@ func pySearch(re *regexp.Regexp, line string) bool {
 }
 
 // WriteLineBefore is FilesystemMixin.write_line_before.
-//
-// lineToAdd is inserted, followed by "\n" and with no indentation copied from
-// the match, before every line whose raw text matches searchedLine — or before
-// only the first such line when firstOccurrence is set. It returns the number
-// of lines added; no match is 0 and not an error.
-//
-// Error order matches Python exactly: nil FS first, then regexp compilation,
-// then the file access (so a bad pattern reports itself even when the file is
-// missing). A missing path yields fs.ErrNotExist, a directory yields
-// ErrFileExpected.
 func WriteLineBefore(fsys FS, filePath, lineToAdd, searchedLine string, firstOccurrence bool) (int, error) {
 	return editLines(fsys, filePath, searchedLine, func(line string, matched bool, out []string) []string {
 		if matched {
@@ -122,12 +72,6 @@ func WriteLineBefore(fsys FS, filePath, lineToAdd, searchedLine string, firstOcc
 }
 
 // WriteLineAfter is FilesystemMixin.write_line_after.
-//
-// Same contract as WriteLineBefore, inserting after the match. When the matched
-// line carries no terminator (last line of a file that does not end in a
-// newline) a "\n" is emitted first so the inserted line starts on its own line.
-// That test is made against the RAW line, so a line ending "\r" also gets the
-// extra "\n" (probe A2: "a\r\nd\r" + after "d" -> "a\nd\r\nX\n").
 func WriteLineAfter(fsys FS, filePath, lineToAdd, searchedLine string, firstOccurrence bool) (int, error) {
 	return editLines(fsys, filePath, searchedLine, func(line string, matched bool, out []string) []string {
 		out = append(out, normalizeLine(line))

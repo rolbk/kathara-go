@@ -1,12 +1,6 @@
 // This file is `get_lab_from_api` (`DockerManager.py:676`) and
 // `update_lab_from_api` (:769): the inverse mapping, from what the daemon says
 // is running back into a [model.Lab].
-//
-// It is the highest-value pure logic in the backend (EXPECTATIONS-docker.md §7
-// items 3 and 4) and the only place the port has to UNDO docker-py's
-// conversions: bytes back to "64M", nano-CPUs back to a float, a PortBindings
-// map back to `(host, proto) → guest`, a DriverOpts string back to interface
-// metadata.
 
 package docker
 
@@ -32,25 +26,6 @@ import (
 const reconstructedLabName = "reconstructed_lab"
 
 // GetLabFromAPI is `get_lab_from_api` (`DockerManager.py:676`).
-//
-// Its guard is NOT the lab-identifier triple the rest of the interface uses:
-// it is `if not lab_hash and not lab_name`, a truthiness test, and when both
-// are given `lab_name` WINS rather than erroring (NILABILITY.tsv:65). Both are
-// reproduced.
-//
-// The network listing's scope follows `shared_cds`, and it has to: in a shared
-// mode the collision domains a scenario's containers are attached to were
-// created by another scenario or another user, and filtering by this
-// scenario's hash would miss them.
-//
-//	NOT_SHARED  filter by this scenario's hash, this user
-//	LABS        no hash filter, this user
-//	USERS       no hash filter, ALL users
-//
-// Errors: [kerrors.ErrLabHashOrName] when both are empty; a
-// [model.PyRuntimeError] KeyError for a container attached to a network the
-// listing did not return, which is where Python's `lab_networks[network_name]`
-// crashes.
 func (m *Manager) GetLabFromAPI(ctx context.Context, labHash, labName string) (*model.Lab, error) {
 	if labHash == "" && labName == "" {
 		return nil, kerrors.ErrLabHashOrName
@@ -134,27 +109,6 @@ func (m *Manager) reconstructionNetworks(ctx context.Context, labHash string) (m
 // applyContainerMetas is the meta rebuild of `get_lab_from_api`
 // (`DockerManager.py:717-740`), whose comment records what CANNOT be rebuilt:
 // `exec`, `ipv6` and `num_terms` leave no trace in the container.
-//
-// Four inversions, each with a zero-value rule:
-//
-//   - memory: `int(Memory / (1024 ** 2))` — FLOAT division then truncation,
-//     not `//` — and always the uppercase `M` suffix regardless of what the
-//     user wrote (docker-backend.md gotcha 13). Zero means ABSENT, not zero.
-//   - CPUs: `NanoCpus / 1e9`, a float, stored under the meta name `cpu` — NOT
-//     `cpus`, which is what the model reads. So a round-tripped scenario loses
-//     its CPU limit unless something renames it; that is the Python behaviour
-//     and the meta lands in [model.Meta.Extras] where Python's dict took it
-//     (OQ-3).
-//   - ports: `(int(host_port), protocol) → int(guest_port)`, written STRAIGHT
-//     into the meta dict rather than through `add_meta`, so none of the port
-//     validation runs.
-//   - sysctls: the whole map is ASSIGNED over, again bypassing `add_meta` and
-//     therefore the `net.*` namespace check.
-//
-// The sysctls arrive as a JSON object whose key order Go's decoder does not
-// preserve; the keys are sorted so that the rebuilt scenario is the same on
-// every run (ORDERING.tsv row 54's "envs/ports ordered maps" has no counterpart
-// for sysctls because Python got the order for free).
 func applyContainerMetas(device *model.Machine, c *Container) error {
 	hostConfig := c.HostConfig()
 	if hostConfig == nil || c.Attrs.Config == nil {
@@ -235,20 +189,6 @@ func applyContainerMetas(device *model.Machine, c *Container) error {
 
 // applyContainerInterfaces is the network half of `get_lab_from_api`
 // (`DockerManager.py:742-765`).
-//
-// The `none` network is the marker for a device with no interfaces at all, and
-// its presence skips the whole block — so a device on `none` is not bridged and
-// has no interfaces, whatever else the endpoint map says. The `bridge` network
-// is the marker for a bridged device, and it is POPPED so it does not become a
-// collision domain.
-//
-// The remaining endpoints are sorted by the `kathara.iface` DriverOpt AS A
-// STRING, so "10" sorts before "2" (ORDERING.tsv row 55). The interface
-// NUMBERS stay correct — `add_interface` is given the number explicitly — and
-// the port's ordered interface slice keeps itself sorted numerically, so the
-// lexicographic quirk that corrupts Python's insertion order for ten or more
-// interfaces is unobservable here. The sort is kept anyway: it is what makes
-// the rebuild deterministic, and it is the order the register pins.
 func (m *Manager) applyContainerInterfaces(lab *model.Lab, device *model.Machine, c *Container, networksByName map[string]*Network) error {
 	endpoints := c.Networks()
 	if _, hasNone := endpoints["none"]; hasNone {
@@ -323,23 +263,6 @@ func (m *Manager) applyContainerInterfaces(lab *model.Lab, device *model.Machine
 // UpdateLabFromAPI is `update_lab_from_api` (`DockerManager.py:769`): refresh
 // an existing scenario in place, adding the collision domains that were
 // attached at runtime and removing the declared ones that were detached.
-//
-// The diff is over Link OBJECTS, not names:
-//
-//	static   the collision domains the scenario declares
-//	current  the ones the container is attached to now
-//	dynamic  current − static  → materialise an interface for each
-//	deleted  static − current  → remove the interface, which TOMBSTONES the
-//	                             slot rather than shifting the others
-//
-// Every static link gets its api_object refreshed whether or not it is still
-// attached, which is what makes a subsequent `undeploy` able to find them.
-//
-// Python iterates `dynamic_links`, a set of objects whose hash is `id()`, so
-// its order varies per run (ORDERING.tsv row 57, flagged "!!"). The iteration
-// here follows the same lexicographic `kathara.iface` order the listing was
-// sorted into; `deleted_links` is order-insensitive (row 58) and is walked in
-// name order.
 func (m *Manager) UpdateLabFromAPI(ctx context.Context, lab *model.Lab) error {
 	user, err := scopedUser(false)
 	if err != nil {
@@ -385,8 +308,8 @@ func (m *Manager) UpdateLabFromAPI(ctx context.Context, lab *model.Lab) error {
 			if iface.IsTombstone() {
 				// `set([x.link for x in device.interfaces.values()])`
 				// (`DockerManager.py:798`) has no guard: the comprehension
-				// itself reads `.link` off the None, so the crash is
-				// AttributeError on `link` and it happens right here, not at
+				// itself reads `.link` off the None, so the result is an
+				// AttributeError on `link` right here, not at
 				// any later `.name`.
 				return newPyAttributeError("link")
 			}
@@ -426,14 +349,6 @@ func (m *Manager) UpdateLabFromAPI(ctx context.Context, lab *model.Lab) error {
 			}
 		}
 
-		// `for link in dynamic_links` iterates a SET of Link objects, so
-		// Python's order is `id()`-based and varies run to run — including the
-		// `add_meta("sysctl")` application order and the interface insertion
-		// order. ORDERING.tsv:57 rules the port iterates by the endpoint's
-		// `kathara.iface` NUMBER, which is NOT the lexicographic string order
-		// rows 55-56 pin for the listing above ("10" before "2"); that one
-		// still decides the last-wins collapse into `currentByLinkName` and is
-		// the tie-break here.
 		dynamic := make([]string, 0, len(currentOrder))
 		for _, name := range currentOrder {
 			if _, isStatic := staticLinks[name]; isStatic {
@@ -494,9 +409,9 @@ func (m *Manager) UpdateLabFromAPI(ctx context.Context, lab *model.Lab) error {
 
 // ifaceNumberOf is `int(network_options["DriverOpts"]["kathara.iface"])`
 // (`DockerManager.py:755,828`), which runs BEFORE the `is not None` guard on
-// the same map two lines below — so a nil DriverOpts crashes here and the
-// guard is dead code. Reproduced: the crash is what a container attached to a
-// non-Kathará network produces.
+// the same map two lines below. A nil DriverOpts therefore raises here before
+// the later guard; this is the observed behaviour for a container attached to
+// a non-Kathará network.
 func ifaceNumberOf(options *network.EndpointSettings) (int, error) {
 	if options == nil || options.DriverOpts == nil {
 		return 0, newPyTypeError("'NoneType' object is not subscriptable")
@@ -512,9 +427,6 @@ func ifaceNumberOf(options *network.EndpointSettings) (int, error) {
 // (`DockerManager.py:761-763`, :833-835): each comma-separated entry becomes a
 // `sysctl` meta with the literal `IFNAME` token replaced by this endpoint's
 // real interface name.
-//
-// It is `str.replace`, so EVERY occurrence goes — the mirror of the `re.sub`
-// that put the token there ([ifaceSysctls]).
 func applyEndpointSysctls(device *model.Machine, driverOpts map[string]string, ifaceNumber int) error {
 	value, ok := driverOpts[driverOptSysctls]
 	if !ok {
@@ -531,15 +443,6 @@ func applyEndpointSysctls(device *model.Machine, driverOpts map[string]string, i
 
 // sortByIfaceOpt is `sorted(Networks.items(), key=lambda x:
 // x[1]["DriverOpts"]["kathara.iface"])` (`DockerManager.py:748`, :808).
-//
-// The key is the raw STRING, so "10" < "2" (ORDERING.tsv rows 55-56). An
-// endpoint whose DriverOpts are missing the key sorts as the empty string,
-// where Python would have raised inside the sort; the raise still happens, one
-// step later, in [ifaceNumberOf], which is where Python raises for a nil
-// DriverOpts too.
-//
-// Ties are broken by network name so that the result does not depend on Go's
-// map iteration.
 func sortByIfaceOpt(endpoints map[string]*network.EndpointSettings) []string {
 	names := make([]string, 0, len(endpoints))
 	for name := range endpoints {
@@ -561,14 +464,6 @@ func ifaceOptOf(options *network.EndpointSettings) string {
 	return options.DriverOpts[driverOptIface]
 }
 
-// ifaceOptNumber is [ifaceNumberOf] as a total sort key, for ORDERING.tsv:57's
-// numeric ordering of the dynamic links.
-//
-// An endpoint whose `kathara.iface` is missing or unparsable sorts as 0 and
-// keeps its relative place under a stable sort; the failure is not swallowed,
-// it is merely deferred to the loop body's own [ifaceNumberOf], which is where
-// Python raises it too. Python's order for that loop is a set's, so no error
-// ordering is more faithful than another.
 func ifaceOptNumber(options *network.EndpointSettings) int {
 	number, err := ifaceNumberOf(options)
 	if err != nil {
@@ -597,13 +492,7 @@ func sortedKeys[V any](m map[string]V) []string {
 	return keys
 }
 
-// sortedPortBindings returns the port-binding map's keys in ascending order.
-//
-// Python iterates `PortBindings.items()` in JSON-object order, which is the
-// daemon's, and the insertion order of the rebuilt `ports` meta is what a
-// re-deploy would replay. Go's decoder does not preserve that order, so the
-// keys are sorted; the meta's own keys carry the host port and protocol, so
-// nothing but the ordering of the `OrderedMap` differs.
+// sortedPortBindings returns this implementation-binding map's keys in ascending order.
 func sortedPortBindings(bindings nat.PortMap) []nat.Port {
 	ports := make([]nat.Port, 0, len(bindings))
 	for port := range bindings {

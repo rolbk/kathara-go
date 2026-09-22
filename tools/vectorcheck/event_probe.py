@@ -1,35 +1,5 @@
 #!/usr/bin/env python3
-"""Layer B authority runner for the ``event`` package.
-
-``event/`` is a faithful port (PORT_SPEC §3.1 row 13) of
-``Kathara/event/EventDispatcher.py`` with the ``getattr`` dispatch replaced by
-typed payloads (§0.2 #13). Two things about it cannot be read off the source,
-so they are measured here:
-
-  1. **The catalog.** Which events exist, and what each dispatch site passes.
-     The names are a contract — ``cli/ui/event/register.py`` subscribes by them
-     — so the answer is taken by ast-walking every
-     ``EventDispatcher.dispatch/register/unregister`` call in 3.8.3 rather than
-     by reading a list someone maintained by hand.
-
-  2. **What a subscriber sees when a subscriber mutates the table.** ``dispatch``
-     iterates the live list at ``self.events[event]`` while ``unregister``
-     deletes the *key*, so subscribing, unsubscribing or re-subscribing from
-     inside a callback produces behaviour that belongs to CPython's list and
-     dict semantics and to nothing the source says. Each scenario is executed
-     against the real dispatcher and every callback that fires is written down,
-     in order.
-
-Results go to ``event/testdata/catalog.json`` and
-``event/testdata/dispatch_traces.json``, consumed by the Go tests in
-``event/events_test.go`` and ``event/oracle_test.go``.
-
-The Python behaviour is the truth. When Go disagrees, Go is wrong.
-
-Usage:
-
-    /root/kathara/pyvenv/bin/python tools/vectorcheck/event_probe.py [--out-dir PATH]
-"""
+"""Layer B authority runner for the ``event`` package."""
 
 from __future__ import annotations
 
@@ -47,7 +17,7 @@ from Kathara.event.EventDispatcher import EventDispatcher  # noqa: E402
 PACKAGE_ROOT = os.path.join(KATHARA_SRC, "Kathara")
 
 # The two events the traces drive. Real catalog names, so the KeyError text a
-# trace records is the text the Go port has to produce.
+# trace records is the text the Go implementation has to produce.
 E1 = "link_deployed"
 E2 = "machine_deployed"
 

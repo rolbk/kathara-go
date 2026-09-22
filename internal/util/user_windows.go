@@ -31,13 +31,6 @@ func GetCurrentUserUIDGID() (uid int, gid int, err error) {
 
 // currentUserLogin is the Windows arm of the `exec_by_platform` inside
 // get_current_user_name (utils.py:242): `getpass.getuser()`.
-//
-// CPython tries LOGNAME, USER, LNAME and USERNAME in that order, taking the
-// first that is set *and non-empty*, and then falls back to the passwd
-// database — which does not exist on Windows, so the fallback is always the
-// OSError below. The order is not alphabetical and is not sorted by
-// likelihood: USERNAME, the only one Windows itself sets, is checked last, so
-// a Cygwin or MSYS shell that exports LOGNAME wins over it.
 func currentUserLogin() (string, error) {
 	for _, name := range []string{"LOGNAME", "USER", "LNAME", "USERNAME"} {
 		if value := os.Getenv(name); value != "" {

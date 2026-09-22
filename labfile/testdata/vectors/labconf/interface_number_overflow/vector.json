@@ -1,5 +1,5 @@
 {
   "description": "Interface numbers are unbounded Python ints: a 20-digit arg is an interface, and dies in check_integrity, not in the dispatch.",
-  "notes": "Go strconv.Atoi overflows on this arg; a naive port would misroute the line to the meta path. Same class of hazard as interface_underscore_digits.",
+  "notes": "Go strconv.Atoi overflows on this arg; a direct implementation would misroute the line to the meta path. Same class of behavior as interface_underscore_digits.",
   "parser": "lab"
 }

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""A fake Kathará binary that speaks the JSON CLI contract.
+"""A fake Kathará binary that speaks the JSON command protocol.
 
 The client's whole job is to build argv, feed stdin, and decode stdout, so the
 unit tests replace the Go binary with this script (via ``$KATHARA_BIN``) and

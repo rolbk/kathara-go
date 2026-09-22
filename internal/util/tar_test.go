@@ -96,10 +96,7 @@ func TestWriteTarHeaderFields(t *testing.T) {
 }
 
 func TestWriteTarOrdering(t *testing.T) {
-	// ORDERING.tsv (utils.py:452): "API takes ordered pairs; Python client must
-	// preserve caller order". Python iterates `guest_to_host.items()`, i.e.
-	// dict insertion order, and member order is observable — extraction is
-	// last-wins for two entries whose arcnames collide.
+
 	tests := []struct {
 		name    string
 		entries []TarEntry
@@ -210,10 +207,6 @@ func TestWriteTarCollidingNamesLastWins(t *testing.T) {
 
 func TestWriteTarDeterministic(t *testing.T) {
 	// Identical input, byte-identical archive, including the gzip wrapper.
-	// Python's wrapper is not reproducible at all: `w:gz` over a
-	// NamedTemporaryFile stamps time.time() into MTIME and the random temp
-	// basename into FNAME, so two Python calls on the same dict already differ
-	// (PROPOSED-DIVERGENCES.md).
 	entries := []TarEntry{
 		{Path: "/etc/frr/frr.conf", Content: []byte("hostname r1\n")},
 		{Path: "/hosthome/x", Content: bytes.Repeat([]byte("x"), 5000)},
@@ -356,18 +349,6 @@ func TestWriteTarRoundTrip(t *testing.T) {
 // utils.pack_files_for_tar (Kathara 3.8.3 on CPython 3.13.5), captured in
 // testdata/. Two field windows per 512-byte block are excluded and asserted
 // separately:
-//
-//   - devmajor/devminor (offset 329, 16 bytes). CPython 3.13 writes NULs there
-//     for non-device members (tarfile._create_header's has_device_fields
-//     branch, new in 3.13); 3.9-3.12 and Go's archive/tar write octal zeros.
-//     POSIX leaves the field unused for regular files, and the golden would be
-//     oracle-version dependent either way.
-//   - the header checksum (offset 148, 8 bytes), which covers those 16 bytes
-//     and therefore differs by exactly 14 * 0x30 = 672.
-//
-// Everything else — name, mode, uid, gid, size, mtime, typeflag, magic,
-// version, uname, gname, prefix, the content blocks and the record padding —
-// is byte-identical.
 func TestPythonParity(t *testing.T) {
 	tests := []struct {
 		name    string

@@ -1,16 +1,4 @@
-// This file is `src/kathara.py`'s `KatharaEntryPoint` and `Kathara/strings.py`:
-// the command table, the top-level help, and the dispatch sequence of
-// CLI_SURFACE.md §0.2, whose *order* is observable.
-//
-// The top level is deliberately not a cobra `Execute()`. Python parses
-// `sys.argv[1:2]` — exactly one token — and hands everything from `sys.argv[2:]`
-// to the sub-command's own parser untouched (CLI_SURFACE.md §0.1), which is why
-// `kathara -v` is the version and `kathara lstart -v` is not, and why
-// JSON_CLI_CONTRACT.md §1.1 can promise that "top-level dispatch failures happen
-// before any per-command flag parsing". cobra's dispatcher parses persistent
-// flags at the root and would break both. So cobra is used for what it is good
-// at — flag declaration and parsing, one `*cobra.Command` per sub-command — and
-// the six steps below are spelled out.
+// The top level is deliberately not a cobra `Execute()`.
 
 package main
 
@@ -26,13 +14,10 @@ import (
 	"github.com/spf13/pflag"
 )
 
-// version is `Kathara.version.CURRENT_VERSION`, injected at link time by
-// goreleaser and defaulting to the Python release this port reproduces.
+// version defaults to the compatibility baseline and is replaced from the
+// release tag by GoReleaser.
 var version = util.CurrentVersion
 
-// commandDescriptions is `Kathara/strings.py`'s `strings` dict, verbatim and in
-// its insertion order — which is the display order of the top-level help
-// (ORDERING.tsv, `strings.py`).
 var commandDescriptions = []struct{ Name, Short string }{
 	{"vstart", "Start a new Kathara device"},
 	{"vclean", "Stop a single Kathara device"},
@@ -54,9 +39,6 @@ var commandDescriptions = []struct{ Name, Short string }{
 // every sub-command parser.
 const wikiDescription = "For examples and further information visit: https://github.com/KatharaFramework/Kathara/wiki"
 
-// interruptExempt is the Ctrl-C warning whitelist of `src/kathara.py:97`, plus
-// `config`, which JSON_CLI_CONTRACT.md §6.2 pins as a fifth member because it
-// is a new, non-deploying command that Python has no entry for.
 var interruptExempt = map[string]bool{
 	"exec":     true,
 	"linfo":    true,
@@ -77,13 +59,9 @@ type commandSpec struct {
 	Greedy []greedySpec
 	// Remainder is `vstart`'s `nargs=argparse.REMAINDER` positional.
 	Remainder bool
-	// Streaming widens `--format` to accept `jsonl`. Only `exec` does
-	// (JSON_CLI_CONTRACT.md §1.1).
+	// Streaming widens `--format` to accept `jsonl`.
 	Streaming bool
-	// NoParser is `settings`, the one command that builds no parser at all and
-	// therefore never looks at argv: `kathara settings -h` opens the menu
-	// rather than printing help (CLI_SURFACE.md M-5).
-	NoParser bool
+	NoParser  bool
 	// Run is the command body. positional is what pflag left over; remainder
 	// is the REMAINDER capture, nil unless Remainder is set.
 	Run func(ctx context.Context, a *app, positional, remainder []string) (int, error)
@@ -113,8 +91,6 @@ func (s *commandSpec) valueTaking() valueTaking {
 	return vt
 }
 
-// commandTable is the registry that replaces `CommandFactory` (§0.2 #7). The
-// map is built per invocation because every command closes over the app.
 func commandTable(a *app) map[string]*commandSpec {
 	specs := []*commandSpec{
 		newLstartCmd(a),
@@ -140,7 +116,6 @@ func commandTable(a *app) map[string]*commandSpec {
 	return table
 }
 
-// dispatch is CLI_SURFACE.md §0.2, step for step. argv is `os.Args`.
 func dispatch(ctx context.Context, a *app, argv []string) int {
 	// Step 1-2: the top level parses one token.
 	var word string
@@ -236,10 +211,6 @@ func runCommand(ctx context.Context, a *app, spec *commandSpec, args []string) i
 			return a.usageError(spec, err)
 		}
 	}
-	// A nested phase of `lrestart` inherits the format its parent resolved:
-	// re-applying it here would read the fresh sub-parser's `human` default and
-	// clobber the console mid-command, putting the clean phase's panel on the
-	// stdout the one-object rule reserves for the envelope (§1.2, §1.4).
 	if !a.suppressEmit {
 		if err := a.applyFormat(spec); err != nil {
 			return a.usageError(spec, err)
@@ -249,11 +220,7 @@ func runCommand(ctx context.Context, a *app, spec *commandSpec, args []string) i
 	code, err := spec.Run(ctx, a, spec.Cmd.Flags().Args(), remainder)
 	if err != nil {
 		if ctx.Err() != nil {
-			// The failure IS the interrupt. Python's `KeyboardInterrupt`
-			// unwinds straight past the command body to the entrypoint's own
-			// handler, so nothing is rendered here: [app.finish] owns the
-			// warning, the exit code and — in json/jsonl — the single
-			// terminal event (JSON_CLI_CONTRACT.md §6.2).
+			// The failure IS the interrupt.
 			return 1
 		}
 		if usage := asUsageError(err); usage != nil {
@@ -262,12 +229,6 @@ func runCommand(ctx context.Context, a *app, spec *commandSpec, args []string) i
 		return a.console.EmitError(err)
 	}
 
-	// The built-in multiplexer (PORT_SPEC §3.3 item 1) is one window for the
-	// whole scenario, so it cannot open from the per-device `machine_deployed`
-	// event the way an OS emulator does. It opens here instead: after the
-	// command body, after its envelope, and — the `suppressEmit` guard —
-	// after `lrestart`'s outer phase rather than in the middle of it.
-	//
 	// Every other terminal mode has already opened its windows during the
 	// deploy, which leaves this a no-op with an empty slice.
 	if !a.suppressEmit {
@@ -281,13 +242,6 @@ func runCommand(ctx context.Context, a *app, spec *commandSpec, args []string) i
 	return code
 }
 
-// usageError is argparse's `parser.error()`: the `usage:` block plus one
-// message on **stderr**, exit 2, and no JSON on stdout in any mode
-// (JSON_CLI_CONTRACT.md §5.5).
-//
-// `print_usage`, not `print_help`: argparse's `error()` prints the usage line
-// and the message and nothing else. [parser.usageBlock] is that half;
-// `UsageString()` — the full help — belongs to `-h` alone.
 func (a *app) usageError(spec *commandSpec, err error) int {
 	_, _ = fmt.Fprint(a.console.Err, spec.Cmd.usageBlock())
 	_, _ = fmt.Fprintf(a.console.Err, "kathara %s: error: %s\n", spec.Name, err.Error())
@@ -336,12 +290,6 @@ func isLower(s string) bool {
 // topLevelUsage is argparse's `usage: ` block for the root parser: the literal
 // `description_msg` of `src/kathara.py:20-24`, which embeds the rich command
 // table.
-//
-// It ends with the last table row and no blank line, because
-// `HelpFormatter.format_help` strips the trailing newlines of the section it
-// built and appends exactly one — which is why `kathara --bogus` prints the
-// error message directly under the table (oracle-captured). The blank line the
-// full help shows before the description belongs to [topLevelHelp].
 func topLevelUsage(width int) string {
 	var b strings.Builder
 	b.WriteString("usage: kathara [-h] [-v] <command> [<args>]\n")
@@ -356,11 +304,6 @@ func topLevelUsage(width int) string {
 }
 
 // topLevelHelp is `parser.print_help()` on the root parser.
-//
-// The three sections are argparse's: the custom `usage=`, the `description=`,
-// and the two action groups. Their column layout is argparse's
-// `HelpFormatter`, which for these three fixed actions puts the help column at
-// 17 and needs no wrapping.
 func topLevelHelp(width int) string {
 	var b strings.Builder
 	b.WriteString(topLevelUsage(width))
@@ -379,11 +322,6 @@ func topLevelHelp(width int) string {
 // commandTableLines is `Kathara.strings.formatted_strings()`: a two-column
 // `rich.Table` with no box, no header and no edge, laid out to the console
 // width.
-//
-// The solver is `internal/cliout`'s, so the widths come out of the same
-// `ratio_reduce` Python uses: at 80 columns the name column measures 10 and the
-// description column 70, which is what puts `lconfig`'s description's fold at
-// "in a / Kathara network scenario".
 func commandTableLines(width int) []string {
 	rows := make([][]string, 0, len(commandDescriptions))
 	for _, c := range commandDescriptions {

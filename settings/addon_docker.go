@@ -1,4 +1,4 @@
-// This file is the port of `setting/addon/DockerSettingsAddon.py`: the seven
+// This file implements `setting/addon/DockerSettingsAddon.py`: the seven
 // keys the file carries when `manager_type` is docker, in the order
 // `_to_dict` lists them, which is the order they are appended to the base keys
 // on disk.
@@ -46,10 +46,6 @@ func validateImageUpdatePolicyValue(_ *Settings, value any) error {
 
 // validateSharedCdsValue restricts `shared_cds` to the three enum members the
 // menu offered (`DockerOptionsHandler.py:164-190`).
-//
-// Nothing validates it on load — a file holding 7 loads, saves back as 7, and
-// reaches `DockerLink`'s `== 2` / `== 3` comparisons as "not shared". That
-// asymmetry is Python's and is kept: this runs on input, not on load.
 func validateSharedCdsValue(_ *Settings, value any) error {
 	v, ok := value.(SharedCollisionDomains)
 	if !ok {

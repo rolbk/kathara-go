@@ -55,11 +55,7 @@ func TestWalkFilesAndDirs(t *testing.T) {
 }
 
 func TestWalkOrderIsDeterministic(t *testing.T) {
-	// ReadDir is name-sorted on both implementations, so the visit order is
-	// the same every run and the same on mem:// and osfs://. Python's
-	// fs.walk uses scandir order, which is filesystem-dependent; nothing in
-	// the port may depend on it (see the FolderParser ruling in
-	// PROPOSED-DIVERGENCES.md).
+
 	want := []string{".", "a", "a/b", "a/b/deep.txt", "a/x.txt", "empty", "top.txt"}
 	forEachFS(t, func(t *testing.T, fsys FS) {
 		seedTree(t, fsys)
@@ -143,9 +139,7 @@ func seedTree(t *testing.T, fsys FS) {
 func symlinkFS(t *testing.T) (FS, string) {
 	t.Helper()
 	if runtime.GOOS == "windows" {
-		// Creating a symlink on Windows needs either developer mode or
-		// SeCreateSymbolicLinkPrivilege, and Windows runtime is out of 1.0
-		// scope (PORT_SPEC §0.3).
+
 		t.Skip("symlinks are not creatable unprivileged on Windows")
 	}
 	root := t.TempDir()

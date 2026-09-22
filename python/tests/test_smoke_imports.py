@@ -1,13 +1,4 @@
-"""The downstream import surface must resolve against this package.
-
-kathara-lab-checker (2,933 lines, `PORT_SPEC.md` §7.1) imports `Lab` in 29
-files. Every import line below was taken by grepping
-``/root/kathara/kathara-lab-checker/src`` — if any of them stops resolving, the
-port has broken its main consumer, and that is a release gate (spec §9 Layer D).
-
-The official Python-API tutorial's end-to-end shape is exercised too, up to but
-not including the manager calls (those need a binary; see `test_manager.py`).
-"""
+"""The downstream import surface must resolve against this package."""
 
 import unittest
 
@@ -38,8 +29,6 @@ class LabCheckerImportSurfaceTest(unittest.TestCase):
             self.assertEqual("No lab.conf in given directory.", str(caught.exception))
 
     def test_model_surface_lab_checker_reads(self):
-        # `lab.hash`, `lab.get_machine`, `lab.fs`, `machine.interfaces`,
-        # `device.meta`, `device.get_sysctls()` (§7.1).
         from Kathara.model.Lab import Lab
 
         lab = Lab("surface")
@@ -61,9 +50,6 @@ class LabCheckerImportSurfaceTest(unittest.TestCase):
 
 class TutorialSurfaceTest(unittest.TestCase):
     def test_getting_started_scenario_builds(self):
-        # The official tutorial: Lab("name") with no path (memory FS),
-        # new_machine, connect_machine_to_link, create_startup_file_from_list,
-        # create_file_from_string (§7.1).
         from Kathara.model.Lab import Lab
 
         lab = Lab("Getting Started")

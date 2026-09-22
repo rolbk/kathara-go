@@ -36,10 +36,6 @@ func TestBackendRow(t *testing.T) {
 	}
 }
 
-// TestLabHashResolution is EXPECTATIONS-k8s §4 "Lab-identity resolution": one
-// of `lab`, `lab_name`, `lab_hash`, resolved in that precedence and then
-// LOWERCASED — the fold that makes Megalos' effective scenario id different
-// from the Docker backend's (k8s-backend.md G1).
 func TestLabHashResolution(t *testing.T) {
 	s := testSettings()
 	lab := newTestLab(t, s)
@@ -87,9 +83,6 @@ func TestLabHashResolution(t *testing.T) {
 	})
 }
 
-// TestLowerLabHashMutates pins k8s-backend.md G1: the deploy and undeploy
-// object paths fold the hash ON THE SHARED SCENARIO OBJECT, not on a local, so
-// a caller that holds the same [model.Lab] sees the folded value afterwards.
 func TestLowerLabHashMutates(t *testing.T) {
 	s := testSettings()
 	lab := newTestLab(t, s)
@@ -99,8 +92,6 @@ func TestLowerLabHashMutates(t *testing.T) {
 	}
 }
 
-// TestDeployLabValidationOrder is EXPECTATIONS-k8s §4 "deploy_lab": the order
-// errors surface in, and that nothing at all is created when one fires.
 func TestDeployLabValidationOrder(t *testing.T) {
 	tests := []struct {
 		name string
@@ -154,12 +145,6 @@ func TestDeployLabValidationOrder(t *testing.T) {
 	}
 }
 
-// TestDeployLabLinkNarrowing is EXPECTATIONS-k8s §4 `test_deploy_lab_*`: the
-// collision-domain scope each machine filter produces.
-//
-// The exclusion arm is the interesting one: a domain shared with a device that
-// is STILL being deployed survives, so only domains used exclusively by
-// excluded devices are dropped.
 func TestDeployLabLinkNarrowing(t *testing.T) {
 	tests := []struct {
 		name string
@@ -214,8 +199,6 @@ func TestDeployLabLinkNarrowing(t *testing.T) {
 	}
 }
 
-// TestDeployLabOrderIsNamespaceSecretLinksMachines is EXPECTATIONS-k8s §4
-// "Operation order (all deploy tests)".
 func TestDeployLabOrderIsNamespaceSecretLinksMachines(t *testing.T) {
 	s := testSettings()
 	s.DockerConfigJSON = ptr("eyJhdXRocyI6IHt9fQ==")
@@ -268,16 +251,6 @@ func TestDeployLabForbiddenIsLabTerminating(t *testing.T) {
 	}
 }
 
-// TestTranslateForbiddenTranslatesABatchElementwise is the interaction between
-// `deploy_lab`'s `except ApiException` and the batch errors of
-// ERROR_CODES.md §6: a half-failed chunk reports a JOIN, and `errors.As` walks
-// into every branch of one.
-//
-// So the translation has to be applied per element. Applied to the join as a
-// whole, one device's 403 would answer `isForbidden` for the batch and replace
-// all of it — the primary error included — with a single
-// [kerrors.ErrLabTerminating], which is neither Python's behaviour nor §6.5's
-// `errors` array.
 func TestTranslateForbiddenTranslatesABatchElementwise(t *testing.T) {
 	primary := kerrors.NewMachineBinary("frr", "pc1")
 	forbidden := apierrors.NewForbidden(
@@ -300,8 +273,6 @@ func TestTranslateForbiddenTranslatesABatchElementwise(t *testing.T) {
 	}
 }
 
-// TestDeployMachineAndLinkGuards is EXPECTATIONS-k8s §4 "deploy_machine /
-// deploy_link": the LabNotFound spellings, which differ between the two.
 func TestDeployMachineAndLinkGuards(t *testing.T) {
 	s := testSettings()
 	m, _, _, _ := newTestManager(t, s)
@@ -351,8 +322,6 @@ func TestDeployLinkCreatesNoSecret(t *testing.T) {
 	}
 }
 
-// TestNotSupported is EXPECTATIONS-k8s §4 "connect/disconnect machine-link" and
-// "update_lab_from_api": three permanent refusals, not deferrals.
 func TestNotSupported(t *testing.T) {
 	s := testSettings()
 	m, _, _, _ := newTestManager(t, s)
@@ -369,9 +338,6 @@ func TestNotSupported(t *testing.T) {
 	}
 }
 
-// TestUndeployMachineLinkGC is EXPECTATIONS-k8s §4 "undeploy_machine": a
-// collision domain is deleted unless a still-running pod references it, and the
-// namespace goes only when the departing device was the last one.
 func TestUndeployMachineLinkGC(t *testing.T) {
 	tests := []struct {
 		name          string
@@ -465,9 +431,6 @@ func namespaceDeleted(clientset actionRecorder) bool {
 	return false
 }
 
-// TestUndeployLinkSkipsWhenStillUsed is EXPECTATIONS-k8s §4
-// `test_undeploy_link_machine_running`: a silent no-op — no deletion, no error,
-// no event — when a running pod still references the collision domain.
 func TestUndeployLinkSkipsWhenStillUsed(t *testing.T) {
 	s := testSettings()
 	lab := newTestLab(t, s)
@@ -492,9 +455,6 @@ func TestUndeployLinkSkipsWhenStillUsed(t *testing.T) {
 	}
 }
 
-// TestUndeployLabMatrix is EXPECTATIONS-k8s §4 "undeploy_lab": the ten rows of
-// the partial-teardown table, reduced to the three questions each of them asks —
-// which networks are deleted, and whether the namespace goes.
 func TestUndeployLabMatrix(t *testing.T) {
 	// pods: pc1(a,b), pc2(a), pc3(c,d)
 	pods := map[string][]string{
@@ -618,9 +578,6 @@ func TestUndeployLabBothFilters(t *testing.T) {
 	}
 }
 
-// TestWipeDeletesNamespacesOnly is EXPECTATIONS-k8s §4 "wipe": Megalos drops
-// the namespaces and lets the API server cascade — it walks neither pods nor
-// networks (k8s-backend.md G26).
 func TestWipeDeletesNamespacesOnly(t *testing.T) {
 	s := testSettings()
 	m, clientset, _, _ := newTestManager(t, s,
@@ -645,9 +602,6 @@ func TestWipeDeletesNamespacesOnly(t *testing.T) {
 	}
 }
 
-// TestGetAPIObjects is EXPECTATIONS-k8s §4 "get_machine_api_object" and
-// "get_link_api_object": the last match, and the not-found messages, which use
-// the UNQUOTED spellings unique to this backend.
 func TestGetAPIObjects(t *testing.T) {
 	s := testSettings()
 	hash := strings.ToLower(defaultScenarioHash)
@@ -707,11 +661,6 @@ func TestGetAPIObjects(t *testing.T) {
 	})
 }
 
-// TestGetLabFromAPI is EXPECTATIONS-k8s §4 "get_lab_from_api": the whole
-// reconstruction, including the two Python details that are preserved because
-// they are observable — the CPU meta is written under `cpu` (which nothing
-// reads) as a FLOAT, and interface numbers come from the annotation's array
-// position.
 func TestGetLabFromAPI(t *testing.T) {
 	s := testSettings()
 	hash := strings.ToLower(defaultScenarioHash)
@@ -731,13 +680,7 @@ func TestGetLabFromAPI(t *testing.T) {
 			Ports: []corev1.ContainerPort{{HostPort: 3001, ContainerPort: 56, Protocol: corev1.ProtocolUDP}},
 			Resources: corev1.ResourceRequirements{Limits: corev1.ResourceList{
 				corev1.ResourceMemory: mustQuantity(t, "64M"),
-				// 1500m, not 1000m: a Quantity canonicalises `1000m` to `1`,
-				// and `int("1") / 1000` is 0.001 — which is exactly what Python
-				// computes when it reads the same limit back off a real API
-				// server, since the server canonicalises too (k8s-backend.md
-				// G22). A value that keeps its `m` suffix is what exercises the
-				// intended path.
-				corev1.ResourceCPU: mustQuantity(t, "1500m"),
+				corev1.ResourceCPU:    mustQuantity(t, "1500m"),
 			}},
 		}}},
 	}
@@ -801,11 +744,6 @@ func TestGetLabFromAPI(t *testing.T) {
 	}
 }
 
-// TestGetLabFromAPICPUQuirk is k8s-backend.md G22 reproduced: a CPU limit
-// WITHOUT the `m` suffix — which is what the API server stores for any whole
-// number of cores — divides by 1000 all the same, so a 2-core device comes back
-// with `cpu = 0.002`. Python does exactly this, and the meta it lands in
-// (`cpu`) is one `get_cpu` never reads.
 func TestGetLabFromAPICPUQuirk(t *testing.T) {
 	s := testSettings()
 	hash := strings.ToLower(defaultScenarioHash)
@@ -850,9 +788,6 @@ func TestGetLabFromAPIByName(t *testing.T) {
 	}
 }
 
-// TestGetLabFromAPINoIdentity is the truthiness guard unique to this method:
-// `if not lab_hash and not lab_name`, which is why an empty string genuinely is
-// absent here (NILABILITY.tsv:65).
 func TestGetLabFromAPINoIdentity(t *testing.T) {
 	s := testSettings()
 	m, _, _, _ := newTestManager(t, s)
@@ -862,10 +797,6 @@ func TestGetLabFromAPINoIdentity(t *testing.T) {
 	}
 }
 
-// TestStatsEagerness is EXPECTATIONS-k8s §4 "get_machines_stats" /
-// "get_machine_stats": the plural getter validates NOW and the singular one
-// defers to the first `next()`, because the Python bodies differ in whether
-// they hold a `yield`.
 func TestStatsEagerness(t *testing.T) {
 	s := testSettings()
 	m, _, _, _ := newTestManager(t, s)

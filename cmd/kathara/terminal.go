@@ -1,26 +1,11 @@
-// This file is `cli/ui/utils.open_machine_terminal` — the half of
-// `HandleMachineTerminal` that spawns a window — under the PORT_SPEC §3.3
-// rebuild.
-//
-// §3.3 replaces Python's single "spawn an emulator, unless the setting says
-// TMUX" decision with three modes in priority order, selected by the value of
-// the `terminal` setting (see [term.ModeFor] for why that key and not a new
-// one):
-//
-//	MULTIPLEXER (and "")   built-in bubbletea multiplexer, §3.3 item 1
-//	TMUX                   the tmux binary through its documented CLI, item 2
-//	anything else          the ported external emulator adapters, item 3
-//
 // The three differ in *when* the window appears, and that is the only place
 // this file is more than a switch:
-//
 //   - tmux and external open a window per device, during the deploy, from the
 //     `machine_deployed` event — Python's timing, preserved.
 //   - the multiplexer is one window for the whole scenario, so the event can
 //     only enqueue the device; the window opens once, after the command has
 //     finished and emitted its result ([app.runPendingTerminals], called from
 //     `runCommand`).
-//
 // `--noterminals` and `open_terminals: false` short-circuit ahead of all three
 // in [app.openMachineTerminals], so the golden suite — which passes
 // `--noterminals` everywhere — never reaches this file at all.
@@ -88,15 +73,6 @@ func (a *app) openTerminal(ctx context.Context, machine *model.Machine) error {
 	}
 }
 
-// openTmuxWindow is `unix_connect`'s TMUX branch, driven through `term/tmuxdrv`
-// rather than through a vendored client library (§3.3 item 2).
-//
-// The connect command it puts in the window is Python's, with one difference
-// carried over from the tmux spike: the empty `is_vmachine` slot is dropped
-// rather than left as a double space. tmux hands the string to a shell, which
-// would collapse it anyway, but the argv this package builds has no shell to
-// forgive it. The external adapters, which must byte-match Python's exec
-// shapes, use [term.ConnectCommand] and keep the double space.
 func (a *app) openTmuxWindow(ctx context.Context, machine *model.Machine, executable, cwd string) error {
 	vmachine := ""
 	if !machine.Lab.HasHostPath() {
@@ -123,12 +99,6 @@ func (a *app) openTmuxWindow(ctx context.Context, machine *model.Machine, execut
 
 // enqueueMuxDevice records a device for the one multiplexer window this
 // command will open at the end.
-//
-// It is idempotent per device, which is what makes `num_terms: 3` a no-op
-// beyond the first terminal — the same thing `num_terms > 1` already does
-// under tmux, where `EnsureWindow` finds the window it made a moment ago
-// (docs/port/SPIKES/tmux.md §6). A multiplexer with three identical tabs
-// would be a worse answer than one.
 func (a *app) enqueueMuxDevice(machine *model.Machine) {
 	for _, m := range a.muxDevices {
 		if m.Name == machine.Name {
@@ -141,19 +111,6 @@ func (a *app) enqueueMuxDevice(machine *model.Machine) {
 // runPendingTerminals opens the built-in multiplexer over the devices the
 // deploy enqueued, and is a no-op for every other mode and for every command
 // that opened no terminals.
-//
-// It runs after the command's envelope so that a scripted caller sees its
-// output before an interactive program takes over the screen, and it never
-// runs under `--format json`/`jsonl` because [app.openMachineTerminals]
-// refuses to enqueue anything there (JSON_CLI_CONTRACT.md §1.3: stdout carries
-// only protocol).
-//
-// A console that is not interactive gets no window at all. `kathara lstart |
-// tee log` must not have alternate-screen frames written into the pipe, and a
-// multiplexer whose keys come from a redirected stdin could never be detached
-// from; Python spawned separate OS windows here and touched neither stream.
-// The deploy itself has already succeeded by this point, so this is a skip with
-// a debug line and not an error.
 func (a *app) runPendingTerminals(ctx context.Context) error {
 	devices := a.muxDevices
 	a.muxDevices = nil
@@ -184,16 +141,6 @@ func (a *app) runPendingTerminals(ctx context.Context) error {
 	return term.Run(ctx, cfg)
 }
 
-// muxOpener is what a pane attaches with: exactly the call `kathara connect`
-// makes, so a tab and a standalone `kathara connect <device>` are the same
-// session type on the same transport (PORT_SPEC §3.3 item 4, "unchanged
-// behaviour", and item 1's "attach via kathara connect").
-//
-// `logs` mirrors the `-l` that Python's spawned connect command carries
-// (`cli/ui/utils.py:133`), gated a second time by `print_startup_log` inside
-// the backend; the log lands in the pane's own scrollback because the writer
-// is the session's screen, which the multiplexer supplies by reading it back
-// through the pane pump.
 func muxOpener(mgr kathara.Manager, machine *model.Machine, logs bool) func(context.Context) (term.Session, error) {
 	return func(ctx context.Context) (term.Session, error) {
 		var log bytes.Buffer

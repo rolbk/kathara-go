@@ -1,17 +1,4 @@
-"""Kathará exception classes.
-
-Every class of Kathará v3.8.3 is reproduced here with the same name, the same
-base classes and the same message templates: `ERROR_CODES.md` §4 makes
-``str(e)`` and class identity a load-bearing contract for downstream consumers
-(kathara-lab-checker catches four of them by name).
-
-One class is **added** by the port: :class:`KatharaError`. `JSON_CLI_CONTRACT.md`
-§9.2 requires the client to map an unknown ``error.code`` (a code added by a
-newer binary) to "its base ``KatharaError`` with the message" instead of
-crashing. It is deliberately *not* made a base class of the v3.8.3 classes:
-that would change their MRO, and `InvalidImageArchitectureError` in particular
-must keep subclassing only :class:`ValueError`.
-"""
+"""Kathará exception classes."""
 
 
 # Generic Exceptions
@@ -190,9 +177,8 @@ class KubernetesConfigMapError(Exception):
     pass
 
 
-# Port-new: the fallback for error codes this client release does not know
-# (JSON_CLI_CONTRACT.md §9.2 "Clients MUST map unknown codes to a generic
-# error"). Never raised for any code in the frozen registry.
+# Fallback for error codes this client release does not know.
+
 class KatharaError(Exception):
     """Raised for an error envelope whose ``code`` this client does not know.
 

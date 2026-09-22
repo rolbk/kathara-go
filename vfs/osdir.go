@@ -15,12 +15,6 @@ type osDir struct {
 }
 
 // OSDir returns an FS rooted at the host directory path.
-//
-// Divergence from pyfilesystem, deliberate and documented in SPIKES/vfs.md:
-// open_fs("osfs://missing") raises CreateFailed eagerly, whereas the §6
-// signature `OSDir(path) FS` cannot report an error. Construction therefore
-// succeeds and the first operation fails with fs.ErrNotExist. Callers that
-// need the eager check (model.NewLab) should stat the directory themselves.
 func OSDir(path string) FS {
 	return &osDir{root: filepath.Clean(path)}
 }
@@ -40,18 +34,6 @@ func (o *osDir) host(cleaned string) string {
 // convert maps host errno values onto the pyfilesystem error classes,
 // reproducing fs/error_tools.py's _ConvertOSErrors tables — the context
 // manager every OSFS method wraps itself in.
-//
-// The FILE/DIR split is real and load-bearing. ENOTDIR ("a component of the
-// path is not a directory") is ResourceNotFound for the file operations
-// (getinfo, openbin, remove — FILE_ERRORS has the DirectoryExpected mapping
-// commented out) and DirectoryExpected for the directory ones (listdir,
-// scandir, makedir, removedir). Verified live against OSFS with a file at
-// /afile: getinfo("/afile/child") raises ResourceNotFound while
-// listdir("/afile/child") raises DirectoryExpected.
-//
-// Without this the raw syscall.ENOTDIR escapes, and it satisfies none of
-// errors.Is(err, fs.ErrNotExist) / ErrDirectoryExpected / ErrFileExpected, so
-// a condition Memory() reports as fs.ErrNotExist would be unclassifiable here.
 func (o *osDir) convert(op, cleaned string, dirOp bool, err error) error {
 	if err == nil {
 		return nil

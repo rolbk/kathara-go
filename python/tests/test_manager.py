@@ -1,8 +1,4 @@
-"""The manager facade against a fake binary: argv, stdin, stdout, exit codes.
-
-Every assertion here is traceable to `JSON_CLI_CONTRACT.md`; the section is
-named in the test.
-"""
+"""The manager facade against a fake binary: argv, stdin, stdout, exit codes."""
 
 import io
 import json
@@ -75,7 +71,6 @@ class DeployTest(FakeBinaryTestCase):
         raise AssertionError("%r carries no --name" % argv)
 
     def test_deploy_lab_invokes_lstart_from_archive(self):
-        # Contract §7.1: `lstart --from-archive - --name NAME --format json`.
         lab = build_lab()
         self.plan_result({"lab": {"name": "Test scenario", "hash": lab.hash, "path": None},
                           "dry_run": False, "machines": ["pc1", "pc2"], "links": ["A"]})
@@ -89,9 +84,6 @@ class DeployTest(FakeBinaryTestCase):
         self.assertEqual("Test scenario", self.deployed_name(argv))
 
     def test_deploy_lab_name_reproduces_the_lab_hash(self):
-        # Contract §7.2: hash = generate_urlsafe_hash(NAME). The client must
-        # pass back exactly the string the model hashed, or `exec(lab_hash=...)`
-        # would address a different scenario afterwards.
         lab = Lab(None, path=self.tmpdir)
         lab.new_machine("pc1")
         self.manager.deploy_lab(lab)
@@ -262,9 +254,6 @@ class UndeployTest(FakeBinaryTestCase):
         self.assertArgvContains(argv, ["--format", "json"])
 
     def test_undeploy_lab_by_name_hashes_the_name(self):
-        # Contract §8: `--lab-name` is the binary's own flag, but v3.8.3's API
-        # resolved the hash client-side; keeping that keeps `lab_name` and
-        # `lab_hash` interchangeable for callers.
         self.manager.undeploy_lab(lab_name="Test scenario")
         argv = self.last_argv()
         self.assertArgvContains(argv, ["--lab-hash", generate_urlsafe_hash("Test scenario")])
@@ -305,8 +294,6 @@ class UndeployTest(FakeBinaryTestCase):
             self.manager.undeploy_machine(lab.get_machine("pc1"), keep_links=True)
 
     def test_wipe_always_forces(self):
-        # Contract §1.5: in json mode `wipe` without --force answers
-        # ConfirmationRequired and wipes nothing. An API call IS the explicit form.
         self.manager.wipe()
         self.assertIn("-f", self.last_argv())
         self.assertNotIn("-a", self.last_argv())
@@ -393,8 +380,6 @@ class ExecTest(FakeBinaryTestCase):
         self.manager = Kathara.get_instance()
 
     def test_stream_yields_demux_tuples(self):
-        # Contract §4.2: one event per non-empty chunk side; a stdout event is
-        # (bytes, None), a stderr event is (None, bytes) — the docker demux shape.
         self.plan_exec([
             {"type": "stdout", "data": "hello "},
             {"type": "stdout", "data": "world\n"},
@@ -448,7 +433,6 @@ class ExecTest(FakeBinaryTestCase):
         self.assertEqual(0, code)
 
     def test_error_event_raises_the_mapped_exception(self):
-        # Contract §4.1: `error` is a terminal event carrying the §5.1 object.
         self.plan_exec([
             {"type": "stdout", "data": "partial"},
             {"type": "error", "error": {"code": "MachineBinary",
@@ -463,7 +447,6 @@ class ExecTest(FakeBinaryTestCase):
         self.assertEqual("frr", caught.exception.binary)
 
     def test_interrupted_event_raises_keyboard_interrupt(self):
-        # Contract §6.2: terminal `interrupted` event, exit 0, no `exit` event.
         self.plan_exec([{"type": "stdout", "data": "x"}, {"type": "interrupted"}])
 
         stream = self.manager.exec("pc1", "sleep 100", lab_hash="H1")
@@ -472,7 +455,6 @@ class ExecTest(FakeBinaryTestCase):
             next(stream)
 
     def test_unknown_event_types_are_skipped(self):
-        # Contract §9.2: clients MUST skip unknown `type` values.
         self.plan_exec([
             {"type": "stats", "sample": {"cpu": 1}},
             {"type": "stdout", "data": "ok"},
@@ -484,8 +466,6 @@ class ExecTest(FakeBinaryTestCase):
         self.assertEqual(0, code)
 
     def test_empty_data_events_are_not_yielded(self):
-        # §4.2: "There are no {"data":""} events in v1" — but a client that gets
-        # one anyway must not turn it into a spurious empty chunk.
         self.plan_exec([
             {"type": "stdout", "data": ""},
             {"type": "stdout", "data": "real"},
@@ -500,7 +480,7 @@ class ExecTest(FakeBinaryTestCase):
         # (`DockerMachine.py:779-781`), and kathara-lab-checker wraps only the
         # `exec(...)` call in try/except (e.g. `DNSAuthorityCheck.py:22-30`),
         # calling `get_output(...)` outside it. A deferred raise turns a recorded
-        # FailedCheck into a crash of the whole run.
+        # FailedCheck into a failure of the whole run.
         self.plan([self.probe_response(machines=[])])
 
         with self.assertRaises(MachineNotRunningError) as caught:
@@ -545,9 +525,6 @@ class ExecTest(FakeBinaryTestCase):
             next(stream)
 
     def test_a_usage_error_is_not_a_successful_empty_result(self):
-        # Contract §5.5: usage errors exit 2 with nothing on stdout. Reporting
-        # that as `(b"", b"", 0)` would make a mis-invocation look like a command
-        # that ran and printed nothing.
         self.plan([self.probe_response(), {"stdout": "", "stderr": "unknown flag: --nope\n", "exit": 2}])
 
         with self.assertRaises(InvocationError) as caught:
@@ -574,7 +551,6 @@ class ExecTest(FakeBinaryTestCase):
         gc.collect()
 
     def test_a_stream_without_a_terminal_event_is_an_error(self):
-        # §4.1: "Exactly one terminal event ends every jsonl stream."
         self.plan([
             self.probe_response(),
             self.events_response([{"type": "stdout", "data": "half"}], exit_code=1),
@@ -586,10 +562,6 @@ class ExecTest(FakeBinaryTestCase):
             next(stream)
 
     def test_a_flood_of_stderr_does_not_deadlock_the_stream(self):
-        # Contract §1.3 puts every log line on stderr while stdout carries the
-        # event stream. A client that reads stdout to exhaustion and only then
-        # drains a stderr *pipe* deadlocks as soon as the binary logs more than
-        # one pipe buffer (64 KiB on Linux) before its first event.
         import concurrent.futures
         import json as _json
 
@@ -701,7 +673,6 @@ class InventoryTest(FakeBinaryTestCase):
             self.manager.get_machine_api_object("pc9", lab_hash="H1")
 
     def test_get_machines_stats_yields_inventory_keyed_by_container(self):
-        # Spec §0.3 partial exception: inventory fields only.
         self.plan_result({"machines": INVENTORY})
         stats = next(self.manager.get_machines_stats(lab_hash="H1"))
 
@@ -731,8 +702,6 @@ class InventoryTest(FakeBinaryTestCase):
         self.assertEqual("27.3.1", self.manager.get_release_version())
         self.assertEqual("check", self.last_argv()[0])
 
-        # `check` deploys and undeploys a test device (contract §3.7). Neither
-        # value can change inside one process, so it runs once.
         self.assertEqual("Docker (Kathara)", self.manager.get_formatted_manager_name())
         self.assertEqual(1, len(self.calls()))
 
@@ -743,7 +712,6 @@ class InventoryTest(FakeBinaryTestCase):
 
 
 class UnsupportedSurfaceTest(FakeBinaryTestCase):
-    """Everything `PORT_SPEC.md` §7.2 gives up on must say so, not misbehave."""
 
     def setUp(self):
         super().setUp()
@@ -777,8 +745,6 @@ class UnsupportedSurfaceTest(FakeBinaryTestCase):
         self.assertEqual([], self.calls(), "an unsupported call must not spawn the binary")
 
     def test_connect_tty_by_hash_alone_is_not_supported(self):
-        # A hash cannot be turned back into the name it was derived from, and
-        # `connect` has no `--lab-hash` (contract §8).
         with self.assertRaises(NotSupportedError):
             self.manager.connect_tty("pc1", lab_hash="H1")
         self.assertEqual([], self.calls())
@@ -792,20 +758,12 @@ class UnsupportedSurfaceTest(FakeBinaryTestCase):
 
         argv = self.last_argv()
         self.assertEqual("connect", argv[0])
-        # Human-only command: no --format token at all (contract §1.1).
         self.assertNotIn("--format", argv)
         self.assertArgvContains(argv, ["--shell", "/bin/sh"])
         self.assertIn("-l", argv)
         self.assertEqual("pc1", argv[-1])
 
     def test_connect_tty_of_a_named_scenario_ignores_its_directory(self):
-        # A scenario that has BOTH a name and a directory is deployed under
-        # `--name=<name>`, so its identity is `hash(name)` (contract §7.2, A8) —
-        # exactly what v3.8.3 addresses `connect_tty` by (`DockerManager.py:398`,
-        # `lab_hash = lab.hash`). `connect -d <dir>` would instead take the
-        # directory's own identity (the `LAB_NAME=` of the lab.conf on disk, or
-        # `hash(<dir>)` when there is none, contract §3.0.1), which is a
-        # different scenario. The name must win.
         directory = os.path.join(self.tmpdir, "scenario")
         os.makedirs(directory)
         with open(os.path.join(directory, "lab.conf"), "w") as lab_conf:
@@ -860,11 +818,6 @@ class UnsupportedSurfaceTest(FakeBinaryTestCase):
         self.assertIn("-v", self.last_argv())
 
     def test_connect_tty_by_name_addresses_the_scenario_through_lab_name(self):
-        # Layer D gate 2: the managing-filesystem tutorial deploys a memory-FS
-        # scenario and then calls `connect_tty(name, lab_name=lab.name)`. The
-        # scenario has no directory, so one is synthesised carrying nothing but
-        # its `LAB_NAME=` line, which `LabParser` turns into exactly the hash
-        # `deploy_lab` used (contract §3.0.1, A8).
         self.plan([{"stdout": "", "exit": 0}])
         seen = {}
 
@@ -903,7 +856,7 @@ class UnsupportedSurfaceTest(FakeBinaryTestCase):
         self.assertIn("-d", argv)
 
     def test_connect_tty_to_an_unwritable_name_is_refused(self):
-        # `LAB_NAME=a=b` crashes the parser's metadata branch (DIVERGENCES.md 5).
+
         with self.assertRaises(NotSupportedError):
             self.manager.connect_tty("pc1", lab_name="a=b")
         self.assertEqual([], self.calls())

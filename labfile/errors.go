@@ -6,17 +6,6 @@ import (
 	"github.com/KatharaFramework/kathara-go/kerrors"
 )
 
-// ParseError is a failure that names the scenario file and the line it was
-// found on — the shape ERROR_CODES.md §0.3 freezes for this package.
-//
-// Python raises two different classes from those sites and the difference is
-// observable in the JSON envelope, so [ParseError.Code] carries it: every
-// message of `LabParser` and `DepParser` is a `SyntaxError` except the reserved
-// device name of `LabParser.py:55`, which is a `ValueError`.
-//
-// The struct is what makes `file` and `line` available as JSON fields; the
-// rendered text is [ParseError.Msg] and the constructors below are the only
-// places the templates live.
 type ParseError struct {
 	// File is the configuration file the failure was found in — "lab.conf",
 	// the `--config` name that replaced it, or "lab.dep". It is empty for the
@@ -65,8 +54,6 @@ func newLabSyntax(confName string, line int, inner string) *ParseError {
 	}
 }
 
-// newLabReservedName is `LabParser.py:55`. It is the one parse failure Python
-// raises as a ValueError rather than a SyntaxError (ERROR_CODES.md §2 Value).
 func newLabReservedName(confName string, line int, key string) *ParseError {
 	return &ParseError{
 		File: confName,
@@ -92,18 +79,11 @@ func newDepSyntax(line int) *ParseError {
 // tooManyValues is CPython's own text for `(a, b) = seq` with a longer
 // sequence, and notEnoughValues is its counterpart for a shorter one, `got`
 // being the length CPython reports.
-//
-// Both strings are CPython runtime detail that Go can only hard-code
-// (DIVERGENCES.md 8, README SURPRISE 27), and both are user-visible: a `LAB_*`
-// value containing a second `=` escapes uncaught with the first
-// (`LabParser.py:85`), and `OptionParser` wraps either one in its own sentence.
 const (
 	tooManyValues        = "too many values to unpack (expected 2)"
 	notEnoughValuesUntil = "not enough values to unpack (expected 2, got "
 )
 
-// errTooManyValues is the bare, uncaught ValueError of `LabParser.py:85` — no
-// file, no line number and no mention of lab.conf (DIVERGENCES.md 5).
 var errTooManyValues = kerrors.NewValue(tooManyValues)
 
 // notEnoughValues renders CPython's short-sequence message for a sequence of

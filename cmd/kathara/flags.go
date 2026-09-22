@@ -1,15 +1,3 @@
-// This file is the `type=` callables of `cli/ui/utils.py` (CLI_SURFACE.md
-// §0.6) plus the pflag value types that carry `nargs`-style lists.
-//
-// The distinction the file exists to preserve is which of them raises
-// `ArgumentTypeError` — caught by argparse, usage on stderr, **exit 2** — and
-// which raises a bare `SyntaxError`, which argparse does *not* catch and which
-// therefore reaches the entrypoint's handler as `CRITICAL (SyntaxError) …`,
-// **exit 1**. JSON_CLI_CONTRACT.md A9 pins both halves. So `alphanumeric`,
-// `interface_cd_mac` and `volume` validate inside [pflag.Value.Set], where a
-// failure is a usage error, and `cd_mac` does not: `--add` collects raw strings
-// and the command body converts them, where a failure is an error envelope.
-
 package main
 
 import (
@@ -21,20 +9,10 @@ import (
 	"github.com/KatharaFramework/kathara-go/kerrors"
 )
 
-// wordPattern is Python's `^\w+$` for a `str` pattern, i.e. with `re.UNICODE`
-// implied: CPython's `SRE_UNI_IS_WORD` is `isalnum() or '_'`, which is the
-// letter and number categories plus the underscore. Go's own `\w` is ASCII, so
-// the classes are spelled out — the same reading RULINGS.md OQ-14a fixes for
-// the lab.conf meta and collision-domain names.
 var wordPattern = regexp.MustCompile(`^[\p{L}\p{N}_]+$`)
 
 // stringList is a pflag value that accumulates the values of an option
 // argparse declares with `nargs='+'` or `nargs='*'`.
-//
-// [expandGreedy] has already turned one Python occurrence into several pflag
-// occurrences, so Set is called once per value. The [emptyListSentinel] is the
-// bare `nargs='*'` case: `-o` with nothing after it, which argparse parses as
-// the empty list and not as absent.
 type stringList struct {
 	values  []string
 	present bool
@@ -61,8 +39,6 @@ func (l *stringList) Set(v string) error {
 
 func (l *stringList) Type() string { return "stringList" }
 
-// Values are the accumulated values, in CLI order — which is semantic for
-// `--add` (it decides interface numbering, `cli.md` §2) and for `--eth`.
 func (l *stringList) Values() []string { return l.values }
 
 // Present reports whether the option appeared at all, which is what tells
@@ -72,10 +48,6 @@ func (l *stringList) Present() bool { return l.present }
 // tristate is a pflag value for argparse's `action='store_const'` options —
 // `--terminals`/`--noterminals`, `--hosthome`/`--no-hosthome`,
 // `--shared`/`--no-shared`, `--privileged`.
-//
-// The three states are Python's and PORT_SPEC §4.2 requires all three: unset is
-// `None` and means "fall through to the setting", while an explicitly set false
-// is not the same answer.
 type tristate struct {
 	value *bool
 	// constant is the `const=` of the flag this value is bound to.
@@ -127,12 +99,6 @@ type ethSpec struct {
 }
 
 // interfaceCDMAC is `cli/ui/utils.interface_cd_mac`, the `type=` of `--eth`.
-//
-// Two of its shapes look like oversights and are reproduced. A value with more
-// than one `/` — `0:A/aa/bb` — takes neither the `len(parts) == 2` branch nor
-// any error branch, so the MAC is silently dropped; and an empty MAC (`0:A/`)
-// *is* an error, because the `else: raise ValueError` fires only for the
-// two-part case.
 func interfaceCDMAC(value string) (ethSpec, error) {
 	invalid := fmt.Errorf("invalid interface definition: %s", value)
 
@@ -182,12 +148,6 @@ func volumeSpec(value string) error {
 
 // cdMAC is `cli/ui/utils.cd_mac` → `utils.parse_cd_mac_address`, the `type=` of
 // `--add`.
-//
-// It is NOT called from a [pflag.Value.Set]. Python's raises `SyntaxError`,
-// which argparse does not catch, so the failure has to reach the entrypoint's
-// handler and become `CRITICAL (SyntaxError) Invalid interface definition:
-// \`x/\`.` with exit **1** — where an `ArgumentTypeError` would have been usage
-// text with exit 2 (JSON_CLI_CONTRACT.md A9).
 func cdMAC(value string) (cd, mac string, err error) {
 	return util.ParseCDMACAddress(value)
 }

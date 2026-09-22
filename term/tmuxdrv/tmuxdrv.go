@@ -1,21 +1,5 @@
 // Package tmuxdrv drives the tmux(1) binary through its documented
 // command-line interface.
-//
-// It is the transport half of the spec §3.3 tmux backend (§0.2 #2): Kathara
-// never links a tmux client library and never parses tmux's human-readable
-// output. Every query asks tmux for an explicit format string (-F) and every
-// decision is taken on an exit status or on a value tmux was asked to print.
-//
-// The package is deliberately dependency-free (standard library only) so it can
-// be exercised without a Docker daemon, a lab, or a TTY. Error values are local
-// sentinels; the `term` package maps them onto the kerrors taxonomy.
-//
-// # Targets
-//
-// tmux resolves a bare -t target by exact name, then prefix, then fnmatch, so
-// "-t lab" happily selects the session "lab1". Every target this package emits
-// is written in tmux's exact-match form ("-t=lab", "-t=lab:=pc1"), which is the
-// only way to make "does session X exist" mean X and not X-something.
 package tmuxdrv
 
 import (
@@ -46,17 +30,12 @@ type Driver struct {
 	// default (~/.tmux.conf and friends). Tests set it to os.DevNull so that
 	// user configuration cannot move window indices (base-index) or rename
 	// windows underneath them.
-	//
 	// tmux only reads the configuration file when the *server* starts, so
 	// this has no effect on a command that reaches an already-running server.
 	Config string
 }
 
 // Sentinel errors. They are matched with errors.Is.
-//
-// "No server running on this socket" is deliberately not one of them: it is
-// indistinguishable from "no such session" at the tmux CLI, and every operation
-// here folds it into the same answer an absent session gets.
 var (
 	// ErrSessionNotFound means the named session does not exist.
 	ErrSessionNotFound = errors.New("tmuxdrv: session not found")
@@ -170,16 +149,6 @@ func (d *Driver) run(ctx context.Context, args ...string) (string, error) {
 // The tmux messages that mean "the thing you asked about is not there", as
 // opposed to "tmux failed". tmux has no localization, so these strings are
 // stable across builds and locales.
-//
-// The groups are deliberately narrow: each call site passes only the spellings
-// the command it ran can actually produce, so a genuine failure that merely
-// mentions an absent object elsewhere is not swallowed as "nothing to do".
-// Every spelling below was observed on the pinned tmux 3.5a from the
-// subcommand named beside it, and exists in that binary's string table; four
-// entries that earlier versions of this list carried ("no current server",
-// "session not found", "no client with tty", "can't establish current
-// session") are absent from tmux 3.5a entirely and were dropped rather than
-// left as unverifiable widening (see docs/port/SPIKES/tmux.md quirk 5).
 var (
 	// noServerMessages: any command, when the socket has no live server.
 	noServerMessages = []string{
@@ -213,11 +182,6 @@ var (
 
 // isAbsence reports whether err is a tmux error whose stderr carries one of the
 // documented "not there" messages. Any other non-zero exit is a real failure.
-//
-// A message has to *begin a line* of stderr: matching anywhere inside it would
-// let an unrelated failure that happens to quote one of these strings be read
-// as absence, while anchoring to the very first byte would break on a command
-// that starts the server and prints configuration diagnostics first.
 func isAbsence(err error, prefixes ...string) bool {
 	var cmdErr *CommandError
 	if !errors.As(err, &cmdErr) || cmdErr.ExitCode != 1 {

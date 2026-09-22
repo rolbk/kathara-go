@@ -13,13 +13,6 @@ import (
 // same one Windows gets, and not the passwd lookup Linux gets. Under `sudo`
 // this therefore returns /root, while the Linux build returns the invoking
 // user's home; the asymmetry is Python's (see [GetCurrentUserHome] on Linux).
-//
-// The body is `os.path.expanduser('~')`, i.e. posixpath.expanduser, rather
-// than [os.UserHomeDir], because two of its behaviours are reachable and
-// differ: `$HOME=""` yields "/" (CPython right-strips the slashes and then
-// `or`s the empty result with the root) and an unset `$HOME` falls back to the
-// passwd entry of the *real* uid, ignoring SUDO_UID unlike everything else in
-// this package.
 func GetCurrentUserHome() (string, error) {
 	home, ok := os.LookupEnv("HOME")
 	if !ok {

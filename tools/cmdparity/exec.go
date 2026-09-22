@@ -64,11 +64,6 @@ func runProcess(ctx context.Context, dir, home string, argv []string) CmdResult 
 // parity harness pins 200 because `create_lab_table` builds an `expand=True`
 // table with eleven columns, and at 80 every cell of it renders as a single
 // ellipsis — the widest of the flows would compare nothing at all.
-//
-// It is a variable so that `-columns 80` reproduces the golden harness's
-// geometry: at 80 the two implementations also agree on the width of the
-// `usage:` block, which they do not at 200 (DIVERGENCES.md #103 pins the port's
-// help at a fixed 80 while argparse follows the terminal).
 var consoleWidth = "200"
 
 // deterministicEnv is tools/goldenharness/exec.go's environment, with HOME

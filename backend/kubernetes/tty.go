@@ -1,12 +1,5 @@
 // This file is `terminal/KubernetesWSTerminal.py` and
 // `terminal/session/KubernetesWSTerminalSession.py`, reduced to the transport.
-//
-// PACKAGE_GRAPH.md D-5 splits the Python "terminal" classes in two: the UI half
-// — raw mode, the SIGWINCH watcher, the stdin/stdout pumps — moves into `term`,
-// and the backend keeps the byte stream. So `KubernetesWSTerminal`, which is
-// nothing but `TerminalRunner(console=exec_by_platform(...), session=…)`, has
-// no port at all: `term` chooses the console. What survives is the session,
-// which is this file.
 
 package kubernetes
 
@@ -23,15 +16,6 @@ import (
 // ttySession is `KubernetesWSTerminalSession`
 // (`terminal/session/KubernetesWSTerminalSession.py:9`): an interactive exec on
 // a running pod.
-//
-// Python drives a websocket it polls (`peek_stdout` / `read_stdout` /
-// `write_stdin` / `write_channel(RESIZE_CHANNEL, …)`); client-go's
-// `remotecommand` drives io.Reader/io.Writer pairs instead, so the session is
-// two pipes and a resize channel around one blocking `StreamWithContext`.
-//
-// It is safe for the one concurrency pattern `term` runs: a goroutine in
-// [ttySession.Read] while another calls [ttySession.Write] and
-// [ttySession.Resize] ([kathara.TTYSession]).
 type ttySession struct {
 	// stdinWriter is what [ttySession.Write] fills and the transport drains.
 	stdinWriter *io.PipeWriter
@@ -54,12 +38,6 @@ type ttySession struct {
 var _ kathara.TTYSession = (*ttySession)(nil)
 
 // newTTYSession opens the exec and starts pumping it.
-//
-// `tty=True` on the request is what makes the API server allocate a PTY and
-// merge stderr into stdout, which is why there is one output pipe and not two —
-// `remotecommand.StreamOptions` rejects a Stderr writer when Tty is set, and
-// Python's session has the same shape (its `read` peeks stdout first and falls
-// back to stderr, a branch a tty exec never takes).
 func newTTYSession(ctx context.Context, factory executorFactory, req execRequest) (*ttySession, error) {
 	executor, err := factory.NewExecutor(req)
 	if err != nil {
@@ -97,12 +75,6 @@ func newTTYSession(ctx context.Context, factory executorFactory, req execRequest
 }
 
 // Read is `read(n)` (`KubernetesWSTerminalSession.py:21`).
-//
-// Python answers `b""` for "nothing yet" and raises a bare `Exception` when the
-// handler has closed, which its `TerminalRunner` reads as EOF. Neither survives:
-// [kathara.TTYSession.Read] pins io.EOF for the end of the session and a
-// zero-byte read with a nil error for "nothing has arrived", and a blocking
-// pipe read gives both without a poll loop.
 func (s *ttySession) Read(p []byte) (int, error) {
 	return s.stdoutReader.Read(p)
 }
@@ -115,12 +87,6 @@ func (s *ttySession) Write(p []byte) (int, error) {
 // Resize is `resize(cols, rows)` (`KubernetesWSTerminalSession.py:70`), whose
 // payload is `{"Height": rows, "Width": cols}` — client-go builds the same
 // frame from [remotecommand.TerminalSize].
-//
-// Columns first. The order is Python's and it is the one axis swap this port
-// cannot afford ([kathara.TTYSession.Resize]).
-//
-// A queued-but-unsent size is replaced rather than waited on: the caller is a
-// SIGWINCH handler and must not block, and only the latest size matters.
 func (s *ttySession) Resize(cols, rows uint16) error {
 	size := remotecommand.TerminalSize{Width: cols, Height: rows}
 	for {

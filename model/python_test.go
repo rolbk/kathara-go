@@ -39,8 +39,8 @@ func TestPyBigInt(t *testing.T) {
 		{in: "1__0", wantErr: true},
 		{in: "_1", wantErr: true},
 		{in: "1_", wantErr: true},
-		// isdigit-but-not-decimal characters are rejected, which is what makes
-		// the sysctl `--5` crash reachable.
+		// isdigit-but-not-decimal characters are rejected, which makes the
+		// sysctl `--5` exception path reachable.
 		{in: "²", wantErr: true},
 		{in: "½", wantErr: true},
 		{in: "一", wantErr: true},
@@ -77,8 +77,6 @@ func TestPyBigInt(t *testing.T) {
 // TestPyBigIntMatchesUtilPyInt keeps this package's arbitrary-precision scanner
 // and [util.PyInt] from drifting: on every literal that fits a Go int the two
 // must agree, and they must agree on which literals are syntax errors.
-//
-// It is the reason pyBigInt may carry its own whitespace table.
 func TestPyBigIntMatchesUtilPyInt(t *testing.T) {
 	t.Parallel()
 
@@ -123,10 +121,6 @@ func TestPyBigIntMatchesUtilPyInt(t *testing.T) {
 }
 
 // TestPyFloat is CPython's `float(s)`, pinned against the oracle.
-//
-// The two directions Go's own parser gets wrong are both here: `0x1p2` is a
-// valid Go float literal and a Python ValueError, and `٣.٥` / `1_0.5` are
-// Python floats that strconv.ParseFloat rejects.
 func TestPyFloat(t *testing.T) {
 	t.Parallel()
 
@@ -210,8 +204,8 @@ func TestPyIsNumeric(t *testing.T) {
 		{in: "٣٥", want: true},
 		{in: "1٣", want: true},
 		{in: "99999999999999999999999999999999", want: true},
-		// Numeric but not decimal: isnumeric says yes, int() says no, and that
-		// pair is what makes `pc1[sysctl]=net.a.b=²` crash.
+		// Numeric but not decimal: isnumeric says yes, int() says no, so
+		// `pc1[sysctl]=net.a.b=²` raises during conversion.
 		{in: "²", want: true},
 		{in: "³", want: true},
 		{in: "½", want: true},
@@ -235,12 +229,8 @@ func TestPyIsNumeric(t *testing.T) {
 		}
 	}
 
-	// DIVERGENCES.md: Python calls the CJK numerals numeric (Numeric_Type
-	// covers them) and Go's tables have no such property, so this one answers
-	// false where the oracle answers true. The only consequence is that
-	// `net.a.b=一` stores a string here and crashes there.
 	if pyIsNumeric("一") {
-		t.Error("pyIsNumeric(一) changed; update DIVERGENCES.md if the gap was closed")
+		t.Error("pyIsNumeric(一) changed; update the compatibility expectation if this gap was closed")
 	}
 }
 
@@ -398,8 +388,6 @@ func TestScalarPyInt(t *testing.T) {
 	}
 }
 
-// TestSaturate pins the one narrowing this package does, so that the
-// DIVERGENCES.md entry and the code cannot disagree.
 func TestSaturate(t *testing.T) {
 	t.Parallel()
 

@@ -8,14 +8,6 @@ import (
 	"github.com/spf13/pflag"
 )
 
-// TestFlagSurfaceMatchesCLISurface walks every row of docs/port/CLI_SURFACE.md
-// §1-§12 and asserts that the flag exists with the spelling, shorthand and
-// value-or-not the table records.
-//
-// It is a table of the *contract*, not of the implementation: the rows below
-// were transcribed from the document, so a flag that silently loses its
-// shorthand — or gains a value where argparse had `store_const` — fails here
-// rather than in a user's script.
 func TestFlagSurfaceMatchesCLISurface(t *testing.T) {
 	type row struct {
 		long      string
@@ -25,10 +17,7 @@ func TestFlagSurfaceMatchesCLISurface(t *testing.T) {
 	tests := []struct {
 		command string
 		flags   []row
-		// count is CLI_SURFACE.md §17's "Options" column, plus the port's own
-		// additions (`--format`, `--lab-hash`, `--lab-name`, `--from-archive`,
-		// `--name`), which the per-command comment enumerates.
-		extra []string
+		extra   []string
 	}{
 		{
 			command: "lstart",
@@ -199,8 +188,6 @@ func TestFlagSurfaceMatchesCLISurface(t *testing.T) {
 			extra:   []string{"format"},
 		},
 		{
-			// `SettingsCommand` defines no parser at all (CLI_SURFACE.md M-5),
-			// so the only flag is the one the dispatcher needs.
 			command: "settings",
 			flags:   []row{{"help", "h", false}},
 		},
@@ -244,16 +231,13 @@ func TestFlagSurfaceMatchesCLISurface(t *testing.T) {
 
 			spec.Cmd.Flags().VisitAll(func(f *pflag.Flag) {
 				if !want[f.Name] {
-					t.Errorf("--%s is declared but is not in CLI_SURFACE.md", f.Name)
+					t.Errorf("unexpected flag --%s", f.Name)
 				}
 			})
 		})
 	}
 }
 
-// TestConnectRejectsFormat is JSON_CLI_CONTRACT.md §1.1: `connect` is
-// human-only and declares no `--format`, so any use of it is an unknown-flag
-// usage error with exit 2 and an empty stdout.
 func TestConnectRejectsFormat(t *testing.T) {
 	a := newTestApp(t)
 	spec := commandTable(a.app)["connect"]
@@ -269,12 +253,6 @@ func TestConnectRejectsFormat(t *testing.T) {
 	}
 }
 
-// TestSettingsNeverParsesArgv is CLI_SURFACE.md §12 and M-5: `SettingsCommand`
-// builds no parser, so `-h` is ignored, `--format json` is ignored, and there
-// is no argparse exit-2 path at all — every invocation opens the screen. Here
-// there is no terminal, so the screen answers InvocationError and exits 1;
-// what matters is that argv never produced a usage error and never printed
-// help.
 func TestSettingsNeverParsesArgv(t *testing.T) {
 	for _, argv := range [][]string{{"-h"}, {"--help"}, {"--format", "json"}, {"--bogus"}, {"extra"}} {
 		t.Run(strings.Join(argv, " "), func(t *testing.T) {
@@ -294,9 +272,6 @@ func TestSettingsNeverParsesArgv(t *testing.T) {
 	}
 }
 
-// TestFormatRejectsUnsupportedValue covers the two halves of §1.1's
-// "Passing `--format json`/`jsonl` to a command that does not support that
-// value is a usage error".
 func TestFormatRejectsUnsupportedValue(t *testing.T) {
 	tests := []struct {
 		command string
@@ -327,8 +302,6 @@ func TestFormatRejectsUnsupportedValue(t *testing.T) {
 	}
 }
 
-// TestMutuallyExclusiveGroups covers every argparse MEG of CLI_SURFACE.md, in
-// both directions: the pair together is exit 2, each alone is accepted.
 func TestMutuallyExclusiveGroups(t *testing.T) {
 	tests := []struct {
 		command string
@@ -349,7 +322,6 @@ func TestMutuallyExclusiveGroups(t *testing.T) {
 		{"wipe", []string{"--settings", "--all"}, true},
 		{"connect", []string{"-v", "-d", "/tmp", "pc1"}, true},
 		{"exec", []string{"-v", "-d", "/tmp", "pc1", "ls"}, true},
-		// `list` has NO groups: -w and -n combine freely (CLI_SURFACE.md §11).
 		{"list", []string{"-w", "-n", "pc1"}, false},
 	}
 	for _, tc := range tests {
@@ -405,8 +377,6 @@ func TestRequiredFlags(t *testing.T) {
 	}
 }
 
-// TestArgparseTypeValidators is CLI_SURFACE.md §0.6, including the two shapes
-// of `interface_cd_mac` that look like oversights.
 func TestArgparseTypeValidators(t *testing.T) {
 	t.Run("alphanumeric", func(t *testing.T) {
 		for _, ok := range []string{"A", "cd_1", "_", "ÜBER", "٣"} {
@@ -618,11 +588,6 @@ func TestLinfoLiveSharesTheWatchGroup(t *testing.T) {
 	}
 }
 
-// TestLinfoErrorsInEveryMode is JSON_CLI_CONTRACT.md §1.1's `linfo` row read
-// with §5.6: the stub errors in every format, and the `linfo` feature token is
-// registered for the JSON *error envelope* — which only exists in the machine
-// formats, so the command has to accept `--format` for that registration to be
-// reachable at all.
 func TestLinfoErrorsInEveryMode(t *testing.T) {
 	t.Run("human", func(t *testing.T) {
 		a := newTestApp(t)

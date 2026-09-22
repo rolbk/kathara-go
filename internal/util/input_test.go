@@ -9,10 +9,6 @@ import (
 	"time"
 )
 
-// TestWaitUserInputDoesNotConsume pins the property that separates the Unix
-// arm from the Windows one and that the startup wait depends on: the probe
-// reports that input is available without reading it, so the byte is still
-// there for whatever runs next (utils.py:165 vs :172, PACKAGE_GRAPH.md §4).
 func TestWaitUserInputDoesNotConsume(t *testing.T) {
 	reader, writer, err := os.Pipe()
 	if err != nil {

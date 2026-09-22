@@ -19,10 +19,6 @@ import (
 )
 
 // fakeManager records what a command asked the backend to do.
-//
-// The embedded nil interface is deliberate: a command that reaches a method
-// this fake does not implement panics with a nil dereference, which fails the
-// test loudly instead of silently exercising a path nobody asserted.
 type fakeManager struct {
 	kathara.Manager
 
@@ -158,7 +154,6 @@ func TestLstartHumanOutputMatchesGoldenShape(t *testing.T) {
 	}
 }
 
-// TestLstartDryModeReturnsBeforeDeploy is CLI_SURFACE.md §1 step 10.
 func TestLstartDryModeReturnsBeforeDeploy(t *testing.T) {
 	dir := scenarioDir(t, map[string]string{
 		"lab.conf": "pc1[0]=\"A\"\npc2[0]=\"A\"\n",
@@ -188,9 +183,6 @@ func TestLstartDryModeReturnsBeforeDeploy(t *testing.T) {
 	}
 }
 
-// TestLstartLabExtIsDeferred is ERROR_CODES.md §5: the presence of the file is
-// reported BEFORE the root and platform gates Python applies, and before the
-// dry-mode return.
 func TestLstartLabExtIsDeferred(t *testing.T) {
 	dir := scenarioDir(t, map[string]string{
 		"lab.conf": "pc1[0]=\"A\"\n",
@@ -226,9 +218,6 @@ func TestLstartEmptyScenarioIsEmptyLabError(t *testing.T) {
 	}
 }
 
-// TestLstartSelectionFiltersAreAlwaysSets is JSON_CLI_CONTRACT.md A11: lstart
-// passes possibly-empty sets, never nil, because the deploy path truthiness-
-// tests them.
 func TestLstartSelectionFiltersAreAlwaysSets(t *testing.T) {
 	dir := scenarioDir(t, map[string]string{"lab.conf": "pc1[0]=\"A\"\npc2[0]=\"A\"\n"})
 
@@ -245,7 +234,7 @@ func TestLstartSelectionFiltersAreAlwaysSets(t *testing.T) {
 	}
 }
 
-// TestLcleanFiltersAreNilWhenEmpty is the inverse (A11, `LcleanCommand.py:70`):
+// TestLcleanFiltersAreNilWhenEmpty checks the inverse of `LcleanCommand.py:70`:
 // an empty CLI list becomes **nil**, because a non-nil empty set would mean
 // "undeploy nothing".
 func TestLcleanFiltersAreNilWhenEmpty(t *testing.T) {
@@ -296,7 +285,6 @@ func TestLcleanFallsBackToAPathLab(t *testing.T) {
 	}
 }
 
-// TestLcleanLabHashAddressing is JSON_CLI_CONTRACT.md §8.
 func TestLcleanLabHashAddressing(t *testing.T) {
 	a := newTestApp(t)
 	fake := &fakeManager{}
@@ -315,9 +303,6 @@ func TestLcleanLabHashAddressing(t *testing.T) {
 	}
 }
 
-// TestLrestartXtermReproducesThePythonBug is CLI_SURFACE.md §3's "latent code
-// bug (port as-is)": `--xterm` passes lrestart's parser, the clean runs, and
-// then lstart's parser rejects it — exit 2 with the scenario already down.
 func TestLrestartXtermFailsAfterTheClean(t *testing.T) {
 	dir := scenarioDir(t, map[string]string{"lab.conf": "pc1[0]=\"A\"\n"})
 
@@ -334,7 +319,7 @@ func TestLrestartXtermFailsAfterTheClean(t *testing.T) {
 		t.Fatalf("exit = %d, want 2", code)
 	}
 	if len(fake.undeployedRefs) != 1 {
-		t.Errorf("the clean phase did not run; that is the bug being reproduced")
+		t.Errorf("the clean phase did not run; expected the established behavior")
 	}
 	if len(fake.deployedLabs) != 0 {
 		t.Errorf("the start phase must not have run")
@@ -344,8 +329,6 @@ func TestLrestartXtermFailsAfterTheClean(t *testing.T) {
 	}
 }
 
-// TestVstartDryModeExitsBeforeValidation is CLI_SURFACE.md §6 step 2: the
-// checkmark prints even for flags that could never deploy.
 func TestVstartDryModeExitsBeforeValidation(t *testing.T) {
 	a := newTestApp(t)
 	spec := commandTable(a.app)["vstart"]
@@ -364,9 +347,6 @@ func TestVstartDryModeExitsBeforeValidation(t *testing.T) {
 	}
 }
 
-// TestVstartNonNumericEthIsASyntaxError is §3.8: a malformed `--eth` VALUE is a
-// usage error (exit 2), but a non-numeric interface NUMBER is a `SyntaxError`
-// that escapes argparse (exit 1).
 func TestVstartEthErrorSplit(t *testing.T) {
 	t.Run("bad value is exit 2", func(t *testing.T) {
 		a := newTestApp(t)
@@ -395,8 +375,6 @@ func TestVstartEthErrorSplit(t *testing.T) {
 	})
 }
 
-// TestVstartBuildsAOneDeviceVlab is PORT_SPEC §0.2 #3: the sugar constructs a
-// `kathara_vlab` scenario and hands it to the same DeployLab the l-family uses.
 func TestVstartBuildsAOneDeviceVlab(t *testing.T) {
 	a := newTestApp(t)
 	fake := &fakeManager{}
@@ -434,7 +412,6 @@ func TestVstartBuildsAOneDeviceVlab(t *testing.T) {
 	}
 }
 
-// TestWipeRequiresForceInJSONMode is JSON_CLI_CONTRACT.md §1.5 and §3.4.
 func TestWipeRequiresForceInJSONMode(t *testing.T) {
 	a := newTestApp(t)
 	fake := &fakeManager{}
@@ -473,8 +450,6 @@ func TestWipeForceProceeds(t *testing.T) {
 	}
 }
 
-// TestWipeReportsWhatWasRunning is §3.4's "canonically sorted names of what was
-// removed".
 func TestWipeReportsWhatWasRunning(t *testing.T) {
 	a := newTestApp(t)
 	fake := &fakeManager{
@@ -519,7 +494,6 @@ func TestWipeDeclinedAtThePromptExitsZero(t *testing.T) {
 	}
 }
 
-// TestListRejectsWatchUnderMachineFormats is §1.1 / A13.
 func TestListRejectsWatchUnderMachineFormats(t *testing.T) {
 	a := newTestApp(t)
 	withManager(a, &fakeManager{})
@@ -551,20 +525,6 @@ func TestListEmptyRendersTheNoDevicesPanel(t *testing.T) {
 
 // TestMachinesTableHeaderFollowsEachBackendsToDict is `create_lab_table`'s
 // column derivation (`cli/ui/utils.py:77-83`) on both backends.
-//
-// Python builds the header from the FIRST record's own `to_dict()` keys minus
-// `FORBIDDEN_TABLE_COLUMNS == ["container_name"]` (`:25,79`). The subtraction is
-// by key, and only Docker's dict has that key, so the two tables differ by more
-// than the one column the filter names:
-//
-//   - `KubernetesMachineStats.to_dict()` keeps `pod_name`, because the filter
-//     lists `container_name` and this dict does not have one;
-//   - it has no `user` at all — the class never records a deploying user;
-//   - its `image` precedes its `status`, where Docker's order is the reverse.
-//
-// JSON mode is deliberately NOT symmetric with this: its key is the canonical
-// `container_name` on both backends (JSON_CLI_CONTRACT.md §3.0.2), which
-// `TestListMachineObjectIsTheContractShape` and the `cliout` envelope tests pin.
 func TestMachinesTableHeaderFollowsEachBackendsToDict(t *testing.T) {
 	for _, tc := range []struct {
 		name  string
@@ -645,8 +605,6 @@ func tableHeaderCells(t *testing.T, lines []string) []string {
 // ptr is `&x` for a literal.
 func ptr[T any](v T) *T { return &v }
 
-// TestExecExitCodeIsTheRemoteCommands is JSON_CLI_CONTRACT.md A4, and the one
-// place a Kathara command exits non-zero on success.
 func TestExecExitCodeIsTheRemoteCommands(t *testing.T) {
 	a := newTestApp(t)
 	withManager(a, &execManager{
@@ -667,7 +625,6 @@ func TestExecExitCodeIsTheRemoteCommands(t *testing.T) {
 	}
 }
 
-// TestExecJSONAggregatesTheStreams is §3.6.
 func TestExecJSONAggregatesTheStreams(t *testing.T) {
 	a := newTestApp(t)
 	withManager(a, &execManager{frames: [][2]string{{"a", ""}, {"b", "e"}}, code: 0})
@@ -682,7 +639,6 @@ func TestExecJSONAggregatesTheStreams(t *testing.T) {
 	}
 }
 
-// TestExecJSONLEmitsOneEventPerNonEmptySide is §4.2's demux ruling.
 func TestExecJSONLEmitsOneEventPerNonEmptySide(t *testing.T) {
 	a := newTestApp(t)
 	withManager(a, &execManager{
@@ -718,7 +674,7 @@ func TestExecSuppressionFlags(t *testing.T) {
 	}
 }
 
-// TestExecCommandPayloadShape is OQ-7b / A12: one token becomes a bare string
+// TestExecCommandPayloadShape is command argument behavior: one token becomes a bare string
 // the backend shlex-splits, several stay a list.
 func TestExecCommandPayloadShape(t *testing.T) {
 	tests := []struct {
@@ -786,9 +742,6 @@ func (s *fakeExecStream) Next(context.Context) ([]byte, []byte, error) {
 func (s *fakeExecStream) ExitCode(context.Context) (int, error) { return s.code, nil }
 func (s *fakeExecStream) Close() error                          { return nil }
 
-// TestUTF8DecoderCarriesPartialSequences is the replacement for Python's
-// per-chunk `chardet` (§3.6, §4.2): a rune split across two chunks must not
-// become two replacement characters.
 func TestUTF8DecoderCarriesPartialSequences(t *testing.T) {
 	d := &utf8Decoder{}
 	// "é" is C3 A9.
@@ -817,7 +770,6 @@ func TestUTF8DecoderCarriesPartialSequences(t *testing.T) {
 	}
 }
 
-// TestArchiveExtraction is JSON_CLI_CONTRACT.md §7.3-§7.4.
 func TestArchiveExtraction(t *testing.T) {
 	t.Run("a plain scenario extracts at the archive root", func(t *testing.T) {
 		var buf bytes.Buffer
@@ -887,7 +839,6 @@ func writeTarFile(t *testing.T, tw *tar.Writer, name, content string) {
 	}
 }
 
-// TestFromArchiveRequiresName is §7.1's three usage rules.
 func TestFromArchiveUsageRules(t *testing.T) {
 	tests := []struct {
 		args []string
@@ -913,7 +864,6 @@ func TestFromArchiveUsageRules(t *testing.T) {
 	}
 }
 
-// TestFromArchiveNameOverridesLabName is §7.2's precedence rule.
 func TestFromArchiveNameOverridesLabName(t *testing.T) {
 	var buf bytes.Buffer
 	tw := tar.NewWriter(&buf)
@@ -938,7 +888,6 @@ func TestFromArchiveNameOverridesLabName(t *testing.T) {
 	if !strings.Contains(out, `"name":"Default scenario"`) {
 		t.Errorf("--name did not win: %s", out)
 	}
-	// The golden constant of §7.2.
 	if !strings.Contains(out, `"hash":"9pe3y6IDMwx4PfOPu5mbNg"`) {
 		t.Errorf("the hash was not recomputed from --name: %s", out)
 	}
@@ -966,9 +915,6 @@ func TestManagerConstructionFailurePropagates(t *testing.T) {
 	}
 }
 
-// TestLcleanReportsRunningLinks is §3.2: with no device filter, everything the
-// scenario had deployed is reported; with one, only the collision domains the
-// selected devices were attached to.
 func TestLcleanReportsRunningLinks(t *testing.T) {
 	dir := scenarioDir(t, map[string]string{
 		"lab.conf": "pc1[0]=\"A\"\npc2[0]=\"B\"\n",
@@ -1011,8 +957,6 @@ func TestLcleanReportsRunningLinks(t *testing.T) {
 	})
 }
 
-// TestLstartListSortsStatsByName is §3.1's `machine_stats` rule: the stream is
-// keyed by container name, the envelope by device name.
 func TestLstartListSortsStatsByName(t *testing.T) {
 	dir := scenarioDir(t, map[string]string{"lab.conf": "pc1[0]=\"A\"\nr1[0]=\"A\"\n"})
 
@@ -1036,9 +980,6 @@ func TestLstartListSortsStatsByName(t *testing.T) {
 	}
 }
 
-// TestLstartDeployedNamesUseScheduleOrderAndSortedLinks is §3.1: devices in
-// deploy schedule order (lab.conf insertion, as reordered by lab.dep), links
-// canonically sorted.
 func TestLstartDeployedNamesUseScheduleOrderAndSortedLinks(t *testing.T) {
 	dir := scenarioDir(t, map[string]string{
 		"lab.conf": "r1[0]=\"B\"\npc1[0]=\"A\"\npc2[0]=\"A\"\n",
@@ -1129,8 +1070,6 @@ func TestLstartGlobalMetadata(t *testing.T) {
 	}
 }
 
-// TestLconfigAddOrderIsSemantic is §3.10: `added` is in CLI argument order,
-// because that order decides interface numbering.
 func TestLconfigAddOrderIsSemantic(t *testing.T) {
 	dir := scenarioDir(t, map[string]string{"lab.conf": "pc1[0]=\"A\"\n"})
 
@@ -1149,8 +1088,8 @@ func TestLconfigAddOrderIsSemantic(t *testing.T) {
 	}
 }
 
-// TestLconfigAddSyntaxErrorIsExitOne is the `cd_mac` trap of A9: a malformed
-// `--add` value escapes argparse and becomes an error envelope, while a
+// TestLconfigCdMacTrap checks that a malformed `--add` value becomes an error
+// envelope, while a
 // malformed `--rm` value is a usage error.
 func TestLconfigCdMacTrap(t *testing.T) {
 	dir := scenarioDir(t, map[string]string{"lab.conf": "pc1[0]=\"A\"\n"})
@@ -1210,9 +1149,6 @@ func (m *configManager) GetLinkAPIObject(context.Context, string, kathara.LabRef
 	return struct{}{}, nil
 }
 
-// TestVconfigFetchesTheAPIObjects is the one behavioural difference §0.2 #3's
-// collapse had to keep: `vconfig` fetches the device and link handles by hand
-// (`VconfigCommand.py:63,85`), `lconfig` does not.
 func TestVconfigFetchesTheAPIObjects(t *testing.T) {
 	a := newTestApp(t)
 	m := &configManager{}
@@ -1251,13 +1187,6 @@ func TestVcleanUndeploysFromTheVlab(t *testing.T) {
 	}
 }
 
-// TestLrestartJSONWritesOneObject is the one-object rule across a nested
-// command (§1.2, §1.4). `lrestart` runs `lclean` and `lstart` through the
-// dispatcher with rebuilt argv, and that argv carries no `--format`; re-reading
-// the fresh sub-parser's `human` default would flip the console back for the
-// whole clean phase, putting its panel on stdout before the envelope and
-// leaving `clean.machines`/`clean.links` empty because the pre-undeploy
-// snapshot is gated on the format.
 func TestLrestartJSONWritesOneObject(t *testing.T) {
 	dir := scenarioDir(t, map[string]string{"lab.conf": "pc1[0]=\"A\"\n"})
 	fake := &fakeManager{
@@ -1289,10 +1218,6 @@ func TestLrestartJSONWritesOneObject(t *testing.T) {
 	}
 }
 
-// TestInterruptSwallowsTheCommandError is §6.2 read together with §1.4: when
-// the failure IS the interrupt, the entrypoint's interrupt arm owns stdout.
-// Rendering the cancelled context as an error first would put two objects on a
-// json stdout and a CRITICAL line Python never prints in human mode.
 func TestInterruptSwallowsTheCommandError(t *testing.T) {
 	for _, format := range []cliout.Format{cliout.FormatHuman, cliout.FormatJSON} {
 		t.Run(string(format), func(t *testing.T) {
@@ -1329,12 +1254,12 @@ func TestInterruptSwallowsTheCommandError(t *testing.T) {
 	}
 }
 
-// TestWipeAllSnapshotsAllUsers is E4: `links` already honoured `-a` and the
+// TestWipeAllSnapshotsAllUsers checks that `links` honors `-a` and the
 // wipe itself does, so `machines` has to as well — otherwise a root all-users
 // wipe reports only the caller's own devices.
 func TestWipeAllSnapshotsAllUsers(t *testing.T) {
 	// `wipe -a` refuses below root before it reaches the manager — that check
-	// is itself ported behaviour (`WipeCommand.py`), so a non-root run cannot
+	// is itself matching behavior (`WipeCommand.py`), so a non-root run cannot
 	// exercise the all-users snapshot. CI runners are non-root; the root VM
 	// this suite was written on runs it.
 	if os.Geteuid() != 0 {
@@ -1374,10 +1299,6 @@ func (r *statsCallRecorder) GetLinksStats(_ context.Context, _ kathara.LabRef, _
 	return &fakeLinksStream{}, nil
 }
 
-// TestListStreamEndIsACleanExit is CLI_SURFACE.md §13: `create_lab_table`
-// catches `StopIteration` and answers `None`, and `ListCommand.run` still
-// returns 0. `MachinesStatsStream.Next` documents io.EOF as that end, so it
-// cannot become an error envelope and exit 1.
 func TestListStreamEndIsACleanExit(t *testing.T) {
 	a := newTestApp(t)
 	withManager(a, &exhaustedManager{})
@@ -1448,10 +1369,6 @@ func TestUTF8DecoderReplacesMaximalSubparts(t *testing.T) {
 	}
 }
 
-// TestLcleanKeepsLinksHeldByASurvivingDevice is §3.2's "names actually
-// undeployed": `DockerLink.undeploy` reloads each candidate network and deletes
-// only the ones with no containers left (`DockerLink.py:170`), so a collision
-// domain shared with a device the filter spared is NOT removed.
 func TestLcleanKeepsLinksHeldByASurvivingDevice(t *testing.T) {
 	dir := scenarioDir(t, map[string]string{
 		"lab.conf": "pc1[0]=\"A\"\npc2[0]=\"A\"\npc1[1]=\"B\"\n",
@@ -1526,14 +1443,6 @@ func TestVstartEmptyStringOptionsAreStillPresent(t *testing.T) {
 	})
 }
 
-// TestFromArchiveExtractionDirectoryLifetime is JSON_CLI_CONTRACT.md §7.4's
-// "The temp directory is the lab's host path for mounts/`hostlab` during the
-// run".
-//
-// A successful deploy must leave the extraction directory on disk: the
-// containers outlive the CLI and bind-mount `/shared` and `/hostlab` out of it,
-// so removing it turns every path under `/shared` into an ENOENT the moment
-// `lstart` returns. Every branch that deploys nothing removes it.
 func TestFromArchiveExtractionDirectoryLifetime(t *testing.T) {
 	// run drives one archive deploy with its own private TMPDIR, and answers
 	// the extraction directories still on disk when the command returned.
@@ -1614,13 +1523,7 @@ func TestFromArchiveExtractionDirectoryLifetime(t *testing.T) {
 	})
 }
 
-// TestLabHashAddressingReportsANullName is §3.0.1's `string|null`: a scenario
-// addressed by `--lab-hash` has no name, and an empty string is not the same
-// answer as "none". The envelope would otherwise contradict itself, reporting
-// `"name":""` beside the `"path":null` the very same branch emits.
 func TestLabHashAddressingReportsANullName(t *testing.T) {
-	// `lclean` stands for all three §8 commands: the nameless scenario is
-	// built once, in [app.resolveRunningLab], which `exec` and `lconfig` share.
 	a := newTestApp(t)
 	withManager(a, &fakeManager{})
 	spec := commandTable(a.app)["lclean"]
@@ -1635,11 +1538,6 @@ func TestLabHashAddressingReportsANullName(t *testing.T) {
 	}
 }
 
-// TestWipeDoesNotCollapseSameNamedCollisionDomains is §3.4's `links`: two
-// scenarios can each own a collision domain called `A`, those are two distinct
-// networks, and `wipe` removes both. The machines half of the same envelope
-// does not deduplicate two devices called `pc1` either, and an envelope whose
-// two halves count differently is the bug.
 func TestWipeDoesNotCollapseSameNamedCollisionDomains(t *testing.T) {
 	a := newTestApp(t)
 	withManager(a, &fakeManager{
@@ -1666,13 +1564,6 @@ func TestWipeDoesNotCollapseSameNamedCollisionDomains(t *testing.T) {
 
 // TestCheckReportExpandsTabsLikeRich pins the five report labels to the columns
 // rich puts them in.
-//
-// Python writes `\t\t` (and one `\t` on the longest label) into
-// `console.print`, and rich expands tabs to eight-column stops before anything
-// reaches the terminal — so every value starts at column 32 and no tab is ever
-// emitted. Writing the raw control character instead re-lays-out the report on
-// any terminal whose stops differ, and leaves a tab in `kathara check > file`
-// where the oracle leaves spaces.
 func TestCheckReportExpandsTabsLikeRich(t *testing.T) {
 	a := newTestApp(t)
 	withManager(a, &fakeCheckManager{name: "Docker (Kathara)", release: "29.7.1"})

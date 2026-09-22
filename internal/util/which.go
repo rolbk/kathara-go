@@ -1,6 +1,5 @@
-// This file is the port of `shutil.which`, the PATH search behind
+// This file implements `shutil.which`, the PATH search behind
 // utils.get_executable_path (utils.py:78).
-//
 // It is here rather than expressed as [os/exec.LookPath] because the two are
 // not the same function. `which`'s result is interpolated straight into a
 // shell or `osascript` command line (`cli/ui/utils.py:133`), so the exact
@@ -19,17 +18,6 @@ import (
 
 // pyWhich is `shutil.which(cmd)` with the default mode, `os.F_OK | os.X_OK`.
 // It returns "" for Python's None.
-//
-// The structure is Python's, in order:
-//
-//  1. A cmd with a directory part is looked up in that directory only, and
-//     never on PATH — which is how `get_executable_path` can be handed an
-//     `argv[0]` of "./kathara" and find it.
-//  2. Otherwise PATH decides. An *unset* PATH falls back to the platform
-//     default; a PATH set to the empty string finds nothing at all, which is
-//     not the same thing (bpo-35755).
-//  3. Each directory is tried once — repeats are skipped by normalised name,
-//     which on Windows makes the skip case-insensitive.
 func pyWhich(cmd string) string {
 	dirname, base := pySplitPath(cmd)
 

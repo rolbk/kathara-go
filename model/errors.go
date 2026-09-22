@@ -6,24 +6,6 @@ import (
 	"github.com/KatharaFramework/kathara-go/internal/util"
 )
 
-// PyRuntimeError is a Python exception class that the ERROR_CODES.md registry
-// does not carry: the builtins §1.2 buckets into `InternalError` —
-// `TypeError`, `AttributeError`, `KeyError`, `OverflowError` — plus
-// pyfilesystem's `CreateFailed`, which `open_fs("osfs://…")` raises for a
-// missing directory. They are the classes 3.8.3 reaches by crashing rather than
-// by raising deliberately.
-//
-// They are ported because the crashes are observable — a tombstoned interface
-// makes `lstart` die with `AttributeError: 'NoneType' object has no attribute
-// 'link'`, and a `bridged_iface` set from lab.conf makes it die with a
-// TypeError from `sorted()` (DIVERGENCES.md 1, vector
-// `labconf/bridged_iface_with_interface`) — but they are returned, never
-// panicked: PORT_SPEC §10 forbids a panic on any Python-reachable path, and
-// these paths run inside the deploy fan-out.
-//
-// At the CLI boundary they carry no code and fall into `InternalError`
-// (ERROR_CODES.md §1.4). Class is kept so the Layer B vector runner can compare
-// against Python's `type(e).__name__`.
 type PyRuntimeError struct {
 	// Class is Python's exception class name: "TypeError", "AttributeError" or
 	// "KeyError".
@@ -47,10 +29,6 @@ func (e *PyRuntimeError) Is(target error) bool {
 	return false
 }
 
-// The three classes a caller has a reason to test for, as sentinels for
-// errors.Is. They are not part of the ERROR_CODES.md registry — a value
-// carrying one is an InternalError there — and exist so that a caller can tell
-// a ported crash from a taxonomy error.
 var (
 	// ErrPyTypeError is Python's TypeError.
 	ErrPyTypeError = errors.New("model: python TypeError")
@@ -62,8 +40,8 @@ var (
 
 func newTypeError(msg string) error { return &PyRuntimeError{Class: "TypeError", Msg: msg} }
 
-// newNoneAttributeError is the crash a tombstoned interface causes:
-// `interface.link` where interface is None (`model/Lab.py:206,229,334`).
+// newNoneAttributeError is the exception from reading `interface.link` where
+// interface is None (`model/Lab.py:206,229,334`).
 func newNoneAttributeError(attr string) error {
 	return &PyRuntimeError{
 		Class: "AttributeError",
@@ -91,10 +69,6 @@ func newKeyError(key string) error {
 // ErrBridgedIfaceType is the TypeError `Machine.check()` raises when meta
 // `bridged_iface` holds a string: it is appended to a list of int interface
 // numbers and `sort()` then compares the two (`model/Machine.py:370-371`).
-//
-// Every lab.conf that sets `bridged_iface` hits this, because the lab.conf
-// parser stores every meta as a string — there is no lab.conf that sets it and
-// parses (DIVERGENCES.md 1, vector `labconf/bridged_iface_with_interface`).
 var ErrBridgedIfaceType = newBridgedIfaceTypeError("str")
 
 // newBridgedIfaceTypeError is that TypeError for any unorderable type. The
@@ -113,8 +87,8 @@ func newBridgedIfaceTypeError(typeName string) *PyRuntimeError {
 // MachineOptionError, so the text never reaches a user.
 var errPyIntNaN = errors.New("model: cannot convert float NaN to integer")
 
-// errPyIntInf is `int(float('inf'))`, an OverflowError — which `get_cpu` does
-// NOT catch, so `pc1[cpus]=inf` crashes 3.8.3 (oracle-verified).
+// errPyIntInf is `int(float('inf'))`, an OverflowError that `get_cpu` does not
+// catch, so `pc1[cpus]=inf` raises it directly in 3.8.3.
 var errPyIntInf = &PyRuntimeError{
 	Class: "OverflowError",
 	Msg:   "cannot convert float infinity to integer",

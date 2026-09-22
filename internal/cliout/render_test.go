@@ -85,7 +85,7 @@ func TestSyntheticLabMetaPanel(t *testing.T) {
 		"Name: goldenharness-lab-meta",
 		"Description: Synthetic scenario exercising every LAB_ metadata key",
 		"Version: 1.0",
-		"Author(s): Kathara Go port golden harness",
+		"Author(s): Kathara Go golden harness",
 		"Email: golden@example.invalid",
 		"Website: https://example.invalid/golden",
 	}, "\n")
@@ -95,7 +95,7 @@ func TestSyntheticLabMetaPanel(t *testing.T) {
 		"│ Name: goldenharness-lab-meta                                                 │",
 		"│ Description: Synthetic scenario exercising every LAB_ metadata key           │",
 		"│ Version: 1.0                                                                 │",
-		"│ Author(s): Kathara Go port golden harness                                    │",
+		"│ Author(s): Kathara Go golden harness                                         │",
 		"│ Email: golden@example.invalid                                                │",
 		"│ Website: https://example.invalid/golden                                      │",
 		"└──────────────────────────────────────────────────────────────────────────────┘",

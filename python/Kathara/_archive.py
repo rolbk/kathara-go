@@ -1,41 +1,4 @@
-"""Serialise an in-memory :class:`~Kathara.model.Lab.Lab` to the deploy archive.
-
-`PORT_SPEC.md` §5.4 / `JSON_CLI_CONTRACT.md` §7: ``deploy_lab`` ships the
-scenario to the Go binary as **a tar of a normal Kathará scenario directory**,
-rooted at the archive root, and the binary extracts it and proceeds exactly as
-if ``-d <tmpdir>`` had been given. So the wire format needs no schema of its
-own — it needs a faithful ``lab.conf``.
-
-What goes in the archive:
-
-* a ``lab.conf`` **regenerated from the model**, because the model — not the
-  file the lab may once have been parsed from — is what the caller asked to
-  deploy. Device order in the file is ``lab.machines`` insertion order, which
-  is the deploy schedule order (`JSON_CLI_CONTRACT.md` §3.1) and already
-  reflects any :meth:`Lab.apply_dependencies` reordering;
-* every file and directory of ``lab.fs``: ``*.startup``, ``*.shutdown``,
-  ``shared.startup``, per-device directory trees, ``kathara.conf``. This works
-  identically for a memory FS (the tutorials' ``Lab("name")``) and an OS FS (a
-  parsed scenario directory).
-* a ``lab.dep`` **regenerated from the model** when — and only when — the
-  scenario has dependencies. Ordering is already baked into the device order,
-  but ``lab.dep`` carries a second, invisible semantic: v3.8.3 deploys devices
-  **sequentially** when the scenario has one and in parallel chunks when it does
-  not (``DockerMachine.py:174-183``). A chain (each device depending on its
-  predecessor in the baked order) restores that without changing the order —
-  ``depgen.flatten`` of a chain is the chain, so the far side's
-  ``apply_dependencies`` is the identity.
-
-What is deliberately left out:
-
-* the original ``lab.conf`` and ``lab.dep`` in ``lab.fs``, superseded by the
-  generated ones: the model — not the files the scenario may once have been
-  parsed from — is what the caller asked to deploy.
-
-``lab.ext`` is passed through unchanged, so a scenario that uses external links
-gets the honest ``FeatureNotAvailable`` error from the binary (`ERROR_CODES.md`
-§5) instead of being silently deployed without them.
-"""
+"""Serialise an in-memory :class:`~Kathara.model.Lab.Lab` to the deploy archive."""
 
 import gzip
 import io
@@ -60,11 +23,7 @@ GENERATED_FILES: Tuple[str, ...] = ("lab.conf", "lab.dep")
 DEVICE_INTRODUCER_META: str = "bridged"
 DEVICE_INTRODUCER_VALUE: str = "false"
 
-#: `PORT_SPEC.md` §7.3 wheels are reproducible; so is this archive. A fixed
-#: mtime keeps two packs of the same scenario byte-identical — in the tar
-#: headers *and* in the gzip header, which carries an mtime of its own
-#: (:func:`pack_lab` writes the `gzip.GzipFile` itself for that reason:
-#: ``tarfile.open(mode="w:gz")`` stamps the wall clock there).
+
 _FIXED_MTIME: int = 0
 
 
@@ -166,25 +125,12 @@ def _interface_lines(machine: 'MachinePackage.Machine') -> List[str]:
 
 
 def _is_expressible_metadata(value: str) -> bool:
-    """Whether a ``LAB_*`` value survives the parser's metadata branch.
-
-    A value containing ``=`` crashes it: the branch does
-    ``(key, value) = line.split("=")`` and the Go port reproduces the crash
-    (``DIVERGENCES.md`` item 5). Quotes are stripped and a newline splits the
-    line, so neither round-trips either.
-    """
+    """Whether a ``LAB_*`` value survives the parser's metadata branch."""
     return "=" not in value and not any(character in value for character in ('\n', '\r', '"', "'"))
 
 
 def _metadata_lines(lab: 'LabPackage.Lab') -> List[str]:
-    """Render the ``LAB_*`` header lines.
-
-    ``LAB_NAME`` is emitted only when the lab has one, and **skipped** rather
-    than refused when its value is inexpressible: ``lstart --name`` wins over it
-    in any case (`JSON_CLI_CONTRACT.md` §7.2, A8), so the line carries the
-    extracted directory's own fidelity, never the identity. The other five keys
-    have no such fallback and are refused.
-    """
+    """Render the ``LAB_*`` header lines."""
     lines: List[str] = []
 
     for key, value in (
@@ -285,11 +231,7 @@ def _add_dir(tar: tarfile.TarFile, name: str, mode: int = 0o755) -> None:
 
 
 def _file_mode(lab: 'LabPackage.Lab', path: str, default: int) -> int:
-    """Preserve the executable bit when the filesystem exposes permissions.
-
-    `JSON_CLI_CONTRACT.md` §7.4: "File modes are preserved; owners are ignored."
-    A memory FS has no ``access`` namespace, hence the fallback.
-    """
+    """Preserve the executable bit when the filesystem exposes permissions."""
     try:
         info = lab.fs.getinfo(path, namespaces=['access'])
         permissions = info.permissions
@@ -306,8 +248,8 @@ def pack_lab(lab: 'LabPackage.Lab', compress: bool = True) -> bytes:
 
     Args:
         lab (Kathara.model.Lab.Lab): The network scenario to pack.
-        compress (bool): If True, gzip the archive. Both encodings are accepted
-            by the binary, which detects them by magic bytes (§7.4).
+        compress (bool): If True, gzip the archive. The binary accepts either
+            encoding and detects it by magic bytes.
 
     Returns:
         bytes: The tar (or tar.gz) content, ready for the binary's stdin.
@@ -372,18 +314,5 @@ def _walk(lab: 'LabPackage.Lab') -> List[Tuple[str, bool]]:
 
 
 def archive_name(lab: 'LabPackage.Lab') -> Optional[str]:
-    """Return the ``--name`` value that makes the binary recompute ``lab.hash``.
-
-    `JSON_CLI_CONTRACT.md` §7.2 pins ``hash = generate_urlsafe_hash(NAME)``, and
-    `model/Lab.py` hashes either the name (when there is one) or the constructor
-    path. The model records whichever string it hashed, so passing it back as
-    ``--name`` reproduces the identical hash — which is what keeps a later
-    ``exec(lab_hash=lab.hash)`` addressing the scenario that was just deployed.
-
-    Args:
-        lab (Kathara.model.Lab.Lab): The network scenario to deploy.
-
-    Returns:
-        Optional[str]: The ``--name`` value, None if the lab has no hash seed.
-    """
+    """Return the ``--name`` value that makes the binary recompute ``lab.hash``."""
     return lab.hash_seed

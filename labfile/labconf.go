@@ -30,32 +30,6 @@ var labMetadataPrefixes = func() []string {
 
 // ParseLab is `LabParser.parse` (`parser/netkit/LabParser.py:14`): read
 // `<path>/<confName>` and build the network scenario it describes.
-//
-// confName is passed through literally, as Python passes it to
-// `os.path.join`, and is interpolated into every file-level message — so
-// `lstart --config custom.conf` on an empty file reports `custom.conf file is
-// empty.` and not the default name. There is no "" spelling of the default;
-// callers pass [DefaultConfName].
-//
-// `check_integrity` runs INSIDE the parse (`LabParser.py:92`), which is why a
-// successfully parsed lab.conf can never produce a device with a hole in its
-// interface numbering — and why a sparse device is a parse-time error rather
-// than a deploy-time one (SYNTHESIS C-2, contradicting the PORT_SPEC §4.1
-// struct comment).
-//
-// Errors, in the order they can occur:
-//
-//   - [kerrors.ErrOS] for the three file-level failures (missing, empty,
-//     unopenable);
-//   - [UnicodeDecodeError] for a line that is not UTF-8;
-//   - [ParseError] for a malformed line or a reserved device name;
-//   - whatever `model` raises for a rejected value — a
-//     [kerrors.ErrMachineOption], a [kerrors.ErrMachineCollisionDomain], a
-//     [kerrors.ErrInterfaceMacAddress], the bare [kerrors.ErrValue] of a
-//     `strtobool` failure, or the [model.PyRuntimeError] a `bridged_iface`
-//     produces;
-//   - [kerrors.ErrNonSequentialMachineInterface] from the closing integrity
-//     check.
 func ParseLab(path, confName string, defaults model.Defaults) (*model.Lab, error) {
 	confPath := joinPath(path, confName)
 
@@ -71,7 +45,7 @@ func ParseLab(path, confName string, defaults model.Defaults) (*model.Lab, error
 
 	// `open(...)` then `mmap(...)`, with a bare `except Exception` over both.
 	// A *directory* passes the two checks above — it exists and `st_size` is
-	// its block size — and dies here, which is the third file-level message
+	// its block size — and fails here, which is the third file-level message
 	// (vector `labconf/conf_name_is_directory`).
 	data, err := os.ReadFile(confPath)
 	if err != nil {
@@ -101,7 +75,7 @@ func ParseLab(path, confName string, defaults model.Defaults) (*model.Lab, error
 
 		// The `#` test is on the RAW line, so an indented comment is a syntax
 		// error here — while lab.dep, which tests the stripped line, accepts
-		// one (README SURPRISE 9).
+		// one (compatibility note 9 in the vector README).
 		if strings.HasPrefix(line, "#") || stripped == "" {
 			continue
 		}
@@ -130,11 +104,12 @@ type deviceLine struct {
 // matched the device pattern.
 func applyDeviceLine(lab *model.Lab, confName string, lineNumber int, d deviceLine) error {
 	// Both groups are stripped in Python. Neither class can contain
-	// whitespace, so both calls are no-ops — kept because the port is a
+	// whitespace, so both calls are no-ops — kept because this implementation is a
 	// statement-for-statement one and a future class change would need them.
 	key := pyStrip(d.key)
 	arg := pyStrip(d.arg)
-	// Dead code on this path: the value class already excludes quotes.
+	// This branch is unreachable on this path because the value class already
+	// excludes quotes.
 	value := stripQuotes(d.value)
 
 	if util.IsReservedMachineName(key) {
@@ -144,22 +119,12 @@ func applyDeviceLine(lab *model.Lab, confName string, lineNumber int, d deviceLi
 	number, err := interfaceNumber(arg)
 	if err != nil {
 		// `except ValueError:` — the arg is not a number, so it names a meta.
-		//
-		// RULINGS.md OQ-14a: the dispatch is the integer parse and NOTHING
-		// else. Python's `except ValueError` would also swallow a ValueError
-		// raised inside the interface branch and silently reinterpret the line
-		// as a meta assignment; nothing on that branch raises one today, and
-		// routing an arbitrary error here would turn a future one into a
-		// wrong-but-silent parse (README SURPRISE 26).
 		_, existed, err := lab.AssignMetaToMachine(key, arg, value)
 		if err != nil {
 			return err
 		}
 		if existed {
-			// `if ... is not None`. Every previous value `add_meta` can report
-			// is non-None — the six containers included, which is why
-			// `pc1[sysctls]=x` warns on its first occurrence — so presence is
-			// the same test (NILABILITY.tsv:8).
+
 			slog.Warn("In " + confName + " - Line " + strconv.Itoa(lineNumber) +
 				": Device `" + key + "` already has a value assigned to meta `" + arg +
 				"`. Previous value has been overwritten with `" + value + "`.")
@@ -205,14 +170,11 @@ func applyLabMetadata(lab *model.Lab, confName string, lineNumber int, line stri
 	if !known {
 		// The raw line goes into the message INCLUDING its terminator, so the
 		// text carries an embedded newline — and the CR too on a CRLF file
-		// (README SURPRISE 10). Trimming it here changes the bytes.
+		// (compatibility note 10 in the vector README). Trimming it here changes
+		// the bytes.
 		return newLabSyntax(confName, lineNumber, "`"+line+"`.")
 	}
 
-	// `(key, value) = line.split("=")`. A value containing a second `=` — a URL
-	// with a query string, say — crashes with a bare ValueError carrying no
-	// file and no line number (DIVERGENCES.md 5). The prefix test above
-	// guarantees at least one `=`, so the short-sequence half is unreachable.
 	parts := strings.Split(line, "=")
 	if len(parts) != 2 {
 		return errTooManyValues
@@ -243,28 +205,6 @@ func applyLabMetadata(lab *model.Lab, confName string, lineNumber int, line stri
 }
 
 // interfaceNumber is `int(arg)`, the interface-versus-meta dispatch.
-//
-// [util.PyInt] is CPython's `int()`: Unicode decimal digits from any script and
-// PEP 515 underscores strictly between digits, so `pc1[0_1]` is interface 1 and
-// `pc1[٣]` is interface 3, while `pc1[_0]`, `pc1[0_]` and the superscript
-// `pc1[²]` are metas (RULINGS.md OQ-14a). `strconv.Atoi` would reclassify all
-// three of the first group.
-//
-// An out-of-range literal is still a number and stays on the interface path
-// ([util.ErrPyIntRange]); Python keeps all twenty digits of
-// `pc1[99999999999999999999]=A` and the port saturates, which reaches the same
-// `Interface \`0\` missing` from `check_integrity` (DIVERGENCES.md 45, vector
-// `labconf/interface_number_overflow`). The sign can only be positive here —
-// the arg class is `\w+`, which has no `-` — but the negative branch is spelled
-// out because [util.PyInt] is a general function.
-//
-// The saturation is NOT invisible once a device carries two out-of-range
-// numbers: they collapse onto one slot, so `pc1[99999999999999999999]=A` next
-// to `pc1[88888888888888888888]=B` is a collision here and a hole in the
-// numbering there, and a genuinely repeated literal reports the saturated value
-// where Python reports the digits it read. Both residues are recorded in
-// DIVERGENCES.md 45 and pinned by `TestInterfaceNumberSaturationIsObservable`;
-// closing them needs an arbitrary-precision interface key in `model`.
 func interfaceNumber(arg string) (int, error) {
 	number, err := util.PyInt(arg)
 	if err == nil {
@@ -280,11 +220,6 @@ func interfaceNumber(arg string) (int, error) {
 }
 
 // isCollisionDomainName is `re.search(r"^\w+$", cd_name)` (`LabParser.py:67`).
-//
-// Collision domains are far more permissive than device names: any run of
-// Unicode word characters, so `UPPER`, `_leading`, `123`, `shared` and a fully
-// non-ASCII name are all legal (README SURPRISE 16). The trailing-newline
-// tolerance is Python's `$`, which also matches immediately before one.
 func isCollisionDomainName(name string) bool {
 	name = strings.TrimSuffix(name, "\n")
 	if name == "" {

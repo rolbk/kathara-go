@@ -1,32 +1,3 @@
-// This file is the pane engine of the PORT_SPEC §3.3 item 1 rebuild: the VT
-// screen model each multiplexer pane draws its device onto
-// (docs/port/SPIKES/windows-terminal.md W6-8, "pane = Pty + VT screen model
-// under bubbletea").
-//
-// It has no Python counterpart. Python spawned an OS terminal emulator per
-// device and let *that* interpret the byte stream; the rebuilt multiplexer is
-// the emulator, so the interpretation has to live somewhere. This is the
-// smallest thing that can honestly be called one: a character grid, a cursor,
-// a scroll region, SGR passthrough and a bounded scrollback.
-//
-// # Deliberate limits
-//
-// The model renders what a device shell, `ip`, `vtysh`, `less` and `vim` emit.
-// It is not a conformance-complete DEC terminal and does not pretend to be:
-//
-//   - No terminal *replies*. DSR (`ESC[6n`), DA (`ESC[c`) and the OSC colour
-//     queries are consumed and dropped rather than answered, because a pane has
-//     no input path back to the device that the user is not also typing on.
-//     Programs that block waiting for a reply (very few; the ones that matter
-//     time out) degrade rather than corrupt.
-//   - Combining marks are dropped instead of merged into the preceding cell.
-//   - Resizing does not reflow wrapped lines, which is also what tmux does.
-//   - No character-set designation (`ESC(0` line drawing) — the sequence is
-//     consumed so it cannot leak to the screen, but the glyphs stay ASCII.
-//
-// Each of those is a rendering fidelity limit inside a sanctioned rebuild, not
-// a behaviour difference against Python: Python had no renderer of its own at
-// all.
 package term
 
 import (
@@ -38,18 +9,10 @@ import (
 )
 
 // DefaultScrollback is the number of scrolled-off lines a pane retains.
-//
-// One window per scenario times a few hundred cells per line puts a 20-device
-// scenario at a few megabytes, which is the right trade for the "scrollback"
-// requirement of §3.3 item 1.
 const DefaultScrollback = 2000
 
 // cell is one character position: the rune it shows and an index into the
 // screen's style table.
-//
-// The style is interned rather than stored as a string per cell because a
-// coloured `vtysh` screen has a handful of distinct SGR states and 80×24 cells;
-// storing the sequence per cell would allocate on every printable character.
 type cell struct {
 	r     rune
 	style uint16
@@ -60,11 +23,6 @@ type cell struct {
 var blank = cell{r: ' '}
 
 // Screen is one pane's terminal emulation state.
-//
-// It is an io.Writer: the pane pump copies device output into it. It is NOT
-// safe for concurrent use — the multiplexer feeds it only from bubbletea's
-// update loop, which is single-threaded, and that is the whole synchronisation
-// story (see mux.go).
 type Screen struct {
 	cols, rows int
 
@@ -126,7 +84,7 @@ const (
 // NewScreen returns a screen of the given geometry retaining scrollback lines
 // of history. Zero or negative dimensions are clamped to 1, and a zero
 // scrollback to [DefaultScrollback]; a screen with no dimensions is not a
-// useful failure mode, it is just a crash waiting for the first Write.
+// useful state because the first Write would fail.
 func NewScreen(cols, rows, scrollback int) *Screen {
 	if cols < 1 {
 		cols = 1
@@ -196,11 +154,6 @@ func (s *Screen) Write(p []byte) (int, error) {
 		b := data[i]
 		if s.state == stGround && b >= 0x80 {
 			if !utf8.FullRune(data[i:]) {
-				// A multi-byte rune split across two reads. Keep the tail and
-				// decode it when the rest arrives — decoding it now would emit
-				// U+FFFD, which is precisely OQ-20's chunk-boundary bug
-				// (SPIKES/windows-terminal.md §9 row 3) reintroduced one layer
-				// up.
 				s.pending = append(s.pending[:0], data[i:]...)
 				return len(p), nil
 			}
@@ -301,7 +254,7 @@ func (s *Screen) control(b byte) {
 		s.curX = next
 	case 0x07, 0x00, 0x7f:
 		// BEL, NUL and DEL are not rendered. Python's Windows path wrote a
-		// literal NUL per chunk (OQ-19); dropping it here is the same fix one
+		// literal NUL per chunk (terminal compatibility behavior); dropping it here is the same fix one
 		// layer up.
 	}
 }
@@ -394,10 +347,6 @@ func (s *Screen) reverseIndex() {
 
 // scrollUp moves the scroll region up by n lines. Lines leaving the top of a
 // full-height region on the primary screen enter the scrollback.
-//
-// "Full-height" is both margins, not just the top one: an application that
-// pins a status line with `ESC[1;23r` is scrolling a window of its own screen,
-// and xterm puts none of that in the user's history.
 func (s *Screen) scrollUp(n int) {
 	if n <= 0 {
 		return
@@ -676,9 +625,6 @@ func (s *Screen) insertChars(n int) {
 // individually. The pane's job is to hand the sequence back to the user's real
 // terminal unchanged; decomposing and recomposing it would only add a place to
 // lose a colour.
-//
-// The one parameter that must be understood is the reset (empty, "0" or "00"),
-// because it has to clear accumulated state rather than append to it.
 func (s *Screen) sgr(raw []byte) {
 	spec := string(raw)
 	if spec == "" || spec == "0" || spec == "00" {
@@ -777,14 +723,6 @@ func (s *Screen) clampCursor() {
 }
 
 // Resize changes the geometry.
-//
-// Lines are not reflowed — a wrapped line stays wrapped where it was, which is
-// tmux's behaviour too. Rows removed from the top of a shrinking *primary*
-// screen go to the scrollback rather than being discarded, so shrinking a
-// window never loses output — including when the resize arrives while `less`
-// or `vim` has the alternate screen up and the primary is only the saved copy
-// underneath it. Rows the alternate screen loses are gone, which is what every
-// terminal does with them: the application redraws.
 func (s *Screen) Resize(cols, rows int) {
 	if cols < 1 {
 		cols = 1
@@ -896,10 +834,6 @@ func (s *Screen) RenderLines(from, to int) []string {
 
 // RenderView is [Screen.RenderLines] with the text cursor drawn as a
 // reverse-video cell when showCursor is set and the device has not hidden it.
-//
-// bubbletea hides the real terminal cursor for the whole program, so a pane
-// that did not draw its own would leave the user typing blind — the single
-// most noticeable way a multiplexer can feel broken.
 func (s *Screen) RenderView(from, to int, showCursor bool) []string {
 	from = clamp(from, 0, s.TotalLines())
 	to = clamp(to, from, s.TotalLines())
@@ -1026,11 +960,6 @@ func parseParams(raw []byte) []int {
 }
 
 // runeWidth is the display width of one rune in cells.
-//
-// ASCII is answered without a call; everything else goes through lipgloss,
-// which is already a `term` dependency (PACKAGE_GRAPH §5) and carries the
-// east-asian-width and combining-mark tables. Adding `mattn/go-runewidth` as a
-// direct dependency for the same answer would widen the pinned set.
 func runeWidth(r rune) int {
 	if r < 0x80 {
 		if r < 0x20 || r == 0x7f {

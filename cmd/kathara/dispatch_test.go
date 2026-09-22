@@ -8,10 +8,6 @@ import (
 	"github.com/KatharaFramework/kathara-go/kerrors"
 )
 
-// TestDispatchSequence is CLI_SURFACE.md §0.2, whose steps are observable and
-// whose exit codes are not the ones a reader guesses: a non-lowercase command
-// is the general help with exit **1**, an unknown one is a logged ERROR plus
-// the help with exit 1, and only a malformed top-level *option* is exit 2.
 func TestDispatchSequence(t *testing.T) {
 	tests := []struct {
 		name       string
@@ -159,9 +155,6 @@ func TestSettingsCheckFailureExits1(t *testing.T) {
 	}
 }
 
-// TestInterruptContract is JSON_CLI_CONTRACT.md §6.2: exit 0 always, the
-// warning unless the command is on the whitelist, and the interrupt envelope on
-// stdout in the machine formats.
 func TestInterruptContract(t *testing.T) {
 	const warning = "You interrupted Kathara during a command."
 
@@ -205,9 +198,6 @@ func TestInterruptContract(t *testing.T) {
 	}
 }
 
-// TestInterruptWarningGoesToStderrInMachineFormats is the second half of §6.2:
-// "In human mode the warning goes where Python puts it (stdout via logging); in
-// json/jsonl it goes to stderr."
 func TestInterruptWarningGoesToStderrInMachineFormats(t *testing.T) {
 	a := newTestApp(t)
 	a.console.Format = cliout.FormatJSON
@@ -222,9 +212,6 @@ func TestInterruptWarningGoesToStderrInMachineFormats(t *testing.T) {
 	}
 }
 
-// TestUsageErrorsWriteNothingToStdout is JSON_CLI_CONTRACT.md §5.5: "Usage
-// errors … produce **no JSON on stdout** in any mode: usage text on stderr,
-// exit 2."
 func TestUsageErrorsWriteNothingToStdout(t *testing.T) {
 	for _, format := range []cliout.Format{cliout.FormatHuman, cliout.FormatJSON} {
 		t.Run(string(format), func(t *testing.T) {
@@ -266,8 +253,6 @@ func TestHelpFlagPrintsToStdoutAndExitsZero(t *testing.T) {
 	}
 }
 
-// TestLinfoIsAFeatureNotAvailableStub is ERROR_CODES.md §5 and the ruling that
-// keeps the command in the table for parity.
 func TestLinfoIsAFeatureNotAvailableStub(t *testing.T) {
 	a := newTestApp(t)
 	a.console.Level = cliout.LevelDebug

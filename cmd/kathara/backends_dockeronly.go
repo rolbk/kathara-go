@@ -1,10 +1,5 @@
 //go:build nok8s
 
-// This file is PORT_SPEC §0.2 #8: the Docker-only build. It works by *not
-// naming* `backend/kubernetes`, which is the only thing that keeps `client-go`
-// out of the binary — an `init()`-registered backend could not be excluded this
-// way, which is why there is none.
-//
 // A `nok8s` binary still accepts `manager_type: kubernetes` in `kathara.conf`,
 // because the frozen config schema's vocabulary is unchanged
 // (`settings.AvailableManagers`); what it answers is `kathara.NewClient`'s

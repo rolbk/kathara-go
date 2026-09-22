@@ -1,5 +1,5 @@
 {
   "description": "Trailing whitespace is removed by line.strip() before matching, so no phantom '' dep is produced.",
-  "notes": "parser-settings.md predicted a phantom '' entry here; strip() makes it unreachable.",
+  "notes": "strip() prevents a trailing space from creating a phantom empty entry.",
   "parser": "dep"
 }

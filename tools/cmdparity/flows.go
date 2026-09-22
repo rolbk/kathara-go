@@ -27,7 +27,7 @@ type Flow struct {
 // reaches stdout (a network left behind, an interface attached with different
 // driver opts) still shows up in the diff.
 var flows = []Flow{
-	// (1) The full vstart/vconfig/vclean sugar surface, PORT_SPEC §3.4.
+
 	{
 		Name:    "vsugar",
 		Fixture: "",
@@ -47,9 +47,6 @@ var flows = []Flow{
 			{Name: "13-list", Args: []string{"list"}},
 		},
 	},
-	// (1b) The flag/alias surface of the same three commands, without Docker:
-	// every row of CLI_SURFACE.md §6/§7/§8 that can be reached by a dry run or
-	// by an argparse rejection.
 	{
 		Name:    "vsugar-args",
 		Fixture: "",
@@ -80,9 +77,7 @@ var flows = []Flow{
 			{Name: "19-vstart-unknown-flag", Args: []string{"vstart", "-n", "pc1", "--nope"}, NoDocker: true},
 		},
 	},
-	// (1c) The device-configuration surface of `vstart` actually deployed, so
-	// that PORT_SPEC §3.4's "every flag must be identical" is checked against
-	// the container the daemon ended up with and not only against argparse.
+
 	{
 		Name:    "vstart-full",
 		Fixture: "",
@@ -104,8 +99,8 @@ var flows = []Flow{
 			{Name: "08-vclean-pc3", Args: []string{"vclean", "-n", "pc3"}},
 		},
 	},
-	// (5) Edge cases the other flows do not reach: the `lrestart --xterm`
-	// latent bug, re-running a command that already ran, and addressing a
+	// (5) Edge cases the other flows do not reach: the previously unexercised
+	// `lrestart --xterm` behaviour, re-running a command that already ran, and addressing a
 	// running lab device through the vlab.
 	{
 		Name:    "edge",

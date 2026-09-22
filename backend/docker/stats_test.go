@@ -9,9 +9,6 @@ import (
 	"github.com/KatharaFramework/kathara-go/kathara"
 )
 
-// TestMachineStatsFor is the inventory reduction of `DockerMachineStats`: the
-// six fields JSON_CLI_CONTRACT.md §3.0.2 keeps, read off the container's labels
-// and state.
 func TestMachineStatsFor(t *testing.T) {
 	c := newTestContainer("pc1", nil)
 
@@ -31,10 +28,6 @@ func TestMachineStatsFor(t *testing.T) {
 	}
 }
 
-// TestMachineStatsAssignedNodeIsAbsent is the one additive backend key of
-// JSON_CLI_CONTRACT.md §3.0.2: `DockerMachineStats.to_dict()` has no
-// `assigned_node`, so the Docker backend leaves the field at its zero value and
-// the key is not emitted at all — which is not the same as emitting null.
 func TestMachineStatsAssignedNodeIsAbsent(t *testing.T) {
 	got := machineStatsFor(newTestContainer("pc1", nil), nil)
 	if got.AssignedNode.Present() {
@@ -42,10 +35,6 @@ func TestMachineStatsAssignedNodeIsAbsent(t *testing.T) {
 	}
 }
 
-// TestMachineStatsUntaggedImage is the total form of
-// `machine_api_object.image.tags[0]`, which IndexErrors in Python on an
-// untagged image: the image reference stands in, because a listing must not be
-// able to fail on one container (PORT_SPEC §10).
 func TestMachineStatsUntaggedImage(t *testing.T) {
 	got := machineStatsFor(newTestContainer("pc1", nil), nil)
 	if got.Image != "sha256:deadbeef" {
@@ -53,15 +42,6 @@ func TestMachineStatsUntaggedImage(t *testing.T) {
 	}
 }
 
-// TestLinkStatsFor is the collision-domain twin, including the `;`-joined
-// `external` label (SYNTHESIS C-8 — a semicolon, not a comma) and the attached
-// device names.
-//
-// `Containers` holds DEVICE names — `container.labels['name']`, which is what
-// `DockerLinkStats.__str__` prints — not the `{prefix}_{user}_{device}_{hash}`
-// container names the endpoint map carries. [Network.AttachedNames] resolves
-// them with the same per-container inspect docker-py's `Network.containers`
-// property performs.
 func TestLinkStatsFor(t *testing.T) {
 	n := newTestNetwork("kathara_user_A_h", "A")
 	n.Attrs.Labels["lab_hash"] = fixtureHash
@@ -87,8 +67,7 @@ func TestLinkStatsFor(t *testing.T) {
 	if !reflect.DeepEqual(got.External, []string{"eth0", "eth1.20"}) {
 		t.Errorf("External = %q, want the semicolon-split label", got.External)
 	}
-	// ORDERING.tsv:51: Python's dict order is thread-completion order; the
-	// port sorts.
+
 	if !reflect.DeepEqual(got.Containers, []string{"pc1", "pc2"}) {
 		t.Errorf("Containers = %q, want the sorted device names", got.Containers)
 	}
@@ -97,8 +76,8 @@ func TestLinkStatsFor(t *testing.T) {
 // TestLinkStatsSharedModeLabelsAreBenign is the recorded divergence: Python
 // indexes `attrs['Labels']['lab_hash']` and `['user']` directly, and
 // [NetworkLabels] omits both in the shared modes — so `DockerLinkStats.__init__`
-// KeyErrors there. The port answers "" instead, because the crash is latent on
-// a path 1.0 does not render and reproducing it would fail an API call for a
+// raises KeyError there. This implementation answers "" instead because that
+// path is not rendered in 1.0, and preserving the exception would fail an API call for a
 // configuration this same backend produced.
 func TestLinkStatsSharedModeLabelsAreBenign(t *testing.T) {
 	n := newTestNetwork("kathara_A", "A") // no user, no lab_hash: SharedBetweenUsers
@@ -120,9 +99,6 @@ func TestLinkStatsEmptyExternalIsNil(t *testing.T) {
 	}
 }
 
-// TestStatsUpdateIsDeferred: live resource sampling is post-1.0 (PORT_SPEC
-// §0.3) and a deferred feature must say so rather than quietly do nothing
-// (§0.4).
 func TestStatsUpdateIsDeferred(t *testing.T) {
 	machine := machineStatsFor(newTestContainer("pc1", nil), nil)
 	if err := machine.Update(t.Context()); err == nil {
@@ -153,9 +129,9 @@ func TestNetworkContainerCount(t *testing.T) {
 }
 
 // TestContainerAccessorsAreNilSafe: the SDK's InspectResponse embeds a POINTER,
-// so a zero-value Attrs faults on a naive field read. Every accessor has to
+// so a zero-value Attrs faults on a direct field read. Every accessor has to
 // answer the empty value instead — a listing that raced a removal must not
-// crash a fan-out.
+// fail a fan-out.
 func TestContainerAccessorsAreNilSafe(t *testing.T) {
 	var empty Container
 	if empty.Name() != "" || empty.Status() != "" || empty.HostConfig() != nil {

@@ -22,8 +22,6 @@ func newTestMachine(t *testing.T) (*Lab, *Machine) {
 	return lab, machine
 }
 
-// TestDefaultDeviceParameters is EXPECTATIONS-core.md §1
-// test_default_device_parameters.
 func TestDefaultDeviceParameters(t *testing.T) {
 	t.Parallel()
 
@@ -125,9 +123,6 @@ func TestMachineNameValidation(t *testing.T) {
 	}
 }
 
-// TestMachineReservedNamesAreNotChecked pins that the model accepts `shared`
-// and `_test`: RESERVED_MACHINE_NAMES is enforced by the parsers, not by the
-// device constructor (model.md §1.2).
 func TestMachineReservedNamesAreNotChecked(t *testing.T) {
 	t.Parallel()
 
@@ -139,7 +134,6 @@ func TestMachineReservedNamesAreNotChecked(t *testing.T) {
 	}
 }
 
-// TestAddInterface is EXPECTATIONS-core.md §1 "add_interface (6)".
 func TestAddInterface(t *testing.T) {
 	t.Parallel()
 
@@ -189,7 +183,7 @@ func TestAddInterface(t *testing.T) {
 		if !errors.Is(err, kerrors.ErrMachineCollisionDomain) {
 			t.Fatalf("error = %v, want ErrMachineCollisionDomain", err)
 		}
-		// Variant 1 of ERROR_CODES.md §2: the number carries no backticks.
+
 		if want := "Interface 0 already set on device `test_machine`."; err.Error() != want {
 			t.Errorf("message = %q, want %q", err.Error(), want)
 		}
@@ -229,13 +223,6 @@ func TestAddInterface(t *testing.T) {
 	})
 }
 
-// TestAddInterfaceAutoNumberCountsSlots is ORDERING.tsv model/Machine.py:102 and
-// the two EXPECTATIONS rows test_add_remove_add_interface /
-// test_add_remove_three_interfaces: the auto number is len(interfaces), which
-// counts tombstones, so a freed number is never reused.
-//
-// Oracle: `sparse auto-number => [[0, 5], [0, 5, 2]]`,
-// `add remove add => [(0,'A'), (1,'B'), (2,None), (3,'D')]`.
 func TestAddInterfaceAutoNumberCountsSlots(t *testing.T) {
 	t.Parallel()
 
@@ -303,8 +290,6 @@ func TestInterfaceSlotOrderingIsTotal(t *testing.T) {
 	}
 }
 
-// TestRemoveInterface is EXPECTATIONS-core.md §1 "remove_interface (5)": the
-// tombstone semantics the ordered-slice redesign had to keep.
 func TestRemoveInterface(t *testing.T) {
 	t.Parallel()
 
@@ -408,8 +393,6 @@ func TestRemoveInterface(t *testing.T) {
 	})
 }
 
-// TestCheck is EXPECTATIONS-core.md §1 "check (3)" plus the two bridged_iface
-// branches DIVERGENCES.md 1 requires.
 func TestCheck(t *testing.T) {
 	t.Parallel()
 
@@ -579,16 +562,12 @@ func TestCheck(t *testing.T) {
 			t.Fatalf("RemoveInterface: %v", err)
 		}
 
-		// The hole is still numbered 0, so the device passes — Python's
-		// check_integrity tolerates a disconnected interface (DIVERGENCES.md 28).
 		if err := machine.Check(); err != nil {
 			t.Errorf("Check: %v", err)
 		}
 	})
 }
 
-// TestMachineAccessors is EXPECTATIONS-core.md §1 "getters with lab-option
-// precedence (25)". Every expected value was taken from the oracle probe.
 func TestMachineAccessors(t *testing.T) {
 	t.Parallel()
 
@@ -668,10 +647,6 @@ func TestMachineAccessors(t *testing.T) {
 			t.Errorf("GetMem(unset) = %q, %v", got, err)
 		}
 
-		// Python's guard is `if memory:` and it returns the falsy object as it
-		// is — 0, False, the empty list — all of which the callers then read as
-		// "no limit". NILABILITY.tsv:14 spells that "", so a falsy non-string
-		// must NOT render as "0" or "False", which would be a limit.
 		for _, falsy := range []Scalar{Int(0), Bool(false), Float(0), Str(""), Strings(nil)} {
 			_, machine := newTestMachine(t)
 			machine.Meta.Mem = falsy
@@ -746,7 +721,6 @@ func TestMachineAccessors(t *testing.T) {
 			}
 		}
 
-		// Unset is nil, and nil is not 0 (NILABILITY.tsv:15).
 		_, machine := newTestMachine(t)
 		if got, err := machine.GetCPU(1); err != nil || got != nil {
 			t.Errorf("GetCPU(unset) = %v, %v; want nil", got, err)
@@ -964,7 +938,7 @@ func TestMachineAccessors(t *testing.T) {
 		}
 	})
 
-	t.Run("ipv6 non-string non-bool crashes like Python", func(t *testing.T) {
+	t.Run("ipv6 non-string non-bool matches Python exception behaviour", func(t *testing.T) {
 		t.Parallel()
 		_, machine := newTestMachine(t)
 
@@ -983,8 +957,6 @@ func TestMachineAccessors(t *testing.T) {
 	t.Run("volumes", func(t *testing.T) {
 		t.Parallel()
 
-		// EXPECTATIONS-core.md §1: the policy is consulted ONLY when the device
-		// has at least one volume (oracle P17).
 		for _, policy := range []string{"Always", "Prompt", "Never"} {
 			defaults := DefaultDefaults()
 			defaults.VolumeMountPolicy = policy

@@ -13,28 +13,6 @@ import (
 )
 
 // GenerateURLSafeHash is utils.generate_urlsafe_hash (utils.py:53).
-//
-// It is the lab hash (Lab.py:76 and :90), half of the user name
-// ([GetCurrentUserName]) and therefore part of every container name, network
-// name and label Kathará writes. PORT_SPEC §0.4 forbids changing it.
-//
-// The four steps, in Python's order:
-//
-//  1. `re.sub` of the pattern `[^\x00-\x7F]+` with an empty replacement
-//     deletes every non-ASCII run. On a
-//     valid UTF-8 string that is the same set of bytes as "drop every byte with
-//     the high bit set", which is what this does — an ASCII code point is one
-//     byte below 0x80, and every byte of a multi-byte sequence is at or above
-//     it. NUL and the other C0 controls are inside the kept range and survive.
-//  2. `hashlib.md5(...)` over those bytes. The `errors='ignore'` of the
-//     `.encode` is dead by then, everything left is ASCII.
-//  3. `base64.urlsafe_b64encode(digest)[:-2]` — a 16-byte digest always encodes
-//     to 24 characters ending in "==", so the slice drops exactly the padding
-//     and leaves 22 characters.
-//  4. two `.replace` calls with empty replacements, one for `-` and one for
-//     `_`, delete the two non-alphanumeric characters of the URL-safe
-//     alphabet. That is why the result is *not* a fixed 22 characters: it is
-//     22 minus however many appeared, typically 20 to 22.
 func GenerateURLSafeHash(s string) string {
 	asciiOnly := make([]byte, 0, len(s))
 	for i := 0; i < len(s); i++ {
@@ -80,20 +58,6 @@ func asciiWord(b byte) bool {
 
 // Slug is utils.slug (utils.py:230), the ASCII slugifier that finishes
 // [GetCurrentUserName].
-//
-// Python's three statements, kept in order because the order is observable —
-// the lowercasing happens *before* the run collapse, and `strip` removes
-// whitespace but never the hyphens, so " - " slugs to "-" while "-a-" keeps
-// both of its hyphens:
-//
-//  1. `unicodedata.normalize("NFKD", value).encode("ascii", "ignore")` —
-//     compatibility-decompose, then delete everything still non-ASCII. "café"
-//     becomes "cafe" because the combining acute is dropped; "日本語" becomes
-//     "" because nothing decomposes into ASCII.
-//  2. `re.sub(r"[^\w\s-]", "", value).strip().lower()` — keep word characters,
-//     whitespace and hyphen; trim; fold case.
-//  3. `re.sub(r"[-\s]+", "-", value)` — collapse every run of hyphens and
-//     whitespace into one hyphen.
 func Slug(value string) string {
 	decomposed := norm.NFKD.String(value)
 

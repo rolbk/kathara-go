@@ -1,35 +1,4 @@
 #!/usr/bin/env python3
-"""Layer B, third implementation: replay the parser conformance vectors against
-the **Python client package** (`PORT_SPEC.md` §7, `python/Kathara`).
-
-`labfile/testdata/vectors/README.md`: "These vectors are shared by the Go
-`labfile` package and the Python client's `LabParser`. They are what keeps the
-two implementations from drifting." This runner is the client's half of that.
-
-It deliberately reuses `check_python.py` unchanged — same materialisation, same
-serialiser, same comparison, same exit status — and only decides *which*
-`Kathara` package the import resolves to. That is what makes "the same 142
-vectors" literally true rather than approximately true.
-
-Usage:
-
-    # in a venv where the upstream Kathara is NOT installed
-    /root/kathara/clientvenv/bin/python tools/vectorcheck/check_client.py
-
-Options: `--client DIR` (default `<repo>/python`) plus every flag of
-`check_python.py` (`--vectors`, `--filter`, `--verbose`, `--update`).
-
-`--update` is accepted but should essentially never be used from here: Python
-3.8.3 is the authority for these vectors (README "Python is the truth"), so a
-disagreement means **the client is wrong**, not the vector.
-
-Independence check: the runner refuses to start if a *different* `Kathara` is
-already importable in this interpreter — that is what would silently turn the
-run into a re-test of the upstream package. An already-importable Kathara that
-IS the client directory (an editable or wheel install of this very package) is
-fine and the run proceeds. Pass `--allow-upstream` to override, which is useful
-only for A/B-ing the two implementations by hand.
-"""
 
 import os
 import sys

@@ -79,7 +79,7 @@
  },
  {
   "name": "json_list",
-  "note": "AttributeError: Python crashes on a non-object document",
+  "note": "AttributeError: Python raises on a non-object document",
   "input": "[1, 2, 3]",
   "error": "AttributeError: 'list' object has no attribute 'items'"
  },

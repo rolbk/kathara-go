@@ -1,8 +1,3 @@
-// This file is `cli/command/LcleanCommand.py` (CLI_SURFACE.md §2) plus the
-// `--lab-hash`/`--lab-name` addressing of JSON_CLI_CONTRACT.md §8, which
-// `lclean` needs in order to tear down a scenario deployed with
-// `--from-archive` — one that has no directory to point `-d` at.
-
 package main
 
 import (
@@ -17,7 +12,6 @@ import (
 	"github.com/KatharaFramework/kathara-go/model"
 )
 
-// lcleanFlags is CLI_SURFACE.md §2 plus §8.
 type lcleanFlags struct {
 	directory string
 	labHash   string
@@ -111,27 +105,9 @@ func runLclean(ctx context.Context, a *app, f *lcleanFlags, selected []string) (
 	return out, nil
 }
 
-// resolveRunningLab is the scenario-addressing rule the three §8 commands
-// share: `--lab-hash`/`--lab-name` name a running deployment directly,
-// otherwise the directory is parsed with Python's swallow-everything fallback.
-//
-// That fallback is `except (Exception, IOError)` — genuinely everything — which
-// is what makes `kathara lclean` work in a directory that holds no lab.conf at
-// all: the scenario is then `Lab(None, path=…)` and its hash comes from the
-// path. What it does NOT survive is a path that cannot be opened as a
-// filesystem at all: `Lab(None, path=…)` builds an `osfs` over it and
-// pyfilesystem raises `CreateFailed` from the constructor, outside the `try`
-// (`test/goldens/err-nonexistent-dir` records the resulting exit 1).
 func (a *app) resolveRunningLab(directory, labHash, labName string) (*model.Lab, error) {
 	switch {
 	case labHash != "":
-		// A scenario addressed by hash has no name at all, and §3.0.1 pins
-		// `lab.name` as `string|null`. `Lab("")` would be a *named* scenario
-		// whose name happens to be empty, which serialises as `"name":""` and
-		// makes the E2/E10 envelope self-inconsistent with the null `path` the
-		// same branch emits. `Lab(None, path="")` is the nameless
-		// constructor; the hash it computed from the empty path is then
-		// replaced by the one the caller gave.
 		lab, err := model.NewLabFromPath("", a.defaults())
 		if err != nil {
 			return nil, err
@@ -155,9 +131,6 @@ func (a *app) resolveRunningLab(directory, labHash, labName string) (*model.Lab,
 	return model.NewLabFromPath(labPath, a.defaults())
 }
 
-// registerLabRef declares the two §8 flags. They are spelled `--lab-name`, not
-// `--name`, so that they cannot collide with the existing `-n/--name`
-// device-name flag of `lconfig`.
 func registerLabRef(p *parser, labHash, labName *string) {
 	p.Flags().StringVar(labHash, "lab-hash", "", "Address the running network scenario by hash.")
 	p.meta("lab-hash", "LAB_HASH")
@@ -167,14 +140,6 @@ func registerLabRef(p *parser, labHash, labName *string) {
 
 // snapshotMachines takes one step of the inventory stream, which is what
 // `kathara list` takes too.
-//
-// allUsers has to be a parameter and not a constant false: `wipe -a` removes
-// every user's devices, so an envelope built from a current-user-only listing
-// would under-report exactly the case the flag exists for.
-//
-// The end of the stream is not an error here. Python's `create_lab_table`
-// answers `StopIteration` with `None` and the command still returns 0
-// (CLI_SURFACE.md §13), so an exhausted generator is an empty snapshot.
 func snapshotMachines(ctx context.Context, mgr kathara.Manager, ref kathara.LabRef, allUsers bool) ([]kathara.MachineStatsEntry, error) {
 	stream, err := mgr.GetMachinesStats(ctx, ref, "", allUsers)
 	if err != nil {
@@ -189,7 +154,7 @@ func snapshotMachines(ctx context.Context, mgr kathara.Manager, ref kathara.LabR
 }
 
 // snapshotLinkNames is the collision-domain twin, reduced to the names the
-// `links` key of E2 and E4 carries, canonically sorted.
+// `links` result carries, canonically sorted.
 func snapshotLinkNames(ctx context.Context, mgr kathara.Manager, ref kathara.LabRef, allUsers bool) ([]string, error) {
 	stream, err := mgr.GetLinksStats(ctx, ref, "", allUsers)
 	if err != nil {
@@ -206,29 +171,10 @@ func snapshotLinkNames(ctx context.Context, mgr kathara.Manager, ref kathara.Lab
 			names = append(names, entry.Stats.Name)
 		}
 	}
-	// Sorted, but NOT deduplicated. `wipe` reads this inventory-wide, where two
-	// scenarios can each own a collision domain called `A`: those are two
-	// distinct networks, and both are removed. §3.4 asks `links` for "the names
-	// of what was removed", exactly as it asks `machines` — and the machines
-	// side, built the same way in `runWipe`, does not collapse two devices
-	// called `pc1` from two scenarios into one entry either. Compacting here
-	// would have made the two halves of one envelope disagree.
 	slices.Sort(names)
 	return names, nil
 }
 
-// undeployedNames is the E2 envelope's pair, canonically sorted: Python's
-// undeploy order is API-listing and pool order, which ORDERING.tsv rules
-// nondeterministic (JSON_CLI_CONTRACT.md §3.2).
-//
-// The collision domains are the ones that were actually deployed, filtered to
-// the scenario's view of what the selected devices were attached to when the
-// CLI narrowed the undeploy — and then filtered again by what the *surviving*
-// devices are still attached to, because `DockerLink.undeploy` reloads every
-// candidate network and deletes only the ones with no containers left
-// (`DockerLink.py:170`). A collision domain shared with a device that is not
-// being removed therefore survives, and §3.2 pins `links` as the names actually
-// undeployed.
 func undeployedNames(lab *model.Lab, running []kathara.MachineStatsEntry, deployedLinks []string, opts kathara.UndeployLabOptions) (machines, links []string) {
 	removed := map[string]struct{}{}
 	for _, entry := range running {

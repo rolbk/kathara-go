@@ -134,9 +134,6 @@ func (n *Normalizer) substitute(s string) string {
 // tools/goldenharness NORMALIZATION.md §6.3 keys the unwrap off.
 var reLogLevel = regexp.MustCompile(`^(CRITICAL|ERROR|WARNING|INFO|DEBUG)\s`)
 
-// unwrapLogRecords folds a RichHandler log record back onto one logical line.
-// The port emits records unfolded on purpose (DIVERGENCES.md #91), so without
-// this every long Python message would diff against its unwrapped Go twin.
 func unwrapLogRecords(s string) string {
 	lines := strings.Split(s, "\n")
 	var out []string
@@ -189,17 +186,6 @@ func (n *Normalizer) Lines(s string) []string {
 var reBoxRun = regexp.MustCompile(`[─═━]+`)
 
 // maskTable rewrites the `list` table into a cell grid.
-//
-// The rendering itself cannot be compared byte for byte: `create_lab_table`
-// builds an `expand=True` rich Table whose column widths are computed from the
-// cell contents, and five of the eleven columns hold live counters, so two runs
-// of the *same* binary lay the table out differently. What survives here is
-// everything that is not a consequence of those counters: the box style, the
-// column headers and their order, the row order, and every non-volatile cell.
-// The border rows keep their corner and junction glyphs — so a wrong box style
-// or a wrong column count still diffs — and lose only their widths.
-//
-// A panel (`create_panel`) has exactly two verticals per row and is left alone.
 func maskTable(lines []string) []string {
 	var header []string
 	out := make([]string, 0, len(lines))

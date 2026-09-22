@@ -13,14 +13,6 @@ import (
 )
 
 // These tests drive the real tmux binary. They are skipped when tmux is absent.
-//
-// Isolation rules, both mandatory (see docs/port/SPIKES/tmux.md):
-//   - -S <socket in t.TempDir()>: never touch the tmux server the developer or
-//     CI agent is sitting in. Every test gets its own server, kills it
-//     afterwards, and — unlike -L, which litters /tmp/tmux-<uid> because tmux
-//     never unlinks a socket, not even on kill-server — leaves nothing behind.
-//   - -f /dev/null: a ~/.tmux.conf setting base-index, automatic-rename or
-//     default-command would otherwise change what the assertions see.
 
 const attachHelperEnv = "KATHARA_TMUXDRV_ATTACH_HELPER"
 
@@ -736,7 +728,7 @@ func TestSanitizedNameRoundTrip(t *testing.T) {
 		t.Fatalf("HasSession(%q) = %v, %v; want true, nil", session, has, err)
 	}
 
-	// The raw, unsanitized name is exactly what a naive implementation would
+	// The raw, unsanitized name is exactly what a direct implementation would
 	// probe with. tmux would never report it as present — proven here with the
 	// bare CLI call...
 	if _, err := d.run(ctx, "has-session", "-t", sessionTarget(SessionPrefix+raw)); !isSessionAbsent(err) {

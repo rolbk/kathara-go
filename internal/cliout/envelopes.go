@@ -1,8 +1,3 @@
-// This file is JSON_CLI_CONTRACT.md §2 to §6: the fourteen `json` envelopes,
-// the five `jsonl` events, and the shared `lab` and inventory sub-objects.
-// Every constructor's key order is the order the contract pins, and §9.1 makes
-// that order breaking to change.
-
 package cliout
 
 import (
@@ -12,8 +7,6 @@ import (
 	"github.com/KatharaFramework/kathara-go/kathara"
 )
 
-// Lab is the shared `lab` object of §3.0.1, in its pinned order `name`, `hash`,
-// `path`, then the five metadata keys when any of them is set.
 type Lab struct {
 	// Name is `lab.name`, null for a path-parsed scenario with no `LAB_NAME=`.
 	Name *string
@@ -60,17 +53,12 @@ func nilIfEmpty(s string) *string {
 // Str is a helper for the many optional strings of these envelopes.
 func Str(s string) *string { return &s }
 
-// encodeMachineStats is the machine inventory object of §3.0.2. Its six
-// canonical keys and their order live on [kathara.MachineStats]'s json tags —
-// the shape is fixed at that end so the API and the CLI cannot disagree — so
-// this only has to hand the value to the encoder.
 func encodeMachineStats(s *kathara.MachineStats) []byte {
 	var tmp jobj
 	tmp.writeValue(s)
 	return tmp.buf.Bytes()
 }
 
-// LstartResult is E1 (§3.1).
 type LstartResult struct {
 	// Lab is the scenario, with its metadata keys.
 	Lab Lab
@@ -112,7 +100,6 @@ func (r LstartResult) encode() []byte {
 	return o.Bytes()
 }
 
-// LcleanResult is E2 (§3.2).
 type LcleanResult struct {
 	Lab      Lab
 	Machines []string
@@ -127,8 +114,6 @@ func (r LcleanResult) encode() []byte {
 	return o.Bytes()
 }
 
-// LrestartResult is E3 (§3.3): the two phase envelopes under `clean` and
-// `start`, emitted only once both have completed.
 type LrestartResult struct {
 	Clean LcleanResult
 	Start LstartResult
@@ -141,7 +126,6 @@ func (r LrestartResult) encode() []byte {
 	return o.Bytes()
 }
 
-// WipeResult is E4 (§3.4).
 type WipeResult struct {
 	SettingsWiped bool
 	AllUsers      bool
@@ -158,8 +142,6 @@ func (r WipeResult) encode() []byte {
 	return o.Bytes()
 }
 
-// ListResult is E5 (§3.5): the inventory, sorted by
-// (`network_scenario_id`, `name`).
 type ListResult struct {
 	Machines []*kathara.MachineStats
 }
@@ -182,8 +164,6 @@ func (r ListResult) encode() []byte {
 	return o.Bytes()
 }
 
-// ExecResult is E6 (§3.6). The process exits with ExitCode, which makes `exec`
-// the one command whose success exit is not necessarily 0.
 type ExecResult struct {
 	Stdout   string
 	Stderr   string
@@ -198,10 +178,6 @@ func (r ExecResult) encode() []byte {
 	return o.Bytes()
 }
 
-// CheckResult is E7 (§3.7). A failed container test is reported through THIS
-// envelope with `ok:false` and exit 1 — not through the error envelope —
-// mirroring `CheckCommand.py:76-79`, which prints its report and returns 1
-// without raising.
 type CheckResult struct {
 	Manager        string
 	ManagerVersion string
@@ -229,7 +205,6 @@ func (r CheckResult) encode() []byte {
 	return o.Bytes()
 }
 
-// VstartResult is E8 (§3.8).
 type VstartResult struct {
 	Lab     Lab
 	Machine string
@@ -248,8 +223,6 @@ func (r VstartResult) encode() []byte {
 	return o.Bytes()
 }
 
-// VcleanResult is E9 (§3.9). Machines is empty for a name that was not running
-// — the Python silent no-op success.
 type VcleanResult struct {
 	Lab      Lab
 	Machine  string
@@ -264,15 +237,11 @@ func (r VcleanResult) encode() []byte {
 	return o.Bytes()
 }
 
-// AddedLink is one element of the `added` array of §3.10: a collision domain
-// and the MAC the CLI asked for, null when the `CD/MAC` value carried none.
 type AddedLink struct {
 	Link string
 	MAC  string
 }
 
-// ConfigResult is E10 and E11 (§3.10, §3.11) — `lconfig` and `vconfig` share a
-// shape and differ only in the `lab` object.
 type ConfigResult struct {
 	Lab     Lab
 	Machine string
@@ -293,7 +262,6 @@ func (r ConfigResult) encode() []byte {
 	return o.Bytes()
 }
 
-// SettingsGetResult is the `config get` shape of E12 (§3.12).
 type SettingsGetResult struct {
 	Key   string
 	Value any
@@ -303,7 +271,7 @@ func (r SettingsGetResult) encode() []byte {
 	return newObj().Str("key", r.Key).Any("value", r.Value).Bytes()
 }
 
-// SettingsSetResult is the `config set` shape of E12.
+// SettingsSetResult is the `config set` response.
 type SettingsSetResult struct {
 	Key   string
 	Value any
@@ -314,7 +282,7 @@ func (r SettingsSetResult) encode() []byte {
 	return newObj().Str("key", r.Key).Any("value", r.Value).Bool("saved", r.Saved).Bytes()
 }
 
-// SettingsListResult is the `config list` shape of E12. Settings must marshal
+// SettingsListResult is the `config list` response. Settings must marshal
 // itself in file order, which `settings.Settings.MarshalJSON` does.
 type SettingsListResult struct {
 	Settings any
@@ -324,7 +292,7 @@ func (r SettingsListResult) encode() []byte {
 	return newObj().Any("settings", r.Settings).Bytes()
 }
 
-// SettingsResetResult is the `config reset` shape of E12.
+// SettingsResetResult is the `config reset` response.
 type SettingsResetResult struct {
 	Settings any
 	Saved    bool
@@ -355,9 +323,6 @@ var (
 	_ Envelope = SettingsResetResult{}
 )
 
-// Emit writes one envelope to stdout, followed by exactly one newline (§1.3).
-// It is a no-op outside `json` mode: `human` renders its own output as it goes
-// and `jsonl` has no result object, only its terminal event.
 func (c *Console) Emit(e Envelope) {
 	if c.Format != FormatJSON {
 		return
@@ -368,9 +333,6 @@ func (c *Console) Emit(e Envelope) {
 	_, _ = fmt.Fprintln(c.Out)
 }
 
-// EmitInterrupted is E14 (§6.2): the single-key object a SIGINT produces in
-// `json` mode, and the terminal `{"type":"interrupted"}` event in `jsonl`.
-// Both exit 0.
 func (c *Console) EmitInterrupted() {
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -382,11 +344,6 @@ func (c *Console) EmitInterrupted() {
 	}
 }
 
-// EmitStreamChunk is S1/S2 (§4.1): one non-empty chunk of a remote stream.
-//
-// §4.2 pins that an event is emitted only for a non-empty side, so a caller
-// must not call this with empty data; it is guarded here as well because the
-// demux boundary is exactly where a `nil` and a `b""` become indistinguishable.
 func (c *Console) EmitStreamChunk(stream string, data string) {
 	if c.Format != FormatJSONL || data == "" {
 		return
@@ -398,7 +355,7 @@ func (c *Console) EmitStreamChunk(stream string, data string) {
 	_, _ = fmt.Fprintln(c.Out)
 }
 
-// EmitStreamExit is S3: the terminal event of a successful `jsonl` stream. The
+// EmitStreamExit writes the terminal event of a successful `jsonl` stream. The
 // process then exits with the same code.
 func (c *Console) EmitStreamExit(code int) {
 	if c.Format != FormatJSONL {

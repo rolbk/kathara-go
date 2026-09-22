@@ -1,7 +1,3 @@
-// This file is `cli/command/ExecCommand.py` (CLI_SURFACE.md §10) — the one
-// command whose success exit code is not 0, and the only `jsonl` producer in
-// 1.0 (JSON_CLI_CONTRACT.md §4).
-
 package main
 
 import (
@@ -64,7 +60,7 @@ func runExec(ctx context.Context, a *app, f *execFlags, positional []string) (in
 
 	// `args['command'] if len(args['command']) > 1 else args['command'].pop()`:
 	// one token becomes a bare string, which the backend then shlex-splits, so
-	// `kathara exec pc1 "ls -la"` really does run two words (OQ-7b).
+	// `kathara exec pc1 "ls -la"` really does run two words (command-string behavior).
 	command := kathara.NewCommand(words...)
 	if len(words) == 1 {
 		command = kathara.NewShellCommand(words[0])
@@ -156,8 +152,6 @@ func runExec(ctx context.Context, a *app, f *execFlags, positional []string) (in
 		a.console.EmitStreamExit(code)
 	}
 
-	// The process exits with the remote command's code, in every mode
-	// (JSON_CLI_CONTRACT.md A4).
 	return code, nil
 }
 
@@ -185,15 +179,6 @@ func (a *app) execLabRef(directory string, vmachine bool, labHash, labName strin
 // utf8Decoder decodes a byte stream that arrives in arbitrary chunks as UTF-8,
 // replacing invalid sequences with U+FFFD and carrying an incomplete trailing
 // sequence over to the next chunk.
-//
-// It replaces Python's per-chunk `chardet.detect` + `bytes.decode`, a pinned
-// divergence: `chardet` returns `{'encoding': None}` for output it cannot
-// classify — short binary output, most obviously — and `bytes.decode(None)`
-// then raises `TypeError`, so `kathara exec pc1 cat /bin/true` crashes
-// (`ExecCommand.py:103-110`, `cli.md` gotcha 5). JSON_CLI_CONTRACT.md §3.6
-// and §4.2 replace it with UTF-8-plus-replacement, and the carry-over is what
-// keeps a multi-byte character that straddles a chunk boundary from becoming
-// two replacement characters.
 type utf8Decoder struct{ pending []byte }
 
 // The three answers [utf8Step] gives.
@@ -209,14 +194,6 @@ const (
 
 // utf8Step classifies the sequence at the head of b, returning how many bytes
 // it covers.
-//
-// This is CPython's `unicode_decode_utf8` error handling, i.e. the Unicode
-// "maximal subpart" recommendation that `bytes.decode('utf-8', 'replace')`
-// implements: an ill-formed sequence costs **one** U+FFFD for the longest
-// prefix that could still have been the start of a valid one, not one per byte.
-// Oracle-measured on CPython 3.13: `b'\xe2\x82'` → `'�'` (one),
-// `b'\xe2\x82A'` → `'�A'`, `b'\xf0\x9f\x98'` → `'�'`, while
-// `b'\xff\xff'` → two, because neither byte can begin anything.
 func utf8Step(b []byte) (size, status int) {
 	cont := func(c byte) bool { return c&0xC0 == 0x80 }
 	c := b[0]

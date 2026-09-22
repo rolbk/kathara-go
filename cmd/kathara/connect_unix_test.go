@@ -1,20 +1,10 @@
 //go:build linux || darwin
 
-// PORT_SPEC §12 risk 6: "a botched termios or console-mode restore leaves the
-// user's shell unusable after `kathara connect`. High visibility, low natural
-// coverage, and now sitting inside a rebuilt subsystem. Needs an explicit test
-// on all three platforms."
-//
 // This is the Unix leg of that test, and it is the one that can be executed
 // here: a real pseudo-terminal stands in for the user's console, `attachTTY`
 // runs on it for real, and the termios the kernel holds is compared before and
 // after — over every way the function can leave, including a panic unwinding
 // through it.
-//
-// The multiplexer leg needs no mirror of this: bubbletea restores the terminal
-// on every exit path of `Program.Run`, including a caught panic and a killed
-// context (v1.3.10 `tea.go`'s `shutdown`), and `TestRunDetachesAndClosesEverything`
-// drives that path. The Windows leg is the gap DIVERGENCES.md item 119 records.
 
 package main
 
@@ -86,7 +76,6 @@ func consoleOnAPty(t *testing.T) (*testApp, int) {
 	return a, int(slave.Fd())
 }
 
-// TestConnectRestoresTheTerminalOnEveryExit is PORT_SPEC §12 risk 6.
 func TestConnectRestoresTheTerminalOnEveryExit(t *testing.T) {
 	for _, tc := range []struct {
 		name string
@@ -148,9 +137,7 @@ func TestConnectRestoresTheTerminalOnEveryExit(t *testing.T) {
 		{
 			name: "a panic unwinds through it",
 			run: func(t *testing.T, a *testApp, fd int) error {
-				// The resize happens after MakeRaw and after the deferred
-				// Restore is registered, so this is the frame the defer has to
-				// survive. `defer` versus `finally` is PORT_SPEC §12 risk 5.
+
 				session := &restoreSession{
 					read:   func([]byte) (int, error) { return 0, io.EOF },
 					resize: func(uint16, uint16) error { panic("boom") },

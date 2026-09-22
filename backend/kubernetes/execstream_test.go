@@ -128,8 +128,6 @@ func TestManagerExecMachineNotRunning(t *testing.T) {
 	}
 }
 
-// TestManagerExecInvocationError is EXPECTATIONS-k8s §4
-// `test_exec_invocation_error`: no lab identity, and no exec attempted.
 func TestManagerExecInvocationError(t *testing.T) {
 	s := testSettings()
 	m, _, _, executor := newTestManager(t, s)
@@ -273,8 +271,6 @@ func TestRetrieveFilesExtracts(t *testing.T) {
 	}
 }
 
-// TestConnectTTYReadinessAndShell is EXPECTATIONS-k8s §1 "connect": the
-// not-running and not-ready branches, and the shell fallback chain.
 func TestConnectTTYReadinessAndShell(t *testing.T) {
 	s := testSettings()
 	hash := strings.ToLower(defaultScenarioHash)
@@ -336,9 +332,6 @@ func TestConnectTTYReadinessAndShell(t *testing.T) {
 	}
 }
 
-// TestConnectTTYStartupLog is the `logs and print_startup_log` block: the two
-// banners and the device's log bytes, written to the caller's writer rather
-// than to stdout (JSON_CLI_CONTRACT.md §1.3).
 func TestConnectTTYStartupLog(t *testing.T) {
 	s := testSettings()
 	hash := strings.ToLower(defaultScenarioHash)

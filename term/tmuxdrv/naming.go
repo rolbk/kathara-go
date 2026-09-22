@@ -6,32 +6,9 @@ import (
 )
 
 // SessionPrefix namespaces every session this package creates.
-//
-// It is not decoration. "Never clobber" (spec §3.3) has to hold against the
-// user's own sessions too: a network scenario named "work" must not adopt the
-// unrelated tmux session "work" the user has been living in all afternoon, and
-// a stale Kathara session must be recognizable in `tmux ls`.
 const SessionPrefix = "kathara_"
 
-// SessionName is the OQ-9 naming ruling: one tmux session per network scenario.
-//
-//	named scenario   -> "kathara_" + sanitized(name)
-//	unnamed scenario -> "kathara_" + hash
-//
-// labHash is Lab.hash (the URL-safe md5 of the scenario's real path for
-// path-parsed scenarios, of the name for named ones) — the same identity
-// Kathara already uses for container labels, Docker network names and the
-// Kubernetes namespace, so two invocations from the same directory always
-// compute the same session.
-//
-// This replaces 3.8.3's behavior, where every path-parsed scenario (lab.name is
-// None) shared one global session literally named "Kathara" and only vlab or
-// API-named scenarios got their own. See docs/port/SPIKES/tmux.md.
-//
-// The name is sanitized here rather than left to tmux, because tmux silently
-// rewrites '.' and ':' to '_' inside session names: an unsanitized probe would
-// look for a name tmux never stored, conclude the session is absent, and try to
-// create it forever.
+// SessionName is the session naming behavior: one tmux session per network scenario.
 func SessionName(labName, labHash string) string {
 	ident := SanitizeName(labName)
 	if ident == "" {
@@ -47,15 +24,6 @@ func SessionName(labName, labHash string) string {
 }
 
 // SanitizeName makes s usable and round-trippable as a tmux session name.
-//
-//   - '.' and ':' become '_' (tmux does this itself; doing it here keeps the
-//     name we probe with equal to the name tmux stores).
-//   - control characters and whitespace become '_' (they would make the
-//     newline-delimited -F output of list-sessions ambiguous).
-//   - leading '-' becomes '_' so the name can never be read as a flag.
-//
-// It does not lower-case or truncate: tmux imposes no length limit and session
-// names are case-sensitive.
 func SanitizeName(s string) string {
 	if s == "" {
 		return ""
@@ -97,10 +65,6 @@ func checkSessionName(name string) error {
 
 // checkWindowName rejects window names that would corrupt the tab-delimited
 // -F output ListWindows parses, or that tmux would read as a flag.
-//
-// Kathara device names are validated as \w+ upstream, so this never fires in
-// production; it exists so that a future caller cannot quietly break the
-// listing format.
 func checkWindowName(name string) error {
 	if name == "" {
 		return fmt.Errorf("%w: empty window name", ErrInvalidName)

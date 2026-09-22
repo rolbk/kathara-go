@@ -11,9 +11,6 @@ import (
 	"github.com/KatharaFramework/kathara-go/settings"
 )
 
-// fixtureHash is `generate_urlsafe_hash("Default scenario")`, the hash the
-// whole Python docker suite is written against
-// (EXPECTATIONS-docker.md, "Fixture lab").
 const fixtureHash = "9pe3y6IDMwx4PfOPu5mbNg"
 
 // TestFixtureHashIsTheOracles anchors the identity chain the rest of this file
@@ -25,10 +22,6 @@ func TestFixtureHashIsTheOracles(t *testing.T) {
 	}
 }
 
-// TestContainerName is `test_get_container_name_lab_hash`
-// (EXPECTATIONS-docker.md §1.9) plus the SYNTHESIS C-7 correction: the name
-// does NOT vary with `shared_cds`, contrary to what the two assertion-free
-// Python tests imply.
 func TestContainerName(t *testing.T) {
 	tests := []struct {
 		name                                     string
@@ -64,8 +57,6 @@ func TestContainerName(t *testing.T) {
 	}
 }
 
-// TestNetworkName is EXPECTATIONS-docker.md §3.1: the one name that DOES change
-// with `shared_cds`, shedding the hash and then the user as sharing widens.
 func TestNetworkName(t *testing.T) {
 	tests := []struct {
 		name   string
@@ -93,12 +84,6 @@ func TestNetworkName(t *testing.T) {
 	}
 }
 
-// TestObjectFilters is EXPECTATIONS-docker.md §1.8 and §3.5, which are the same
-// five cases for containers and networks.
-//
-// The ORDER is the assertion, not just the membership: SYNTHESIS §1.2 pins it
-// as `app=kathara`, `user=`, `lab_hash=`, `name=`, and the goldens read the
-// request the SDK builds from it.
 func TestObjectFilters(t *testing.T) {
 	tests := []struct {
 		name                  string
@@ -139,8 +124,6 @@ func TestObjectFiltersTreatsEmptyAsAbsent(t *testing.T) {
 	}
 }
 
-// TestContainerLabels is the five-label scheme of `DockerMachine.create` plus
-// the conditional sixth (EXPECTATIONS-docker.md §7 item 1).
 func TestContainerLabels(t *testing.T) {
 	want := map[string]string{
 		"name":     "pc1",
@@ -162,9 +145,6 @@ func TestContainerLabels(t *testing.T) {
 	}
 }
 
-// TestNetworkLabels is EXPECTATIONS-docker.md §3.2's shared-CD variants: the
-// label set SHRINKS as sharing widens, which is what makes
-// `DockerLinkStats.__init__` KeyError in the shared modes (SYNTHESIS §1.2).
 func TestNetworkLabels(t *testing.T) {
 	tests := []struct {
 		name   string
@@ -207,9 +187,6 @@ func TestNetworkLabelsAlwaysCarriesExternal(t *testing.T) {
 	}
 }
 
-// TestExternalLabelIsDeferred: `lab.ext` is post-1.0, so the label is always ""
-// and a hand-built external link gets the deferral error rather than a wrong
-// label (PACKAGE_GRAPH.md §2.8).
 func TestExternalLabelIsDeferred(t *testing.T) {
 	lab := model.NewLab("Default scenario", model.DefaultDefaults())
 	link := lab.GetOrNewLink("A")

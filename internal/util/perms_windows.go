@@ -14,15 +14,6 @@ var accessRights = [3]uint32{windows.GENERIC_READ, windows.GENERIC_WRITE, window
 
 // CheckDirectoryPermissions is utils.check_directory_permissions
 // (utils.py:268) on Windows.
-//
-// Windows has no access(2), and an NTFS ACL does not reduce to three bits, so
-// Python does not try: it *opens* the directory once per access right and
-// treats a failed open as a missing permission (utils.py:338-384). This does
-// the same, with the same masks, the same FILE_SHARE_READ|FILE_SHARE_WRITE and
-// the same OPEN_EXISTING.
-//
-// FILE_FLAG_BACKUP_SEMANTICS is what makes it work at all: without it
-// CreateFileW refuses to open a directory.
 func CheckDirectoryPermissions(path string, mode string) ([]string, error) {
 	info, err := os.Stat(path)
 	if err != nil {

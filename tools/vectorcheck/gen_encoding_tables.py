@@ -2,7 +2,7 @@
 """Code generator for internal/util/encoding_tables.go and encoding_tree.go.
 
 Everything binaryornot's `is_binary` consults that is *data* rather than logic
-is lifted straight out of the oracle venv here, so the Go port never restates a
+is lifted straight out of the reference environment, so this implementation never restates a
 table by hand:
 
   * `binary_extensions.csv` -> the extension set consulted before the file is

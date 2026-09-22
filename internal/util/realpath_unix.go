@@ -18,26 +18,6 @@ type realpathFrame struct {
 
 // realPath is `os.path.realpath(filename)` with `strict=False`, i.e.
 // posixpath.realpath as CPython 3.13 implements it.
-//
-// [path/filepath.EvalSymlinks] is not a substitute. It fails on a path that
-// does not exist and it fails on a symlink loop, where this must succeed with
-// a particular wrong answer in both cases: a missing component is appended
-// unresolved, and a loop stops resolution and yields the path as built so far
-// — which is what makes [GetAbsolutePath]'s `readlink` tail reachable at all.
-//
-// The algorithm is a stack of unresolved components over a resolved prefix.
-// Encountering a symlink pushes the link's target components in front of the
-// remaining ones, so resolution is depth-first and a target's own symlinks are
-// followed before the rest of the original path is looked at. `seen` maps a
-// link path to its fully resolved value, or to the empty string while it is
-// still being resolved — which is exactly the loop test.
-//
-// Two consequences of the shape are worth naming because they differ from a
-// naive implementation. `..` is applied lexically to the *already resolved*
-// prefix, never by asking the filesystem, so `link_dir/../real` is relative to
-// where `link_dir` points and not to its parent directory. And an absolute
-// symlink target resets the accumulated prefix to "/" rather than being joined
-// onto it.
 func realPath(filename string) (string, error) {
 	const sep = "/"
 
@@ -146,11 +126,6 @@ func realPath(filename string) (string, error) {
 }
 
 // getcwd is `os.getcwd()`, the getcwd(2) result and nothing else.
-//
-// [os.Getwd] is not it: Go prefers `$PWD` when it names the same directory, so
-// under a shell that entered through a symlink it returns the symlinked path
-// while CPython returns the resolved one. That difference would propagate into
-// every relative lab path, so the syscall is used directly.
 func getcwd() (string, error) {
 	if syscall.ImplementsGetwd {
 		if dir, err := syscall.Getwd(); err == nil {

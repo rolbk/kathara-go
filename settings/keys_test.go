@@ -156,9 +156,6 @@ func TestSetString(t *testing.T) {
 	}
 }
 
-// TestSetStringRejections pins that the scriptable path enforces exactly what
-// the settings screen's menus enforced (§3.2 item 4), and that a rejected
-// value leaves the receiver alone.
 func TestSetStringRejections(t *testing.T) {
 	for _, tc := range []struct {
 		key   string
@@ -166,10 +163,7 @@ func TestSetStringRejections(t *testing.T) {
 	}{
 		{"open_terminals", "maybe"},
 		{"last_checked", "soon"},
-		// `strconv.ParseFloat` takes all three, and `pyFloatRepr` would write
-		// CPython's `Infinity`/`NaN` — a file this port cannot load back
-		// (DIVERGENCES.md items 25 and 34). A validated `config set` may not
-		// produce one.
+
 		{"last_checked", "inf"},
 		{"last_checked", "-Infinity"},
 		{"last_checked", "NaN"},
@@ -269,8 +263,6 @@ func TestKindLookup(t *testing.T) {
 	}
 }
 
-// TestMarshalJSONKeepsOrder pins the compact envelope of `kathara config list`
-// (JSON_CLI_CONTRACT.md §3.12): the same keys, in the same order as the file.
 func TestMarshalJSONKeepsOrder(t *testing.T) {
 	pinClock(t, 1785923124.0260758)
 	s := Defaults()

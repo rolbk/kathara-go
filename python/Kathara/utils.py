@@ -1,18 +1,4 @@
-"""Utility functions, ported from Kathará v3.8.3 ``src/Kathara/utils.py``.
-
-Ported as-is, bugs included (`PORT_SPEC.md` §0.1); the known ones are catalogued
-in ``DIVERGENCES.md`` items 9, 11-14.
-
-Omitted from the client (they belong to the Go binary, not to the Python API):
-
-* ``class_for_name`` — the dynamic-import reflection replaced by an explicit
-  registry (spec §0.2 #7);
-* ``check_python_version`` — the CLI entry point is Go;
-* ``get_executable_path``, ``wait_user_input_linux``, ``wait_user_input_windows``
-  — terminal spawning is a Go concern (spec §3.3);
-* ``pywintypes_import_*`` / ``import_pywintypes`` — a Docker-SDK shim that would
-  drag ``requests`` into the client's dependency set.
-"""
+"""Utility functions compatible with Kathará v3.8.3."""
 
 import base64
 import hashlib

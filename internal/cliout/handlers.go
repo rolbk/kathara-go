@@ -1,13 +1,4 @@
-// This file is the five subscribers of `cli/ui/event/`: `HandleProgressBar`,
-// `HandleDockerImagePull`, `UpdateDockerImage`, `MountDevicesVolumes`, and the
-// two `HandleMachineTerminal` methods that only write to stdout
-// (`print_wait_msg` and `flush` — the terminal-opening half stays in
-// `cmd/kathara`, PACKAGE_GRAPH.md row `cli/ui/event/HandleMachineTerminal.py`).
-//
-// All of them are drawn only in `human` mode. JSON_CLI_CONTRACT.md §1.3 makes
-// progress bars, spinners and live screens "UI, not logs", so json/jsonl render
-// nothing at all — and §1.5 replaces the two prompts with the pinned
-// auto-answers instead of blocking on a stdin no client is driving.
+// All of them are drawn only in `human` mode.
 
 package cliout
 
@@ -21,14 +12,6 @@ import (
 )
 
 // barGlyph is `rich.progress.BarColumn`'s complete block.
-//
-// The **completed** progress row is a golden: on a non-terminal `rich` prints
-// one render per bar, at stop, and `HandleProgressBar`'s columns carry no
-// clock, so at a pinned width the row is a pure function of the description and
-// the counts (NORMALIZATION.md §6.6). This renderer therefore has to agree with
-// rich's layout byte for byte, which it does — description, one space, the
-// spinner cell, one space, the bar, one space, `done/total`, filling the
-// console width exactly.
 const barGlyph = "━"
 
 // spinnerFrames is `rich`'s "dots" spinner, the braille cycle that
@@ -41,13 +24,6 @@ var spinnerFrames = []rune("⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏")
 
 // ProgressBar is `cli/ui/event/HandleProgressBar.py`: one bar per message,
 // subscribed to a started/item/ended triple.
-//
-// The three methods keep Python's names and Python's tolerance — `update` and
-// `finish` both test `if self.progress_bar` first, so an `item` event that
-// arrives after the bar was torn down (or before it was built) is a no-op
-// rather than an error. That tolerance is load-bearing: `unregister_cli_events`
-// runs `finish` through the unsubscribe hook on every exit path, including the
-// ones where the bar was never opened.
 type ProgressBar struct {
 	// Message is the bar's description, e.g. "Deploying devices".
 	Message string
@@ -182,13 +158,6 @@ func (b *ProgressBar) paintLocked(final bool) {
 
 // ImagePullBar is `cli/ui/event/HandleDockerImagePull.py`: one task per Docker
 // layer, keyed by the layer id.
-//
-// The two statuses it acts on are the two Python acts on; every other line
-// returns early (`HandleDockerImagePull.py:48-49`). A `progress` line with no
-// `status` key is a *failed* pull, and 3.8.3 raises `KeyError: 'status'` on it
-// — see [event.PullProgress]. That bug is reproduced by [ImagePullBar.Update]
-// returning an error, which `event.Dispatch` propagates exactly as `dispatch`
-// let the KeyError unwind.
 type ImagePullBar struct {
 	// Console is where the bar is drawn.
 	Console *Console
@@ -327,12 +296,6 @@ func (b *ImagePullBar) paintLocked() {
 
 // ImageUpdatePolicy answers `UpdateDockerImage.run` for one image whose remote
 // digest moved.
-//
-// The three policies are Python's (`cli/ui/event/UpdateDockerImage.py:19-27`);
-// what the port adds is the machine-mode arm of JSON_CLI_CONTRACT.md §1.5,
-// where `Prompt` **auto-answers no** — the local image is used, no pull — and a
-// notice goes to stderr. The rationale is pinned there: never block a scripted
-// client on a question.
 type ImageUpdatePolicy struct {
 	// Policy is `Setting.image_update_policy`.
 	Policy string
@@ -369,11 +332,6 @@ func (u *ImageUpdatePolicy) Run(e event.DockerImageUpdateFound) error {
 
 // VolumeMountPolicy is `cli/ui/event/MountDevicesVolumes.py`: print the tree of
 // host-to-guest mounts, then, under `Prompt`, ask whether to go ahead.
-//
-// JSON_CLI_CONTRACT.md §1.5 pins the machine-mode answer to **yes** — the
-// opposite of the image prompt, and deliberately so: the volumes are what the
-// scenario declared, so mounting them is the declared intent, while pulling a
-// new image is a change nobody asked for.
 type VolumeMountPolicy struct {
 	// Policy is `Setting.volume_mount_policy`.
 	Policy string
@@ -438,11 +396,6 @@ func (c *Console) PrintWaitMessage() {
 	_, _ = fmt.Fprint(c.Out, "Waiting startup commands execution. Press [ENTER] to override...")
 }
 
-// ClearScreen is `HandleMachineTerminal.flush`: erase the display and home the
-// cursor. Python spells it `\033[2J` then `\033[0;0H` on Unix and shells out to
-// `cls` on Windows; the escape sequence works on both since Windows 10's
-// virtual-terminal support, and shelling out to a command interpreter to clear
-// a screen is not something the port reproduces (DIVERGENCES.md).
 func (c *Console) ClearScreen() {
 	if c.Format.Machine() || !c.TTY {
 		return

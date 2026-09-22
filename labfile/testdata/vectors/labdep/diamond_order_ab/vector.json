@@ -1,4 +1,4 @@
 {
-  "description": "OQ-15b: within a dependency level, flatten() order follows lab.dep line order (b before c).",
+  "description": "Within a dependency level, flatten() order follows lab.dep line order (b before c).",
   "parser": "dep"
 }

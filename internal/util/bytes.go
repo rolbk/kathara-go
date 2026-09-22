@@ -16,37 +16,6 @@ import (
 var sizeName = [...]string{"B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"}
 
 // HumanReadableBytes is utils.human_readable_bytes (utils.py:416).
-//
-// Python:
-//
-//	i = int(math.floor(math.log(size_bytes, 1024)))
-//	p = math.pow(1024, i)
-//	s = round(size_bytes / p, 2)
-//	return "%s %s" % (s, size_name[i])
-//
-// Three details make this more than a division.
-//
-// The exponent is chosen with floating-point arithmetic and is occasionally
-// wrong, in a way that shows: `float(2**50 - 1) / float(2**50)` divides to
-// exactly 5.0, so 1125899906842623 bytes are reported as "1.0 PB" rather than
-// "1024.0 TB". The Go expression is spelled the same way, `Log(n)/Log(1024)`,
-// so the same artefact appears; it was verified identical to CPython over half
-// a million values including every 2**k neighbourhood.
-//
-// `round(x, 2)` is round-half-to-even on the exact binary value, which
-// `strconv.FormatFloat(v, 'f', 2, 64)` also is — Go's fixed-precision
-// formatting breaks ties to even too. Re-parsing puts the result back on the
-// nearest double, which is what Python's `round` returns.
-//
-// `"%s" % float` is `str(float)`, the shortest decimal that round-trips, and it
-// always keeps a fractional part: Python prints "1.0", Go's %v prints "1". The
-// trailing ".0" is restored explicitly. The rounding can also carry across the
-// unit boundary, so 1048571 bytes render as "1024.0 KB" and never as "1.0 MB".
-//
-// Zero short-circuits to "0 B" before the logarithm. A negative size is
-// `math.log`'s domain error in Python, an uncaught ValueError; it is returned
-// as an error here rather than allowed to become a NaN, and it is not reachable
-// from any 3.8.3 call site (both feed byte counts from Docker or from a tar).
 func HumanReadableBytes(sizeBytes int64) (string, error) {
 	if sizeBytes == 0 {
 		return "0 B", nil
