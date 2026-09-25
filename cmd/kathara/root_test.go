@@ -58,7 +58,7 @@ func TestEveryDescribedCommandIsRegistered(t *testing.T) {
 			t.Errorf("%q is in the help but is not dispatchable", c.Name)
 		}
 	}
-	described := map[string]bool{"config": true}
+	described := map[string]bool{"config": true, "api": true}
 	for _, c := range commandDescriptions {
 		described[c.Name] = true
 	}

@@ -354,9 +354,20 @@ func (l *Lab) AssignMetaToMachine(machineName, metaName, metaValue string) (any,
 	return machine.AddMeta(metaName, metaValue)
 }
 
-// AttachExternalLinks is `attach_external_links` (`model/Lab.py:159`).
-func (l *Lab) AttachExternalLinks(map[string][]ExternalLink) error {
-	return kerrors.NewFeatureNotAvailable(kerrors.FeatureLabExt)
+// AttachExternalLinks is `attach_external_links` (`model/Lab.py:159`): every
+// lab.ext collision domain must already be declared by lab.conf.
+func (l *Lab) AttachExternalLinks(external map[string][]ExternalLink) error {
+	for name := range external {
+		if !l.links.Has(name) {
+			return kerrors.WrapLink(name, "", kerrors.New(kerrors.ErrLinkNotFound,
+				"Collision domain `"+name+"` (declared in lab.ext) not found in network scenario collision domains."))
+		}
+	}
+	for name, links := range external {
+		link, _ := l.links.Get(name)
+		link.External = append(link.External, links...)
+	}
+	return nil
 }
 
 // CheckIntegrity is `check_integrity` (`model/Lab.py:181`): run [Machine.Check]

@@ -108,6 +108,7 @@ func commandTable(a *app) map[string]*commandSpec {
 		newCheckCmd(a),
 		newSettingsCmd(a),
 		newConfigCmd(a),
+		newAPICmd(a),
 	}
 	table := make(map[string]*commandSpec, len(specs))
 	for _, spec := range specs {

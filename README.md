@@ -91,9 +91,13 @@ Python-specific development commands.
 ## Current scope
 
 The Docker workflow is the primary path. The Kubernetes backend is available
-but needs cluster credentials and configuration. A few legacy operations are
-explicitly unavailable rather than silently approximated: external links via
-`lab.ext`, the `linfo` command, and live resource-statistics sampling.
+but needs cluster credentials and configuration. `linfo` supports static lab
+information and running device/topology inventory; live resource-statistics
+sampling is not yet available. On Linux, Docker labs can use `lab.ext` to
+attach host interfaces. That operation requires root and the host networking
+tools used by the selected Kathará network plugin (`ip`, plus `nsenter` and
+`/usr/local/bin/vde_ext` for VDE); it is not supported with a remote Docker
+daemon. Kubernetes ignores external links, as the Python backend does.
 
 ## Versioning
 

@@ -584,33 +584,29 @@ func TestLinfoLiveSharesTheWatchGroup(t *testing.T) {
 	a := newTestApp(t)
 	spec := commandTable(a.app)["linfo"]
 	if code := runCommand(t.Context(), a.app, spec, []string{"-w", "-l"}); code != 1 {
-		t.Fatalf("exit = %d, want 1 (the FeatureNotAvailable stub)", code)
+		t.Fatalf("exit = %d, want 1 (no test manager)", code)
 	}
 }
 
-func TestLinfoErrorsInEveryMode(t *testing.T) {
+func TestLinfoStaticInEveryMode(t *testing.T) {
 	t.Run("human", func(t *testing.T) {
 		a := newTestApp(t)
 		spec := commandTable(a.app)["linfo"]
-		if code := runCommand(t.Context(), a.app, spec, nil); code != 1 {
-			t.Fatalf("exit = %d, want 1", code)
+		if code := runCommand(t.Context(), a.app, spec, []string{"-c"}); code != 0 {
+			t.Fatalf("exit = %d, want 0", code)
 		}
-		if !strings.Contains(a.stdoutString(), "not supported in this release") {
+		if !strings.Contains(a.stdoutString(), "Topology Information") {
 			t.Errorf("stdout = %q", a.stdoutString())
 		}
 	})
 	t.Run("json", func(t *testing.T) {
 		a := newTestApp(t)
 		spec := commandTable(a.app)["linfo"]
-		if code := runCommand(t.Context(), a.app, spec, []string{"--format", "json"}); code != 1 {
-			t.Fatalf("exit = %d, want 1", code)
+		if code := runCommand(t.Context(), a.app, spec, []string{"--format", "json", "-c"}); code != 0 {
+			t.Fatalf("exit = %d, want 0", code)
 		}
-		want := `{"error":{"code":"FeatureNotAvailable",`
-		if !strings.HasPrefix(a.stdoutString(), want) {
-			t.Errorf("stdout = %q, want it to start with %q", a.stdoutString(), want)
-		}
-		if !strings.Contains(a.stdoutString(), `"feature":"linfo"`) {
-			t.Errorf("stdout = %q, want the feature token", a.stdoutString())
+		if !strings.Contains(a.stdoutString(), `"mode":"conf"`) {
+			t.Errorf("stdout = %q, want static linfo result", a.stdoutString())
 		}
 	})
 	t.Run("jsonl is not a linfo value", func(t *testing.T) {

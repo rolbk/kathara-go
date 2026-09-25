@@ -139,6 +139,11 @@ func (s *linkService) Create(ctx context.Context, link *model.Link) error {
 	if err != nil {
 		return err
 	}
+	if len(link.External) > 0 {
+		if err := s.preflightExternalInterfaces(ctx, link.External); err != nil {
+			return err
+		}
+	}
 
 	networkPlugin := pluginNameOf(s.manager.settings)
 
@@ -164,8 +169,11 @@ func (s *linkService) Create(ctx context.Context, link *model.Link) error {
 	}
 	link.APIObject = &Network{ID: created.ID, Attrs: inspected}
 
-	// `if link.external:` — unreachable in 1.0, since `externalLabel` above
-	// has already answered FeatureNotAvailable for a non-empty list.
+	if len(link.External) > 0 {
+		if err := s.attachExternalInterfaces(ctx, link.External, link.APIObject.(*Network)); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
@@ -255,8 +263,10 @@ func (s *linkService) undeployLink(ctx context.Context, n *Network) error {
 // deleteLink is `_delete_link` (`DockerLink.py:300`): detach any external
 // interfaces, then remove the network.
 func (s *linkService) deleteLink(ctx context.Context, n *Network) error {
-	if n.Label(labelExternal) != "" {
-		return kerrors.NewFeatureNotAvailable(kerrors.FeatureLabExt)
+	if external := n.Label(labelExternal); external != "" {
+		if err := s.deleteExternalInterfaces(ctx, external, n); err != nil {
+			return err
+		}
 	}
 	return s.manager.api.NetworkRemove(ctx, n.ID)
 }

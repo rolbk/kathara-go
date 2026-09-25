@@ -1,12 +1,10 @@
 package docker
 
 import (
-	"errors"
 	"maps"
 	"reflect"
 	"testing"
 
-	"github.com/KatharaFramework/kathara-go/kerrors"
 	"github.com/KatharaFramework/kathara-go/model"
 	"github.com/KatharaFramework/kathara-go/settings"
 )
@@ -197,9 +195,14 @@ func TestExternalLabelIsDeferred(t *testing.T) {
 	}
 
 	link.External = []model.ExternalLink{{Interface: "eth0"}}
-	if _, err := externalLabel(link); !errors.Is(err, kerrors.ErrNotSupported) &&
-		kerrors.Code(err) != kerrors.CodeFeatureNotAvailable {
-		t.Errorf("externalLabel with an external link = %v, want FeatureNotAvailable", err)
+	label, err = externalLabel(link)
+	if err != nil || label != "eth0" {
+		t.Errorf("externalLabel with an external link = (%q, %v), want eth0", label, err)
+	}
+	link.External = append(link.External, model.ExternalLink{Interface: "longinterfacename", VLAN: 20})
+	label, err = externalLabel(link)
+	if err != nil || label != "eth0;longinterfac.20" {
+		t.Errorf("externalLabel with VLAN = (%q, %v)", label, err)
 	}
 }
 

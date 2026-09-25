@@ -1,11 +1,13 @@
 // This file is `rich/panel.py` and the two `rich/box.py` boxes the CLI names,
 // reduced to the one configuration `cli/ui/utils.create_panel` ever builds:
-// `expand=True`, `padding=(0, 1)`, no subtitle, and a title that only the
-// deferred `linfo` command passes.
+// `expand=True`, `padding=(0, 1)`, no subtitle, and the title used by `linfo`.
 
 package cliout
 
-import "strings"
+import (
+	"strings"
+	"unicode/utf8"
+)
 
 // Box is one `rich.box.Box`, reduced to the seven characters a titleless,
 // columnless panel and a plain table need.
@@ -57,6 +59,8 @@ var BoxSquareDoubleHead = Box{
 
 // PanelOptions is the keyword surface of `cli/ui/utils.create_panel`.
 type PanelOptions struct {
+	// Title is centered in the top border, as linfo's panels render it.
+	Title string
 	// Box selects the border characters. The zero value is [BoxSquare], which
 	// is `create_panel`'s default.
 	Box *Box
@@ -85,7 +89,16 @@ func Panel(message string, opts PanelOptions) []string {
 	body := Wrap(message, w-4, opts.Justify)
 
 	lines := make([]string, 0, len(body)+2)
-	lines = append(lines, box.TopLeft+strings.Repeat(box.Top, w-2)+box.TopRight)
+	top := box.TopLeft + strings.Repeat(box.Top, w-2) + box.TopRight
+	if opts.Title != "" {
+		title := " " + opts.Title + " "
+		if titleWidth := utf8.RuneCountInString(title); titleWidth <= w-2 {
+			left := (w - 2 - titleWidth) / 2
+			top = box.TopLeft + strings.Repeat(box.Top, left) + title +
+				strings.Repeat(box.Top, w-2-left-titleWidth) + box.TopRight
+		}
+	}
+	lines = append(lines, top)
 	for _, line := range body {
 		lines = append(lines, box.MidLeft+" "+line+" "+box.MidRight)
 	}

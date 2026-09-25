@@ -235,10 +235,14 @@ class DeployTest(FakeBinaryTestCase):
         with self.assertRaises(LabNotFoundError):
             self.manager.deploy_machine(machine)
 
-    def test_deploy_link_is_not_supported(self):
+    def test_deploy_link_uses_api_bridge(self):
         lab = build_lab()
-        with self.assertRaises(NotSupportedError):
-            self.manager.deploy_link(lab.get_link("A"))
+        self.manager.deploy_link(lab.get_link("A"))
+        self.assertEqual("api", self.last_argv()[0])
+        self.assertIn("deploy-link", self.last_argv())
+        payload = json.loads(self.last_stdin())
+        self.assertEqual(lab.hash, payload["lab_hash"])
+        self.assertEqual("A", payload["link_name"])
 
 
 class UndeployTest(FakeBinaryTestCase):
@@ -723,10 +727,6 @@ class UnsupportedSurfaceTest(FakeBinaryTestCase):
         link = lab.get_link("A")
 
         cases = {
-            "deploy_link": lambda: self.manager.deploy_link(link),
-            "undeploy_link": lambda: self.manager.undeploy_link(link),
-            "copy_files": lambda: self.manager.copy_files(machine, {"/tmp/x": "/etc/hosts"}),
-            "retrieve_files": lambda: self.manager.retrieve_files(machine, "/tmp/x", "/tmp/y"),
             "get_link_api_object": lambda: self.manager.get_link_api_object("A", lab_hash="H1"),
             "get_links_api_objects": lambda: self.manager.get_links_api_objects(lab_hash="H1"),
             "get_lab_from_api": lambda: self.manager.get_lab_from_api(lab_hash="H1"),
@@ -734,7 +734,6 @@ class UnsupportedSurfaceTest(FakeBinaryTestCase):
             "get_links_stats": lambda: self.manager.get_links_stats(lab_hash="H1"),
             "get_link_stats": lambda: self.manager.get_link_stats("A", lab_hash="H1"),
             "get_link_stats_obj": lambda: self.manager.get_link_stats_obj(link),
-            "check_image": lambda: self.manager.check_image("kathara/base"),
         }
 
         for name, call in cases.items():
@@ -743,6 +742,35 @@ class UnsupportedSurfaceTest(FakeBinaryTestCase):
                     call()
 
         self.assertEqual([], self.calls(), "an unsupported call must not spawn the binary")
+
+    def test_copy_files_uses_api_bridge(self):
+        lab = build_lab()
+        machine = lab.get_machine("pc1")
+        self.manager.copy_files(machine, {"/etc/message": io.BytesIO(b"hello\x00"),
+                                          "/etc/hosts": "/tmp/hosts"})
+        self.assertIn("copy-files", self.last_argv())
+        payload = json.loads(self.last_stdin())
+        self.assertEqual(lab.hash, payload["lab_hash"])
+        self.assertEqual("pc1", payload["machine_name"])
+        self.assertEqual("/tmp/hosts", payload["files"][1]["host_path"])
+        self.assertEqual("aGVsbG8A", payload["files"][0]["content_base64"])
+
+    def test_retrieve_files_uses_api_bridge(self):
+        lab = build_lab()
+        self.manager.retrieve_files(lab.get_machine("pc1"), "/etc/hosts", "/tmp/hosts")
+        self.assertIn("retrieve-files", self.last_argv())
+        payload = json.loads(self.last_stdin())
+        self.assertEqual("/etc/hosts", payload["src"])
+        self.assertEqual("/tmp/hosts", payload["dst"])
+
+    def test_undeploy_link_and_check_image_use_api_bridge(self):
+        lab = build_lab()
+        self.manager.undeploy_link(lab.get_link("A"))
+        self.assertIn("undeploy-link", self.last_argv())
+        self.assertEqual("A", json.loads(self.last_stdin())["link_name"])
+        self.manager.check_image("kathara/base")
+        self.assertIn("check-image", self.last_argv())
+        self.assertEqual("kathara/base", json.loads(self.last_stdin())["image_name"])
 
     def test_connect_tty_by_hash_alone_is_not_supported(self):
         with self.assertRaises(NotSupportedError):

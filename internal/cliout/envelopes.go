@@ -164,6 +164,53 @@ func (r ListResult) encode() []byte {
 	return o.Bytes()
 }
 
+// LinfoLink is one collision domain in linfo's topology response.
+type LinfoLink struct {
+	Name     string   `json:"name"`
+	Machines []string `json:"machines"`
+}
+
+// LinfoResult covers static, device, table and topology views of one lab.
+type LinfoResult struct {
+	Lab         Lab
+	Mode        string
+	Machine     *kathara.MachineStats
+	Machines    []*kathara.MachineStats
+	Links       []LinfoLink
+	DeviceCount int
+	LinkCount   int
+	MachineText string
+}
+
+// APIResult acknowledges one Python bridge operation.
+type APIResult struct{ OK bool }
+
+func (r APIResult) encode() []byte { return newObj().Bool("ok", r.OK).Bytes() }
+
+func (r LinfoResult) encode() []byte {
+	o := newObj().Raw("lab", r.Lab.encode(true)).Str("mode", r.Mode)
+	switch r.Mode {
+	case "conf":
+		o.Int("device_count", r.DeviceCount).Int("link_count", r.LinkCount)
+		if r.MachineText != "" {
+			o.Str("machine", r.MachineText)
+		}
+	case "machine":
+		o.Any("machine", r.Machine)
+	case "topology":
+		if r.Links == nil {
+			r.Links = []LinfoLink{}
+		}
+		o.Any("links", r.Links)
+	default:
+		if r.Machines == nil {
+			r.Machines = []*kathara.MachineStats{}
+		}
+		o.Any("machines", r.Machines)
+	}
+	return o.Bytes()
+}
+
 type ExecResult struct {
 	Stdout   string
 	Stderr   string
@@ -312,6 +359,8 @@ var (
 	_ Envelope = LrestartResult{}
 	_ Envelope = WipeResult{}
 	_ Envelope = ListResult{}
+	_ Envelope = LinfoResult{}
+	_ Envelope = APIResult{}
 	_ Envelope = ExecResult{}
 	_ Envelope = CheckResult{}
 	_ Envelope = VstartResult{}

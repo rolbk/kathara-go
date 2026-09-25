@@ -253,16 +253,16 @@ func TestHelpFlagPrintsToStdoutAndExitsZero(t *testing.T) {
 	}
 }
 
-func TestLinfoIsAFeatureNotAvailableStub(t *testing.T) {
+func TestLinfoStaticInformation(t *testing.T) {
+	dir := scenarioDir(t, map[string]string{"lab.conf": "LAB_NAME=example\npc1[0]=A\n"})
 	a := newTestApp(t)
 	a.console.Level = cliout.LevelDebug
-	code := dispatch(t.Context(), a.app, []string{"kathara", "linfo", "-c", "-n", "pc1"})
-	if code != 1 {
-		t.Fatalf("exit = %d, want 1", code)
+	code := dispatch(t.Context(), a.app, []string{"kathara", "linfo", "-c", "-n", "pc1", "-d", dir})
+	if code != 0 {
+		t.Fatalf("exit = %d, want 0", code)
 	}
-	want := "CRITICAL (FeatureNotAvailable) The linfo command is not supported in this release. Use Kathará 3.8.x."
-	if got := strings.TrimRight(a.stdoutString(), "\n"); got != want {
-		t.Errorf("stdout = %q\nwant     %q", got, want)
+	if got := a.stdoutString(); !strings.Contains(got, "pc1 Information") || !strings.Contains(got, "Interfaces:") {
+		t.Errorf("stdout = %q", got)
 	}
 }
 

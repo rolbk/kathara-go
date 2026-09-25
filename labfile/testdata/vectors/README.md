@@ -8,7 +8,8 @@ They are what keeps the two implementations from drifting.** Neither implementat
 "win" an argument with a vector: the vectors record what Kathará 3.8.3's Python parser
 actually does, verified by replaying them against the real Python parser.
 
-`lab.ext` is not supported by this implementation and has no vectors here.
+`lab.ext` is parsed separately from this `lab.conf`/`lab.dep` vector corpus;
+its grammar and attachment behavior have package-level tests.
 
 ---
 
@@ -256,7 +257,7 @@ deliberately changes them.
 
 9. **Indented comments: illegal in lab.conf, legal in lab.dep.** lab.conf tests
    `line.startswith('#')` on the **raw** line; lab.dep tests it on the **stripped** line. Two
-   files, two conventions. (`lab.ext`, deferred, uses the raw-line convention.)
+   files, two conventions. (`lab.ext` also uses the raw-line convention.)
    → `labconf/indented_comment`, `labdep/indented_comment_ok`
 
 10. **Syntax-error messages embed the raw line including its trailing newline** — and the CR

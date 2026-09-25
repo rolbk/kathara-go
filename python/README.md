@@ -44,8 +44,10 @@ terminal, and execution operations.
 
 Operations that cannot be represented safely through the binary interface
 raise `NotSupportedError`. This includes low-level Docker/Kubernetes object
-access, link-only deployment, file transfer helpers, external links, and live
-resource-statistics sampling.
+access and live resource-statistics sampling. Link-only deployment and file
+transfer use the binary's internal JSON bridge. External links can be passed
+through `deploy_link` or packed into `lab.ext` when deploying an in-memory lab;
+they retain the Linux/root requirements described in the root README.
 
 ## Development
 

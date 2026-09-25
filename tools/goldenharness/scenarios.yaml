@@ -305,12 +305,10 @@ scenarios:
   - name: err-lab-ext
     dir: test/scenarios/synthetic/err-lab-ext
     kind: dry
-    status: reference
     note: >-
       lab.ext fixture. Recorded in dry mode so lab.ext is parsed but no host
-      bridge or VLAN interface is created. The Go build does not support
-      ExternalLink and is expected to fail with FeatureNotAvailable, so drift
-      against this snapshot is reported, not fatal.
+      bridge or VLAN interface is created. Its output must match the Python
+      reference exactly.
 
   - name: err-nonexistent-dir
     dir: test/scenarios/synthetic/this-directory-does-not-exist

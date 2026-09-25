@@ -11,6 +11,7 @@ import _support  # noqa: F401  (puts the client package on sys.path)
 from Kathara import _archive
 from Kathara.exceptions import InvocationError, NotSupportedError
 from Kathara.model.Lab import Lab
+from Kathara.model.ExternalLink import ExternalLink
 from Kathara.parser.netkit.DepParser import DepParser
 from Kathara.parser.netkit.LabParser import LabParser
 
@@ -58,6 +59,14 @@ class ArchiveTestCase(unittest.TestCase):
 
 
 class RoundTripTest(ArchiveTestCase):
+    def test_external_links_are_shipped_as_lab_ext(self):
+        lab = Lab("external")
+        lab.connect_machine_to_link("pc1", "A")
+        lab.get_link("A").external.append(ExternalLink("eth0", 20))
+        destination = self.unpack(lab)
+        with open(os.path.join(destination, "lab.ext"), encoding="utf-8") as source:
+            self.assertEqual("A eth0.20\n", source.read())
+
     def test_interfaces_and_macs(self):
         lab = Lab("rt")
         lab.connect_machine_to_link("pc1", "A")

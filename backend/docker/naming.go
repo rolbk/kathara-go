@@ -7,8 +7,8 @@ package docker
 
 import (
 	"strconv"
+	"strings"
 
-	"github.com/KatharaFramework/kathara-go/kerrors"
 	"github.com/KatharaFramework/kathara-go/model"
 	"github.com/KatharaFramework/kathara-go/settings"
 )
@@ -137,8 +137,9 @@ func BridgeName(networkID string) string {
 // externalLabel is the `external` label's value for a collision domain:
 // `";".join(x.get_full_name() for x in link.external)` (`DockerLink.py:145`).
 func externalLabel(link *model.Link) (string, error) {
-	if len(link.External) == 0 {
-		return "", nil
+	names := make([]string, 0, len(link.External))
+	for _, external := range link.External {
+		names = append(names, external.FullName())
 	}
-	return "", kerrors.NewFeatureNotAvailable(kerrors.FeatureLabExt)
+	return strings.Join(names, ";"), nil
 }

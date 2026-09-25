@@ -39,40 +39,49 @@ func writeLab(t *testing.T, files map[string]string) string {
 	return dir
 }
 
-func TestCheckExt(t *testing.T) {
+func TestParseExt(t *testing.T) {
 	t.Run("absent", func(t *testing.T) {
-		if err := CheckExt(writeLab(t, map[string]string{"lab.conf": "pc1[0]=A\n"})); err != nil {
-			t.Fatalf("CheckExt on a scenario without lab.ext = %v, want nil", err)
+		links, err := ParseExt(writeLab(t, map[string]string{"lab.conf": "pc1[0]=A\n"}))
+		if err != nil || links != nil {
+			t.Fatalf("ParseExt absent = (%v, %v), want (nil, nil)", links, err)
 		}
 	})
 
 	t.Run("present", func(t *testing.T) {
-		err := CheckExt(writeLab(t, map[string]string{"lab.ext": "A enp9s0\n"}))
-		if err == nil {
-			t.Fatal("CheckExt on a scenario with lab.ext = nil, want FeatureNotAvailable")
+		links, err := ParseExt(writeLab(t, map[string]string{
+			"lab.ext": "# comment\nA enp9s0\nB enp9s0.20\nA eth0\n",
+		}))
+		if err != nil {
+			t.Fatal(err)
 		}
-
-		const want = "lab.ext external links are not supported in this release. Use Kathará 3.8.x."
-		if err.Error() != want {
-			t.Errorf("message = %q, want %q", err.Error(), want)
+		if got := links["A"]; !slices.Equal(got, []model.ExternalLink{{Interface: "enp9s0"}, {Interface: "eth0"}}) {
+			t.Errorf("A = %+v", got)
 		}
-		if got := kerrors.Code(err); got != kerrors.CodeFeatureNotAvailable {
-			t.Errorf("code = %q, want %q", got, kerrors.CodeFeatureNotAvailable)
-		}
-
-		var feature *kerrors.FeatureNotAvailableError
-		if !errors.As(err, &feature) || feature.Feature != kerrors.FeatureLabExt {
-			t.Errorf("errors.As gave %+v, want the %q feature", feature, kerrors.FeatureLabExt)
+		if got := links["B"]; !slices.Equal(got, []model.ExternalLink{{Interface: "enp9s0", VLAN: 20}}) {
+			t.Errorf("B = %+v", got)
 		}
 	})
 
-	t.Run("empty file still counts", func(t *testing.T) {
-		// `os.path.exists` is presence, not content: an empty lab.ext is still
-		// a declaration of external links.
-		if err := CheckExt(writeLab(t, map[string]string{"lab.ext": ""})); err == nil {
-			t.Fatal("CheckExt on an empty lab.ext = nil, want FeatureNotAvailable")
+	t.Run("empty", func(t *testing.T) {
+		links, err := ParseExt(writeLab(t, map[string]string{"lab.ext": ""}))
+		if err != nil || links != nil {
+			t.Fatalf("ParseExt empty = (%v, %v), want (nil, nil)", links, err)
 		}
 	})
+
+	for _, tc := range []struct{ name, text, code, message string }{
+		{"syntax", "A eth-0\n", kerrors.CodeSyntax, "In file lab.ext - Line 1."},
+		{"indented comment", "  # comment\n", kerrors.CodeSyntax, "In file lab.ext - Line 1."},
+		{"vlan range", "A eth0.4095\n", kerrors.CodeValue,
+			"In file lab.ext, line 1: VLAN ID must be in range [1, 4094]."},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			_, err := ParseExt(writeLab(t, map[string]string{"lab.ext": tc.text}))
+			if err == nil || kerrors.Code(err) != tc.code || err.Error() != tc.message {
+				t.Fatalf("ParseExt error = %v, want %s %q", err, tc.code, tc.message)
+			}
+		})
+	}
 }
 
 func TestParseErrorShape(t *testing.T) {

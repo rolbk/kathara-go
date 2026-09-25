@@ -475,9 +475,11 @@ func (e *HostArchError) Error() string {
 func (e *HostArchError) Unwrap() error { return ErrHostArchitecture }
 
 const (
-	// FeatureLabExt covers lab.ext and external collision domains.
+	// FeatureLabExt is retained for older callers that decode a previously
+	// emitted FeatureNotAvailable error. New lab.ext paths do not emit it.
 	FeatureLabExt = "lab.ext"
-	// FeatureLinfo is the whole linfo command.
+	// FeatureLinfo is retained for the same error-envelope compatibility.
+	// The linfo command no longer emits it.
 	FeatureLinfo = "linfo"
 	// FeatureStatsSampling is the resource-sampling half of the stats API;
 	// the inventory fields keep working.

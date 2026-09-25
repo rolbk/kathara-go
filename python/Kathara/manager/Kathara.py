@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import contextlib
+import base64
 import io
+import json
 import os
 import shlex
 import tempfile
@@ -244,13 +246,15 @@ class Kathara(object):
             None
 
         Raises:
-            NotSupportedError: Always, in this release.
+            LabNotFoundError: If the collision domain has no scenario.
         """
-        raise _not_supported(
-            "deploy_link",
-            "The command interface has no per-collision-domain operation; deploy the network scenario "
-            "with `deploy_lab`, which creates every collision domain its devices use."
-        )
+        lab = self._link_lab(link)
+        payload = {
+            "lab_hash": lab.hash,
+            "link_name": link.name,
+            "external": [{"interface": item.interface, "vlan": item.vlan or 0} for item in link.external],
+        }
+        _proc.run_json("api", ["deploy-link"], stdin_data=json.dumps(payload).encode("utf-8"))
 
     def deploy_lab(self, lab: Lab, selected_machines: Optional[Set[str]] = None,
                    excluded_machines: Optional[Set[str]] = None) -> None:
@@ -415,13 +419,11 @@ class Kathara(object):
             None
 
         Raises:
-            NotSupportedError: Always, in this release.
+            LabNotFoundError: If the collision domain has no scenario.
         """
-        raise _not_supported(
-            "undeploy_link",
-            "The command interface has no per-collision-domain operation; `undeploy_lab` removes the collision "
-            "domains of the network scenario."
-        )
+        lab = self._link_lab(link)
+        payload = {"lab_hash": lab.hash, "link_name": link.name}
+        _proc.run_json("api", ["undeploy-link"], stdin_data=json.dumps(payload).encode("utf-8"))
 
     def undeploy_lab(self, lab_hash: Optional[str] = None, lab_name: Optional[str] = None, lab: Optional[Lab] = None,
                      selected_machines: Optional[Set[str]] = None,
@@ -705,13 +707,25 @@ class Kathara(object):
             None
 
         Raises:
-            NotSupportedError: Always, in this release.
+            LabNotFoundError: If the device has no scenario.
         """
-        raise _not_supported(
-            "copy_files",
-            "The command interface has no file-transfer operation; put the files in the network scenario "
-            "filesystem before `deploy_lab`, which ships them in the deploy archive."
-        )
+        lab = self._machine_lab(machine)
+        files = []
+        for guest_path, source in guest_to_host.items():
+            if isinstance(source, str):
+                files.append({"guest_path": guest_path, "host_path": source})
+            elif isinstance(source, io.IOBase):
+                content = source.read()
+                if isinstance(source, io.TextIOBase):
+                    content = content.encode("utf-8")
+                source.seek(0, 2)
+                source.seek(0)
+                files.append({"guest_path": guest_path, "is_content": True,
+                              "content_base64": base64.b64encode(content).decode("ascii")})
+            else:
+                raise ValueError("File type %s not supported" % type(source))
+        payload = {"lab_hash": lab.hash, "machine_name": machine.name, "files": files}
+        _proc.run_json("api", ["copy-files"], stdin_data=json.dumps(payload).encode("utf-8"))
 
     def retrieve_files(self, machine: Machine, src: str, dst: str) -> None:
         """Copy files from a running device path to the host.
@@ -725,12 +739,11 @@ class Kathara(object):
             None
 
         Raises:
-            NotSupportedError: Always, in this release.
+            LabNotFoundError: If the device has no scenario.
         """
-        raise _not_supported(
-            "retrieve_files",
-            "The command interface has no file-transfer operation; read the file with `exec` instead."
-        )
+        lab = self._machine_lab(machine)
+        payload = {"lab_hash": lab.hash, "machine_name": machine.name, "src": src, "dst": dst}
+        _proc.run_json("api", ["retrieve-files"], stdin_data=json.dumps(payload).encode("utf-8"))
 
     # ------------------------------------------------------------------ #
     # Inventory
@@ -960,12 +973,10 @@ class Kathara(object):
             None
 
         Raises:
-            NotSupportedError: Always, in this release.
+            DockerImageNotFoundError: If the image is unavailable.
         """
-        raise _not_supported(
-            "check_image",
-            "`kathara check` self-tests the default image only; there is no single-image check."
-        )
+        _proc.run_json("api", ["check-image"],
+                       stdin_data=json.dumps({"image_name": image_name}).encode("utf-8"))
 
     @staticmethod
     def _check_report() -> Dict[str, Any]:

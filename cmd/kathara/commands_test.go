@@ -8,6 +8,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"runtime"
 	"slices"
 	"strings"
 	"testing"
@@ -183,7 +184,10 @@ func TestLstartDryModeReturnsBeforeDeploy(t *testing.T) {
 	}
 }
 
-func TestLstartLabExtIsDeferred(t *testing.T) {
+func TestLstartLabExtDryRun(t *testing.T) {
+	if runtime.GOOS != "linux" || os.Geteuid() != 0 {
+		t.Skip("lab.ext requires root on Linux, including in dry mode")
+	}
 	dir := scenarioDir(t, map[string]string{
 		"lab.conf": "pc1[0]=\"A\"\n",
 		"lab.ext":  "A eth0\n",
@@ -192,13 +196,11 @@ func TestLstartLabExtIsDeferred(t *testing.T) {
 	a := newTestApp(t)
 	spec := commandTable(a.app)["lstart"]
 
-	if code := runCommand(t.Context(), a.app, spec, []string{"--format", "json", "--print", "-d", dir}); code != 1 {
-		t.Fatalf("exit = %d, want 1", code)
+	if code := runCommand(t.Context(), a.app, spec, []string{"--format", "json", "--print", "-d", dir}); code != 0 {
+		t.Fatalf("exit = %d, want 0", code)
 	}
-	want := `{"error":{"code":"FeatureNotAvailable","message":"lab.ext external links are not supported ` +
-		`in this release. Use Kathará 3.8.x.","feature":"lab.ext"}}` + "\n"
-	if got := a.stdoutString(); got != want {
-		t.Errorf("\n got %s\nwant %s", got, want)
+	if got := a.stdoutString(); !strings.Contains(got, `{"file":"lab.ext","ok":true}`) {
+		t.Errorf("stdout missing lab.ext check: %s", got)
 	}
 }
 

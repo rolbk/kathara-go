@@ -3,12 +3,17 @@ package main
 import (
 	"context"
 	"errors"
+	"fmt"
 	"io"
+	"sort"
+	"strings"
 
 	"github.com/KatharaFramework/kathara-go/internal/cliout"
 	"github.com/KatharaFramework/kathara-go/internal/util"
 	"github.com/KatharaFramework/kathara-go/kathara"
 	"github.com/KatharaFramework/kathara-go/kerrors"
+	"github.com/KatharaFramework/kathara-go/labfile"
+	"github.com/KatharaFramework/kathara-go/model"
 )
 
 type listFlags struct {
@@ -114,7 +119,7 @@ func runListWatch(ctx context.Context, a *app, stream kathara.MachinesStatsStrea
 	}
 }
 
-// newLinfoCmd is the `linfo` stub.
+// newLinfoCmd is LinfoCommand's parser and dispatcher.
 func newLinfoCmd(a *app) *commandSpec {
 	cmd := newParser("linfo")
 	flags := cmd.Flags()
@@ -150,8 +155,142 @@ func newLinfoCmd(a *app) *commandSpec {
 	return &commandSpec{
 		Name: "linfo",
 		Cmd:  cmd,
-		Run: func(context.Context, *app, []string, []string) (int, error) {
-			return 1, kerrors.NewFeatureNotAvailable(kerrors.FeatureLinfo)
+		Run: func(ctx context.Context, a *app, _, _ []string) (int, error) {
+			if watch && a.console.Format.Machine() {
+				return 2, errUsage("argument -w/--watch: not allowed with --format %s", a.console.Format)
+			}
+			result, err := runLinfo(ctx, a, directory, watch, conf, name, topology)
+			if err != nil {
+				return 1, err
+			}
+			a.console.Emit(result)
+			return 0, nil
 		},
 	}
+}
+
+// runLinfo parses the scenario when possible, but keeps the original
+// LinfoCommand fallback to an empty Lab when lab.conf is missing or malformed.
+func runLinfo(ctx context.Context, a *app, directory string, watch, conf bool, name string, topology bool) (cliout.LinfoResult, error) {
+	var out cliout.LinfoResult
+	path, err := a.resolveLabPath(directory)
+	if err != nil {
+		return out, err
+	}
+	if err := a.loadCustomConfiguration(path); err != nil {
+		return out, err
+	}
+	lab, err := labfile.ParseLab(path, labfile.DefaultConfName, a.defaults())
+	if err != nil {
+		lab, err = model.NewLabFromPath(path, a.defaults())
+		if err != nil {
+			return out, err
+		}
+	}
+	out.Lab = asLabObject(lab, true)
+
+	if conf {
+		out.Mode = "conf"
+		if name != "" {
+			machine, err := lab.GetMachine(name)
+			if err != nil {
+				return out, err
+			}
+			out.MachineText = machine.String()
+			a.console.PrintPanel(out.MachineText, cliout.PanelOptions{Title: name + " Information"})
+			return out, nil
+		}
+		if meta := lab.String(); meta != "" {
+			a.console.PrintPanel(meta, cliout.PanelOptions{Title: "Network Scenario Information"})
+		}
+		out.DeviceCount = len(lab.Machines())
+		out.LinkCount = len(lab.Links())
+		if lab.HasLink(model.BridgeLinkName) {
+			out.LinkCount--
+		}
+		a.console.PrintPanel(fmt.Sprintf("There are %d devices.\nThere are %d collision domains.",
+			out.DeviceCount, out.LinkCount), cliout.PanelOptions{Title: "Topology Information"})
+		return out, nil
+	}
+
+	mgr, err := a.manager(ctx)
+	if err != nil {
+		return out, err
+	}
+	for {
+		switch {
+		case name != "":
+			out.Mode = "machine"
+			stream := mgr.GetMachineStats(ctx, name, kathara.LabRef{Hash: lab.Hash}, false)
+			out.Machine, err = stream.Next(ctx)
+			_ = stream.Close()
+			if errors.Is(err, io.EOF) {
+				err = nil
+			}
+			if err != nil {
+				return out, err
+			}
+			if out.Machine == nil {
+				a.console.PrintPanel("Device `"+name+"` Not Found.", cliout.PanelOptions{Title: name + " Information"})
+			} else {
+				a.console.PrintPanel(formatLinfoMachine(out.Machine), cliout.PanelOptions{Title: name + " Information"})
+			}
+		case topology:
+			out.Mode = "topology"
+			if err := mgr.UpdateLabFromAPI(ctx, lab); err != nil {
+				return out, err
+			}
+			out.Links = linfoLinks(lab)
+			a.console.PrintLines(renderTopologyTable(out.Links, a.console.Width))
+		case true:
+			out.Mode = "lab"
+			entries, err := snapshotMachines(ctx, mgr, kathara.LabRef{Hash: lab.Hash}, false)
+			if err != nil {
+				return out, err
+			}
+			out.Machines = statsValues(entries)
+			a.console.PrintLines(renderMachinesTable(entries, a.console.Width))
+		}
+		if !watch {
+			return out, nil
+		}
+		select {
+		case <-ctx.Done():
+			return out, nil
+		case <-tickerC():
+			a.console.ClearScreen()
+		}
+	}
+}
+
+func formatLinfoMachine(s *kathara.MachineStats) string {
+	status := "None"
+	if s.Status != nil {
+		status = *s.Status
+	}
+	return fmt.Sprintf("Network Scenario ID: %s\nDevice Name: %s\nContainer Name: %s\nStatus: %s\nImage: %s",
+		s.NetworkScenarioID, s.Name, s.ContainerName, status, s.Image)
+}
+
+func linfoLinks(lab *model.Lab) []cliout.LinfoLink {
+	links := lab.Links()
+	sort.Slice(links, func(i, j int) bool { return links[i].Name < links[j].Name })
+	out := make([]cliout.LinfoLink, 0, len(links))
+	for _, link := range links {
+		out = append(out, cliout.LinfoLink{Name: link.Name, Machines: link.MachineNames()})
+	}
+	return out
+}
+
+func renderTopologyTable(links []cliout.LinfoLink, width int) []string {
+	timestamp := cliout.Timestamp(nowFunc())
+	if len(links) == 0 {
+		return cliout.EmptyBlock(timestamp, "No Collision Domains Found", width)
+	}
+	rows := make([][]string, 0, len(links))
+	for _, link := range links {
+		rows = append(rows, []string{link.Name, strings.Join(link.Machines, ", ")})
+	}
+	return (&cliout.Table{Title: timestamp, Box: &cliout.BoxSquareDoubleHead,
+		ShowLines: true, Columns: []string{"LINK NAME", "DEVICES"}, Rows: rows}).Render(width)
 }

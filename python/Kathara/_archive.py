@@ -11,7 +11,7 @@ from .model import Lab as LabPackage
 from .model import Machine as MachinePackage
 from .utils import EXCLUDED_FILES
 
-__all__ = ['generate_lab_conf', 'generate_lab_dep', 'pack_lab']
+__all__ = ['generate_lab_conf', 'generate_lab_dep', 'generate_lab_ext', 'pack_lab']
 
 #: Files of ``lab.fs`` that the generated ``lab.conf`` supersedes.
 GENERATED_FILES: Tuple[str, ...] = ("lab.conf", "lab.dep")
@@ -213,6 +213,16 @@ def generate_lab_dep(lab: 'LabPackage.Lab') -> Optional[str]:
     return "".join("%s: %s\n" % (names[index], names[index - 1]) for index in range(1, len(names)))
 
 
+def generate_lab_ext(lab: 'LabPackage.Lab') -> Optional[str]:
+    """Render external host-interface attachments from the in-memory model."""
+    lines: List[str] = []
+    for link in lab.links.values():
+        for external in link.external:
+            suffix = ".%s" % external.vlan if external.vlan else ""
+            lines.append("%s %s%s" % (link.name, external.interface, suffix))
+    return "\n".join(lines) + "\n" if lines else None
+
+
 def _add_bytes(tar: tarfile.TarFile, name: str, payload: bytes, mode: int = 0o644) -> None:
     info = tarfile.TarInfo(name)
     info.size = len(payload)
@@ -279,14 +289,17 @@ def _add_members(tar: tarfile.TarFile, lab: 'LabPackage.Lab') -> None:
     """Write the generated files and every path of ``lab.fs`` into ``tar``."""
     lab_conf = generate_lab_conf(lab).encode("utf-8")
     lab_dep = generate_lab_dep(lab)
+    lab_ext = generate_lab_ext(lab)
 
     _add_bytes(tar, "lab.conf", lab_conf)
     if lab_dep is not None:
         _add_bytes(tar, "lab.dep", lab_dep.encode("utf-8"))
+    if lab_ext is not None:
+        _add_bytes(tar, "lab.ext", lab_ext.encode("utf-8"))
 
     for path, is_dir in _walk(lab):
         arcname = path.lstrip("/")
-        if not arcname or arcname in GENERATED_FILES:
+        if not arcname or arcname in GENERATED_FILES or (arcname == "lab.ext" and lab_ext is not None):
             continue
         if posixpath.basename(arcname) in EXCLUDED_FILES:
             continue

@@ -655,19 +655,32 @@ func TestLabAttachExternalLinks(t *testing.T) {
 	lab.GetOrNewLink("A")
 
 	err := lab.AttachExternalLinks(map[string][]ExternalLink{"A": {{Interface: "eth0"}}})
-	if !errors.Is(err, kerrors.ErrNotSupported) {
-		t.Fatalf("error = %v, want ErrNotSupported", err)
+	if err != nil {
+		t.Fatal(err)
 	}
-	var feature *kerrors.FeatureNotAvailableError
-	if !errors.As(err, &feature) || feature.Feature != kerrors.FeatureLabExt {
-		t.Fatalf("error = %v, want a FeatureNotAvailableError for lab.ext", err)
+	if link, _ := lab.GetLink("A"); len(link.External) != 1 || link.External[0].Interface != "eth0" {
+		t.Errorf("external links = %+v", link.External)
 	}
-	want := "lab.ext external links are not supported in this release. Use Kathará 3.8.x."
-	if err.Error() != want {
-		t.Errorf("message = %q, want %q", err.Error(), want)
+	err = lab.AttachExternalLinks(map[string][]ExternalLink{"missing": {{Interface: "eth1"}}})
+	if !errors.Is(err, kerrors.ErrLinkNotFound) {
+		t.Fatalf("missing link error = %v, want ErrLinkNotFound", err)
 	}
-	if link, _ := lab.GetLink("A"); len(link.External) != 0 {
-		t.Error("the deferred call attached something")
+}
+
+func TestExternalLinkFullName(t *testing.T) {
+	t.Parallel()
+	for _, tc := range []struct {
+		link ExternalLink
+		want string
+	}{
+		{ExternalLink{Interface: "eth0"}, "eth0"},
+		{ExternalLink{Interface: "eth0", VLAN: 20}, "eth0.20"},
+		{ExternalLink{Interface: "longinterfacename", VLAN: 20}, "longinterfac.20"},
+		{ExternalLink{Interface: "äbcdefghijklmn", VLAN: 20}, "äbcdefghijkl.20"},
+	} {
+		if got := tc.link.FullName(); got != tc.want {
+			t.Errorf("%+v.FullName() = %q, want %q", tc.link, got, tc.want)
+		}
 	}
 }
 

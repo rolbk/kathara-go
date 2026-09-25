@@ -12,6 +12,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"runtime"
 	"slices"
 
 	"github.com/KatharaFramework/kathara-go/internal/cliout"
@@ -246,8 +247,25 @@ func runLstart(ctx context.Context, a *app, f *lstartFlags, selected []string) (
 	labExtExists := false
 	if _, statErr := os.Stat(filepath.Join(labPath, labfile.ExtName)); statErr == nil {
 		labExtExists = true
-		if err := labfile.CheckExt(labPath); err != nil {
+		if runtime.GOOS != "linux" {
+			return out, kerrors.NewOS("lab.ext is only available on Linux systems.")
+		}
+		admin, err := util.IsAdmin()
+		if err != nil {
 			return out, err
+		}
+		if !admin {
+			return out, kerrors.New(kerrors.ErrPrivilege, "You must be root in order to use lab.ext file.")
+		}
+		external, err := labfile.ParseExt(labPath)
+		if err != nil {
+			return out, err
+		}
+		if len(external) > 0 {
+			if err := lab.AttachExternalLinks(external); err != nil {
+				return out, err
+			}
+			a.settings.OpenTerminals = false
 		}
 	}
 
@@ -262,9 +280,8 @@ func runLstart(ctx context.Context, a *app, f *lstartFlags, selected []string) (
 			out.Checks = append(out.Checks, labfile.DepName)
 		}
 		if labExtExists {
-			// Unreachable in 1.0 — CheckExt above already returned — but kept
-			// so the shape of the Python branch survives the deferral.
 			a.console.Print("✓ lab.ext file is correct.")
+			out.Checks = append(out.Checks, labfile.ExtName)
 		}
 		return out, nil
 	}

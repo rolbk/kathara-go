@@ -205,6 +205,8 @@ func TestPortedLogMessagesMatchPythonFormatStrings(t *testing.T) {
 					"Previous value has been overwritten with `%s`.",
 				// `DepParser.py:37`
 				"lab.dep file is empty. Ignoring...",
+				// `ExtParser.py:36`
+				"lab.ext file is empty. Ignoring...",
 			},
 		},
 		{
