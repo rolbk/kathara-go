@@ -87,9 +87,14 @@ class ReleaseVersionTest(unittest.TestCase):
                 self.assertIn("3.8.3", str(caught.exception))
 
     def test_a_release_version_passes(self):
-        for version in ("3.8.4", "4.0.0", "4.0.0rc1", "10.0.0"):
+        for version in ("3.8.4", "3.8.4.dev0+g7ee428d", "4.0.0", "4.0.0rc1", "10.0.0"):
             with self.subTest(version=version):
                 build_wheels.check_release_version(version)
+
+    def test_goreleaser_snapshot_version_is_refused_before_hatchling(self):
+        with self.assertRaises(SystemExit) as caught:
+            build_wheels.check_release_version("3.8.4-snapshot-7ee428d")
+        self.assertIn("PEP 440", str(caught.exception))
 
     def test_a_version_with_no_number_is_refused(self):
         with self.assertRaises(SystemExit):
@@ -237,6 +242,24 @@ class BuildTest(unittest.TestCase):
         wheels = self.build()
         for name in wheels:
             self.assertTrue(name.startswith("kathara-4.2.3-"), name)
+
+    def test_snapshot_version_from_goreleaser_metadata_builds(self):
+        import json
+
+        version = "3.8.4.dev0+g7ee428d"
+        with open(os.path.join(self.dist, "metadata.json"), "w") as handle:
+            json.dump({"version": version}, handle)
+
+        wheels = self.build()
+        self.assertEqual(5, len(wheels))
+        for name in wheels:
+            self.assertTrue(name.startswith("kathara-%s-" % version), name)
+
+        with zipfile.ZipFile(os.path.join(self.out, wheels[0])) as archive:
+            self.assertIn("Version: %s" % version,
+                          archive.read("kathara-%s.dist-info/METADATA" % version).decode("utf-8"))
+            self.assertIn('CURRENT_VERSION = "%s"' % version,
+                          archive.read("Kathara/version.py").decode("utf-8"))
 
 
 if __name__ == "__main__":

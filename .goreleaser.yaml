@@ -62,8 +62,9 @@ checksum:
   name_template: checksums.txt
 
 snapshot:
-  # Untagged builds get an obviously-not-a-release version.
-  version_template: "{{ incpatch .Version }}-snapshot-{{ .ShortCommit }}"
+  # The same version is embedded in the Go binary and Python wheels. Use a
+  # PEP 440 development release so Hatchling accepts snapshot wheel metadata.
+  version_template: "{{ incpatch .Version }}.dev0+g{{ .ShortCommit }}"
 
 changelog:
   use: github

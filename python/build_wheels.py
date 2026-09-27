@@ -8,6 +8,7 @@ import hashlib
 import io
 import json
 import os
+import re
 import shutil
 import sys
 import tempfile
@@ -42,6 +43,16 @@ LAST_PYTHON_RELEASE = (3, 8, 3)
 BINARY_NAMES = ("kathara", "kathara.exe")
 
 WHEEL_GENERATOR = "kathara-build_wheels"
+
+# Accept the canonical PEP 440 forms emitted by our release tags and snapshot
+# template. Checking this before Hatchling gives an actionable error instead
+# of an opaque build-backend traceback.
+VERSION_NUMBER = r"(?:0|[1-9][0-9]*)"
+WHEEL_VERSION = re.compile(
+    rf"^{VERSION_NUMBER}(?:\.{VERSION_NUMBER})*(?:(?:a|b|rc){VERSION_NUMBER})?"
+    rf"(?:\.post{VERSION_NUMBER})?(?:\.dev{VERSION_NUMBER})?"
+    r"(?:\+[a-zA-Z0-9]+(?:\.[a-zA-Z0-9]+)*)?$"
+)
 
 
 # --------------------------------------------------------------------------
@@ -169,8 +180,15 @@ def check_release_version(version):
         version (str): The resolved wheel version.
 
     Raises:
-        SystemExit: If the version does not sort above the last PyPI release.
+        SystemExit: If the version is unsupported or does not sort above the
+            last PyPI release.
     """
+    if not WHEEL_VERSION.fullmatch(version):
+        raise SystemExit(
+            "version %r is not a supported PEP 440 wheel version; use a version like "
+            "3.8.4.dev0+gabcdef0 for snapshots" % version
+        )
+
     ordinal = release_ordinal(version)
     if not ordinal:
         raise SystemExit("version %r has no numeric component" % version)
