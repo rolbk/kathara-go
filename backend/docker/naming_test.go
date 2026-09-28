@@ -5,8 +5,8 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/KatharaFramework/kathara-go/model"
-	"github.com/KatharaFramework/kathara-go/settings"
+	"github.com/rolbk/kathara-go/model"
+	"github.com/rolbk/kathara-go/settings"
 )
 
 const fixtureHash = "9pe3y6IDMwx4PfOPu5mbNg"

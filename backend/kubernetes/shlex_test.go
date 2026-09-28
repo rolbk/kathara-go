@@ -8,8 +8,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/KatharaFramework/kathara-go/kathara"
-	"github.com/KatharaFramework/kathara-go/kerrors"
+	"github.com/rolbk/kathara-go/kathara"
+	"github.com/rolbk/kathara-go/kerrors"
 )
 
 // shlexVectors is testdata/shlex.json, taken from CPython's own `shlex.split`

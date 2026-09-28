@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/KatharaFramework/kathara-go/kerrors"
+	"github.com/rolbk/kathara-go/kerrors"
 )
 
 // newTestMachine is the fixture of tests/model/machine_test.py:

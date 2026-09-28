@@ -7,7 +7,7 @@ import (
 	"os/user"
 	"strconv"
 
-	"github.com/KatharaFramework/kathara-go/kerrors"
+	"github.com/rolbk/kathara-go/kerrors"
 )
 
 // GetCurrentUserInfo is utils.get_current_user_info (utils.py:249), the passwd

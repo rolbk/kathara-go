@@ -17,10 +17,10 @@ import (
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 
-	"github.com/KatharaFramework/kathara-go/event"
-	"github.com/KatharaFramework/kathara-go/internal/util"
-	"github.com/KatharaFramework/kathara-go/kathara"
-	"github.com/KatharaFramework/kathara-go/kerrors"
+	"github.com/rolbk/kathara-go/event"
+	"github.com/rolbk/kathara-go/internal/util"
+	"github.com/rolbk/kathara-go/kathara"
+	"github.com/rolbk/kathara-go/kerrors"
 )
 
 // startupLogCommand is the command `connect` runs to replay the startup log

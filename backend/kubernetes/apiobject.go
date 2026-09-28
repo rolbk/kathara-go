@@ -20,7 +20,7 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 
-	"github.com/KatharaFramework/kathara-go/internal/util"
+	"github.com/rolbk/kathara-go/internal/util"
 )
 
 // The custom-resource coordinates of a Multus NetworkAttachmentDefinition

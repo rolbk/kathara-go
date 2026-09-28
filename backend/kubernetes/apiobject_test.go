@@ -10,7 +10,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/KatharaFramework/kathara-go/model"
+	"github.com/rolbk/kathara-go/model"
 )
 
 // TestEncodeNetworkAttachments is `json.dumps(network_interfaces)` with

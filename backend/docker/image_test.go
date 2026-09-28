@@ -9,8 +9,8 @@ import (
 
 	cerrdefs "github.com/containerd/errdefs"
 
-	"github.com/KatharaFramework/kathara-go/internal/util"
-	"github.com/KatharaFramework/kathara-go/kerrors"
+	"github.com/rolbk/kathara-go/internal/util"
+	"github.com/rolbk/kathara-go/kerrors"
 )
 
 func TestNormalizeImageTag(t *testing.T) {

@@ -6,11 +6,11 @@ import (
 	"io"
 	"testing"
 
-	"github.com/KatharaFramework/kathara-go/event"
-	"github.com/KatharaFramework/kathara-go/internal/cliout"
-	"github.com/KatharaFramework/kathara-go/kathara"
-	"github.com/KatharaFramework/kathara-go/model"
-	"github.com/KatharaFramework/kathara-go/settings"
+	"github.com/rolbk/kathara-go/event"
+	"github.com/rolbk/kathara-go/internal/cliout"
+	"github.com/rolbk/kathara-go/kathara"
+	"github.com/rolbk/kathara-go/model"
+	"github.com/rolbk/kathara-go/settings"
 )
 
 type testApp struct {

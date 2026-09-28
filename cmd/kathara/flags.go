@@ -5,8 +5,8 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/KatharaFramework/kathara-go/internal/util"
-	"github.com/KatharaFramework/kathara-go/kerrors"
+	"github.com/rolbk/kathara-go/internal/util"
+	"github.com/rolbk/kathara-go/kerrors"
 )
 
 var wordPattern = regexp.MustCompile(`^[\p{L}\p{N}_]+$`)

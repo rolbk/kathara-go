@@ -3,7 +3,7 @@ package labfile
 import (
 	"strconv"
 
-	"github.com/KatharaFramework/kathara-go/kerrors"
+	"github.com/rolbk/kathara-go/kerrors"
 )
 
 type ParseError struct {

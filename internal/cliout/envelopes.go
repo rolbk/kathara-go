@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/KatharaFramework/kathara-go/kathara"
+	"github.com/rolbk/kathara-go/kathara"
 )
 
 type Lab struct {

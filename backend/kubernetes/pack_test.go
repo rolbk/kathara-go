@@ -13,7 +13,7 @@ import (
 	"syscall"
 	"testing"
 
-	"github.com/KatharaFramework/kathara-go/model"
+	"github.com/rolbk/kathara-go/model"
 )
 
 // TestPackDataEmptyDevice is `pack_data`'s None branch: a device with no

@@ -15,8 +15,8 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/KatharaFramework/kathara-go/kerrors"
-	"github.com/KatharaFramework/kathara-go/model"
+	"github.com/rolbk/kathara-go/kerrors"
+	"github.com/rolbk/kathara-go/model"
 )
 
 // `testdata/vectors` is the shared truth of the Go parsers and the Python

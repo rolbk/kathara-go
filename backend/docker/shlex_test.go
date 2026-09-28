@@ -7,8 +7,8 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/KatharaFramework/kathara-go/kathara"
-	"github.com/KatharaFramework/kathara-go/kerrors"
+	"github.com/rolbk/kathara-go/kathara"
+	"github.com/rolbk/kathara-go/kerrors"
 )
 
 // shlexVector is one row of testdata/shlex.json, produced by running

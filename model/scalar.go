@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/KatharaFramework/kathara-go/internal/util"
+	"github.com/rolbk/kathara-go/internal/util"
 )
 
 // Kind is the Python type of a [Scalar].

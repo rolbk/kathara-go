@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/KatharaFramework/kathara-go/kerrors"
+	"github.com/rolbk/kathara-go/kerrors"
 )
 
 // The expectations below were produced by running the Python side of

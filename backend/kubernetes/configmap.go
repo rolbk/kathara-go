@@ -12,9 +12,9 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 
-	"github.com/KatharaFramework/kathara-go/internal/util"
-	"github.com/KatharaFramework/kathara-go/kerrors"
-	"github.com/KatharaFramework/kathara-go/model"
+	"github.com/rolbk/kathara-go/internal/util"
+	"github.com/rolbk/kathara-go/kerrors"
+	"github.com/rolbk/kathara-go/model"
 )
 
 // MaxConfigMapSize is `MAX_FILE_SIZE` (`KubernetesConfigMap.py:12`): 3 MiB of

@@ -8,7 +8,7 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/KatharaFramework/kathara-go/kerrors"
+	"github.com/rolbk/kathara-go/kerrors"
 )
 
 // terminalAvailable is the `check_osx` arm of `Setting.check_terminal`

@@ -77,7 +77,7 @@ changelog:
 
 release:
   github:
-    owner: KatharaFramework
+    owner: rolbk
     name: kathara-go
   draft: true
   prerelease: auto

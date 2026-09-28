@@ -5,7 +5,7 @@ package kathara
 import (
 	"context"
 
-	"github.com/KatharaFramework/kathara-go/model"
+	"github.com/rolbk/kathara-go/model"
 )
 
 // Manager is implemented by the Docker and Kubernetes backends and proxied by

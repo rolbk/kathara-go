@@ -4,7 +4,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/KatharaFramework/kathara-go/kerrors"
+	"github.com/rolbk/kathara-go/kerrors"
 )
 
 func TestInterfaceConstruction(t *testing.T) {

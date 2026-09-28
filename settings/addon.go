@@ -5,7 +5,7 @@ import (
 	"unicode"
 	"unicode/utf8"
 
-	"github.com/KatharaFramework/kathara-go/kerrors"
+	"github.com/rolbk/kathara-go/kerrors"
 )
 
 // addonRegistry maps the capitalized `manager_type` to the addon's keys, in

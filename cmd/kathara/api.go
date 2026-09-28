@@ -7,10 +7,10 @@ import (
 	"encoding/json"
 	"io"
 
-	"github.com/KatharaFramework/kathara-go/internal/cliout"
-	"github.com/KatharaFramework/kathara-go/kathara"
-	"github.com/KatharaFramework/kathara-go/kerrors"
-	"github.com/KatharaFramework/kathara-go/model"
+	"github.com/rolbk/kathara-go/internal/cliout"
+	"github.com/rolbk/kathara-go/kathara"
+	"github.com/rolbk/kathara-go/kerrors"
+	"github.com/rolbk/kathara-go/model"
 )
 
 // api is the narrow JSON transport for Python manager methods that cannot be

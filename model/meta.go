@@ -10,8 +10,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/KatharaFramework/kathara-go/internal/util"
-	"github.com/KatharaFramework/kathara-go/kerrors"
+	"github.com/rolbk/kathara-go/internal/util"
+	"github.com/rolbk/kathara-go/kerrors"
 )
 
 // machineCapabilities is `MACHINE_CAPABILITIES` (`model/Machine.py:27`), the

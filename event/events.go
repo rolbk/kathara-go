@@ -1,6 +1,6 @@
 package event
 
-import "github.com/KatharaFramework/kathara-go/model"
+import "github.com/rolbk/kathara-go/model"
 
 // Name is the stable wire name used to subscribe to and dispatch an event.
 type Name string

@@ -4,8 +4,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/KatharaFramework/kathara-go/internal/cliout"
-	"github.com/KatharaFramework/kathara-go/kerrors"
+	"github.com/rolbk/kathara-go/internal/cliout"
+	"github.com/rolbk/kathara-go/kerrors"
 )
 
 func TestDispatchSequence(t *testing.T) {

@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	kerr "github.com/KatharaFramework/kathara-go/kerrors"
+	kerr "github.com/rolbk/kathara-go/kerrors"
 )
 
 func TestIsClassSentinel(t *testing.T) {

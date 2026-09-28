@@ -5,9 +5,9 @@
 package main
 
 import (
-	"github.com/KatharaFramework/kathara-go/backend/docker"
-	"github.com/KatharaFramework/kathara-go/backend/kubernetes"
-	"github.com/KatharaFramework/kathara-go/kathara"
+	"github.com/rolbk/kathara-go/backend/docker"
+	"github.com/rolbk/kathara-go/backend/kubernetes"
+	"github.com/rolbk/kathara-go/kathara"
 )
 
 // backendRegistry builds the table `manager_type` is resolved against.

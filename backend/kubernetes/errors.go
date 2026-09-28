@@ -8,8 +8,8 @@ import (
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 
-	"github.com/KatharaFramework/kathara-go/kerrors"
-	"github.com/KatharaFramework/kathara-go/model"
+	"github.com/rolbk/kathara-go/kerrors"
+	"github.com/rolbk/kathara-go/model"
 )
 
 // newPyKeyError is `d['k']` on a dict without that key: the repr of a str,

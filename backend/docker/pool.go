@@ -12,8 +12,8 @@ import (
 
 	"golang.org/x/sync/errgroup"
 
-	"github.com/KatharaFramework/kathara-go/internal/util"
-	"github.com/KatharaFramework/kathara-go/model"
+	"github.com/rolbk/kathara-go/internal/util"
+	"github.com/rolbk/kathara-go/model"
 )
 
 // chunk is `utils.chunk_list(iterable, size)` (`utils.py:102`).

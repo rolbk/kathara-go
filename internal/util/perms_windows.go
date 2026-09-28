@@ -5,7 +5,7 @@ import (
 
 	"golang.org/x/sys/windows"
 
-	"github.com/KatharaFramework/kathara-go/kerrors"
+	"github.com/rolbk/kathara-go/kerrors"
 )
 
 // accessRights are the CreateFileW access masks of [permissionFlags], in the

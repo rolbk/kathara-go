@@ -23,7 +23,7 @@ import (
 	"github.com/docker/go-connections/nat"
 	"github.com/docker/go-units"
 
-	"github.com/KatharaFramework/kathara-go/model"
+	"github.com/rolbk/kathara-go/model"
 )
 
 // rpFilterNamespace is `RP_FILTER_NAMESPACE` (`DockerMachine.py:34`).

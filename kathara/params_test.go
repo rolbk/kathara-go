@@ -6,9 +6,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/KatharaFramework/kathara-go/internal/util"
-	"github.com/KatharaFramework/kathara-go/kerrors"
-	"github.com/KatharaFramework/kathara-go/model"
+	"github.com/rolbk/kathara-go/internal/util"
+	"github.com/rolbk/kathara-go/kerrors"
+	"github.com/rolbk/kathara-go/model"
 )
 
 // TestLabRefRequireSingle is `check_required_single_not_none_var(lab_hash=…,

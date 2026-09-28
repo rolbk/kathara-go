@@ -9,8 +9,8 @@ import (
 	"math"
 	"strconv"
 
-	"github.com/KatharaFramework/kathara-go/internal/util"
-	"github.com/KatharaFramework/kathara-go/kerrors"
+	"github.com/rolbk/kathara-go/internal/util"
+	"github.com/rolbk/kathara-go/kerrors"
 )
 
 // Kind is the JSON type a key carries in `kathara.conf`. It is what `kathara

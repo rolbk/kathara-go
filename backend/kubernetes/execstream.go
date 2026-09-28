@@ -22,7 +22,7 @@ import (
 	"k8s.io/client-go/tools/remotecommand"
 	utilexec "k8s.io/client-go/util/exec"
 
-	"github.com/KatharaFramework/kathara-go/kerrors"
+	"github.com/rolbk/kathara-go/kerrors"
 )
 
 // ociRuntimeRE is `OCI_RUNTIME_RE` (`KubernetesMachine.py:40`).

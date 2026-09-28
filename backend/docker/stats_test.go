@@ -6,7 +6,7 @@ import (
 
 	"github.com/docker/docker/api/types/network"
 
-	"github.com/KatharaFramework/kathara-go/kathara"
+	"github.com/rolbk/kathara-go/kathara"
 )
 
 func TestMachineStatsFor(t *testing.T) {

@@ -11,7 +11,7 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 
-	"github.com/KatharaFramework/kathara-go/settings"
+	"github.com/rolbk/kathara-go/settings"
 )
 
 // keyMsg builds one key event from the name [tea.Key.String] would print.

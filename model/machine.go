@@ -13,9 +13,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/KatharaFramework/kathara-go/internal/util"
-	"github.com/KatharaFramework/kathara-go/kerrors"
-	"github.com/KatharaFramework/kathara-go/vfs"
+	"github.com/rolbk/kathara-go/internal/util"
+	"github.com/rolbk/kathara-go/kerrors"
+	"github.com/rolbk/kathara-go/vfs"
 )
 
 // machineNameRegex is `model/Machine.py:60`: lower-case ASCII letters, digits

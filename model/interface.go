@@ -4,7 +4,7 @@ import (
 	"regexp"
 	"strconv"
 
-	"github.com/KatharaFramework/kathara-go/kerrors"
+	"github.com/rolbk/kathara-go/kerrors"
 )
 
 // macAddressRegex is `MAC_ADDRESS_REGEX` (`model/Interface.py:7`): exactly six

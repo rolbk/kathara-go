@@ -10,7 +10,7 @@ import (
 
 	"k8s.io/client-go/tools/remotecommand"
 
-	"github.com/KatharaFramework/kathara-go/kathara"
+	"github.com/rolbk/kathara-go/kathara"
 )
 
 // ttySession is `KubernetesWSTerminalSession`

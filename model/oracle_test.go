@@ -12,8 +12,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/KatharaFramework/kathara-go/internal/util"
-	"github.com/KatharaFramework/kathara-go/kerrors"
+	"github.com/rolbk/kathara-go/internal/util"
+	"github.com/rolbk/kathara-go/kerrors"
 )
 
 // testdata/model_oracle.json was produced BY Kathará 3.8.3, not by this port:

@@ -9,8 +9,8 @@ import (
 	"strings"
 	"unicode"
 
-	"github.com/KatharaFramework/kathara-go/internal/cliout"
-	"github.com/KatharaFramework/kathara-go/internal/util"
+	"github.com/rolbk/kathara-go/internal/cliout"
+	"github.com/rolbk/kathara-go/internal/util"
 	"github.com/spf13/pflag"
 )
 

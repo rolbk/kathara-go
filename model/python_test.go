@@ -6,7 +6,7 @@ import (
 	"math/big"
 	"testing"
 
-	"github.com/KatharaFramework/kathara-go/internal/util"
+	"github.com/rolbk/kathara-go/internal/util"
 )
 
 // TestPyBigInt is CPython's `int(s)`, pinned against the oracle. Every row was

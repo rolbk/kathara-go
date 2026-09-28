@@ -7,7 +7,7 @@ import (
 
 	"golang.org/x/sys/unix"
 
-	"github.com/KatharaFramework/kathara-go/kerrors"
+	"github.com/rolbk/kathara-go/kerrors"
 )
 
 // accessModes are the access(2) masks of [permissionFlags], in the same order.

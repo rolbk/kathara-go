@@ -9,8 +9,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/KatharaFramework/kathara-go/model"
-	"github.com/KatharaFramework/kathara-go/settings"
+	"github.com/rolbk/kathara-go/model"
+	"github.com/rolbk/kathara-go/settings"
 )
 
 // The label keys of the frozen schema. They are spelled once so that the

@@ -15,9 +15,9 @@ import (
 
 	"github.com/docker/docker/api/types/image"
 
-	"github.com/KatharaFramework/kathara-go/event"
-	"github.com/KatharaFramework/kathara-go/internal/util"
-	"github.com/KatharaFramework/kathara-go/kerrors"
+	"github.com/rolbk/kathara-go/event"
+	"github.com/rolbk/kathara-go/internal/util"
+	"github.com/rolbk/kathara-go/kerrors"
 )
 
 // imageService is `DockerImage` (`DockerImage.py:13`).

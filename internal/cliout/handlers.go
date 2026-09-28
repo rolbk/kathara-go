@@ -7,8 +7,8 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/KatharaFramework/kathara-go/event"
-	"github.com/KatharaFramework/kathara-go/model"
+	"github.com/rolbk/kathara-go/event"
+	"github.com/rolbk/kathara-go/model"
 )
 
 // barGlyph is `rich.progress.BarColumn`'s complete block.

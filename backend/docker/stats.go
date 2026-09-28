@@ -6,9 +6,9 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/KatharaFramework/kathara-go/internal/util"
-	"github.com/KatharaFramework/kathara-go/kathara"
-	"github.com/KatharaFramework/kathara-go/kerrors"
+	"github.com/rolbk/kathara-go/internal/util"
+	"github.com/rolbk/kathara-go/kathara"
+	"github.com/rolbk/kathara-go/kerrors"
 )
 
 // machineStatsFor is `DockerMachineStats.__init__` reduced to its static half

@@ -5,9 +5,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/KatharaFramework/kathara-go/event"
-	"github.com/KatharaFramework/kathara-go/internal/cliout"
-	"github.com/KatharaFramework/kathara-go/model"
+	"github.com/rolbk/kathara-go/event"
+	"github.com/rolbk/kathara-go/internal/cliout"
+	"github.com/rolbk/kathara-go/model"
 )
 
 func TestMachineDeployedSubscriberOrder(t *testing.T) {

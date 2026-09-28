@@ -8,16 +8,16 @@ import (
 	"os"
 	"os/signal"
 
-	"github.com/KatharaFramework/kathara-go/event"
+	"github.com/rolbk/kathara-go/event"
 	// Imported for effect, and it has to be this package that does it: an
 	// `init()` in `main` runs *after* every imported package's, which is too
 	// late — see the package doc for what bubbletea does in its own init and
 	// what it costs the thirteen commands that are not a terminal UI.
-	_ "github.com/KatharaFramework/kathara-go/internal/charmguard"
-	"github.com/KatharaFramework/kathara-go/internal/cliout"
-	"github.com/KatharaFramework/kathara-go/kathara"
-	"github.com/KatharaFramework/kathara-go/kerrors"
-	"github.com/KatharaFramework/kathara-go/settings"
+	_ "github.com/rolbk/kathara-go/internal/charmguard"
+	"github.com/rolbk/kathara-go/internal/cliout"
+	"github.com/rolbk/kathara-go/kathara"
+	"github.com/rolbk/kathara-go/kerrors"
+	"github.com/rolbk/kathara-go/settings"
 )
 
 func main() {

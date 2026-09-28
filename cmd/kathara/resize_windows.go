@@ -10,7 +10,7 @@ package main
 import (
 	"os"
 
-	"github.com/KatharaFramework/kathara-go/kathara"
+	"github.com/rolbk/kathara-go/kathara"
 )
 
 // watchResize is a no-op on Windows; the initial size has already been sent by

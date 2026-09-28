@@ -12,7 +12,7 @@ import (
 
 	"github.com/docker/docker/api/types"
 
-	"github.com/KatharaFramework/kathara-go/kerrors"
+	"github.com/rolbk/kathara-go/kerrors"
 )
 
 // frame builds one multiplexed chunk the way the daemon writes it: an 8-byte

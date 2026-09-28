@@ -8,7 +8,7 @@ package util
 import (
 	"log/slog"
 
-	"github.com/KatharaFramework/kathara-go/kerrors"
+	"github.com/rolbk/kathara-go/kerrors"
 )
 
 // GetArchitecture is utils.get_architecture (utils.py:396).

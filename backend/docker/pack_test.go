@@ -15,7 +15,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/KatharaFramework/kathara-go/model"
+	"github.com/rolbk/kathara-go/model"
 )
 
 // packedMember is one archive entry, reduced to what the container sees.

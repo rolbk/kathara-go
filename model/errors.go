@@ -3,7 +3,7 @@ package model
 import (
 	"errors"
 
-	"github.com/KatharaFramework/kathara-go/internal/util"
+	"github.com/rolbk/kathara-go/internal/util"
 )
 
 type PyRuntimeError struct {

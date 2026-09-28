@@ -3,7 +3,7 @@ package event
 import (
 	"sync"
 
-	"github.com/KatharaFramework/kathara-go/model"
+	"github.com/rolbk/kathara-go/model"
 )
 
 // Dispatcher implements `event/EventDispatcher.py`: a table of event name

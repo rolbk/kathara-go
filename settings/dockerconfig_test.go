@@ -7,8 +7,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/KatharaFramework/kathara-go/kerrors"
-	"github.com/KatharaFramework/kathara-go/settings"
+	"github.com/rolbk/kathara-go/kerrors"
+	"github.com/rolbk/kathara-go/settings"
 )
 
 // TestEncodeDockerConfigJSONMatchesCPython pins the whole of

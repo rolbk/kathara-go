@@ -6,8 +6,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/KatharaFramework/kathara-go/kerrors"
-	"github.com/KatharaFramework/kathara-go/settings"
+	"github.com/rolbk/kathara-go/kerrors"
+	"github.com/rolbk/kathara-go/settings"
 )
 
 // kubeconfigYAML is a minimal readable kubeconfig, whose CURRENT CONTEXT name

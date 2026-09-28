@@ -56,7 +56,7 @@ test = ["pytest"]
 [project.urls]
 "Homepage" = "https://www.kathara.org"
 "Bug Reports" = "https://github.com/KatharaFramework/Kathara/issues"
-"Source" = "https://github.com/KatharaFramework/kathara-go"
+"Source" = "https://github.com/rolbk/kathara-go"
 
 [build-system]
 requires = ["hatchling"]

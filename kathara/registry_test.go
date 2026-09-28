@@ -7,7 +7,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/KatharaFramework/kathara-go/settings"
+	"github.com/rolbk/kathara-go/settings"
 )
 
 // mustRegister registers b or fails the test. Registration failures are wiring

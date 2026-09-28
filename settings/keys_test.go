@@ -6,7 +6,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/KatharaFramework/kathara-go/kerrors"
+	"github.com/rolbk/kathara-go/kerrors"
 )
 
 // allKeys is every row of the schema, both addons included, for the

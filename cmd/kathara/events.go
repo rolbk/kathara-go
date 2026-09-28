@@ -7,8 +7,8 @@ package main
 import (
 	"context"
 
-	"github.com/KatharaFramework/kathara-go/event"
-	"github.com/KatharaFramework/kathara-go/internal/cliout"
+	"github.com/rolbk/kathara-go/event"
+	"github.com/rolbk/kathara-go/internal/cliout"
 )
 
 // cliHandlers owns the subscriber objects so that they survive between the

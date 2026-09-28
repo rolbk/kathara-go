@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/KatharaFramework/kathara-go/kerrors"
+	"github.com/rolbk/kathara-go/kerrors"
 )
 
 // TestGetCurrentUserInfoSudoUID pins the three details of the sudo override

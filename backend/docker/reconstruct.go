@@ -14,9 +14,9 @@ import (
 	"github.com/docker/docker/api/types/network"
 	"github.com/docker/go-connections/nat"
 
-	"github.com/KatharaFramework/kathara-go/kerrors"
-	"github.com/KatharaFramework/kathara-go/model"
-	"github.com/KatharaFramework/kathara-go/settings"
+	"github.com/rolbk/kathara-go/kerrors"
+	"github.com/rolbk/kathara-go/model"
+	"github.com/rolbk/kathara-go/settings"
 )
 
 // reconstructedLabName is the placeholder a hash-addressed reconstruction gets

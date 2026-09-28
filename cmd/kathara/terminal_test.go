@@ -6,11 +6,11 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/KatharaFramework/kathara-go/event"
-	"github.com/KatharaFramework/kathara-go/kerrors"
-	"github.com/KatharaFramework/kathara-go/model"
-	"github.com/KatharaFramework/kathara-go/settings"
-	"github.com/KatharaFramework/kathara-go/term"
+	"github.com/rolbk/kathara-go/event"
+	"github.com/rolbk/kathara-go/kerrors"
+	"github.com/rolbk/kathara-go/model"
+	"github.com/rolbk/kathara-go/settings"
+	"github.com/rolbk/kathara-go/term"
 )
 
 // newTestMachine builds a device in a scenario with a real directory, which is

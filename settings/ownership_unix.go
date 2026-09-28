@@ -5,8 +5,8 @@ package settings
 import (
 	"os"
 
-	"github.com/KatharaFramework/kathara-go/internal/util"
-	"github.com/KatharaFramework/kathara-go/kerrors"
+	"github.com/rolbk/kathara-go/internal/util"
+	"github.com/rolbk/kathara-go/kerrors"
 )
 
 // applyOwnership is the `unix_permissions` closure of `Setting.save_to_disk`

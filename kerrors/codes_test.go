@@ -7,7 +7,7 @@ import (
 	"slices"
 	"testing"
 
-	kerr "github.com/KatharaFramework/kathara-go/kerrors"
+	kerr "github.com/rolbk/kathara-go/kerrors"
 )
 
 func TestRegistrySize(t *testing.T) {

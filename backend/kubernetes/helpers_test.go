@@ -34,10 +34,10 @@ import (
 	k8stesting "k8s.io/client-go/testing"
 	"k8s.io/client-go/tools/remotecommand"
 
-	"github.com/KatharaFramework/kathara-go/event"
-	"github.com/KatharaFramework/kathara-go/kathara"
-	"github.com/KatharaFramework/kathara-go/model"
-	"github.com/KatharaFramework/kathara-go/settings"
+	"github.com/rolbk/kathara-go/event"
+	"github.com/rolbk/kathara-go/kathara"
+	"github.com/rolbk/kathara-go/model"
+	"github.com/rolbk/kathara-go/settings"
 )
 
 const defaultScenarioHash = "FwFaxbiuhvSWb2KpN5zw"

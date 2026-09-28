@@ -3,8 +3,8 @@ package labfile
 import (
 	"strings"
 
-	"github.com/KatharaFramework/kathara-go/kerrors"
-	"github.com/KatharaFramework/kathara-go/model"
+	"github.com/rolbk/kathara-go/kerrors"
+	"github.com/rolbk/kathara-go/model"
 )
 
 // ParseOptions is `OptionParser.parse` (`parser/netkit/OptionParser.py:8`): the

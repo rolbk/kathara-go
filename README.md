@@ -23,14 +23,19 @@ is included for programs that use the Kathará model API.
 ## Install
 
 Install [Go 1.26.0 or newer](https://go.dev/doc/install) and Docker first. Make
-sure your user can access the Docker daemon, then install Kathará from this
-repository:
+sure your user can access the Docker daemon, then install Kathará:
+
+```console
+go install github.com/rolbk/kathara-go/cmd/kathara@latest
+kathara check
+```
+
+To build from a local checkout instead:
 
 ```console
 git clone https://github.com/rolbk/kathara-go.git
 cd kathara-go
 go install ./cmd/kathara
-kathara check
 ```
 
 `go install` places the command in `GOBIN`, or in `GOPATH/bin` when `GOBIN` is

@@ -5,8 +5,8 @@ import (
 	"slices"
 	"time"
 
-	"github.com/KatharaFramework/kathara-go/kerrors"
-	"github.com/KatharaFramework/kathara-go/model"
+	"github.com/rolbk/kathara-go/kerrors"
+	"github.com/rolbk/kathara-go/model"
 )
 
 // labRefParamNames is `', '.join(kwargs.keys())` for every

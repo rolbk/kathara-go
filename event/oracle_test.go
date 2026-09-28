@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/KatharaFramework/kathara-go/model"
+	"github.com/rolbk/kathara-go/model"
 )
 
 // testdata/dispatch_traces.json was recorded by driving the real 3.8.3

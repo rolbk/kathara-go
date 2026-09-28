@@ -8,8 +8,8 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 
-	"github.com/KatharaFramework/kathara-go/kerrors"
-	"github.com/KatharaFramework/kathara-go/settings"
+	"github.com/rolbk/kathara-go/kerrors"
+	"github.com/rolbk/kathara-go/settings"
 )
 
 // ClusterConfig is what `KubernetesConfig.load_kube_config` leaves behind: the

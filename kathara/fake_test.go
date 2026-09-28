@@ -5,7 +5,7 @@ import (
 	"errors"
 	"io"
 
-	"github.com/KatharaFramework/kathara-go/model"
+	"github.com/rolbk/kathara-go/model"
 )
 
 // This file holds the doubles the tests in this package delegate through.

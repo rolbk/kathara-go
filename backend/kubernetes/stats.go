@@ -9,7 +9,7 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 
-	"github.com/KatharaFramework/kathara-go/kathara"
+	"github.com/rolbk/kathara-go/kathara"
 )
 
 // machineStatsFor is `KubernetesMachineStats.__init__`

@@ -7,7 +7,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/KatharaFramework/kathara-go/model"
+	"github.com/rolbk/kathara-go/model"
 )
 
 // recorder collects the tags of the subscribers that fired, in order.

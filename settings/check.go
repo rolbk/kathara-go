@@ -8,8 +8,8 @@ import (
 	"regexp"
 	"slices"
 
-	"github.com/KatharaFramework/kathara-go/internal/util"
-	"github.com/KatharaFramework/kathara-go/kerrors"
+	"github.com/rolbk/kathara-go/internal/util"
+	"github.com/rolbk/kathara-go/kerrors"
 )
 
 // prefixPattern is `r"^[a-z]+_?[a-z_]+$"` (Setting.py:216, :221) translated

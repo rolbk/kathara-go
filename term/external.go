@@ -13,7 +13,7 @@ import (
 	"errors"
 	"strings"
 
-	"github.com/KatharaFramework/kathara-go/kerrors"
+	"github.com/rolbk/kathara-go/kerrors"
 )
 
 // ErrExternalUnsupported is returned by [OpenExternal] on a platform with no

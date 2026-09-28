@@ -11,8 +11,8 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	utilexec "k8s.io/client-go/util/exec"
 
-	"github.com/KatharaFramework/kathara-go/kathara"
-	"github.com/KatharaFramework/kathara-go/kerrors"
+	"github.com/rolbk/kathara-go/kathara"
+	"github.com/rolbk/kathara-go/kerrors"
 )
 
 // TestExecExitCode is the `try: response.returncode / except ValueError` block

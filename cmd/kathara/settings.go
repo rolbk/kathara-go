@@ -5,8 +5,8 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 
-	"github.com/KatharaFramework/kathara-go/kerrors"
-	"github.com/KatharaFramework/kathara-go/settings"
+	"github.com/rolbk/kathara-go/kerrors"
+	"github.com/rolbk/kathara-go/settings"
 )
 
 // newSettingsCmd builds the command.

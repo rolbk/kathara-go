@@ -5,8 +5,8 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/KatharaFramework/kathara-go/internal/cliout"
-	"github.com/KatharaFramework/kathara-go/kathara"
+	"github.com/rolbk/kathara-go/internal/cliout"
+	"github.com/rolbk/kathara-go/kathara"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )

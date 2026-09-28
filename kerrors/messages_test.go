@@ -5,7 +5,7 @@ import (
 	"slices"
 	"testing"
 
-	kerr "github.com/KatharaFramework/kathara-go/kerrors"
+	kerr "github.com/rolbk/kathara-go/kerrors"
 )
 
 // errCause stands in for a third-party error (docker/k8s client, os) that a

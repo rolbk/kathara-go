@@ -10,7 +10,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/KatharaFramework/kathara-go/kerrors"
+	"github.com/rolbk/kathara-go/kerrors"
 )
 
 // ---------------------------------------------------------------------------

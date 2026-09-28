@@ -5,7 +5,7 @@ import (
 	"context"
 	"encoding/json"
 
-	"github.com/KatharaFramework/kathara-go/kerrors"
+	"github.com/rolbk/kathara-go/kerrors"
 )
 
 // OptionalString is a JSON string with three states, not two: absent from the

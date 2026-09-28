@@ -6,7 +6,7 @@ package util
 import (
 	"strings"
 
-	"github.com/KatharaFramework/kathara-go/kerrors"
+	"github.com/rolbk/kathara-go/kerrors"
 )
 
 // CurrentVersion is version.CURRENT_VERSION (version.py:3).

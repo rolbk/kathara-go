@@ -5,7 +5,7 @@ package settings
 import (
 	"os"
 
-	"github.com/KatharaFramework/kathara-go/internal/util"
+	"github.com/rolbk/kathara-go/internal/util"
 )
 
 // terminalAvailable is the `check_unix` arm of `Setting.check_terminal`

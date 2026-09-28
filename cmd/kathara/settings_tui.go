@@ -18,8 +18,8 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 
-	"github.com/KatharaFramework/kathara-go/internal/util"
-	"github.com/KatharaFramework/kathara-go/settings"
+	"github.com/rolbk/kathara-go/internal/util"
+	"github.com/rolbk/kathara-go/settings"
 )
 
 // settingsChoice is one `FunctionItem` of a submenu: the text the user picks

@@ -14,7 +14,7 @@ import (
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/kubernetes"
 
-	"github.com/KatharaFramework/kathara-go/model"
+	"github.com/rolbk/kathara-go/model"
 )
 
 // dockerConfigJSONKey is the key a `kubernetes.io/dockerconfigjson` Secret must

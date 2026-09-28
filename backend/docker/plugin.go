@@ -18,7 +18,7 @@ import (
 
 	"github.com/docker/docker/api/types"
 
-	"github.com/KatharaFramework/kathara-go/kerrors"
+	"github.com/rolbk/kathara-go/kerrors"
 )
 
 // The two plugin flavours (`DockerPlugin.py:14-15`). `network_plugin` in the

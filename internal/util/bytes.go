@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/KatharaFramework/kathara-go/kerrors"
+	"github.com/rolbk/kathara-go/kerrors"
 )
 
 // sizeName is the unit table of human_readable_bytes (utils.py:421), in the

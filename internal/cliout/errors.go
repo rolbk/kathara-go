@@ -4,9 +4,9 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/KatharaFramework/kathara-go/kerrors"
-	"github.com/KatharaFramework/kathara-go/labfile"
-	"github.com/KatharaFramework/kathara-go/model"
+	"github.com/rolbk/kathara-go/kerrors"
+	"github.com/rolbk/kathara-go/labfile"
+	"github.com/rolbk/kathara-go/model"
 )
 
 type humanLabeler interface{ HumanLabel() string }

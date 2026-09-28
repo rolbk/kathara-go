@@ -9,8 +9,8 @@ import (
 	"os"
 	"syscall"
 
-	"github.com/KatharaFramework/kathara-go/kathara"
-	"github.com/KatharaFramework/kathara-go/term"
+	"github.com/rolbk/kathara-go/kathara"
+	"github.com/rolbk/kathara-go/term"
 	xterm "golang.org/x/term"
 )
 

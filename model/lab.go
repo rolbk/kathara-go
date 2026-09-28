@@ -7,9 +7,9 @@ import (
 	"os"
 	"strings"
 
-	"github.com/KatharaFramework/kathara-go/internal/util"
-	"github.com/KatharaFramework/kathara-go/kerrors"
-	"github.com/KatharaFramework/kathara-go/vfs"
+	"github.com/rolbk/kathara-go/internal/util"
+	"github.com/rolbk/kathara-go/kerrors"
+	"github.com/rolbk/kathara-go/vfs"
 )
 
 // labMetadata is `LAB_METADATA` (`model/Lab.py:19`), the lab.conf keys that

@@ -15,7 +15,7 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/KatharaFramework/kathara-go/kerrors"
+	"github.com/rolbk/kathara-go/kerrors"
 )
 
 // requireOneOf is the shape every menu-restricted key shares: membership in a

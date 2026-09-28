@@ -14,8 +14,8 @@ import (
 	"github.com/docker/docker/api/types/network"
 	"github.com/docker/go-connections/nat"
 
-	"github.com/KatharaFramework/kathara-go/kerrors"
-	"github.com/KatharaFramework/kathara-go/model"
+	"github.com/rolbk/kathara-go/kerrors"
+	"github.com/rolbk/kathara-go/model"
 )
 
 // baseSysctlsIPv6Off is the profile `DockerMachine.create` builds for a device

@@ -3,7 +3,7 @@ package main
 import (
 	"context"
 
-	"github.com/KatharaFramework/kathara-go/internal/cliout"
+	"github.com/rolbk/kathara-go/internal/cliout"
 )
 
 func newLrestartCmd(a *app) *commandSpec {

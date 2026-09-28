@@ -6,7 +6,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/KatharaFramework/kathara-go/internal/util"
+	"github.com/rolbk/kathara-go/internal/util"
 )
 
 // expandUser is `ntpath.expanduser`, which is what `os.path.expanduser`

@@ -21,7 +21,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/KatharaFramework/kathara-go/kerrors"
+	"github.com/rolbk/kathara-go/kerrors"
 )
 
 // EncodeDockerConfigJSON is `store_b64_docker_json_callback` with

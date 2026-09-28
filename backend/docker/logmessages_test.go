@@ -3,7 +3,7 @@ package docker
 import (
 	"testing"
 
-	"github.com/KatharaFramework/kathara-go/kathara"
+	"github.com/rolbk/kathara-go/kathara"
 )
 
 // TestCommandRepr pins the `%s` operand of `exec`'s debug line

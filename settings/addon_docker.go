@@ -5,7 +5,7 @@
 
 package settings
 
-import "github.com/KatharaFramework/kathara-go/kerrors"
+import "github.com/rolbk/kathara-go/kerrors"
 
 // availableImageUpdatePolicies is the `image_update_policy` menu of
 // `DockerOptionsHandler.py:125-151`, in menu order. It governs what happens

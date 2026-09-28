@@ -7,7 +7,7 @@ import (
 	"io"
 	"strings"
 
-	"github.com/KatharaFramework/kathara-go/kerrors"
+	"github.com/rolbk/kathara-go/kerrors"
 )
 
 // ErrPromptEOF is what `rich.prompt`'s `console.input` does at end of input:

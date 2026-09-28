@@ -10,7 +10,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/KatharaFramework/kathara-go/kerrors"
+	"github.com/rolbk/kathara-go/kerrors"
 )
 
 // Param is one keyword argument of a Python `check_*_not_none_var` call: the

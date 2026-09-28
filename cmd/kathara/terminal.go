@@ -19,12 +19,12 @@ import (
 	"os"
 	"strings"
 
-	"github.com/KatharaFramework/kathara-go/internal/util"
-	"github.com/KatharaFramework/kathara-go/kathara"
-	"github.com/KatharaFramework/kathara-go/kerrors"
-	"github.com/KatharaFramework/kathara-go/model"
-	"github.com/KatharaFramework/kathara-go/term"
-	"github.com/KatharaFramework/kathara-go/term/tmuxdrv"
+	"github.com/rolbk/kathara-go/internal/util"
+	"github.com/rolbk/kathara-go/kathara"
+	"github.com/rolbk/kathara-go/kerrors"
+	"github.com/rolbk/kathara-go/model"
+	"github.com/rolbk/kathara-go/term"
+	"github.com/rolbk/kathara-go/term/tmuxdrv"
 )
 
 // openTerminal is `open_machine_terminal(machine)`.

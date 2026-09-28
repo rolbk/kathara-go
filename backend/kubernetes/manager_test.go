@@ -17,9 +17,9 @@ import (
 	"k8s.io/apimachinery/pkg/watch"
 	k8stesting "k8s.io/client-go/testing"
 
-	"github.com/KatharaFramework/kathara-go/kathara"
-	"github.com/KatharaFramework/kathara-go/kerrors"
-	"github.com/KatharaFramework/kathara-go/model"
+	"github.com/rolbk/kathara-go/kathara"
+	"github.com/rolbk/kathara-go/kerrors"
+	"github.com/rolbk/kathara-go/model"
 )
 
 // TestBackendRow pins the registry row `cmd/kathara` registers.

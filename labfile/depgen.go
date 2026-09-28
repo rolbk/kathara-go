@@ -3,7 +3,7 @@ package labfile
 import (
 	"slices"
 
-	"github.com/KatharaFramework/kathara-go/model"
+	"github.com/rolbk/kathara-go/model"
 )
 
 // DepGraph is `depgen`'s dependency dictionary: a device name to the devices it

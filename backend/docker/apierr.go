@@ -16,8 +16,8 @@ import (
 	"github.com/containerd/errdefs/pkg/errhttp"
 	"github.com/docker/docker/client"
 
-	"github.com/KatharaFramework/kathara-go/internal/util"
-	"github.com/KatharaFramework/kathara-go/kerrors"
+	"github.com/rolbk/kathara-go/internal/util"
+	"github.com/rolbk/kathara-go/kerrors"
 )
 
 // daemonPrefix is what `errors.Wrap(daemonErr, "Error response from daemon")`

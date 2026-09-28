@@ -18,7 +18,7 @@ import (
 
 	"github.com/docker/docker/api/types"
 
-	"github.com/KatharaFramework/kathara-go/kerrors"
+	"github.com/rolbk/kathara-go/kerrors"
 )
 
 // ociRuntimeRE is `OCI_RUNTIME_RE` (`DockerMachine.py:35`):

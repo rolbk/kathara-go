@@ -1,4 +1,4 @@
-module github.com/KatharaFramework/kathara-go/tools/goldenharness
+module github.com/rolbk/kathara-go/tools/goldenharness
 
 go 1.26
 

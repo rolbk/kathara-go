@@ -8,7 +8,7 @@ import (
 	"os"
 	"os/signal"
 
-	"github.com/KatharaFramework/kathara-go/kathara"
+	"github.com/rolbk/kathara-go/kathara"
 	"golang.org/x/sys/unix"
 	"golang.org/x/term"
 )

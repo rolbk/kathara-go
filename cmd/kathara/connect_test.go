@@ -10,8 +10,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/KatharaFramework/kathara-go/kathara"
-	"github.com/KatharaFramework/kathara-go/kerrors"
+	"github.com/rolbk/kathara-go/kathara"
+	"github.com/rolbk/kathara-go/kerrors"
 )
 
 // connectManager is a backend that answers exactly one `ConnectTTY`.

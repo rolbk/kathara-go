@@ -6,7 +6,7 @@
 
 package kathara
 
-import "github.com/KatharaFramework/kathara-go/kerrors"
+import "github.com/rolbk/kathara-go/kerrors"
 
 const (
 	CodeClassNotFound             = kerrors.CodeClassNotFound

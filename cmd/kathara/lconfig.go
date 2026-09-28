@@ -3,10 +3,10 @@ package main
 import (
 	"context"
 
-	"github.com/KatharaFramework/kathara-go/internal/cliout"
-	"github.com/KatharaFramework/kathara-go/kathara"
-	"github.com/KatharaFramework/kathara-go/labfile"
-	"github.com/KatharaFramework/kathara-go/model"
+	"github.com/rolbk/kathara-go/internal/cliout"
+	"github.com/rolbk/kathara-go/kathara"
+	"github.com/rolbk/kathara-go/labfile"
+	"github.com/rolbk/kathara-go/model"
 )
 
 // configFlags is the shared surface of `lconfig` and `vconfig`.

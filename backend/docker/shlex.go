@@ -11,8 +11,8 @@ package docker
 import (
 	"strings"
 
-	"github.com/KatharaFramework/kathara-go/kathara"
-	"github.com/KatharaFramework/kathara-go/kerrors"
+	"github.com/rolbk/kathara-go/kathara"
+	"github.com/rolbk/kathara-go/kerrors"
 )
 
 // The four character classes of `shlex.shlex(s, posix=True)` with

@@ -1,4 +1,4 @@
-module github.com/KatharaFramework/kathara-go
+module github.com/rolbk/kathara-go
 
 go 1.26.0
 

@@ -14,7 +14,7 @@ import (
 	"strings"
 	"unicode"
 
-	"github.com/KatharaFramework/kathara-go/internal/util"
+	"github.com/rolbk/kathara-go/internal/util"
 )
 
 // pySpace reports whether r is whitespace for `str.strip()`, i.e. whether

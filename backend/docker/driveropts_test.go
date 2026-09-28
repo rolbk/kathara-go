@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/KatharaFramework/kathara-go/model"
+	"github.com/rolbk/kathara-go/model"
 )
 
 // newFixtureMachine builds the Python suite's fixture device: `Lab("Default

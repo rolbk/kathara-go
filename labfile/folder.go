@@ -8,8 +8,8 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/KatharaFramework/kathara-go/internal/util"
-	"github.com/KatharaFramework/kathara-go/model"
+	"github.com/rolbk/kathara-go/internal/util"
+	"github.com/rolbk/kathara-go/model"
 )
 
 // ParseFolder is `FolderParser.parse` (`parser/netkit/FolderParser.py:12`):

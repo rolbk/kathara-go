@@ -16,9 +16,9 @@ import (
 	"time"
 	"unicode/utf8"
 
-	"github.com/KatharaFramework/kathara-go/internal/util"
-	"github.com/KatharaFramework/kathara-go/model"
-	"github.com/KatharaFramework/kathara-go/vfs"
+	"github.com/rolbk/kathara-go/internal/util"
+	"github.com/rolbk/kathara-go/model"
+	"github.com/rolbk/kathara-go/vfs"
 )
 
 // hostlabDir is the archive's single top-level directory. The startup script

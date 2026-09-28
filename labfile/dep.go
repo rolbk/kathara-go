@@ -6,8 +6,8 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/KatharaFramework/kathara-go/kerrors"
-	"github.com/KatharaFramework/kathara-go/model"
+	"github.com/rolbk/kathara-go/kerrors"
+	"github.com/rolbk/kathara-go/model"
 )
 
 // DepName is the dependency file's fixed name. Unlike lab.conf's, it is not
