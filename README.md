@@ -20,28 +20,36 @@ is included for programs that use the Kathará model API.
 - Automate commands with structured JSON and JSON Lines output.
 - Build a static binary for Linux, macOS, or Windows.
 
-## Quick start
+## Install
 
-Kathará uses Docker to create devices and collision domains. Install Docker,
-make sure your user can access its daemon, then build the command:
+Install [Go 1.26.0 or newer](https://go.dev/doc/install) and Docker first. Make
+sure your user can access the Docker daemon, then install Kathará from this
+repository:
 
 ```console
 git clone https://github.com/rolbk/kathara-go.git
 cd kathara-go
-mkdir -p bin
-go build -o bin/kathara ./cmd/kathara
-./bin/kathara check
+go install ./cmd/kathara
+kathara check
 ```
+
+`go install` places the command in `GOBIN`, or in `GOPATH/bin` when `GOBIN` is
+unset. Add that directory to your `PATH` if `kathara` is not found. On Windows
+the installed file is `kathara.exe`. To build without installing, run
+`go build -o bin/kathara ./cmd/kathara` (use `bin/kathara.exe` on Windows) and
+invoke the binary from `bin/` instead.
+
+## Quick start
 
 Start an existing lab directory:
 
 ```console
-./bin/kathara lstart -d /path/to/lab
-./bin/kathara list
-./bin/kathara lclean -d /path/to/lab
+kathara lstart -d /path/to/lab
+kathara list
+kathara lclean -d /path/to/lab
 ```
 
-Run `./bin/kathara --help` to see the main command set. The `check` command is
+Run `kathara --help` to see the main command set. The `check` command is
 the best first diagnostic if Docker, its network plugin, or local settings need
 attention.
 

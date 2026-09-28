@@ -3,6 +3,7 @@
 package term
 
 import (
+	"bufio"
 	"io"
 	"os/exec"
 	"strings"
@@ -26,6 +27,37 @@ func readAll(t *testing.T, p Pty) string {
 	}
 }
 
+// readLineBeforeExit keeps a short-lived child attached to the slave until
+// the master has consumed its output. On Darwin, reading only after the child
+// exits can observe EOF without the last line from the slave.
+func readLineBeforeExit(t *testing.T, p Pty, cmd *exec.Cmd, echoedInput string) string {
+	t.Helper()
+	defer func() {
+		if cmd.ProcessState == nil {
+			_ = cmd.Process.Kill()
+			_ = cmd.Wait()
+		}
+	}()
+	reader := bufio.NewReader(p)
+	line, err := reader.ReadString('\n')
+	if err != nil {
+		t.Fatalf("ReadString: %v (got %q)", err, line)
+	}
+	if echoedInput != "" && strings.TrimSpace(line) == echoedInput {
+		line, err = reader.ReadString('\n')
+		if err != nil {
+			t.Fatalf("ReadString after echoed input: %v (got %q)", err, line)
+		}
+	}
+	if _, err := p.Write([]byte("\n")); err != nil {
+		t.Fatalf("release child: %v", err)
+	}
+	if err := cmd.Wait(); err != nil {
+		t.Fatalf("Wait: %v (output %q)", err, line)
+	}
+	return line
+}
+
 func TestPtyEcho(t *testing.T) {
 	p, err := New(Winsize{})
 	if err != nil {
@@ -33,14 +65,11 @@ func TestPtyEcho(t *testing.T) {
 	}
 	defer func() { _ = p.Close() }()
 
-	cmd := exec.Command("sh", "-c", "printf hello-pty")
+	cmd := exec.Command("sh", "-c", `printf 'hello-pty\n'; read _`)
 	if err := p.Start(cmd); err != nil {
 		t.Fatalf("Start: %v", err)
 	}
-	out := readAll(t, p)
-	if err := cmd.Wait(); err != nil {
-		t.Fatalf("Wait: %v", err)
-	}
+	out := readLineBeforeExit(t, p, cmd, "")
 	if !strings.Contains(out, "hello-pty") {
 		t.Fatalf("output %q does not contain %q", out, "hello-pty")
 	}
@@ -57,14 +86,11 @@ func TestPtyInitialSize(t *testing.T) {
 	}
 	defer func() { _ = p.Close() }()
 
-	cmd := exec.Command("stty", "size")
+	cmd := exec.Command("sh", "-c", "stty size; read _")
 	if err := p.Start(cmd); err != nil {
 		t.Fatalf("Start: %v", err)
 	}
-	out := readAll(t, p)
-	if err := cmd.Wait(); err != nil {
-		t.Fatalf("Wait: %v (output %q)", err, out)
-	}
+	out := readLineBeforeExit(t, p, cmd, "")
 	if !strings.Contains(out, "42 101") {
 		t.Fatalf("stty size = %q, want it to contain %q", out, "42 101")
 	}
@@ -79,7 +105,7 @@ func TestPtyResize(t *testing.T) {
 
 	// The child blocks on `read` until we write a newline, which we only do
 	// after Resize returns — so stty observes the post-resize geometry.
-	cmd := exec.Command("sh", "-c", "read _ && stty size")
+	cmd := exec.Command("sh", "-c", "read _ && stty size; read _")
 	if err := p.Start(cmd); err != nil {
 		t.Fatalf("Start: %v", err)
 	}
@@ -89,10 +115,7 @@ func TestPtyResize(t *testing.T) {
 	if _, err := p.Write([]byte("go\n")); err != nil {
 		t.Fatalf("Write: %v", err)
 	}
-	out := readAll(t, p)
-	if err := cmd.Wait(); err != nil {
-		t.Fatalf("Wait: %v (output %q)", err, out)
-	}
+	out := readLineBeforeExit(t, p, cmd, "go")
 	if !strings.Contains(out, "30 90") {
 		t.Fatalf("stty size after resize = %q, want it to contain %q", out, "30 90")
 	}
@@ -148,14 +171,11 @@ func TestNewDefaultsSize(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer func() { _ = p.Close() }()
-	cmd := exec.Command("stty", "size")
+	cmd := exec.Command("sh", "-c", "stty size; read _")
 	if err := p.Start(cmd); err != nil {
 		t.Fatalf("Start: %v", err)
 	}
-	out := readAll(t, p)
-	if err := cmd.Wait(); err != nil {
-		t.Fatalf("Wait: %v (output %q)", err, out)
-	}
+	out := readLineBeforeExit(t, p, cmd, "")
 	if !strings.Contains(out, "24 80") {
 		t.Fatalf("default size = %q, want it to contain %q", out, "24 80")
 	}
