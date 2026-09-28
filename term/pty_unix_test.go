@@ -49,12 +49,11 @@ func readLineBeforeExit(t *testing.T, p Pty, cmd *exec.Cmd, echoedInput string) 
 			t.Fatalf("ReadString after echoed input: %v (got %q)", err, line)
 		}
 	}
-	if _, err := p.Write([]byte("\n")); err != nil {
-		t.Fatalf("release child: %v", err)
-	}
-	if err := cmd.Wait(); err != nil {
-		t.Fatalf("Wait: %v (output %q)", err, line)
-	}
+	// The shell is deliberately waiting on input to keep the slave open. Kill
+	// it after reading instead of relying on a second PTY input handshake,
+	// which can itself block on Darwin.
+	_ = cmd.Process.Kill()
+	_ = cmd.Wait()
 	return line
 }
 
